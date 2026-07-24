@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>منصة الزواج - التحديث الشامل</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        
+        .emoji-font { font-family: "Twemoji Mozilla", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif !important; }
+
+        .accordion-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-out; }
+        .accordion-content.open { grid-template-rows: 1fr; }
+        .accordion-inner { overflow: hidden; }
+        
+        .custom-radio-group input[type="radio"] { display: none; }
+        .custom-radio-group label { cursor: pointer; transition: all 0.2s; border: 1px solid #cbd5e1; }
+        .custom-radio-group input[type="radio"]:checked + label { background-color: #059669; color: white; border-color: #059669; }
+        
+        .skin-radio-group input[type="radio"] { display: none; }
+        .skin-radio-group input[type="radio"]:checked + label { 
+            border-color: #059669 !important; transform: scale(1.05); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3); z-index: 10;
+        }
+        
+        .smart-tag input[type="checkbox"] { display: none; }
+        .smart-tag input[type="checkbox"]:checked + div { background-color: #059669; color: white; border-color: #059669; }
+        .smart-tag div { transition: all 0.2s ease; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .otp-input { text-align: center; font-family: monospace; font-size: 1.5rem; }
+        .error-field { border-color: #ef4444 !important; background-color: #fef2f2 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); }
+        .locked-step { opacity: 0.5; pointer-events: none; }
+        .modal-backdrop { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .progress-bar { transition: width 0.4s ease; }
+        
+        body.in-iframe header, body.in-iframe nav, body.in-iframe #advancedSearchBtn { display: none !important; }
+        body.in-iframe { padding-top: 1rem !important; }
+        
+        .group-pill { display: flex; width: 100%; border-radius: 0.75rem; overflow: hidden; border: 1px solid #cbd5e1; background-color: white; }
+        .group-pill input[type="radio"] { display: none; }
+        .group-pill label { flex: 1; text-align: center; padding: 0.5rem 0; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin: 0; border: none; }
+        .group-pill > div { flex: 1; display: flex; }
+        .group-pill > div:not(:last-child) { border-left: 1px solid #cbd5e1; }
+        .group-pill input[type="radio"]:checked + label { background-color: #059669; color: white; }
+    </style>
+</head>
+<body class="py-4 sm:py-8 text-gray-800 relative min-h-screen flex flex-col items-center">
+
+    <div id="syncBanner" class="fixed top-0 left-0 right-0 z-[100] bg-blue-600 text-white text-xs font-bold text-center py-1.5 transition-transform transform -translate-y-full flex items-center justify-center gap-2 shadow-md">
+        <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        <span id="syncText">جاري التحديث...</span>
+    </div>
+
+    <div id="advancedSearchBtn" class="fixed top-4 left-4 z-[90] fade-in hidden sm:block">
+        <a href="engine.html?mode=manual" class="bg-white/90 backdrop-blur text-indigo-700 hover:bg-indigo-50 font-bold text-sm py-2 px-4 rounded-full border border-indigo-200 transition-colors shadow-lg flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            البحث المتقدم
+        </a>
+    </div>
+
+    <!-- ==================== أولاً: شاشة التحقق OTP ==================== -->
+    <div id="otpSection" class="fixed inset-0 z-[100] flex items-end justify-center sm:items-center px-0 sm:px-4 fade-in">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+        <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
+            <div class="w-10 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-[#25D366]/10 text-[#25D366] rounded-full flex items-center justify-center mx-auto mb-2 border border-[#25D366]/20">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </div>
+                <h2 class="text-lg font-bold text-gray-900 mb-1">تسجيل الدخول / طلب جديد</h2>
+                <p class="text-[11px] sm:text-xs text-gray-500">أدخل رقمك المرتبط بالواتساب للمتابعة</p>
+            </div>
+
+            <div id="otpStep1" class="space-y-4">
+                <div class="flex shadow-sm" dir="ltr">
+                    <select id="otpCountryCode" class="p-2.5 sm:p-3 border border-gray-300 rounded-l-xl bg-gray-50 text-center w-[80px] sm:w-[90px] shrink-0 outline-none text-xs sm:text-sm focus:ring-2 focus:ring-[#25D366] emoji-font font-bold text-gray-700">
+                        <option value="+966">🇸🇦 +966</option><option value="+967">🇾🇪 +967</option><option value="+962">🇯🇴 +962</option><option value="+963">🇸🇾 +963</option><option value="+212">🇲🇦 +212</option><option value="+20">🇪🇬 +20</option><option value="+971">🇦🇪 +971</option><option value="+965">🇰🇼 +965</option><option value="+973">🇧🇭 +973</option><option value="+974">🇶🇦 +974</option><option value="+968">🇴🇲 +968</option>
+                    </select>
+                    <input type="tel" id="otpPhoneInput" class="w-full flex-1 min-w-0 p-2.5 sm:p-3 border border-gray-300 border-l-0 rounded-r-xl outline-none text-left font-bold text-gray-800 tracking-wider focus:ring-2 focus:ring-[#25D366] text-base placeholder:font-normal placeholder:text-gray-300" placeholder="5XXXXXXXX">
+                </div>
+                <p id="otpPhoneError" class="text-red-500 text-[10px] font-bold mt-1 hidden text-center">يرجى إدخال رقم جوال صحيح</p>
+                
+                <button id="btnSendCode" type="button" onclick="sendWhatsAppCode()" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
+                    <span>أرسل كود التحقق (واتساب)</span>
+                </button>
+                <button type="button" onclick="bypassOtpForDev()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-2.5 rounded-xl transition-colors text-xs mt-2 border border-slate-200">
+                    دخول سريع بدون تحقق (للتطوير فقط)
+                </button>
+            </div>
+
+            <div id="otpStep2" class="space-y-4 hidden fade-in">
+                <p class="text-[11px] font-bold text-center text-gray-600">أدخل الرمز (4 أرقام) المرسل لواتساب الخاص بك:</p>
+                <div class="flex justify-center gap-2 sm:gap-3" dir="ltr">
+                    <input type="text" maxlength="1" oninput="moveOtpFocus(this, 'otp2')" onkeydown="handleOtpBackspace(event, this, null)" id="otp1" class="otp-input w-11 h-12 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#25D366] font-bold bg-gray-50 text-xl transition-all">
+                    <input type="text" maxlength="1" oninput="moveOtpFocus(this, 'otp3')" onkeydown="handleOtpBackspace(event, this, 'otp1')" id="otp2" class="otp-input w-11 h-12 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#25D366] font-bold bg-gray-50 text-xl transition-all">
+                    <input type="text" maxlength="1" oninput="moveOtpFocus(this, 'otp4')" onkeydown="handleOtpBackspace(event, this, 'otp2')" id="otp3" class="otp-input w-11 h-12 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#25D366] font-bold bg-gray-50 text-xl transition-all">
+                    <input type="text" maxlength="1" oninput="moveOtpFocus(this, '')" onkeydown="handleOtpBackspace(event, this, 'otp3')" id="otp4" class="otp-input w-11 h-12 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-[#25D366] font-bold bg-gray-50 text-xl transition-all">
+                </div>
+                <p id="otpCodeError" class="text-red-500 text-[10px] font-bold text-center hidden">الكود المدخل غير صحيح.</p>
+                <button id="btnVerifyCode" type="button" onclick="verifyWhatsAppCode()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-sm transition-all active:scale-95 text-sm">الدخول للمنصة</button>
+                <div class="text-center text-[10px] text-gray-500 mt-2">
+                    لم يصلك الرمز؟ <span id="otpCountdown" class="font-bold text-[#25D366]">60</span> ثانية
+                    <button id="resendOtpBtn" type="button" onclick="sendWhatsAppCode()" class="block mx-auto mt-2 text-[#25D366] font-bold hover:underline hidden">إعادة إرسال الرمز</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ثانياً: لوحة تحكم العائلة ==================== -->
+    <div id="dashboardSection" class="w-full hidden fade-in flex-1">
+        <div id="profilesLoading" class="hidden flex-col items-center justify-center py-24 bg-transparent w-full fade-in">
+            <div class="relative flex items-center justify-center mb-8 h-20 w-32">
+                <div class="w-16 h-16 rounded-full border-[5px] border-indigo-200 animate-[ping_2s_ease-in-out_infinite] absolute left-2 opacity-60"></div>
+                <div class="w-16 h-16 rounded-full border-[5px] border-emerald-200 animate-[ping_2s_ease-in-out_infinite] absolute right-2 opacity-60" style="animation-delay: 0.5s;"></div>
+                <div class="w-16 h-16 rounded-full border-4 border-indigo-400 absolute left-2 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center shadow-lg"><svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>
+                <div class="w-16 h-16 rounded-full border-4 border-emerald-400 absolute right-2 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center shadow-lg"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></div>
+            </div>
+            <h3 class="text-lg font-bold text-gray-800 mb-1 tracking-wide">نجهز مساحتك الخاصة</h3>
+            <p class="text-sm text-gray-500 font-medium animate-pulse">يرجى الانتظار قليلاً...</p>
+        </div>
+        
+        <!-- التعديل المعماري: توسعة max-w-5xl لضمان عدم اختناق الديسكتوب -->
+        <div id="dashboardContent" class="hidden flex flex-col mt-4 sm:mt-8 pb-12 px-2 sm:px-4 mx-auto w-full max-w-5xl">
+            <div id="heroCardContainer" class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative transition-all duration-500 w-full max-w-3xl mx-auto">
+                <div class="h-24 sm:h-32 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 relative rounded-t-[2rem] flex justify-between items-start p-3 sm:p-4">
+                    <div class="bg-black/20 backdrop-blur-sm text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm border border-white/20 relative z-30">
+                        <span>🪙 رصيد التواصل: <span id="walletBalanceText">--</span></span>
+                    </div>
+
+                    <button onclick="logout()" title="تسجيل خروج" class="flex items-center justify-center p-2 sm:p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm shadow-sm transition-all focus:ring-2 focus:ring-white/50 relative z-30">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </button>
+                </div>
+                
+                <div class="px-4 sm:px-8 pb-4 relative">
+                    <div class="flex flex-row items-end relative -top-10 sm:-top-16 mb-[-1.5rem] sm:mb-[-2.5rem] z-20">
+                        <div class="relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 ml-3 sm:ml-4">
+                            <div id="heroAvatar" class="w-full h-full rounded-full border-4 border-white shadow-xl bg-gray-50 overflow-hidden flex items-center justify-center"></div>
+                            <button id="heroMainBadge" type="button" class="absolute -top-3 left-1/2 transform -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1 whitespace-nowrap z-20 transition-all"></button>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col justify-end items-start w-full pb-2 pr-1 relative z-30">
+                            <div class="flex items-center flex-wrap gap-2 mb-1.5 w-fit cursor-pointer group bg-white/60 hover:bg-white/90 backdrop-blur-sm border border-gray-200/80 shadow-sm hover:shadow hover:border-indigo-200 rounded-full px-3 py-1.5 transition-all" onclick="toggleFamilyCarousel(event)" title="اضغط لعرض أفراد العائلة">
+                                <h3 id="headerAccountName" class="text-lg sm:text-xl font-bold text-gray-900 truncate max-w-[100px] sm:max-w-[160px] group-hover:text-indigo-700 transition-colors">الاسم</h3>
+                                <span id="headerAccountRefId" class="font-mono font-bold px-1.5 py-0.5 rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 text-[10px] sm:text-xs shadow-inner shrink-0"></span>
+                                <div id="familyToggleBtn" class="bg-white border border-gray-200 shadow-sm text-gray-600 rounded-full w-6 h-6 flex items-center justify-center transition-all relative group-hover:bg-indigo-50 group-hover:text-indigo-600 shrink-0">
+                                    <svg id="familyToggleIcon" class="w-3.5 h-3.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+                                    <span id="familyToggleBadge" class="hidden absolute -top-1 -right-1 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span></span>
+                                </div>
+                            </div>
+                            <span id="headerAccountRel" class="text-[10px] font-bold text-gray-600 bg-white/70 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-gray-200 shadow-sm shrink-0 hidden mr-3"></span>
+                        </div>
+                    </div>
+
+                    <div id="familyCarouselWrapper" class="w-full mt-1 mb-3 hidden fade-in bg-gray-50/80 p-2 rounded-2xl border border-gray-100 shadow-inner">
+                        <div class="flex justify-between items-center px-1 mb-1.5">
+                            <h4 class="text-[10px] font-bold text-gray-500">اختر الملف المطلوب:</h4>
+                            <button onclick="showMainForm()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full px-2 py-0.5 flex items-center justify-center font-bold transition-colors text-[10px] gap-1 shadow-sm border border-blue-100" title="إضافة طلب جديد"><span>+</span> <span>ملف جديد</span></button>
+                        </div>
+                        <div id="familyCarousel" class="flex flex-row gap-2 overflow-x-auto hide-scroll pb-1 px-1 snap-x">
+                        </div>
+                    </div>
+
+                    <div id="heroShortSummary" class="mt-4 sm:mt-5 text-right px-2 sm:px-0 w-full"></div>
+
+                    <div class="mb-3 mt-4 relative">
+                        <button onclick="toggleBio(event)" type="button" class="w-full flex items-center justify-between bg-blue-50 hover:bg-blue-100 text-blue-800 text-sm font-bold py-2.5 px-4 rounded-xl border border-blue-200 transition-colors shadow-sm">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                النبذة التلقائية والتفاصيل
+                            </span>
+                            <svg id="bioIcon" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="bioContentDiv" class="hidden mt-2 relative transition-all">
+                            <div id="heroBio" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm leading-loose text-gray-800 emoji-font shadow-inner whitespace-pre-wrap min-h-[100px]"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center items-center bg-gray-50/80 p-2 rounded-2xl border border-gray-100 gap-3 sm:gap-6">
+                        <button onclick="handleHeroAction('copy')" class="p-2.5 text-emerald-600 bg-white hover:bg-emerald-100 rounded-full border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-emerald-200 hover:scale-110" title="إنشاء مشابه"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
+                        <button onclick="handleHeroAction('edit')" class="p-2.5 text-amber-500 bg-white hover:bg-amber-100 rounded-full border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 hover:scale-110" title="تعديل"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                        <button onclick="shareFromHero()" class="p-2.5 text-[#25D366] bg-white hover:bg-[#25D366]/20 rounded-full border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-[#25D366]/50 hover:scale-110" title="إرسال للوسيط"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>
+                        <button onclick="askDeleteConfirmHero()" class="p-2.5 text-red-500 bg-white hover:bg-red-100 rounded-full border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-red-200 hover:scale-110" title="حذف"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex border-b border-gray-200 mt-6 w-full max-w-3xl mx-auto overflow-x-auto hide-scroll rounded-t-xl bg-gray-50/50">
+                <button id="tabBtn-smart" onclick="switchTab('smart')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-slate-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5"><span class="text-sm sm:text-base">🤖</span> المرشحين</button>
+                <button id="tabBtn-favorites" onclick="switchTab('favorites')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-slate-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5"><span class="text-amber-500 text-sm sm:text-base">⭐️</span> مفضلاتي</button>
+                <button id="tabBtn-requests" onclick="switchTab('requests')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-slate-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 relative"><span class="text-blue-500 text-sm sm:text-base">💬</span> طلباتي <span id="mainTabReqBadge" class="hidden absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex h-2 sm:h-2.5 w-2 sm:w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-red-500"></span></span></button>
+            </div>
+
+            <!-- حاوية الـ iframe بمساحة التنفس (Breathing Space) والتمدد -->
+            <div id="contentContainer" class="w-full mt-6 pb-32 mb-10 px-4 md:px-0">
+                <iframe id="contentIframe" class="w-full border-0 bg-transparent rounded-2xl overflow-hidden min-h-[600px] block" scrolling="no" src=""></iframe>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== ثالثاً: نموذج تسجيل البيانات ==================== -->
+    <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-12 mt-2 flex-1 max-w-3xl">
+        <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 mb-4 sm:mb-6">
+            <div class="w-full bg-gray-200 h-1.5 overflow-hidden"><div id="progressBar" class="bg-emerald-600 h-1.5 progress-bar" style="width: 20%"></div></div>
+            <div class="flex justify-between items-center px-4 sm:px-6 py-2.5 text-xs font-bold text-gray-500">
+                <span id="progressText">الخطوة 1 من 5</span>
+                <span id="draftIndicator" class="text-indigo-500 hidden">✓ تم حفظ مسودة</span>
+            </div>
+        </div>
+
+        <div class="text-center mb-6 mt-2 px-4">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-1">تسجيل طلب زواج</h1>
+            <p class="text-gray-500 text-xs hidden sm:block">يرجى تعبئة البيانات بدقة لتسهيل عملية التوفيق</p>
+            <div class="flex items-center justify-center gap-3 mt-2">
+                <button onclick="loadDashboard()" class="text-indigo-600 text-xs font-bold hover:underline">العودة للوحة العائلة</button>
+                <span class="text-gray-300">|</span>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-500 text-xs font-bold hover:underline flex items-center gap-1 transition-colors">خروج</button>
+            </div>
+        </div>
+
+        <form id="registrationForm" class="space-y-3 sm:space-y-4 px-2 sm:px-4" onsubmit="return false;">
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="step-1-card">
+                <div class="bg-gray-50 px-4 sm:px-6 py-3.5 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(1)">
+                    <div class="flex items-center gap-3"><span id="step-1-badge" class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">1</span><h2 class="text-sm sm:text-base font-bold text-gray-800">البيانات الأساسية</h2></div>
+                    <div id="step-1-icon" class="text-emerald-600"><svg class="w-5 h-5 transform rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                </div>
+                <div id="step-1-content" class="accordion-content open">
+                    <div class="accordion-inner p-4 sm:p-6 space-y-4 sm:space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">الاسم الأول أو المستعار <span class="text-red-500">*</span></label>
+                                <input type="text" id="firstName" required class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="اكتب اسمك هنا...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">صلة القرابة <span class="text-red-500">*</span></label>
+                                <select id="relation" required class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-sm">
+                                    <option value="" disabled selected>-- اختر الصلة --</option>
+                                    <option value="أنا">أنا (صاحب الطلب)</option><option value="أبي">أبي</option><option value="أمي">أمي</option><option value="ابني">ابني</option><option value="ابنتي">ابنتي</option><option value="أخي">أخي</option><option value="أختي">أختي</option><option value="قريب">قريب</option><option value="قريبة">قريبة</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">تحديد الجنس <span class="text-red-500">*</span></label>
+                            <div class="group-pill shadow-sm">
+                                <div><input type="radio" name="gender" id="gender_male" value="ذكر" onchange="handleGenderChange()"><label for="gender_male">ذكر</label></div>
+                                <div><input type="radio" name="gender" id="gender_female" value="أنثى" onchange="handleGenderChange()"><label for="gender_female">أنثى</label></div>
+                            </div>
+                        </div>
+                        <div class="pt-2 flex justify-end">
+                            <button type="button" onclick="nextStep(1)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl transition-colors text-sm">التالي</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-2-card">
+                <div class="bg-gray-50 px-4 sm:px-6 py-3.5 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(2)">
+                    <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors" id="step-2-badge">2</span><h2 class="text-sm sm:text-base font-bold text-gray-800">الجنسية، الإقامة والأصول</h2></div>
+                    <div id="step-2-icon" class="text-gray-400"><svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                </div>
+                <div id="step-2-content" class="accordion-content">
+                    <div class="accordion-inner p-4 sm:p-6 space-y-4 sm:space-y-5">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">الجنسية <span class="text-red-500">*</span></label>
+                            <select id="nationality" required onchange="renderSmartTags(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white emoji-font text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select>
+                        </div>
+                        <div class="bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200 space-y-3">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">الانتماء القبلي <span class="text-red-500">*</span></label>
+                            <div class="group-pill shadow-sm" id="tribalStatusGroup"></div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 hidden fade-in" id="namesContainer">
+                                <div id="tribeNameDiv" class="hidden"><label class="block text-xs font-semibold text-gray-700 mb-1.5">اسم القبيلة <span class="text-red-500">*</span></label><input type="text" id="tribeName" class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="اكتب اسم القبيلة..."></div>
+                                <div id="familyNameDiv" class="hidden"><label id="familyLabel" class="block text-xs font-semibold text-gray-700 mb-1.5">اسم العائلة</label><input type="text" id="familyName" class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="اكتب اسم العائلة..."></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">أين تقع أصول العائلة أو القبيلة؟ <span class="text-red-500">*</span></label>
+                            <div class="group-pill shadow-sm mb-3" id="originLocationGroupWrapper">
+                                <div><input type="radio" name="originLocation" id="origin_in" value="من داخل المملكة" onchange="toggleOriginDetails(); clearLiveErrorGroup('originLocationGroupWrapper');"><label for="origin_in">من داخل المملكة</label></div>
+                                <div><input type="radio" name="originLocation" id="origin_out" value="من خارج المملكة" onchange="toggleOriginDetails(); clearLiveErrorGroup('originLocationGroupWrapper');"><label for="origin_out">من خارج المملكة</label></div>
+                            </div>
+                            <div id="originInsideDetails" class="hidden fade-in"><select id="originInside" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none bg-white focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد منطقة الأصول داخل المملكة --</option></select></div>
+                            <div id="originOutsideDetails" class="hidden fade-in">
+                                <select id="originOutside" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none bg-white focus:ring-2 focus:ring-emerald-500 text-sm">
+                                    <option value="" disabled selected>-- حدد الأصول المعروفة بالخارج --</option><option value="أصول يمنية">أصول يمنية</option><option value="أصول حضرمية">أصول حضرمية</option><option value="أصول شامية">أصول شامية</option><option value="أصول بخارية / تركستانية">أصول جاوية / شرق آسيوية</option><option value="أصول أفريقية عربية">أصول أفريقية عربية (مصر، السودان...)</option><option value="أصول أفريقية غير عربية">أصول أفريقية غير عربية (نيجيريا، مالي...)</option><option value="أصول هندية / باكستانية">أصول هندية / باكستانية</option><option value="أصول تركية">أصول تركية</option><option value="أصول فلاتة">أصول فلاتة</option><option value="أصول هوساوية">أصول هوساوية</option><option value="أخرى">أصول أخرى</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200">
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">مكان الإقامة الحالية <span class="text-red-500">*</span></label>
+                            <div class="group-pill shadow-sm mb-3" id="residenceLocGroupWrapper">
+                                <div><input type="radio" name="residenceLoc" id="res_ksa" value="داخل السعودية" onchange="handleResidenceChange(); renderSmartTags(); clearLiveErrorGroup('residenceLocGroupWrapper');"><label for="res_ksa">داخل السعودية</label></div>
+                                <div><input type="radio" name="residenceLoc" id="res_out" value="خارج السعودية" onchange="handleResidenceChange(); renderSmartTags(); clearLiveErrorGroup('residenceLocGroupWrapper');"><label for="res_out">خارج السعودية</label></div>
+                            </div>
+                            <div id="ksaCitiesDiv" class="hidden fade-in"><select id="ksaCity" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm"></select></div>
+                            <div id="worldCountriesDiv" class="hidden fade-in grid grid-cols-1 gap-2.5"><select id="worldCountry" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"></select><input type="text" id="worldCity" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none text-sm" placeholder="اسم المدينة أو المحافظة بالخارج (اختياري)..."></div>
+                        </div>
+                        <div class="pt-2 flex justify-between"><button type="button" onclick="openSpecificStep(1)" class="text-gray-500 hover:text-gray-800 font-bold py-2 px-3 text-sm">السابق</button><button type="button" onclick="nextStep(2)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl text-sm">التالي</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-3-card">
+                <div class="bg-gray-50 px-4 sm:px-6 py-3.5 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(3)">
+                    <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-3-badge">3</span><h2 class="text-sm sm:text-base font-bold text-gray-800">الحالة الاجتماعية ونوع الزواج</h2></div>
+                    <div id="step-3-icon" class="text-gray-400"><svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                </div>
+                <div id="step-3-content" class="accordion-content">
+                    <div class="accordion-inner p-4 sm:p-6 space-y-4 sm:space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الحالة الاجتماعية <span class="text-red-500">*</span></label><select id="maritalStatus" required onchange="handleMaritalStatusChange(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select></div>
+                            <div id="childrenCountDiv" class="hidden fade-in"><label class="block text-xs font-semibold text-gray-700 mb-1.5">عدد الأبناء (فارغ إن لم يوجد)</label><input type="text" id="childrenCount" oninput="sanitizeAndConvertDigits(this)" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اكتب العدد رقمياً..."></div>
+                        </div>
+                        <div id="custodyDiv" class="hidden fade-in bg-blue-50 p-3 sm:p-4 rounded-xl border border-blue-100"><label class="block text-xs font-semibold text-blue-900 mb-1.5">حالة حضانة الأبناء <span class="text-red-500">*</span></label><select id="custodyStatus" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 text-sm"></select></div>
+                        <div id="menMarriageSection" class="hidden space-y-3 sm:space-y-4 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200 fade-in">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">نوع الزواج المرغوب <span class="text-red-500">*</span></label><select id="menMarriageType" required onchange="handleMenMarriageTypeChange(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select>
+                            <div id="menSpecialSpecsWrapper" class="hidden border-t border-gray-300 pt-2.5 space-y-2"><p class="text-[10px] sm:text-xs font-bold text-gray-600 mb-1">حدد الاشتراطات الخاصة (سرية):</p><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="مسيار" class="w-4 h-4 text-emerald-600"> مسيار وبدون توفير سكن</label><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="غير معلن مؤقتاً" class="w-4 h-4 text-emerald-600"> غير معلن لفترة ثم يعلن</label><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="فارق عمر كبير" class="w-4 h-4 text-emerald-600"> فارق العمر يتجاوز 12 سنة</label><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="غير سعودي و سعودية" class="w-4 h-4 text-emerald-600"> غير سعودي بسعودية</label><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="زواج مختلط القبيلة" class="w-4 h-4 text-emerald-600"> غير قبيلي بقبيلية / مختلط</label><label class="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-200 cursor-pointer text-xs font-medium"><input type="checkbox" name="menSpecOpts" value="قبول ظروف صحية خاصة" class="w-4 h-4 text-emerald-600"> قبول ظروف خاصة أو إعاقة</label></div></div>
+                        </div>
+                        <div id="womenMarriageSection" class="hidden space-y-3 sm:space-y-4 bg-pink-50/50 p-3 sm:p-4 rounded-xl border border-pink-200 fade-in">
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">خيارات التعدد <span class="text-red-500">*</span></label><select id="acceptMarried" required onchange="clearLiveError(this);" class="w-full md:w-1/2 p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-pink-500 text-sm"><option value="" disabled selected>-- تقبلين معدد؟ --</option><option value="نعم">نعم (أقبل برجل متزوج)</option><option value="لا">لا (أشترط أن يكون غير متزوج)</option><option value="ممكن">ممكن / حسب الظروف</option></select></div>
+                            <div class="border-t border-pink-200 pt-2.5"><label class="block text-xs font-semibold text-gray-700 mb-1.5">نوع الزواج المطلوب <span class="text-red-500">*</span></label><select id="womenMarriageType" required onchange="handleWomenMarriageTypeChange(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-pink-500 text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select>
+                                <div id="womenSpecialSpecsWrapper" class="hidden mt-2.5 grid grid-cols-1 md:grid-cols-2 gap-2"><label class="flex items-center gap-2 p-2.5 border border-pink-200 bg-white rounded-xl cursor-pointer text-[11px] sm:text-xs font-bold"><input type="checkbox" name="womenAltMarriage" value="غير معلن / معلن من طرف" class="w-4 h-4 text-pink-600"> غير معلن / من طرف واحد</label><label class="flex items-center gap-2 p-2.5 border border-pink-200 bg-white rounded-xl cursor-pointer text-[11px] sm:text-xs font-bold"><input type="checkbox" name="womenAltMarriage" value="بدون مبيت كامل / مبيت محدود" class="w-4 h-4 text-pink-600"> بدون مبيت / مبيت محدود</label><label class="flex items-center gap-2 p-2.5 border border-pink-200 bg-white rounded-xl cursor-pointer text-[11px] sm:text-xs font-bold"><input type="checkbox" name="womenAltMarriage" value="زواج تشاركي بالمصروف" class="w-4 h-4 text-pink-600"> زواج تشاركي بالمصروف</label><label class="flex items-center gap-2 p-2.5 border border-pink-200 bg-white rounded-xl cursor-pointer text-[11px] sm:text-xs font-bold"><input type="checkbox" name="womenAltMarriage" value="زواج نهاية الأسبوع (ويكند)" class="w-4 h-4 text-pink-600"> زواج نهاية الأسبوع (ويكند)</label></div>
+                            </div>
+                        </div>
+                        <div class="pt-2 flex justify-between"><button type="button" onclick="openSpecificStep(2)" class="text-gray-500 hover:text-gray-800 font-bold py-2 px-3 text-sm">السابق</button><button type="button" onclick="nextStep(3)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl text-sm">التالي</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-4-card">
+                <div class="bg-gray-50 px-4 sm:px-6 py-3.5 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(4)">
+                    <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-4-badge">4</span><h2 class="text-sm sm:text-base font-bold text-gray-800">المواصفات وتاريخ الميلاد</h2></div>
+                    <div id="step-4-icon" class="text-gray-400"><svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                </div>
+                <div id="step-4-content" class="accordion-content">
+                    <div class="accordion-inner p-4 sm:p-6 space-y-4 sm:space-y-5">
+                        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 space-y-3">
+                            <label class="block text-xs font-semibold text-gray-700">تاريخ الميلاد <span class="text-red-500">*</span></label>
+                            <div class="flex items-center gap-5 text-sm font-bold mb-1.5">
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="hijri" checked onchange="handleCalendarSwitch()" class="accent-emerald-600"> هجري</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="greg" onchange="handleCalendarSwitch()" class="accent-emerald-600"> ميلادي</label>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <div><select id="dobDay" required onchange="calculateEstimatedAge(); clearLiveError(this);" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none text-sm"></select></div>
+                                <div><select id="dobMonth" required onchange="calculateEstimatedAge(); clearLiveError(this);" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none text-sm"></select></div>
+                                <div><select id="dobYear" required onchange="calculateEstimatedAge(); clearLiveError(this);" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none text-sm"></select></div>
+                            </div>
+                            <div id="ageDisplayBox" class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800 font-bold text-xs text-center hidden">العمر المحسوب: <span id="calculatedAgeVal">--</span> سنة.</div>
+                            <input type="hidden" id="age" value="">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الطول <span class="text-red-500">*</span></label><input type="number" id="height" required min="120" max="250" oninput="validateRealTime(this, 120, 250, 'الطول غير منطقي'); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="مثال: 172"><p class="text-red-500 text-[10px] font-bold mt-1 hidden"></p></div>
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الوزن <span class="text-red-500">*</span></label><input type="number" id="weight" required min="40" max="200" oninput="validateRealTime(this, 40, 200, 'الوزن غير منطقي'); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="مثال: 68"><p class="text-red-500 text-[10px] font-bold mt-1 hidden"></p></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">لون البشرة <span class="text-red-500">*</span></label>
+                            <div class="flex flex-wrap gap-2 skin-radio-group" id="skinColorGroup" onclick="document.getElementById('skinColorGroup').classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50')">
+                                <!-- سيتم التعبئة برمجياً بـ 7 ألوان -->
+                            </div>
+                        </div>
+                        <div id="femalePhysicalSpecs" class="hidden fade-in space-y-3 pt-3 border-t border-gray-100"><h3 class="font-bold text-gray-700 text-xs">تفاصيل إضافية للمرأة:</h3><div class="grid grid-cols-1 md:grid-cols-3 gap-3"><div><label class="block text-[11px] font-bold text-gray-700 mb-1">طول الشعر</label><select id="hairLength" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white text-xs font-semibold outline-none"><option value="" disabled selected>-- اختر --</option><option value="قصير">قصير</option><option value="متوسط">متوسط</option><option value="طويل">طويل</option></select></div><div><label class="block text-[11px] font-bold text-gray-700 mb-1">نوع الشعر</label><select id="hairTexture" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white text-xs font-semibold outline-none"><option value="" disabled selected>-- اختر --</option><option value="ناعم حرير">ناعم حرير</option><option value="ناعم عادي">ناعم عادي</option><option value="مموج (ويفي)">مموج (ويفي)</option><option value="كيرلي">كيرلي</option><option value="مجعد">مجعد</option></select></div><div><label class="block text-[11px] font-bold text-gray-700 mb-1">الجسم</label><select id="bodyShape" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white text-xs font-semibold outline-none"><option value="" selected>-- غير محدد --</option><option value="ساعة رملية">ساعة رملية</option><option value="كمثرى">كمثرى</option><option value="تفاحة">تفاحة</option><option value="مستطيل">مستطيل</option></select></div></div></div>
+                        <div class="pt-2 flex justify-between"><button type="button" onclick="openSpecificStep(3)" class="text-gray-500 hover:text-gray-800 font-bold py-2 px-3 text-sm">السابق</button><button type="button" onclick="nextStep(4)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl text-sm">التالي</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-5-card">
+                <div class="bg-gray-50 px-4 sm:px-6 py-3.5 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(5)">
+                    <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-5-badge">5</span><h2 class="text-sm sm:text-base font-bold text-gray-800">المؤهلات والاعتماد</h2></div>
+                    <div id="step-5-icon" class="text-gray-400"><svg class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></div>
+                </div>
+                <div id="step-5-content" class="accordion-content">
+                    <div class="accordion-inner p-4 sm:p-6 space-y-4 sm:space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">التعليم <span class="text-red-500">*</span></label><select id="education" required onchange="clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- اختر --</option></select></div>
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الوظيفة <span class="text-red-500">*</span></label><select id="jobStatus" required onchange="handleJobChange(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select><input type="text" id="customJob" class="hidden mt-2 w-full p-2.5 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اكتب مسمى الوظيفة..."></div>
+                            <div id="incomeDiv" class="hidden fade-in"><label class="block text-xs font-semibold text-gray-700 mb-1.5">الدخل الشهري <span class="text-red-500">*</span></label><select id="monthlyIncome" onchange="clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد النطاق --</option><option value="50,000 فأكثر">50,000 ريال فأكثر</option><option value="30,000 - 50,000">30,000 - 50,000 ريال</option><option value="15,000 - 30,000">15,000 - 30,000 ريال</option><option value="8,000 - 15,000">8,000 - 15,000 ريال</option><option value="4,000 - 8,000">4,000 - 8,000 ريال</option><option value="بدون دخل">بدون دخل ثابت</option></select></div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">رقم التوثيق</label><input type="text" id="finalPhoneDisplay" readonly class="w-full p-2.5 sm:p-3 border border-gray-200 bg-gray-100 rounded-xl text-left font-mono font-bold text-gray-600 cursor-not-allowed text-sm" dir="ltr"></div>
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">معلومات سرية (للإدارة فقط)</label><textarea id="specialInfo" rows="1" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm" placeholder="ظروف عائلية أو صحية خاصة..."></textarea></div>
+                        </div>
+                        <div class="bg-blue-50/50 border border-blue-100 p-3 sm:p-4 rounded-xl"><label class="block text-xs font-semibold text-blue-900 mb-2">معلومات إضافية عني <span class="text-[10px] font-normal text-blue-600">(خيارات سريعة)</span></label><div id="myTagsContainer" class="flex flex-wrap gap-1.5 mb-2.5"></div><textarea id="additionalInfo" rows="2" class="w-full p-2.5 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 resize-none text-sm" placeholder="أو اكتب ما تود إضافته بنفسك..."></textarea></div>
+                        <div class="bg-indigo-50/50 border border-indigo-100 p-3 sm:p-4 rounded-xl"><label class="block text-xs font-semibold text-indigo-900 mb-2">شروط الشريك المطلوب <span class="text-red-500">*</span></label><div id="partnerTagsContainer" class="flex flex-wrap gap-1.5 mb-2.5"></div><textarea id="partnerSpecs" required oninput="clearLiveError(this);" rows="2" class="w-full p-2.5 border border-indigo-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 resize-none text-sm" placeholder="اكتب شروطك في الشريك هنا..."></textarea></div>
+                        
+                        <div class="bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200 mt-2">
+                            <label class="block text-xs font-semibold text-gray-700 mb-2">كيف وصلت لصفحتنا؟ <span class="text-red-500">*</span></label>
+                            <select id="howHeard" required class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-gray-400 text-sm">
+                                <option value="" disabled selected>-- اختر الإجابة --</option>
+                                <option value="تويتر / إكس">تويتر / إكس</option><option value="واتساب">رسالة واتساب</option><option value="صديق">قريب أو معارف</option><option value="بحث جوجل">بحث جوجل</option><option value="غير ذلك">منصة أخرى</option>
+                            </select>
+                        </div>
+
+                        <div id="smartValidationError" class="hidden text-center p-2 rounded-xl font-bold bg-red-100 text-red-700 border border-red-300 fade-in mt-2 text-xs"></div>
+                        
+                        <div class="pt-3 flex justify-between items-center border-t border-gray-100 mt-3">
+                            <button type="button" onclick="openSpecificStep(4)" class="text-gray-500 hover:text-gray-800 font-bold py-2 px-3 text-sm">السابق</button>
+                            <button type="button" id="reviewSubmitBtn" onclick="openTermsModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 px-6 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2">
+                                <span>اعتماد الطلب</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- ==================== النافذة المنبثقة للشروط ==================== -->
+    <div id="termsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    الشروط
+                </h3>
+                <button type="button" onclick="closeTermsModal()" class="text-white/70 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-4 overflow-y-auto space-y-4">
+                <div id="dynamicTermsContainer"></div>
+
+                <div class="flex items-start gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <input type="checkbox" id="agreeTerms" required class="mt-0.5 w-4 h-4 text-indigo-600 rounded border-gray-300 accent-indigo-600 cursor-pointer">
+                    <label for="agreeTerms" class="text-[11px] font-bold text-gray-800 cursor-pointer leading-relaxed">أشهد بصحة البيانات، وألتزم بالشروط والرسوم، وأتعهد بالجدية.</label>
+                </div>
+                
+                <div id="modalError" class="hidden text-red-600 text-[10px] font-bold text-center bg-red-50 p-2 rounded-lg border border-red-200">يرجى الموافقة على التعهد للمتابعة.</div>
+            </div>
+
+            <div class="bg-gray-50 px-4 py-3 flex justify-between gap-2 border-t border-gray-200">
+                <button type="button" onclick="closeTermsModal()" class="flex-1 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">تراجع</button>
+                <button type="button" id="finalSubmitBtn" onclick="submitForm(this)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 rounded-xl shadow-md transition-colors flex items-center justify-center">
+                    <span>اعتماد</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== شاشة النجاح ==================== -->
+    <div id="successSection" class="max-w-md mx-auto hidden fade-in my-8 sm:my-12 px-4">
+        <div class="text-center py-3 px-2 rounded-xl font-bold bg-green-50 text-green-800 border border-green-200 shadow-sm mb-4 flex items-center justify-center gap-2">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-sm">تم اعتماد الطلب بنجاح!</span>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-4 text-center shadow-md">
+            <p class="text-[11px] sm:text-xs font-bold text-emerald-800 mb-3 leading-relaxed">يرجى إرسال ملفك الآن لوسيط الزواج (أبو العنود) للأهمية.</p>
+            <button onclick="sendToBroker()" class="w-full bg-[#059669] hover:bg-[#047857] text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-transform transform active:scale-95 flex items-center justify-center gap-1.5 mx-auto text-sm">
+                <span>أرسل للاعتماد</span>
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            </button>
+            
+            <div class="mt-4 pt-3 border-t border-emerald-200">
+                <button id="engineSmartBtn" onclick="goToSmartEngine()" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-500 font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 mx-auto transition-all text-sm">
+                    <span>شاهد المرشحين لك</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl transform transition-all text-center">
+            <h3 id="msgModalTitle" class="text-base font-bold text-gray-900 mb-1.5">تنبيه</h3>
+            <p id="msgModalText" class="text-[11px] text-gray-600 mb-4 leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl transition-colors text-sm">حسناً فهمت</button>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl text-center">
+            <div id="confirmModalIconWrapper" class="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg id="confirmModalIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </div>
+            <h3 id="confirmModalTitle" class="text-base font-bold text-gray-900 mb-1.5">تأكيد الإجراء</h3>
+            <p id="confirmModalText" class="text-[11px] text-gray-600 mb-4"></p>
+            <div class="flex gap-2">
+                <button id="confirmYesBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl transition-colors text-sm">نعم، متأكد</button>
+                <button onclick="closeConfirmModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 rounded-xl transition-colors text-sm">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        
+        let verifiedFullPhone = "";
+        let isMale = null;
+        let pendingDelete = null; 
+        let editInfoState = null; 
+        let dynamicDropdowns = null; 
+        let currentViewData = null; 
+        let currentViewedIndexInDashboard = null; 
+        let hasClickedWaToApprove = false;
+        
+        let cachedProfiles = [];
+        let registeredUserData = {};
+
+        const fallbackDropdowns = {
+            residenceCountries: ["السعودية", "الإمارات", "الكويت", "قطر", "البحرين", "عمان", "اليمن", "مصر", "الأردن", "سوريا", "لبنان", "فلسطين", "العراق", "السودان", "المغرب", "الجزائر", "تونس", "ليبيا", "تركيا", "باكستان", "الهند", "إندونيسيا", "ماليزيا", "الفلبين", "أمريكا", "أوروبا"],
+            regionsData: {
+                "منطقة الرياض": ["الرياض", "الخرج", "المجمعة", "الدوادمي", "الزلفي", "وادي الدواسر", "عفيف", "شقراء", "القويعية", "حريملاء", "الأفلاج", "ضرماء"],
+                "منطقة مكة المكرمة": ["مكة المكرمة", "جدة", "الطائف", "القنفذة", "الليث", "رابغ", "خليص", "الخرمة", "تربة", "رنية", "الجموم"],
+                "المنطقة الشرقية": ["الدمام", "الخبر", "الظهران", "الجبيل", "القطيف", "حفر الباطن", "الخفجي", "رأس تنورة", "بقيق", "النعيرية"], 
+                "محافظة الأحساء": ["الهفوف", "المبرز", "العيون", "العمران", "الجفر", "الطرف", "البطالية"], 
+                "منطقة المدينة المنورة": ["المدينة المنورة", "ينبع", "العلا", "المهد", "بدر", "خيبر", "الحناكية"],
+                "منطقة القصيم": ["بريدة", "عنيزة", "الرس", "المذنب", "البكيرية", "البدائع", "الأسياح", "رياض الخبراء"],
+                "منطقة عسير": ["أبها", "خميس مشيط", "بيشة", "محايل عسير", "النماص", "ظهران الجنوب", "سراة عبيدة", "رجال ألمع", "تثليث"],
+                "منطقة جازان": ["جازان", "صبيا", "أبو عريش", "صامطة", "بيش", "الدرب", "ضمد", "الدائر", "أحد المسارحة"],
+                "منطقة تبوك": ["تبوك", "الوجه", "ضبا", "تيماء", "أملج", "حقل"],
+                "منطقة حائل": ["حائل", "بقعاء", "الغزالة", "الشنان"],
+                "منطقة الحدود الشمالية": ["عرعر", "رفحاء", "طريف"],
+                "منطقة الجوف": ["سكاكا", "القريات", "دومة الجندل", "طبرجل"],
+                "منطقة نجران": ["نجران", "شرورة", "حبونا", "بدر الجنوب"],
+                "منطقة الباحة": ["الباحة", "بلجرشي", "المندق", "المخواة", "العقيق", "قلوة"]
+            },
+            educations: ["متوسط وما دون", "ثانوي", "دبلوم", "بكالوريوس", "ماجستير / دكتوراه"],
+            maleNationalities: ["سعودي", "إماراتي", "كويتي", "قطري", "بحريني", "عماني", "يمني", "مصري", "سوري", "أردني", "لبناني", "فلسطيني", "عراقي", "سوداني", "مغربي", "جزائري", "تونسي", "ليبي", "تركي", "باكستاني", "هندي", "إندونيسي", "فلبيني", "أفغاني", "بنغلاديشي"],
+            femaleNationalities: ["سعودية", "إماراتية", "كويتية", "قطرية", "بحرينية", "عمانية", "يمنية", "مصرية", "سورية", "أردنية", "لبنانية", "فلسطينية", "عراقية", "سودانية", "مغربية", "جزائرية", "تونسية", "ليبية", "تركية", "باكستانية", "هندية", "إندونيسية", "فلبينية", "أفغانية", "بنغلاديشية"],
+            maleJobs: ["موظف حكومي", "موظف قطاع خاص", "عسكري", "معلم", "طبيب / قطاع صحي", "مهندس", "أعمال حرة / تجارة", "طالب", "متقاعد", "باحث عن عمل"],
+            femaleJobs: ["موظفة حكومية", "موظفة قطاع خاص", "معلمة", "طبيبة / قطاع صحي", "طالبة", "ربة منزل", "عمل حر", "متقاعدة"],
+            maleMarital: ["أعزب", "متزوج", "مطلق", "أرمل"],
+            femaleMarital: ["بكر", "مطلقة", "أرملة"],
+            maleMarriageType: ["زواج تقليدي معلن", "زواج باشتراطات خاصة"],
+            femaleMarriageType: ["زواج تقليدي معلن", "زواج بظروف خاصة"],
+            maleSkinColors: ["أبيض", "حنطي فاتح", "حنطي", "برونزي", "أسمر", "أسمر داكن", "أسود"],
+            femaleSkinColors: ["بيضاء", "حنطية فاتح", "حنطية", "برونزية", "سمراء", "سمراء داكن", "سوداء"]
+        };
+
+        const flagDictionary = {
+            "سعودي": "🇸🇦", "سعودية": "🇸🇦", "السعودية": "🇸🇦", "كويتي": "🇰🇼", "كويتية": "🇰🇼", "الكويت": "🇰🇼",
+            "إماراتي": "🇦🇪", "إماراتية": "🇦🇪", "الإمارات": "🇦🇪", "قطري": "🇶🇦", "قطرية": "🇶🇦", "قطر": "🇶🇦",
+            "بحريني": "🇧🇭", "بحرينية": "🇧🇭", "البحرين": "🇧🇭", "عماني": "🇴🇲", "عمانية": "🇴🇲", "عمان": "🇴🇲",
+            "مصري": "🇪🇬", "مصرية": "🇪🇬", "مصر": "🇪🇬", "أردني": "🇯🇴", "أردنية": "🇯🇴", "الأردن": "🇯🇴",
+            "سوري": "🇸🇾", "سورية": "🇸🇾", "سوريا": "🇸🇾", "يمني": "🇾🇪", "يمنية": "🇾🇪", "اليمن": "🇾🇪",
+            "مغربي": "🇲🇦", "مغربية": "🇲🇦", "المغرب": "🇲🇦", "سوداني": "🇸🇩", "سودانية": "🇸🇩", "السودان": "🇸🇩",
+            "فلسطيني": "🇵🇸", "فلسطينية": "🇵🇸", "فلسطين": "🇵🇸", "عراقي": "🇮🇶", "عراقية": "🇮🇶", "العراق": "🇮🇶",
+            "لبناني": "🇱🇧", "لبنانية": "🇱🇧", "لبنان": "🇱🇧", "جزائري": "🇩🇿", "جزائرية": "🇩🇿", "الجزائر": "🇩🇿",
+            "تونسي": "🇹🇳", "تونسية": "🇹🇳", "تونس": "🇹🇳", "ليبي": "🇱🇾", "ليبية": "🇱🇾", "ليبيا": "🇱🇾",
+            "تركي": "🇹🇷", "تركية": "🇹🇷", "تركيا": "🇹🇷", "باكستاني": "🇵🇰", "باكستانية": "🇵🇰", "باكستان": "🇵🇰",
+            "إندونيسي": "🇮🇩", "إندونيسية": "🇮🇩", "إندونيسيا": "🇮🇩", "ماليزي": "🇲🇾", "ماليزية": "🇲🇾", "ماليزيا": "🇲🇾",
+            "أفغاني": "🇦🇫", "أفغانية": "🇦🇫", "أفغانستان": "🇦🇫", "بنغلاديشي": "🇧🇩", "بنغلاديشية": "🇧🇩", "بنغلاديش": "🇧🇩",
+            "هندي": "🇮🇳", "هندية": "🇮🇳", "الهند": "🇮🇳", "فلبيني": "🇵🇭", "فلبينية": "🇵🇭", "الفلبين": "🇵🇭"
+        };
+
+        function getFlagForText(text) {
+            if(!text) return "";
+            for (let key in flagDictionary) { if (text.includes(key)) return flagDictionary[key]; }
+            return "🌍"; 
+        }
+
+        function cleanArabicText(text) { if(!text) return ""; return text.replace(/[a-zA-Z]+/g, '').trim(); }
+
+        function setVal(id, val) { 
+            const el = document.getElementById(id); 
+            if(el) { 
+                if (el.tagName === 'SELECT' && val) {
+                    let optExists = Array.from(el.options).some(opt => opt.value === val || opt.text.trim() === val.trim());
+                    if(!optExists) { const newOpt = new Option(val + ' (مُدخل)', val); el.add(newOpt); }
+                }
+                el.value = val; el.dispatchEvent(new Event('change')); clearLiveError(el);
+            } 
+        }
+        
+        function checkRad(name, val) { 
+            let el = document.querySelector(`input[name="${name}"][value="${val}"]`); 
+            if(!el && name === 'skinColor') {
+                const container = document.getElementById('skinColorGroup');
+                if(container) {
+                    const newId = 'skin_custom_' + Date.now();
+                    container.insertAdjacentHTML('beforeend', `<div><input type="radio" name="skinColor" id="${newId}" value="${val}"><label for="${newId}" class="inline-block text-center py-1.5 px-3 rounded-xl whitespace-nowrap text-xs font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: #cbd5e1; color: #1e293b;">${val}</label></div>`);
+                    el = document.getElementById(newId);
+                }
+            }
+            if(el) { el.checked = true; el.dispatchEvent(new Event('change')); if(name === 'skinColor') { document.getElementById('skinColorGroup').classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); } } 
+        }
+
+        function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-red-500', 'bg-red-50'); }
+        function clearLiveErrorGroup(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            if(wrapper) {
+                const inputs = wrapper.querySelectorAll('input[type="radio"]');
+                inputs.forEach(inp => { 
+                    const label = wrapper.querySelector(`label[for="${inp.id}"]`); 
+                    if(label) label.classList.remove('border-red-500', 'bg-red-50'); 
+                });
+            }
+        }
+
+        function clearAllValidationErrors() {
+            document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
+            document.getElementById('skinColorGroup')?.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
+            ['originLocationGroupWrapper', 'residenceLocGroupWrapper'].forEach(clearLiveErrorGroup);
+            for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
+        }
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            if (!data) return;
+
+            // 1. تمرير الرسائل للإطار الداخلي (الجسر)
+            if (data.type === 'passToInnerIframe') {
+                const innerIframe = document.getElementById('contentIframe');
+                if (innerIframe && innerIframe.contentWindow) {
+                    innerIframe.contentWindow.postMessage(data.msg, '*');
+                }
+                return;
+            }
+
+            if (data.type === 'resizeIframe' || data.type === 'resizeActivityIframe') {
+                const iframe = document.getElementById('contentIframe');
+                if (iframe) { iframe.style.height = data.height + 'px'; }
+            }
+            
+            if (data.type === 'closeBio') { closeBioSmoothly(); closeFamilyCarouselSmoothly(); }
+            
+            if (data.type === 'updateAuthUI') { 
+                refreshUserActivity(); 
+                const contentIframe = document.getElementById('contentIframe');
+                if(contentIframe && contentIframe.contentWindow) contentIframe.contentWindow.postMessage({ type: 'updateAuthUI' }, '*');
+            }
+            
+            // الاستجابة لطلب الصعود للأعلى
+            if (data.type === 'scrollToTop') {
+                // صعود نافذة لوحة التحكم بالكامل
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // إذا كان هناك حاوية تمرير داخلية، نجعلها تصعد أيضاً
+                const mainContainer = document.querySelector('.overflow-y-auto');
+                if (mainContainer) {
+                    mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+
+            // 2. تمرير طلبات النوافذ المنبثقة من الإطار الداخلي للأب الأكبر
+            if (data.type === 'openProfileModal' || data.type === 'openGlobalAction') {
+                window.top.postMessage(data, '*');
+            }
+        });
+
+        function toggleBio(event) {
+            if(event) event.stopPropagation();
+            const bioDiv = document.getElementById('bioContentDiv');
+            const bioIcon = document.getElementById('bioIcon');
+            if (bioDiv) {
+                bioDiv.classList.toggle('hidden');
+                if (bioIcon) bioIcon.classList.toggle('rotate-180');
+            }
+            closeFamilyCarouselSmoothly();
+        }
+
+        function closeBioSmoothly() {
+            const bioDiv = document.getElementById('bioContentDiv');
+            const bioIcon = document.getElementById('bioIcon');
+            if (bioDiv && !bioDiv.classList.contains('hidden')) {
+                bioDiv.classList.add('hidden');
+                if(bioIcon) bioIcon.classList.remove('rotate-180');
+            }
+        }
+
+        function toggleFamilyCarousel(event) {
+            if(event) event.stopPropagation();
+            const wrapper = document.getElementById('familyCarouselWrapper');
+            const icon = document.getElementById('familyToggleIcon');
+            if (wrapper) {
+                wrapper.classList.toggle('hidden');
+                if (icon) icon.classList.toggle('rotate-180');
+            }
+            closeBioSmoothly();
+        }
+
+        function closeFamilyCarouselSmoothly() {
+            const wrapper = document.getElementById('familyCarouselWrapper');
+            const icon = document.getElementById('familyToggleIcon');
+            if (wrapper && !wrapper.classList.contains('hidden')) {
+                wrapper.classList.add('hidden');
+                if(icon) icon.classList.remove('rotate-180');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const bioDiv = document.getElementById('bioContentDiv');
+            const toggleBtn = document.getElementById('bioContentDiv')?.previousElementSibling; 
+            if (bioDiv && !bioDiv.classList.contains('hidden')) {
+                if (!bioDiv.contains(event.target) && (!toggleBtn || !toggleBtn.contains(event.target))) {
+                    closeBioSmoothly();
+                }
+            }
+
+            const famWrapper = document.getElementById('familyCarouselWrapper');
+            const nameHeader = document.getElementById('headerAccountName')?.parentElement;
+            if (famWrapper && !famWrapper.classList.contains('hidden')) {
+                if (!famWrapper.contains(event.target) && (!nameHeader || !nameHeader.contains(event.target))) {
+                    closeFamilyCarouselSmoothly();
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('registrationForm');
+            if(form) { form.addEventListener('input', saveDraft); form.addEventListener('change', saveDraft); }
+            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+        });
+
+        window.onload = () => { 
+            buildDobDropdowns(); 
+            dynamicDropdowns = fallbackDropdowns; 
+            populateSharedDropdowns(); 
+            fetchDropdownData(); 
+
+            const isIframe = window.self !== window.top;
+            if (isIframe) { document.body.classList.add('in-iframe'); }
+
+            const preVerifiedPhone = localStorage.getItem('verified_user_phone');
+            if (preVerifiedPhone) {
+                verifiedFullPhone = preVerifiedPhone;
+                document.getElementById('otpSection')?.classList.add('hidden');
+                document.getElementById('advancedSearchBtn')?.classList.remove('hidden');
+                loadDashboard();
+            }
+        };
+
+        function showMsgModal(title, text) { document.getElementById('msgModalTitle').innerText = title; document.getElementById('msgModalText').innerText = text; document.getElementById('msgModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('msgModal').classList.add('hidden'); }
+
+        function showConfirmModal(text, onYes, onNo) {
+            document.getElementById('confirmModalTitle').innerText = "تأكيد الإجراء"; 
+            document.getElementById('confirmModalText').innerText = text;
+            
+            const iconWrapper = document.getElementById('confirmModalIconWrapper');
+            iconWrapper.className = "w-12 h-12 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3";
+            document.getElementById('confirmModalIcon').innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>`;
+
+            const yesBtn = document.getElementById('confirmYesBtn'); 
+            yesBtn.innerText = "نعم، متأكد";
+            yesBtn.disabled = false;
+            yesBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-xl transition-colors text-sm";
+            
+            const newYes = yesBtn.cloneNode(true); yesBtn.parentNode.replaceChild(newYes, yesBtn);
+            newYes.addEventListener('click', async () => { 
+                newYes.innerText = "جاري المعالجة..."; newYes.disabled = true;
+                if(onYes) await onYes(); 
+                closeConfirmModal(); 
+            });
+            document.getElementById('confirmModal').classList.remove('hidden'); pendingDelete = onNo; 
+        }
+
+        function closeConfirmModal() { 
+            document.getElementById('confirmModal').classList.add('hidden'); 
+            if(pendingDelete && typeof pendingDelete === 'function') { pendingDelete(); pendingDelete = null; }
+        }
+
+        function logout() {
+            localStorage.removeItem('verified_user_phone');
+            localStorage.removeItem('verified_user_name');
+            localStorage.removeItem('verified_user_gender');
+            localStorage.removeItem('active_profile_refid');
+            localStorage.removeItem('active_profile_index');
+            if (window.self !== window.top) window.top.postMessage({ type: 'updateAuthUI' }, '*');
+            
+            verifiedFullPhone = "";
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('mainFormSection').classList.add('hidden');
+            document.getElementById('successSection').classList.add('hidden');
+            document.getElementById('advancedSearchBtn').classList.add('hidden');
+            document.getElementById('otpSection').classList.remove('hidden');
+            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+        }
+
+        async function sendWhatsAppCode() {
+            const phone = document.getElementById('otpPhoneInput').value.trim(); const code = document.getElementById('otpCountryCode').value; const err = document.getElementById('otpPhoneError');
+            if(!phone || phone.length < 6 || isNaN(phone)) { err.classList.remove('hidden'); return; }
+            err.classList.add('hidden'); let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone; verifiedFullPhone = code + cleanPhone;
+            
+            const btn = document.getElementById('btnSendCode'); const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
+                clearTimeout(timeoutId);
+                const text = await res.text();
+                try {
+                    const result = JSON.parse(text);
+                    if (result.success) { document.getElementById('otpStep1').classList.add('hidden'); document.getElementById('otpStep2').classList.remove('hidden'); startOtpCountdown(); } 
+                    else showMsgModal("خطأ", result.message);
+                } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
+            } catch (e) {
+                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت."); 
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        }
+
+        function startOtpCountdown() {
+            let timer = 60; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); resendBtn.classList.add('hidden');
+            const interval = setInterval(() => { timer--; countEl.innerText = timer; if(timer <= 0) { clearInterval(interval); resendBtn.classList.remove('hidden'); } }, 1000);
+        }
+
+        function moveOtpFocus(curr, nextId) { if(curr.value.length >= 1 && nextId) document.getElementById(nextId).focus(); }
+        
+        function handleOtpBackspace(event, curr, prevId) {
+            if (event.key === 'Backspace' && curr.value === '' && prevId) {
+                document.getElementById(prevId).focus();
+            }
+        }
+
+        async function verifyWhatsAppCode() {
+            const c = document.getElementById('otp1').value + document.getElementById('otp2').value + document.getElementById('otp3').value + document.getElementById('otp4').value;
+            const err = document.getElementById('otpCodeError'); if(c.length !== 4) { err.innerText = "الرجاء إدخال الرمز كاملاً."; err.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btnVerifyCode'); const originalText = btn.innerHTML; btn.innerHTML = "جاري التحقق..."; btn.disabled = true;
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "verifyOtp", phone: verifiedFullPhone, code: c }), signal: controller.signal });
+                clearTimeout(timeoutId);
+                const text = await res.text();
+                try {
+                    const result = JSON.parse(text);
+                    if(result.success) {
+                        err.classList.add('hidden'); 
+                        document.getElementById('otpSection')?.classList.add('hidden');
+                        document.getElementById('advancedSearchBtn')?.classList.remove('hidden');
+                        localStorage.setItem('verified_user_phone', verifiedFullPhone);
+                        loadDashboard(); 
+                    } else { err.innerText = result.message || "الكود غير صحيح."; err.classList.remove('hidden'); }
+                } catch(e) { err.innerText="السيرفر يرسل بيانات خاطئة."; err.classList.remove('hidden'); }
+            } catch(e) { 
+                if(e.name === 'AbortError') { err.innerText="تأخر استجابة السيرفر بسبب الزحام."; err.classList.remove('hidden'); }
+                else { err.innerText="حدث خطأ بالاتصال."; err.classList.remove('hidden'); }
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        }
+
+        function bypassOtpForDev() {
+            verifiedFullPhone = "+966500000000";
+            document.getElementById('otpSection')?.classList.add('hidden');
+            document.getElementById('advancedSearchBtn')?.classList.remove('hidden');
+            localStorage.setItem('verified_user_phone', verifiedFullPhone);
+            loadDashboard(); 
+        }
+
+        async function fetchDropdownData() {
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000); 
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getDropdowns" }), signal: controller.signal });
+                clearTimeout(timeoutId); const text = await res.text();
+                try {
+                    const result = JSON.parse(text);
+                    if (result.success && result.data && result.data.maleSkinColors && result.data.maleSkinColors.length >= 6) {
+                        dynamicDropdowns = result.data; 
+                        const currentKsaCity = document.getElementById('ksaCity').value; const currentWorldCountry = document.getElementById('worldCountry').value; const currentEdu = document.getElementById('education').value;
+                        populateSharedDropdowns(); 
+                        if(currentKsaCity) setVal('ksaCity', currentKsaCity); if(currentWorldCountry) setVal('worldCountry', currentWorldCountry); if(currentEdu) setVal('education', currentEdu);
+
+                        if (isMale !== null) {
+                            let currNat = document.getElementById('nationality').value; let currJob = document.getElementById('jobStatus').value; let currMarital = document.getElementById('maritalStatus').value; let currMarriageType = isMale ? document.getElementById('menMarriageType').value : document.getElementById('womenMarriageType').value; let currSkin = document.querySelector('input[name="skinColor"]:checked')?.value;
+                            handleGenderChange(true); 
+                            if(currNat) setVal('nationality', currNat); if(currJob) setVal('jobStatus', currJob); if(currMarital) setVal('maritalStatus', currMarital);
+                            if(currMarriageType) { if(isMale) setVal('menMarriageType', currMarriageType); else setVal('womenMarriageType', currMarriageType); }
+                            if(currSkin) checkRad('skinColor', currSkin);
+                        }
+                    }
+                } catch(e) {}
+            } catch (e) {} finally { clearTimeout(timeoutId); }
+        }
+
+        function populateSharedDropdowns() {
+            const countries = (dynamicDropdowns && dynamicDropdowns.residenceCountries) ? dynamicDropdowns.residenceCountries : fallbackDropdowns.residenceCountries;
+            const regions = (dynamicDropdowns && dynamicDropdowns.regionsData) ? dynamicDropdowns.regionsData : fallbackDropdowns.regionsData;
+            const edus = (dynamicDropdowns && dynamicDropdowns.educations) ? dynamicDropdowns.educations : fallbackDropdowns.educations;
+
+            let worldOptions = '<option value="" disabled selected>-- اختر دولة الإقامة --</option>';
+            if(countries) countries.forEach(country => { let cleanVal = cleanArabicText(country); worldOptions += `<option value="${cleanVal}">${cleanVal}</option>`; });
+            if(document.getElementById('worldCountry')) document.getElementById('worldCountry').innerHTML = worldOptions;
+
+            let cityOptions = '<option value="" disabled selected>-- اختر المدينة الحالية --</option>'; let originInsideOptions = '<option value="" disabled selected>-- حدد منطقة الأصول --</option>'; 
+            
+            if(regions) {
+                for (const region in regions) {
+                    cityOptions += `<optgroup label="${region}">`;
+                    regions[region].forEach(city => { let cleanCity = cleanArabicText(city); cityOptions += `<option value="${cleanCity}">${cleanCity}</option>`; });
+                    cityOptions += `</optgroup>`;
+                    originInsideOptions += `<option value="${region}">${region}</option>`;
+                }
+            }
+            if(document.getElementById('ksaCity')) document.getElementById('ksaCity').innerHTML = cityOptions;
+            if(document.getElementById('originInside')) document.getElementById('originInside').innerHTML = originInsideOptions; 
+
+            let eduOptions = '<option value="" disabled selected>-- اختر المؤهل --</option>';
+            if(edus) edus.forEach(edu => eduOptions += `<option value="${edu}">${edu}</option>`);
+            if(document.getElementById('education')) document.getElementById('education').innerHTML = eduOptions;
+        }
+
+        function buildDobDropdowns() {
+            const dSel = document.getElementById('dobDay'); 
+            if(dSel) { dSel.innerHTML = '<option value="" disabled selected>اليوم</option>'; for(let i=1; i<=31; i++) dSel.innerHTML += `<option value="${i}">${i}</option>`; }
+            handleCalendarSwitch();
+        }
+
+        function handleCalendarSwitch() {
+            const calTypeEl = document.querySelector('input[name="calType"]:checked'); if(!calTypeEl) return;
+            const calType = calTypeEl.value; const mSel = document.getElementById('dobMonth'); const ySel = document.getElementById('dobYear');
+            if(mSel) mSel.innerHTML = '<option value="" disabled selected>الشهر</option>'; if(ySel) ySel.innerHTML = '<option value="" disabled selected>السنة</option>';
+            
+            const hijriMonths = ["1- محرم","2- صفر","3- ربيع الأول","4- ربيع الآخر","5- جمادى الأولى","6- جمادى الآخرة","7- رجب","8- شعبان","9- رمضان","10- شوال","11- ذو القعدة","12- ذو الحجة"];
+            const gregMonths = ["1- يناير","2- فبراير","3- مارس","4- أبريل","5- مايو","6- يونيو","7- يوليو","8- أغسطس","9- سبتمبر","10- أكتوبر","11- نوفمبر","12- ديسمبر"];
+            const months = (calType === 'hijri') ? hijriMonths : gregMonths;
+            if(mSel) months.forEach((m, idx) => { mSel.innerHTML += `<option value="${idx + 1}">${m}</option>`; });
+            
+            const currentYear = (calType === 'hijri') ? 1447 : 2026;
+            if(ySel) for(let y = currentYear - 18; y >= currentYear - 70; y--) { ySel.innerHTML += `<option value="${y}">${y}</option>`; }
+            
+            const ageDisplayBox = document.getElementById('ageDisplayBox'); if(ageDisplayBox) ageDisplayBox.classList.add('hidden');
+        }
+
+        function calculateEstimatedAge() {
+            const yVal = parseInt(document.getElementById('dobYear').value); if(isNaN(yVal)) return;
+            const calType = document.querySelector('input[name="calType"]:checked').value;
+            let estAge = ((calType === 'hijri') ? 1447 : 2026) - yVal;
+            const box = document.getElementById('ageDisplayBox'); const val = document.getElementById('calculatedAgeVal'); const ageInp = document.getElementById('age');
+            if(box) box.classList.remove('hidden'); if(val) val.innerText = estAge; if(ageInp) ageInp.value = estAge;
+        }
+
+        function sanitizeAndConvertDigits(inputEl) {
+            let val = inputEl.value; const arabicNorm = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+            for (let char in arabicNorm) val = val.replace(new RegExp(char, 'g'), arabicNorm[char]);
+            inputEl.value = val.replace(/[^0-9]/g, ''); handleChildrenChange(); saveDraft();
+        }
+
+        function validateRealTime(inputEl, minVal, maxVal, errorMsg) {
+            const val = parseInt(inputEl.value); const errorEl = inputEl.nextElementSibling;
+            if (inputEl.value && (isNaN(val) || val < minVal || val > maxVal)) { inputEl.classList.add('border-red-500', 'bg-red-50'); errorEl.innerText = `${errorMsg}`; errorEl.classList.remove('hidden'); } 
+            else { inputEl.classList.remove('border-red-500', 'bg-red-50'); errorEl.classList.add('hidden'); }
+            saveDraft();
+        }
+
+        function saveDraft() {
+            if (!verifiedFullPhone) return;
+            const draftData = {
+                firstName: document.getElementById('firstName').value, relation: document.getElementById('relation').value, gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: document.getElementById('nationality').value,
+                residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: document.getElementById('ksaCity').value, worldCountry: document.getElementById('worldCountry').value,
+                maritalStatus: document.getElementById('maritalStatus').value, height: document.getElementById('height').value, weight: document.getElementById('weight').value, education: document.getElementById('education').value, jobStatus: document.getElementById('jobStatus').value
+            };
+            localStorage.setItem(`draft_${verifiedFullPhone}`, JSON.stringify(draftData));
+            const indicator = document.getElementById('draftIndicator'); if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
+        }
+
+        function checkAndRestoreDraft() {
+            if (!verifiedFullPhone) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
+            if (draft) {
+                showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
+                    const data = JSON.parse(draft);
+                    if(data.gender) {
+                        checkRad('gender', data.gender);
+                        setTimeout(() => {
+                            if(data.firstName) setVal('firstName', data.firstName); if(data.relation) setVal('relation', data.relation); if(data.nationality) setVal('nationality', data.nationality); if(data.residenceLoc) checkRad('residenceLoc', data.residenceLoc);
+                            if(data.ksaCity) setVal('ksaCity', data.ksaCity); if(data.worldCountry) setVal('worldCountry', data.worldCountry); if(data.maritalStatus) setVal('maritalStatus', data.maritalStatus);
+                            if(data.height) setVal('height', data.height); if(data.weight) setVal('weight', data.weight); if(data.education) setVal('education', data.education); if(data.jobStatus) setVal('jobStatus', data.jobStatus);
+                            showMsgModal("نجاح", "تمت استعادة البيانات المحفوظة.");
+                        }, 500);
+                    }
+                }, () => { localStorage.removeItem(`draft_${verifiedFullPhone}`); });
+            }
+        }
+
+        function getProfileUid(p) { return p.refId ? String(p.refId) : String(p.sheetName + '_' + p.rowIndex); }
+        function getMainProfileUid() { return localStorage.getItem(`mainProfileUid_${verifiedFullPhone}`); }
+        function getRelation(rowIndex) { return localStorage.getItem(`relation_${verifiedFullPhone}_${rowIndex}`) || ""; }
+
+        async function loadDashboard(retryCount = 0) {
+            editInfoState = null; currentViewData = null; currentViewedIndexInDashboard = null;
+            document.getElementById('mainFormSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) contentContainer.classList.add('hidden');
+            
+            const loadingIndicator = document.getElementById('profilesLoading');
+            const dashboardContent = document.getElementById('dashboardContent');
+            const cacheKey = `user_profiles_cache_${verifiedFullPhone}`;
+            const localCache = localStorage.getItem(cacheKey);
+
+            if (loadingIndicator) {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+                dashboardContent.classList.add('hidden');
+            }
+
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 35000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "getUserProfiles", phone: verifiedFullPhone }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+                
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('flex');
+                    dashboardContent.classList.remove('hidden');
+                }
+
+                if (result.success) {
+                    cachedProfiles = result.profiles || [];
+                    localStorage.setItem(cacheKey, JSON.stringify(cachedProfiles));
+                    renderDashboardUi(cachedProfiles);
+                } else {
+                    if(result.message === "لم يتم العثور على أي ملفات") {
+                        cachedProfiles = [];
+                        showMainForm();
+                    } else {
+                        showMsgModal("خطأ", result.message);
+                        logout();
+                    }
+                }
+            } catch (e) {
+                clearTimeout(timeoutId);
+                if (retryCount < 2) {
+                    setTimeout(() => loadDashboard(retryCount + 1), 2000);
+                } else {
+                    if (loadingIndicator) {
+                        loadingIndicator.classList.add('hidden');
+                        loadingIndicator.classList.remove('flex');
+                        dashboardContent.classList.remove('hidden');
+                    }
+                    if (localCache) {
+                        try {
+                            cachedProfiles = JSON.parse(localCache);
+                            renderDashboardUi(cachedProfiles);
+                            showMsgModal("وضع عدم الاتصال", "تم تحميل البيانات من النسخة المخبأة.");
+                        } catch(err) {
+                            showMsgModal("خطأ اتصال", "لا يوجد اتصال بالإنترنت.");
+                        }
+                    } else {
+                        showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت وإعادة المحاولة.");
+                    }
+                }
+            }
+        }
+
+        function selectProfileInDashboard(uid) {
+            closeBioSmoothly(); 
+            closeFamilyCarouselSmoothly();
+            
+            document.getElementById('mainTabReqBadge')?.classList.add('hidden');
+            
+            try { renderDashboardUi(cachedProfiles, uid); } catch(e) { console.error("Error selecting profile", e); }
+            document.getElementById('familyCarouselWrapper').classList.add('hidden');
+            
+            switchTab('smart'); // توجيه المرور الافتراضي
+        }
+
+        function renderDashboardUi(profiles, overrideSelectUid = null, isSilentSync = false) {
+            if(!profiles || profiles.length === 0) {
+                 if(!isSilentSync) showMainForm();
+                 return;
+            }
+
+            let serverMain = profiles.find(p => p.isMain === true || p.isMain === "نعم" || p.isMain === "رئيسي");
+            if(serverMain) { localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, getProfileUid(serverMain)); }
+
+            let mainUid = getMainProfileUid();
+            if(!mainUid || !profiles.find(p => getProfileUid(p) === mainUid)) { 
+                mainUid = getProfileUid(profiles[0]); 
+                localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, mainUid); 
+            }
+            
+            let savedActiveUid = localStorage.getItem('active_profile_uid');
+            let determinedUid = overrideSelectUid;
+            if(!determinedUid) {
+                if(savedActiveUid && profiles.find(p => getProfileUid(p) === savedActiveUid)) { determinedUid = savedActiveUid; }
+                else { determinedUid = mainUid; }
+            }
+
+            const activeProfile = profiles.find(p => getProfileUid(p) === determinedUid) || profiles[0];
+            const activeUid = getProfileUid(activeProfile);
+            
+            currentViewedIndexInDashboard = activeProfile.rowIndex; 
+            currentViewData = activeProfile; 
+            
+            localStorage.setItem('active_profile_uid', activeUid); 
+            localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
+            localStorage.setItem('active_profile_index', activeProfile.rowIndex); 
+            localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
+            localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
+            if (window.self !== window.top) window.top.postMessage({ type: 'updateAuthUI' }, '*');
+            
+            let safeName = activeProfile.name ? activeProfile.name.split(' ')[0] : 'مستخدم';
+            const isMainProfile = activeUid === mainUid;
+            const savedRel = activeProfile.relation || getRelation(activeProfile.rowIndex);
+            const relText = savedRel ? savedRel : "غير محدد";
+            
+            if(!isSilentSync) {
+                document.getElementById('headerAccountName').innerText = safeName;
+                document.getElementById('headerAccountRefId').innerText = `#${activeProfile.refId || activeProfile.rowIndex}`;
+                const heroRelEl = document.getElementById('headerAccountRel');
+                if(savedRel) { heroRelEl.innerText = `(${savedRel})`; heroRelEl.classList.remove('hidden'); } else { heroRelEl.classList.add('hidden'); }
+            }
+
+            const badge = document.getElementById('heroMainBadge');
+            if(isMainProfile) {
+                badge.className = "absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-300 shadow-md flex items-center gap-1 whitespace-nowrap z-20 cursor-default";
+                badge.innerHTML = "👑 رئيسي"; badge.onclick = null;
+            } else {
+                badge.className = "absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur text-gray-500 hover:text-amber-600 hover:border-amber-300 border border-gray-200 text-[10px] font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1 whitespace-nowrap z-20 cursor-pointer transition-all hover:scale-105";
+                badge.innerHTML = "تعيين رئيسي";
+                badge.onclick = () => { askSetMainProfile(); };
+            }
+
+            const carousel = document.getElementById('familyCarousel'); 
+            if(!isSilentSync) carousel.innerHTML = "";
+            let carouselHtml = "";
+
+            let familyAlerts = [];
+            try { familyAlerts = JSON.parse(localStorage.getItem('family_alerts') || '[]'); } catch(e) {}
+
+            profiles.forEach(p => {
+                const pUid = getProfileUid(p);
+                const isIterMain = pUid === mainUid; 
+                const isActive = pUid === activeUid;
+                const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
+                
+                const hasAlert = familyAlerts.some(id => String(id) === String(p.refId) || String(id) === pUid);
+
+                let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-100 hover:bg-gray-50";
+                let alertClass = hasAlert ? "border-red-300 bg-red-50 shadow-sm" : bgClass;
+                let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
+                
+                const avatarSvg = p.gender === 'ذكر' 
+                    ? `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>`
+                    : `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+                
+                const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
+
+                carouselHtml += `
+                    <button onclick="selectProfileInDashboard('${pUid}')" class="shrink-0 flex flex-col items-center justify-center p-1.5 rounded-xl border ${alertClass} transition-all duration-300 group min-w-[65px] snap-center">
+                        <div class="relative mb-1">
+                            ${avatarSvg}
+                            ${hasAlert ? '<div class="absolute -top-1 -right-1">' + pulseDot + '</div>' : ''}
+                        </div>
+                        <div class="text-[9px] font-bold ${hasAlert ? 'text-red-700' : 'text-gray-800'} truncate w-full text-center">${shortName}</div>
+                        <div class="text-[8px] text-gray-500 font-medium truncate w-full text-center mt-0.5">${iterRel}</div>
+                        ${isIterMain ? '<div class="text-[7px] bg-amber-100 text-amber-700 px-1 mt-0.5 rounded border border-amber-200 w-max mx-auto">رئيسي</div>' : ''}
+                    </button>
+                `;
+            });
+            carousel.innerHTML = carouselHtml;
+
+            if(!isSilentSync) {
+                const heroAvatar = document.getElementById('heroAvatar');
+                heroAvatar.innerHTML = activeProfile.gender === 'ذكر' 
+                    ? '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-md" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>'
+                    : '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-md" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+                let bioStr = activeProfile.autoBio || (activeProfile.fullDetails && activeProfile.fullDetails.autoBio) || "";
+                if(!bioStr || typeof bioStr !== 'string' || bioStr.trim() === "") bioStr = "النبذة التلقائية قيد التحديث في قاعدة البيانات...";
+                bioStr = `📱 الحساب المرتبط برقم: ${verifiedFullPhone}\n━━━━━━━━━━━━━━━━━━\n` + bioStr;
+                document.getElementById('heroBio').innerText = bioStr;
+                
+                localStorage.setItem('verified_user_bio', bioStr);
+
+                let extractedAge = "غير محدد"; let extractedMarital = "غير محدد"; let originStr = ""; let cityStr = "غير محدد"; let natStr = "غير محدد";
+                if (activeProfile.fullDetails) {
+                    extractedAge = activeProfile.fullDetails.age ? `${activeProfile.fullDetails.age} سنة` : extractedAge;
+                    extractedMarital = activeProfile.fullDetails.maritalStatus ? activeProfile.fullDetails.maritalStatus.split(' ')[0] : extractedMarital;
+                    cityStr = activeProfile.fullDetails.residence ? activeProfile.fullDetails.residence : cityStr;
+                    natStr = activeProfile.fullDetails.nationality ? activeProfile.fullDetails.nationality.split(' ')[0] : natStr;
+                    let originArr = [];
+                    if (activeProfile.fullDetails.tribeName && activeProfile.fullDetails.tribeName !== "غير محدد" && activeProfile.fullDetails.tribeName !== "---") originArr.push(activeProfile.fullDetails.tribeName);
+                    if (activeProfile.fullDetails.familyName && activeProfile.fullDetails.familyName !== "غير محدد" && activeProfile.fullDetails.familyName !== "---") originArr.push(activeProfile.fullDetails.familyName);
+                    if (originArr.length > 0) originStr = originArr.join(' - ');
+                    else if (activeProfile.fullDetails.originType && activeProfile.fullDetails.originType !== "غير محدد") originStr = activeProfile.fullDetails.originType;
+                } else if (activeProfile.autoBio && typeof activeProfile.autoBio === 'string') {
+                    const ageMatch = activeProfile.autoBio.match(/العمر:\s*(\d+)/); if (ageMatch) extractedAge = `${ageMatch[1]} سنة`;
+                    const maritalMatch = activeProfile.autoBio.match(/الحالة الاجتماعية:\s*([^\s]+)/); if (maritalMatch) extractedMarital = maritalMatch[1];
+                }
+
+                const summaryContainer = document.getElementById('heroShortSummary');
+                if(summaryContainer) {
+                    let sentenceArr = [];
+                    if (natStr !== "غير محدد") sentenceArr.push(`${getFlagForText(natStr)} ${natStr}`);
+                    if (originStr !== "") sentenceArr.push(originStr);
+                    if (cityStr !== "غير محدد") { if(cityStr.includes("في ")) sentenceArr.push(cityStr); else sentenceArr.push(`في ${cityStr}`); }
+                    if (extractedMarital !== "غير محدد") sentenceArr.push(extractedMarital);
+                    if (extractedAge !== "غير محدد") sentenceArr.push(extractedAge);
+                    summaryContainer.innerHTML = `<span class="text-[11px] sm:text-xs text-gray-600 leading-relaxed font-bold">${sentenceArr.join(' • ')}</span>`;
+                }
+                switchTab('smart'); // الاستدعاء الافتراضي
+            }
+            refreshUserActivity();
+            
+            if (!isSilentSync) {
+                checkPendingIntent();
+            }
+        }
+
+        async function checkPendingIntent() {
+            const intentStr = localStorage.getItem('pending_guest_intent');
+            if (!intentStr) return; 
+            
+            try {
+                const intent = JSON.parse(intentStr);
+                const targetGender = intent.gender;
+                const targetRefId = intent.refId;
+                const myGender = currentViewData ? currentViewData.gender : null; 
+                const activeRefId = localStorage.getItem('active_profile_refid');
+
+                if (!myGender || !activeRefId) return;
+                
+                // التدقيق الجندري
+                if (myGender === targetGender || myGender === 'غير محدد' || targetGender === 'غير محدد') {
+                    window.top.postMessage({ type: 'showMsgModal', title: 'تنبيه ذكي', message: 'الملف الذي كنت مهتماً به قبل التسجيل يعود لـ (' + targetGender + '). للتواصل معه، يرجى إضافة أو اختيار ملف من الجنس الآخر من شريط العائلة بالأعلى.' }, '*');
+                    return; 
+                }
+                
+                // إذا كان الجنس مختلفاً، نقوم بالإضافة للمفضلة
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                const res = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ 
+                        action: "toggleFavorite", 
+                        phone: verifiedFullPhone, 
+                        requesterRefId: activeRefId, 
+                        refId: targetRefId 
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.removeItem('pending_guest_intent');
+                    window.top.postMessage({ type: 'showMsgModal', title: 'أهلاً بك معنا!', message: 'بناءً على اهتمامك قبل التسجيل، تم حفظ الملف رقم #' + targetRefId + ' في (مفضلاتك). يمكنك الدخول لتبويب مفضلاتي الآن ومراسلته براحة تامة.' }, '*');
+                    refreshUserActivity();
+                }
+            } catch (e) { console.error('خطأ في معالجة أمنية الزائر', e); }
+        }
+
+        function switchTab(tabName) {
+            // 1. تفعيل الزر المناسب وتغيير تصميمه
+            const btns = ['smart', 'favorites', 'requests'];
+            btns.forEach(btn => {
+                const el = document.getElementById(`tabBtn-${btn}`);
+                if(el) {
+                    el.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                }
+            });
+
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            if(activeBtn) {
+                if(tabName === 'smart') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-indigo-50/30 text-indigo-600 border-indigo-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                if(tabName === 'favorites') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-amber-50/30 text-amber-600 border-amber-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                if(tabName === 'requests') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-blue-50/30 text-blue-600 border-blue-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 relative';
+            }
+
+            // 2. تحديث رابط الـ iframe
+            const iframe = document.getElementById('contentIframe');
+            if (!iframe) return;
+
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) contentContainer.classList.remove('hidden');
+
+            const phone = typeof verifiedFullPhone !== 'undefined' && verifiedFullPhone ? verifiedFullPhone : localStorage.getItem('verified_user_phone');
+            let activeRefId = localStorage.getItem('active_profile_refid');
+            const refId = typeof activeRefId !== 'undefined' && activeRefId ? activeRefId : localStorage.getItem('active_profile_refid');
+            const gender = (typeof currentViewData !== 'undefined' && currentViewData) ? currentViewData.gender : localStorage.getItem('verified_user_gender');
+            
+            const firstName = (typeof currentViewData !== 'undefined' && currentViewData && currentViewData.name) ? currentViewData.name.split(' ')[0] : (localStorage.getItem('verified_user_name') ? localStorage.getItem('verified_user_name').split(' ')[0] : '');
+
+            if (!phone || !refId) return; 
+
+            if (tabName === 'smart') {
+                iframe.src = 'smart.html?phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&gender=' + encodeURIComponent(gender || '') + '&name=' + encodeURIComponent(firstName);
+            } else if (tabName === 'favorites') {
+                iframe.src = 'activity.html?tab=favorites&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName);
+            } else if (tabName === 'requests') {
+                iframe.src = 'activity.html?tab=requests&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName);
+            }
+        }
+
+        async function refreshUserActivity() {
+            const phone = localStorage.getItem('verified_user_phone');
+            const activeRefId = localStorage.getItem('active_profile_refid') || localStorage.getItem('mainProfileRefId_' + phone) || "";
+            if (!phone) return;
+
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "syncUserActivity", phone: phone, requesterRefId: String(activeRefId) }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+                
+                if (result.success) {
+                    const balanceEl = document.getElementById('walletBalanceText'); 
+                    if(balanceEl && result.balance !== undefined) balanceEl.innerText = result.balance;
+                    
+                    let familyAlerts = [];
+                    try { if (result.familyAlerts) familyAlerts = result.familyAlerts; } catch(e){}
+
+                    const hasIncoming = result.incomingRequests && result.incomingRequests.length > 0;
+                    const hasOutgoingUpdates = result.outgoingRequests && result.outgoingRequests.some(req => req.reply || (req.status && (req.status.includes('قبول') || req.status.includes('رفض') || req.status.includes('مرفوض') || req.status.includes('مقبول'))));
+                    const shouldHaveAlert = hasIncoming || hasOutgoingUpdates;
+
+                    let isActiveAlert = familyAlerts.some(id => String(id) === String(activeRefId) || (currentViewData && String(id) === getProfileUid(currentViewData)));
+
+                    if (shouldHaveAlert && !isActiveAlert) {
+                        familyAlerts.push(String(activeRefId));
+                        isActiveAlert = true;
+                    } else if (!shouldHaveAlert && isActiveAlert) {
+                        familyAlerts = familyAlerts.filter(id => String(id) !== String(activeRefId) && (!currentViewData || String(id) !== getProfileUid(currentViewData)) && (!currentViewData || String(id) !== String(currentViewData.rowIndex)));
+                        isActiveAlert = false;
+                    }
+
+                    localStorage.setItem('family_alerts', JSON.stringify(familyAlerts));
+
+                    if (familyAlerts.length > 0) { localStorage.setItem('has_actionable_notifications', 'true'); } 
+                    else { localStorage.setItem('has_actionable_notifications', 'false'); }
+                    if (window.self !== window.top) window.top.postMessage({ type: 'updateAuthUI' }, '*');
+
+                    const reqBadge = document.getElementById('mainTabReqBadge');
+                    const toggleBadge = document.getElementById('familyToggleBadge');
+
+                    if (isActiveAlert) reqBadge?.classList.remove('hidden'); else reqBadge?.classList.add('hidden');
+
+                    const hasHiddenAlert = familyAlerts.some(id => String(id) !== String(activeRefId) && (!currentViewData || String(id) !== getProfileUid(currentViewData)));
+                    if (hasHiddenAlert) toggleBadge?.classList.remove('hidden'); else toggleBadge?.classList.add('hidden');
+
+                    if (cachedProfiles && cachedProfiles.length > 0) {
+                        try {
+                            const carousel = document.getElementById('familyCarousel');
+                            let carouselHtml = "";
+                            const mainUid = getMainProfileUid();
+                            const activeUid = localStorage.getItem('active_profile_uid');
+                            
+                            cachedProfiles.forEach(p => {
+                                const pUid = getProfileUid(p);
+                                const isIterMain = pUid === mainUid; 
+                                const isActive = pUid === activeUid;
+                                const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
+                                
+                                const hasAlert = familyAlerts.some(id => String(id) === String(p.refId) || String(id) === pUid);
+
+                                let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-100 hover:bg-gray-50";
+                                let alertClass = hasAlert ? "border-red-300 bg-red-50/50 shadow-sm" : bgClass;
+                                let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
+                                
+                                const avatarSvg = p.gender === 'ذكر' 
+                                    ? `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>`
+                                    : `<svg viewBox="0 0 64 64" class="w-8 h-8 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+                                
+                                const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
+
+                                carouselHtml += `
+                                    <button onclick="selectProfileInDashboard('${pUid}')" class="shrink-0 flex flex-col items-center justify-center p-1.5 rounded-xl border ${alertClass} transition-all duration-300 group min-w-[65px] snap-center">
+                                        <div class="relative mb-1">
+                                            ${avatarSvg}
+                                            ${hasAlert ? '<div class="absolute -top-1 -right-1">' + pulseDot + '</div>' : ''}
+                                        </div>
+                                        <div class="text-[9px] font-bold ${hasAlert ? 'text-red-700' : 'text-gray-800'} truncate w-full text-center">${shortName}</div>
+                                        <div class="text-[8px] text-gray-500 font-medium truncate w-full text-center mt-0.5">${iterRel}</div>
+                                        ${isIterMain ? '<div class="text-[7px] bg-amber-100 text-amber-700 px-1 mt-0.5 rounded border border-amber-200 w-max mx-auto">رئيسي</div>' : ''}
+                                    </button>
+                                `;
+                            });
+                            if(carousel) carousel.innerHTML = carouselHtml;
+                        } catch(e) {}
+                    }
+                    
+                    const contentIframe = document.getElementById('contentIframe');
+                    if(contentIframe && contentIframe.contentWindow) {
+                        contentIframe.contentWindow.postMessage({ type: 'updateAuthUI' }, '*');
+                    }
+                }
+            } catch (e) { } finally { clearTimeout(timeoutId); }
+        }
+
+        async function askSetMainProfile() {
+            if(!currentViewData) return;
+            closeBioSmoothly(); 
+            showConfirmModal("تعيين كحساب رئيسي للمنصة؟", async () => {
+                const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
+                const uid = getProfileUid(currentViewData);
+                cachedProfiles.forEach(p => p.isMain = false); 
+                const newMain = cachedProfiles.find(p => getProfileUid(p) === uid);
+                if (newMain) newMain.isMain = true; 
+                localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, uid);
+                renderDashboardUi(cachedProfiles, uid);
+                
+                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+                try { 
+                    await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "setMainProfile", phone: verifiedFullPhone, rowIndex: rIndex, sheetName: sName }), signal: controller.signal }); 
+                } catch(e) {} finally { clearTimeout(timeoutId); }
+            });
+        }
+
+        function handleHeroAction(actionType) {
+            if(!currentViewData) return;
+            closeBioSmoothly(); 
+            const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
+            const fakeBtn = document.createElement('button'); fakeBtn.innerHTML = "...";
+            handleProfileAction(rIndex, sName, fakeBtn, actionType);
+        }
+
+        function shareFromHero() {
+            if(!currentViewData) return;
+            closeBioSmoothly(); 
+            const bioText = document.getElementById('heroBio').innerText;
+            const refId = currentViewData.refId || currentViewData.rowIndex;
+            let textToShare = `> ملف رقم: #${refId}\n`;
+            let cleaned = bioText.replace(/(?:🔹|-)?\s*(طلب رقم|رقم الملف|ملف رقم):?\s*#?\d+\s*/g, ''); textToShare += cleaned.trim();
+            const encodedText = encodeURIComponent(textToShare); const brokerPhone = "966590779236"; 
+            
+            const link = document.createElement('a');
+            link.href = `https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`;
+            link.target = '_blank';
+            document.body.appendChild(link); link.click(); link.remove();
+        }
+
+        async function askDeleteConfirmHero() {
+            if(!currentViewData) return;
+            closeBioSmoothly(); 
+            showConfirmModal("هل أنت متأكد من الحذف النهائي للطلب؟", async () => {
+                const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
+                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+                try {
+                    const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "deleteProfile", phone: verifiedFullPhone, rowIndex: rIndex, sheetName: sName }), signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    const result = await res.json();
+                    if(result.success) {
+                        cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName);
+                        showMsgModal("نجاح", "تم الحذف بنجاح."); currentViewedIndexInDashboard = null;
+                        if(cachedProfiles.length === 0) showMainForm(); else renderDashboardUi(cachedProfiles);
+                    } else showMsgModal("خطأ", result.message);
+                } catch(e) { 
+                    if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                    else showMsgModal("خطأ", "خطأ بالاتصال"); 
+                } finally { clearTimeout(timeoutId); }
+            });
+        }
+
+        function handleProfileAction(rowIndex, sheetName, btnEl, actionType) {
+            const cachedProfile = cachedProfiles.find(p => p.rowIndex === rowIndex && p.sheetName === sheetName);
+            if (cachedProfile && cachedProfile.fullDetails) { populateMainFormFromData(cachedProfile.fullDetails, rowIndex, sheetName, actionType); } 
+            else { fetchProfileActionFromServer(rowIndex, sheetName, btnEl, actionType); }
+        }
+
+        async function fetchProfileActionFromServer(rowIndex, sheetName, btnEl, actionType) {
+            const originalText = btnEl.innerHTML; btnEl.innerHTML = "..."; btnEl.disabled = true;
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 35000);
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getProfileDetails", phone: verifiedFullPhone, rowIndex: rowIndex, sheetName: sheetName }), signal: controller.signal });
+                clearTimeout(timeoutId); const result = await res.json();
+                if(result.success && result.data) populateMainFormFromData(result.data, rowIndex, sheetName, actionType);
+            } catch(e) { 
+                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                else showMsgModal("خطأ", "حدث خطأ أثناء جلب البيانات."); 
+            } finally {
+                btnEl.innerHTML = originalText; btnEl.disabled = false;
+            }
+        }
+
+        function populateMainFormFromData(data, rowIndex, sheetName, actionType) {
+            if (actionType === 'edit') editInfoState = { rowIndex: rowIndex, sheetName: sheetName }; else editInfoState = null; 
+            
+            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            const btnSubmit = document.getElementById('reviewSubmitBtn');
+            if (actionType === 'edit') btnSubmit.innerHTML = `<span>تحديث الطلب</span>`;
+            else btnSubmit.innerHTML = `<span>اعتماد الطلب</span>`;
+
+            for(let i=2; i<=5; i++) document.getElementById(`step-${i}-card`).classList.remove('locked-step', 'opacity-50');
+            populateSharedDropdowns(); buildDobDropdowns(); document.getElementById('finalPhoneDisplay').value = verifiedFullPhone;
+
+            if (actionType === 'copy') { setVal('firstName', ''); setVal('relation', ''); showMsgModal("تنبيه", "تأكد من تغيير (الاسم الأول) للطلب الجديد."); } 
+            else { setVal('firstName', data.name || ''); setVal('relation', data.relation || getRelation(rowIndex) || ''); }
+            
+            if(data.familyName) setVal('familyName', data.familyName); checkRad('gender', data.gender === 'أنثى' ? 'أنثى' : 'ذكر');
+            
+            setTimeout(() => {
+                setVal('nationality', data.nationality || ''); if(data.originType) checkRad('tribalStatus', data.originType); if(data.tribeName) setVal('tribeName', data.tribeName);
+                let resText = data.residence || ''; let isKsa = false; let knownCities = [];
+                if (dynamicDropdowns && dynamicDropdowns.regionsData) Object.values(dynamicDropdowns.regionsData).forEach(arr => knownCities.push(...arr));
+                else Object.values(fallbackDropdowns.regionsData).forEach(arr => knownCities.push(...arr));
+
+                if(resText.includes('السعودية') || knownCities.some(city => resText.includes(cleanArabicText(city)))) isKsa = true;
+                if(isKsa) { checkRad('residenceLoc', 'داخل السعودية'); setTimeout(() => { setVal('ksaCity', resText); }, 200); } 
+                else { checkRad('residenceLoc', 'خارج السعودية'); setTimeout(() => { if(resText.includes('(')) { const parts = resText.split('('); setVal('worldCountry', parts[0].trim()); setVal('worldCity', parts[1].replace(')', '').trim()); } else setVal('worldCountry', resText.trim()); }, 200); }
+                
+                let originRoots = data.roots || '';
+                let insideOpt = document.querySelector('#originInside option[value="'+originRoots+'"]');
+                if(insideOpt) { 
+                    checkRad('originLocation', 'من داخل المملكة'); 
+                    setTimeout(() => { setVal('originInside', originRoots); }, 200); 
+                } else if (originRoots) { 
+                    checkRad('originLocation', 'من خارج المملكة'); 
+                    setTimeout(() => { setVal('originOutside', originRoots); }, 200); 
+                }
+
+                if(data.howHeard) setVal('howHeard', data.howHeard);
+            }, 200);
+
+            setTimeout(() => {
+                let fullMarital = data.maritalStatus || ''; let cleanMarital = fullMarital.split(' ')[0]; setVal('maritalStatus', cleanMarital);
+                if(data.childrenCount) { document.getElementById('childrenCount').value = data.childrenCount.replace(/[^0-9]/g, ''); handleChildrenChange(); }
+                if(data.childrenStatus) { setTimeout(() => setVal('custodyStatus', data.childrenStatus), 50); }
+                
+                if (data.birthDate) {
+                    let birthStr = String(data.birthDate).trim(); let nums = birthStr.match(/\d+/g);
+                    if (nums && nums.length >= 3) {
+                        let y = nums.find(n => n.length === 4) || nums[2]; let m = nums[1]; let d = nums[0];
+                        if (y) {
+                            let parsedYear = parseInt(y); let ageIfHijri = 1447 - parsedYear; let ageIfGreg = 2026 - parsedYear; let chosenCalType = 'hijri'; 
+                            if ((ageIfHijri < 15 || ageIfHijri > 100) && (ageIfGreg >= 15 && ageIfGreg <= 100)) chosenCalType = 'greg';
+                            checkRad('calType', chosenCalType); 
+                            setTimeout(() => { setVal('dobYear', y); setVal('dobMonth', parseInt(m).toString()); setVal('dobDay', parseInt(d).toString()); calculateEstimatedAge(); }, 200);
+                        }
+                    }
+                }
+            }, 400);
+
+            setTimeout(() => {
+                setVal('education', data.education || '');
+                let jobExists = Array.from(document.getElementById('jobStatus').options).some(o => o.value === data.job);
+                if(jobExists) setVal('jobStatus', data.job); else if(data.job) { setVal('jobStatus', 'أخرى'); setVal('customJob', data.job); }
+
+                if(data.gender !== 'أنثى') {
+                    if(data.monthlyIncome) setVal('monthlyIncome', data.monthlyIncome);
+                    if(data.specialConditions) { const conds = data.specialConditions.split('،'); conds.forEach(c => { const cb = document.querySelector(`input[name="menSpecOpts"][value="${c.trim()}"]`); if(cb) cb.checked = true; }); }
+                } else {
+                    if(data.acceptMarried) {
+                        let acc = data.acceptMarried;
+                        if(acc.includes('نعم')) setVal('acceptMarried', 'نعم'); else if(acc.includes('لا')) setVal('acceptMarried', 'لا'); else if(acc.includes('ممكن')) setVal('acceptMarried', 'ممكن');
+                    }
+                    if(data.specialConditions) { const conds = data.specialConditions.split('،'); conds.forEach(c => { const cb = document.querySelector(`input[name="womenAltMarriage"][value="${c.trim()}"]`); if(cb) cb.checked = true; }); }
+                }
+
+                setVal('specialInfo', data.secretInfo || '');
+                const savedAddInfo = data.additionalInfo || ''; let cleanAddInfo = savedAddInfo;
+                if (data.gender === 'أنثى' && savedAddInfo.includes('[مواصفات الشكل:')) { const specMatch = savedAddInfo.match(/\[مواصفات الشكل:\s*(.*?)\]\s*-\s*(.*)/); if (specMatch) cleanAddInfo = specMatch[2]; }
+                document.querySelectorAll('input[name="myInfoTags"]').forEach(cb => { if (savedAddInfo.includes(cb.value)) { cb.checked = true; cleanAddInfo = cleanAddInfo.replace(cb.value, '').replace(' | ', '').replace('، ', '').trim(); } });
+                setVal('additionalInfo', cleanAddInfo);
+
+                const savedPartner = data.partnerSpecs || ''; let cleanPartner = savedPartner;
+                document.querySelectorAll('input[name="partnerTags"]').forEach(cb => { if (savedPartner.includes(cb.value)) { cb.checked = true; cleanPartner = cleanPartner.replace(cb.value, '').replace(' | ', '').replace('، ', '').trim(); } });
+                setVal('partnerSpecs', cleanPartner);
+                
+                openSpecificStep(1);
+            }, 600);
+
+            setTimeout(() => {
+                let sColor = data.skinColor || '';
+                // تنظيف لون البشرة وإزالة كلمة "أسمر" إذا كانت مقترنة ببرونزي
+                if(sColor) { sColor = sColor.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'); }
+                setVal('height', data.height || ''); setVal('weight', data.weight || ''); if(sColor) checkRad('skinColor', sColor);
+                if(data.marriageType) { if(data.gender !== 'أنثى') setVal('menMarriageType', data.marriageType); else setVal('womenMarriageType', data.marriageType); }
+
+                setTimeout(() => {
+                    const bioText = (data.autoBio || '') + ' ' + (data.additionalInfo || '');
+                    if(data.gender === 'أنثى') {
+                        let hairL = data.hairLength || ''; let hairT = data.hairTexture || ''; let bShape = data.bodyShape || '';
+                        if (!hairL && bioText.includes('قصير')) hairL = 'قصير'; else if (!hairL && bioText.includes('طويل')) hairL = 'طويل'; else if (!hairL && bioText.includes('متوسط')) hairL = 'متوسط';
+                        if (!hairT && bioText.includes('ويفي')) hairT = 'مموج (ويفي)'; else if (!hairT && bioText.includes('حرير')) hairT = 'ناعم حرير'; else if (!hairT && bioText.includes('كيرلي')) hairT = 'كيرلي';
+                        if (!bShape && bioText.includes('كمثرى')) bShape = 'كمثرى'; else if (!bShape && bioText.includes('رملية')) bShape = 'ساعة رملية'; else if (!bShape && bioText.includes('تفاحة')) bShape = 'تفاحة';
+                        if(hairL) setVal('hairLength', hairL); if(hairT) setVal('hairTexture', hairT); if(bShape) setVal('bodyShape', bShape);
+                    }
+                }, 300);
+                setTimeout(() => { clearAllValidationErrors(); }, 800);
+            }, 800);
+        }
+
+        function showMainForm() {
+            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden');
+            document.getElementById('registrationForm').reset(); document.getElementById('finalPhoneDisplay').value = verifiedFullPhone; buildDobDropdowns();
+            for(let i=1; i<=5; i++) {
+                let b = document.getElementById(`step-${i}-badge`); if(b) { b.className = "w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors"; b.innerHTML = i; }
+                if(i > 1) document.getElementById(`step-${i}-card`).classList.add('locked-step', 'opacity-50');
+            }
+            const btnSubmit = document.getElementById('reviewSubmitBtn'); btnSubmit.innerHTML = `<span>اعتماد الطلب</span>`;
+            openSpecificStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); checkAndRestoreDraft();
+        }
+
+        function validateStep(stepNum) {
+            const stepContent = document.getElementById(`step-${stepNum}-content`); if(!stepContent) return { isValid: true, hasLogicalError: false };
+            let isValid = true; let hasLogicalError = false; 
+            const requiredElements = stepContent.querySelectorAll('input[required], select[required], textarea[required]');
+            stepContent.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
+
+            requiredElements.forEach(el => { if (el.closest('.hidden')) return; if (!el.value || el.value.trim() === '') { isValid = false; el.classList.add('error-field'); } });
+
+            if(stepNum === 1) { if(!document.querySelector('input[name="gender"]:checked')) isValid = false; }
+            if(stepNum === 2) { 
+                if(!document.querySelector('input[name="tribalStatus"]:checked')) isValid = false; 
+                if(!document.querySelector('input[name="originLocation"]:checked')) isValid = false; 
+                if(!document.querySelector('input[name="residenceLoc"]:checked')) isValid = false; 
+                
+                const locGroup = document.querySelector('input[name="originLocation"]:checked');
+                if (locGroup) {
+                    if (locGroup.value === 'من داخل المملكة' && !document.getElementById('originInside').value) isValid = false;
+                    if (locGroup.value === 'من خارج المملكة' && !document.getElementById('originOutside').value) isValid = false;
+                }
+                const resGroup = document.querySelector('input[name="residenceLoc"]:checked');
+                if (resGroup) {
+                    if (resGroup.value === 'داخل السعودية' && !document.getElementById('ksaCity').value) isValid = false;
+                    if (resGroup.value === 'خارج السعودية' && !document.getElementById('worldCountry').value) isValid = false;
+                }
+            }
+            if(stepNum === 4) {
+                if(!document.querySelector('input[name="skinColor"]:checked')) { isValid = false; document.getElementById('skinColorGroup').classList.add('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); } else { document.getElementById('skinColorGroup').classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); }
+                const hVal = parseInt(document.getElementById('height').value); if(document.getElementById('height').value && (isNaN(hVal) || hVal < 120 || hVal > 250)) { document.getElementById('height').classList.add('error-field'); hasLogicalError = true; }
+                const wVal = parseInt(document.getElementById('weight').value); if(document.getElementById('weight').value && (isNaN(wVal) || wVal < 40 || wVal > 200)) { document.getElementById('weight').classList.add('error-field'); hasLogicalError = true; }
+            }
+            return { isValid, hasLogicalError };
+        }
+
+        function toggleAccordion(targetStep) {
+            for(let i = 1; i < targetStep; i++) {
+                const validation = validateStep(i);
+                if(!validation.isValid || validation.hasLogicalError) { showMsgModal("تنبيه", `يرجى إكمال البيانات الإلزامية في الخطوة ${i} أولاً.`); markStepAsError(i); openSpecificStep(i); return; }
+            }
+            openSpecificStep(targetStep);
+        }
+
+        function openSpecificStep(stepNumber) {
+            for(let i=1; i<=5; i++) { document.getElementById(`step-${i}-content`).classList.remove('open'); document.getElementById(`step-${i}-icon`).querySelector('svg').classList.remove('rotate-180'); }
+            document.getElementById(`step-${stepNumber}-content`).classList.add('open'); document.getElementById(`step-${stepNumber}-icon`).querySelector('svg').classList.add('rotate-180');
+            const progress = (stepNumber / 5) * 100; const pb = document.getElementById('progressBar'); if (pb) pb.style.width = `${progress}%`;
+            const pt = document.getElementById('progressText'); if (pt) pt.innerText = `الخطوة ${stepNumber} من 5`;
+        }
+
+        function markStepAsError(stepNum) { let badge = document.getElementById(`step-${stepNum}-badge`); if(badge) { badge.className = "w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs animate-pulse"; badge.innerHTML = "!"; } }
+
+        function nextStep(currentStep) {
+            const validation = validateStep(currentStep);
+            if(validation.hasLogicalError) { markStepAsError(currentStep); showMsgModal("خطأ", "يرجى التحقق من الأرقام المدخلة للطول أو الوزن."); return; }
+            if(validation.isValid) {
+                let badge = document.getElementById(`step-${currentStep}-badge`); badge.className = "w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; 
+                if(currentStep < 5) { const nextCard = document.getElementById(`step-${currentStep + 1}-card`); nextCard.classList.remove('locked-step', 'opacity-50'); openSpecificStep(currentStep + 1); setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }
+            } else { markStepAsError(currentStep); showMsgModal("تنبيه", "يرجى تعبئة الحقول الإلزامية المحددة باللون الأحمر."); }
+        }
+
+        function openTermsModal() {
+            document.getElementById('smartValidationError').classList.add('hidden'); let firstInvalidStep = null; let logicalErrorFound = false;
+            for(let i=1; i<=5; i++) { const validation = validateStep(i); if(!validation.isValid || validation.hasLogicalError) { markStepAsError(i); if(!firstInvalidStep) { firstInvalidStep = i; logicalErrorFound = validation.hasLogicalError; } } else { let badge = document.getElementById(`step-${i}-badge`); badge.className = "w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
+
+            if(firstInvalidStep) {
+                const errBox = document.getElementById('smartValidationError');
+                if (logicalErrorFound) errBox.innerText = `هناك قيم غير منطقية في الخطوة ${firstInvalidStep}.`; else errBox.innerText = `يرجى إكمال الحقول الإجبارية في الخطوة ${firstInvalidStep}.`;
+                errBox.classList.remove('hidden'); openSpecificStep(firstInvalidStep); document.getElementById(`step-${firstInvalidStep}-card`).scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+            }
+            if(!document.getElementById('howHeard').value) { document.getElementById('howHeard').classList.add('error-field'); showMsgModal("تنبيه", "يرجى اختيار إجابة سؤال الإحصاء."); return; }
+            generateTerms(); document.getElementById('modalError').classList.add('hidden'); document.getElementById('termsModal').classList.remove('hidden');
+        }
+
+        function closeTermsModal() { document.getElementById('termsModal').classList.add('hidden'); }
+
+        function renderSmartTags() {
+            if (isMale === null) return;
+            const nat = document.getElementById('nationality').value || "";
+            const isSaudi = nat.includes("سعودي") || nat.includes("السعودية") || nat.includes("خليجي") || nat.includes("إمارات") || nat.includes("كويت") || nat.includes("قطر") || nat.includes("بحرين") || nat.includes("عمان");
+            
+            let myTags = []; let partnerTags = [];
+            
+            const customNiqabSVG = `<svg class="w-4 h-4 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
+            const hijabIcon = `🧕`;
+
+            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
+            else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
+            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+
+            const drawTag = (tag, isMyTag) => {
+                let iconStr = ''; let cleanTag = tag;
+                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
+                return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2.5 py-1.5 bg-white text-gray-700 text-[10px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
+            };
+
+            const myTagsC = document.getElementById('myTagsContainer'); if(myTagsC) myTagsC.innerHTML = myTags.map(tag => drawTag(tag, true)).join('');
+            const ptTagsC = document.getElementById('partnerTagsContainer'); if(ptTagsC) ptTagsC.innerHTML = partnerTags.map(tag => drawTag(tag, false)).join('');
+        }
+
+        function handleGenderChange(isSilentSync = false) {
+            isMale = document.getElementById('gender_male').checked; renderSmartTags();
+            const group = document.getElementById('tribalStatusGroup');
+            group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
+            
+            if (!isSilentSync) document.getElementById('namesContainer').classList.add('hidden');
+            
+            if(isMale) {
+                document.getElementById('menMarriageSection').classList.remove('hidden'); document.getElementById('womenMarriageSection').classList.add('hidden');
+                document.getElementById('femalePhysicalSpecs').classList.add('hidden'); document.getElementById('incomeDiv').classList.remove('hidden'); document.getElementById('monthlyIncome').required = true;
+            } else {
+                document.getElementById('womenMarriageSection').classList.remove('hidden'); document.getElementById('menMarriageSection').classList.add('hidden');
+                document.getElementById('femalePhysicalSpecs').classList.remove('hidden'); document.getElementById('incomeDiv').classList.add('hidden'); document.getElementById('monthlyIncome').required = false;
+            }
+            
+            if (!isSilentSync) { document.getElementById('childrenCountDiv').classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; }
+
+            const nats = isMale ? (dynamicDropdowns?.maleNationalities || fallbackDropdowns.maleNationalities) : (dynamicDropdowns?.femaleNationalities || fallbackDropdowns.femaleNationalities);
+            const jobs = isMale ? (dynamicDropdowns?.maleJobs || fallbackDropdowns.maleJobs) : (dynamicDropdowns?.femaleJobs || fallbackDropdowns.femaleJobs);
+            const mars = isMale ? (dynamicDropdowns?.maleMarital || fallbackDropdowns.maleMarital) : (dynamicDropdowns?.femaleMarital || fallbackDropdowns.femaleMarital);
+            const mTypes = isMale ? (dynamicDropdowns?.maleMarriageType || fallbackDropdowns.maleMarriageType) : (dynamicDropdowns?.femaleMarriageType || fallbackDropdowns.femaleMarriageType);
+            
+            // جلب الألوان وتطبيق الفلتر لمنع ظهور "أسمر برونزي"
+            let rawSkins = isMale ? (dynamicDropdowns?.maleSkinColors || fallbackDropdowns.maleSkinColors) : (dynamicDropdowns?.femaleSkinColors || fallbackDropdowns.femaleSkinColors);
+            const skins = rawSkins.map(s => s.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'));
+
+            let natOptions = '<option value="" disabled selected>-- اختر الجنسية --</option>'; if(nats) nats.forEach(nat => { let cleanVal = cleanArabicText(nat); natOptions += `<option value="${cleanVal}">${getFlagForText(cleanVal)} ${cleanVal}</option>`; });
+            const natEl = document.getElementById('nationality'); natEl.innerHTML = natOptions; natEl.classList.add('emoji-font');
+
+            let jobOptions = '<option value="" disabled selected>-- اختر الوظيفة --</option>'; if(jobs) [...jobs, "أخرى"].forEach(job => jobOptions += `<option value="${job}">${job}</option>`);
+            document.getElementById('jobStatus').innerHTML = jobOptions; if(!isSilentSync) document.getElementById('customJob').classList.add('hidden');
+
+            let marOptions = '<option value="" disabled selected>-- حدد الحالة --</option>'; if(mars) mars.forEach(m => marOptions += `<option value="${m}">${m}</option>`);
+            document.getElementById('maritalStatus').innerHTML = marOptions;
+
+            let marrOptions = '<option value="" disabled selected>-- اختر النوع --</option>'; if(mTypes) mTypes.forEach(m => marrOptions += `<option value="${m}">${m}</option>`);
+            if(isMale) document.getElementById('menMarriageType').innerHTML = marrOptions; else document.getElementById('womenMarriageType').innerHTML = marrOptions;
+
+            // تحديث الألوان لتناسب 7 خيارات (أبيض، حنطي فاتح، حنطي، برونزي، أسمر، أسمر داكن، أسود)
+            const skinHexCodes = ["#fefaf5", "#faead6", "#e1c699", "#c29062", "#8c5a35", "#54331c", "#2c1b12"]; 
+            const textColors = ["#1e293b", "#1e293b", "#1e293b", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]; 
+            let skinOptions = '';
+            
+            if(skins) {
+                skins.forEach((skin, index) => { 
+                    const hex = skinHexCodes[index] || "#cbd5e1"; 
+                    const textColor = textColors[index] || "#1e293b"; 
+                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-xl whitespace-nowrap text-xs font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
+                });
+                document.getElementById('skinColorGroup').innerHTML = skinOptions;
+            }
+            generateTerms(); if(!isSilentSync) saveDraft();
+        }
+
+        function handleTribalChange() {
+            const isQabili = document.getElementById('tribal_yes').checked;
+            document.getElementById('namesContainer').classList.remove('hidden'); 
+            document.getElementById('tribeNameDiv').classList.toggle('hidden', !isQabili); 
+            document.getElementById('familyNameDiv').classList.remove('hidden');
+            
+            const lbl = document.getElementById('familyLabel'); 
+            const inp = document.getElementById('familyName');
+            const tribeInp = document.getElementById('tribeName');
+            
+            if(isQabili) { 
+                lbl.innerHTML = 'اسم العائلة <span class="text-gray-400 font-normal">(اختياري)</span>'; 
+                inp.required = false; 
+                tribeInp.required = true; 
+            } else { 
+                lbl.innerHTML = 'اسم العائلة <span class="text-red-500">*</span>'; 
+                inp.required = true; 
+                tribeInp.required = false; 
+            }
+            saveDraft();
+        }
+
+        function handleMaritalStatusChange() {
+            const s = document.getElementById('maritalStatus').value; const div = document.getElementById('childrenCountDiv');
+            if(s === "أعزب" || s === "بكر") { div.classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; } else { div.classList.remove('hidden'); handleChildrenChange(); }
+            saveDraft();
+        }
+
+        function handleChildrenChange() {
+            const s = document.getElementById('maritalStatus').value; const count = parseInt(document.getElementById('childrenCount').value) || 0;
+            const div = document.getElementById('custodyDiv'); const sel = document.getElementById('custodyStatus');
+            if(count > 0 && (s.includes('مطلق') || s.includes('أرمل'))) {
+                div.classList.remove('hidden'); sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
+                if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
+            } else { div.classList.add('hidden'); }
+            saveDraft();
+        }
+
+        function handleResidenceChange() { const isKsa = document.getElementById('res_ksa').checked; document.getElementById('ksaCitiesDiv').classList.toggle('hidden', !isKsa); document.getElementById('worldCountriesDiv').classList.toggle('hidden', isKsa); saveDraft(); }
+        function toggleOriginDetails() { const isInside = document.getElementById('origin_in').checked; document.getElementById('originInsideDetails').classList.toggle('hidden', !isInside); document.getElementById('originOutsideDetails').classList.toggle('hidden', isInside); saveDraft(); }
+        function handleJobChange() { const isOther = document.getElementById('jobStatus').value === 'أخرى'; document.getElementById('customJob').classList.toggle('hidden', !isOther); document.getElementById('customJob').required = isOther; saveDraft(); }
+        function handleMenMarriageTypeChange() { document.getElementById('menSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('menMarriageType').value !== "زواج باشتراطات خاصة"); generateTerms(); saveDraft(); }
+        function handleWomenMarriageTypeChange() { document.getElementById('womenSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('womenMarriageType').value !== "زواج بظروف خاصة"); saveDraft(); }
+
+        function generateTerms() {
+            if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
+            if(isMale) { const isSpecial = document.getElementById('menMarriageType').value === "زواج باشتراطات خاصة"; container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-xs">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-xs">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; } 
+            else { container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-xs">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; }
+        }
+
+        function getCombinedAddInfo() {
+            const mySelectedTags = Array.from(document.querySelectorAll('input[name="myInfoTags"]:checked')).map(cb => cb.value).join('، ');
+            const baseAddInfo = document.getElementById('additionalInfo').value.trim(); return [mySelectedTags, baseAddInfo].filter(Boolean).join(' | ');
+        }
+        function getCombinedPartnerSpecs() {
+            const partnerSelectedTags = Array.from(document.querySelectorAll('input[name="partnerTags"]:checked')).map(cb => cb.value).join('، ');
+            const basePartnerSpecs = document.getElementById('partnerSpecs').value.trim(); return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
+        }
+
+        function generateCleanBio(refId = "---") {
+            const age = document.getElementById('calculatedAgeVal').innerText || '--'; const height = document.getElementById('height').value || '--'; const weight = document.getElementById('weight').value || '--'; const skin = document.querySelector('input[name="skinColor"]:checked')?.value || 'غير محدد';
+            const rawNationality = document.getElementById('nationality').value || 'غير محدد'; const natFlag = getFlagForText(rawNationality); const nationalityDisplay = natFlag ? `${rawNationality} ${natFlag}` : rawNationality;
+            
+            const isKsa = document.getElementById('res_ksa')?.checked; let city = "غير محدد"; let cityDisplay = "";
+            if(isKsa) { city = document.getElementById('ksaCity').value || 'السعودية'; cityDisplay = `${city}`; } else { city = document.getElementById('worldCountry').value || 'غير محدد'; const wCity = document.getElementById('worldCity').value.trim(); if(wCity) city += ` (${wCity})`; cityDisplay = city; }
+            
+            const tStatus = document.querySelector('input[name="tribalStatus"]:checked')?.value || 'غير محدد'; let tribalText = tStatus + (document.getElementById('tribal_yes')?.checked && document.getElementById('tribeName').value ? ` (${document.getElementById('tribeName').value})` : "");
+            const oLoc = document.querySelector('input[name="originLocation"]:checked')?.value; let originVal = (oLoc === "من داخل المملكة") ? document.getElementById('originInside').value : document.getElementById('originOutside').value;
+            const marital = document.getElementById('maritalStatus').value || 'غير محدد'; let childText = " (بدون أبناء)";
+            if(marital !== "أعزب" && marital !== "بكر") { const cCount = parseInt(document.getElementById('childrenCount').value) || 0; if(cCount > 0) childText = ` (الأبناء: ${cCount} - ${document.getElementById('custodyStatus').value})`; else childText = ""; } else childText = "";
+
+            const edu = document.getElementById('education').value || 'غير محدد'; const jVal = document.getElementById('jobStatus').value; const job = (jVal === 'أخرى') ? document.getElementById('customJob').value : jVal;
+            
+            let extra = "";
+            if(isMale) { const inc = document.getElementById('monthlyIncome').value || ''; extra += `🔹 المؤهل: ${edu} | الوظيفة: ${job} | الدخل: ${inc}\n🔹 الزواج المطلوب: ${document.getElementById('menMarriageType').value}\n`; } 
+            else {
+                extra += `🔹 المؤهل: ${edu} | الوظيفة: ${job}\n🔹 الزواج المطلوب: ${document.getElementById('womenMarriageType').value} | تقبل معدد؟: ${document.getElementById('acceptMarried').value}\n`;
+                const hLen = document.getElementById('hairLength').value; const hTex = document.getElementById('hairTexture').value; const bShape = document.getElementById('bodyShape').value;
+                let hairStr = ""; if (hLen || hTex) { hairStr = `الشعر: ${hLen || ''} ${hTex ? '('+hTex+')' : ''}`.trim(); }
+                let bodyStr = bShape ? `الجسم: ${bShape}` : "";
+                if (hairStr || bodyStr) { extra += `🔹 الشكل: ${[hairStr, bodyStr].filter(Boolean).join(' | ')}\n`; }
+            }
+
+            const combinedAddInfo = getCombinedAddInfo(); const combinedPartnerSpecs = getCombinedPartnerSpecs();
+            return `📄 طلب رقم: ${refId}\n\n🔹 الإقامة: ${cityDisplay}\n🔹 الجنسية: ${nationalityDisplay}\n🔹 ${tribalText} | الأصول: ${originVal}\n🔹 العمر: ${age} سنة | الطول: ${height} | الوزن: ${weight} | البشرة: ${skin}\n🔹 الحالة الاجتماعية: ${marital}${childText}\n${extra}\n💡 معلومات إضافية:\n"${combinedAddInfo || 'لا يوجد'}"\n\n💬 شروط الشريك:\n"${combinedPartnerSpecs || 'غير محدد'}"\n\n📌 للجادين، يمكنكم التواصل مع الإدارة عبر الرابط:\nhttps://wa.me/966590779236`;
+        }
+
+        async function submitForm(btn) {
+            const agree = document.getElementById('agreeTerms').checked; const mError = document.getElementById('modalError');
+            if(!agree) { mError.classList.remove('hidden'); return; }
+            mError.classList.add('hidden');
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`; 
+            btn.disabled = true;
+            
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            const jobSelectVal = document.getElementById('jobStatus').value; const finalJob = (jobSelectVal === 'أخرى') ? document.getElementById('customJob').value : jobSelectVal;
+            let finalAdditionalInfo = getCombinedAddInfo();
+            if (!isMale) {
+                const hLen = document.getElementById('hairLength').value; const hTex = document.getElementById('hairTexture').value; const bShape = document.getElementById('bodyShape').value;
+                let pSpecs = []; if (hLen || hTex) pSpecs.push(`الشعر: ${hLen || ''} ${hTex ? '('+hTex+')' : ''}`.trim()); if (bShape) pSpecs.push(`الجسم: ${bShape}`);
+                if (pSpecs.length > 0) { finalAdditionalInfo = `[الشكل: ${pSpecs.join(' | ')}] - ` + finalAdditionalInfo; }
+            }
+
+            const payloadData = {
+                phone: verifiedFullPhone, name: document.getElementById('firstName').value, relation: document.getElementById('relation').value, familyName: document.getElementById('familyName')?.value || "",
+                birthDate: `${document.getElementById('dobDay').value}/${document.getElementById('dobMonth').value}/${document.getElementById('dobYear').value}|${document.querySelector('input[name="calType"]:checked').value === 'hijri' ? 'هجري' : 'ميلادي'}`,
+                gender: isMale ? "ذكر" : "أنثى", age: document.getElementById('age').value || document.getElementById('calculatedAgeVal').innerText.replace(" سنة", ""),
+                nationality: document.getElementById('nationality').value, originType: document.querySelector('input[name="tribalStatus"]:checked')?.value || "",
+                roots: document.getElementById('origin_in').checked ? document.getElementById('originInside').value : document.getElementById('originOutside').value,
+                tribeName: document.getElementById('tribeName')?.value || "", residence: document.getElementById('res_ksa').checked ? document.getElementById('ksaCity').value : (document.getElementById('worldCountry').value + " " + document.getElementById('worldCity').value),
+                maritalStatus: document.getElementById('maritalStatus').value, childrenCount: document.getElementById('childrenCount').value || "0", childrenStatus: document.getElementById('custodyStatus').value || "",
+                education: document.getElementById('education').value, job: finalJob, height: document.getElementById('height').value, weight: document.getElementById('weight').value,
+                skinColor: document.querySelector('input[name="skinColor"]:checked')?.value || "غير محدد", marriageType: isMale ? document.getElementById('menMarriageType').value : document.getElementById('womenMarriageType').value,
+                specialConditions: isMale ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، '),
+                acceptMarried: !isMale ? document.getElementById('acceptMarried').value : "", monthlyIncome: isMale ? document.getElementById('monthlyIncome').value : "",
+                fees: isMale ? (document.getElementById('menMarriageType').value === "زواج باشتراطات خاصة" ? "1000 مقدم + 3000 توفيق" : "200 بحث + 3000 توفيق") : "2000 توفيق",
+                partnerSpecs: getCombinedPartnerSpecs(), secretInfo: document.getElementById('specialInfo').value || "لا يوجد", additionalInfo: finalAdditionalInfo,
+                howHeard: document.getElementById('howHeard').value, agreedToTerms: "نعم موافق", autoBio: "#طلب_زواج_جديد" 
+            };
+
+            const reqBody = { action: editInfoState ? "updateRegistration" : "saveRegistration", data: payloadData };
+            if(editInfoState) reqBody.editInfo = editInfoState;
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
+                clearTimeout(timeoutId); const responseText = await res.text();
+                try {
+                    const result = JSON.parse(responseText);
+                    if(result.success) {
+                        closeTermsModal(); document.getElementById('mainFormSection').classList.add('hidden'); document.getElementById('successSection').classList.remove('hidden');
+                        const reference = result.refId || result.rowIndex || "---"; const generatedBio = generateCleanBio(reference);
+
+                        registeredUserData = {
+                            refId: reference, gender: payloadData.gender, nationality: payloadData.nationality, originType: document.querySelector('input[name="tribalStatus"]:checked')?.value || "",
+                            tribeName: document.getElementById('tribeName')?.value || "غير محدد", age: payloadData.age, city: payloadData.residence, maritalStatus: payloadData.maritalStatus,
+                            skinColor: payloadData.skinColor, height: payloadData.height, weight: payloadData.weight, education: payloadData.education, job: payloadData.job,
+                            monthlyIncome: payloadData.monthlyIncome || "غير محدد", acceptsPolygamy: payloadData.acceptMarried || "غير محدد", marriageType: payloadData.marriageType, autoBio: generatedBio
+                        };
+                        
+                        hasClickedWaToApprove = false;
+                        cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); localStorage.removeItem(`draft_${verifiedFullPhone}`); 
+                    } else showMsgModal("رفض الخادم", result.message);
+                } catch(e) { showMsgModal("خطأ", "حدث خطأ بالخادم عند الحفظ."); }
+            } catch(e) { 
+                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                else showMsgModal("خطأ اتصال", "تعذر الوصول للخادم."); 
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        }
+
+        function sendToBroker() {
+            const c = registeredUserData; if (!c || !c.refId) return;
+            const fullName = `${document.getElementById('firstName').value} ${document.getElementById('familyName')?.value || ''} ${document.getElementById('tribeName')?.value || ''}`.trim();
+            const secretInfo = document.getElementById('specialInfo').value || "لا يوجد";
+            
+            let specialConds = "لا يوجد";
+            if (c.gender === 'ذكر') { const selected = Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value); if(selected.length > 0) specialConds = selected.join(' ، '); } 
+            else { const selected = Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value); if(selected.length > 0) specialConds = selected.join(' ، '); }
+
+            let msg = `${c.autoBio}\n\n___سرية للإدارة___\nالاسم الأول : ${fullName}\nظروف خاصة : ${secretInfo}\nشروط خاصة : ${specialConds}\n_______________________\n`;
+            let shortCity = c.city ? c.city.split(' ')[0].replace(/[()]/g, '') : "";
+            let shortName = (document.getElementById('familyName')?.value || document.getElementById('tribeName')?.value || "غير محدد").split(' ')[0];
+            msg += `${c.refId} ${shortName} ${shortCity} ${c.maritalStatus} ${c.age}`;
+
+            const encodedText = encodeURIComponent(msg); const brokerPhone = "966590779236"; 
+            const link = document.createElement('a'); link.href = `https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`; link.target = '_blank'; document.body.appendChild(link); link.click(); link.remove();
+
+            hasClickedWaToApprove = true;
+            const engineBtn = document.getElementById('engineSmartBtn');
+            if (engineBtn) {
+                engineBtn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 mx-auto transition-all text-sm";
+            }
+        }
+
+        function goToSmartEngine() {
+            if (!hasClickedWaToApprove) { showMsgModal("تنبيه", "يرجى الضغط على (أرسل للاعتماد) أولاً لتفعيل المرشحين."); return; }
+            if (registeredUserData && registeredUserData.refId && verifiedFullPhone) {
+                sessionStorage.setItem('autoOpenSmartEngine', 'true');
+                
+                // التعديل: إجبار النظام على جعل الملف الجديد هو الملف النشط
+                localStorage.setItem('active_profile_uid', String(registeredUserData.refId));
+                
+                document.getElementById('successSection').classList.add('hidden'); document.getElementById('registrationForm').reset();
+                loadDashboard(); window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else showMsgModal("خطأ", "البيانات غير مكتملة.");
+        }
+    </script>
+</body>
+</html>

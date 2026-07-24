@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>نشاطات العميل - منصة زواج</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        // الشرط: إذا كنا في فريم (Iframe) + الرابط يحتوي على phone = إذن نحن في منصة الإنتاج
+        if (window.self !== window.top && params.has('phone')) {
+            document.documentElement.classList.add('in-iframe');
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        
+        /* إخفاء السكرول العام للمنصة */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* تصميم شريط تمرير أنيق ونحيف جداً لصناديق المحادثة */
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #cbd5e1; }
+        
+        /* منع تداخل السحب في الجوالات (Scroll Chaining) */
+        .chat-scroll-container { overscroll-behavior-y: contain; scroll-behavior: smooth; }
+
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* إخفاء جذري وقاطع للعناصر عند التواجد داخل المنصة الأم */
+        html.in-iframe #fallbackLogin,
+        .in-iframe #fallbackLogin { display: none !important; }
+        
+        /* إخفاء شريط التبويبات الداخلي بالقوة عند التواجد داخل إطار */
+        html.in-iframe #innerTabsContainer,
+        .in-iframe #innerTabsContainer,
+        html.in-iframe #dashboardContent > .sticky-tabs,
+        .in-iframe #dashboardContent > div.flex.border-b.border-slate-200.sticky { 
+            display: none !important; 
+        }
+        
+        /* تقليص المسافة العلوية للدمج السلس */
+        html.in-iframe #dashboardContent,
+        .in-iframe #dashboardContent { 
+            padding-top: 1rem !important; 
+        }
+
+        /* تأثير نبض النجاح للمحادثة المحدثة */
+        @keyframes successPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); border-color: #10b981; }
+            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); border-color: #34d399; }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); border-color: #e2e8f0; }
+        }
+        .highlight-flash {
+            animation: successPulse 2s ease-out 4; /* ينبض 4 مرات خلال 8 ثواني */
+            border-width: 2px !important;
+            border-color: #10b981 !important;
+            background-color: #f0fdf4 !important; /* خلفية خضراء فاتحة جداً */
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 relative min-h-screen">
+
+    <div id="fallbackLogin" class="fixed top-0 left-0 right-0 bg-[#0f172a] text-white z-[200] shadow-xl flex flex-col p-3 gap-3 hidden">
+        <div class="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto w-full">
+            <span class="text-xs font-bold text-slate-300">لوحة الاختبار:</span>
+            <div class="flex" dir="ltr">
+                <input type="tel" id="fbPhone" class="w-32 p-2 border border-slate-700 bg-[#1e293b] rounded-l-lg outline-none text-center text-sm font-bold text-white focus:border-indigo-500" placeholder="5XXXXXXXX">
+                <span class="p-2 border border-slate-700 border-l-0 bg-slate-700 rounded-r-lg text-sm text-slate-300 font-bold">+966</span>
+            </div>
+            <input type="text" id="fbRefId" class="w-24 p-2 border border-slate-700 bg-[#1e293b] rounded-lg outline-none text-center text-sm font-bold text-white focus:border-indigo-500" placeholder="رقم الملف">
+            <button id="fallbackSubmitBtn" onclick="applyFallbackLogin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 shadow-md w-24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                <span>عرض</span>
+            </button>
+            <button onclick="addCurrentToQuickAccess()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs flex items-center gap-1 shadow-md" title="حفظ هذا الحساب للوصول السريع">
+                + إضافة
+            </button>
+        </div>
+        
+        <div class="flex items-center justify-center gap-2 max-w-4xl mx-auto w-full overflow-x-auto hide-scroll pb-1">
+            <span class="text-[10px] font-bold text-slate-400 shrink-0">دخول سريع:</span>
+            <div id="quickAccessButtons" class="flex items-center gap-2"></div>
+        </div>
+    </div>
+
+    <div id="dashboardContent" class="w-full max-w-5xl mx-auto transition-all pt-[110px] pb-12">
+        
+        <!-- رسالة الترحيب المصغرة -->
+        <h2 id="dynamicWelcomeText" class="text-[13px] sm:text-sm md:text-base font-bold text-slate-700 mb-3 mt-1 text-center hidden px-2 truncate mx-auto w-full max-w-[95%]"></h2>
+
+        <!-- الرأس اللاصق الموحد -->
+        <div class="unified-sticky-header sticky top-0 z-40 bg-[#f8fafc] shadow-sm border-b border-slate-200">
+            <div id="innerTabsContainer" class="flex w-full overflow-x-auto hide-scroll bg-white">
+                <button id="tabBtn-favorites" onclick="switchTab('favorites')" class="flex-1 py-4 px-4 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap flex items-center justify-center gap-2">
+                    <span class="text-amber-500 text-lg">⭐️</span> مفضلاتي
+                </button>
+                <button id="tabBtn-requests" onclick="switchTab('requests')" class="flex-1 py-4 px-4 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30 transition-all whitespace-nowrap flex items-center justify-center gap-2 relative">
+                    <span class="text-indigo-500 text-lg">💬</span> طلباتي والمحادثات
+                </button>
+            </div>
+            
+            <div id="subTabsWrapper" class="px-4 py-2 bg-slate-50 border-t border-slate-100 hidden">
+                <div class="flex bg-slate-200/60 p-1.5 rounded-xl max-w-md mx-auto shadow-inner">
+                    <button id="subTab-incoming" onclick="switchReqTab('incoming')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all relative flex items-center justify-center gap-1.5">
+                        📥 طلبات واردة لي
+                    </button>
+                    <button id="subTab-outgoing" onclick="switchReqTab('outgoing')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all flex items-center justify-center gap-1.5 border border-slate-200/50">
+                        📤 طلبات أرسلتها
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="favoritesTabContainer" class="tab-content hidden opacity-0 transition-all duration-500 mt-6 px-4">
+            <div id="favoritesList" class="w-full"></div>
+        </div>
+
+        <!-- محتوى الطلبات مع إخفاء جذري للمحادثات وعرض رسالة قريباً -->
+        <div id="requestsTabContainer" class="tab-content block opacity-100 transition-all duration-500 mt-6 px-4">
+            
+            <!-- رسالة الإصدار التجريبي -->
+            <div class="w-full bg-white rounded-3xl border border-indigo-100 shadow-sm p-8 text-center flex flex-col items-center justify-center my-4 fade-in mx-auto max-w-2xl">
+                <div class="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">قريباً جداً..</h3>
+                <p class="text-sm text-slate-500 max-w-md leading-relaxed mb-6">ستتمكن هنا من إدارة جميع طلباتك ومحادثاتك مع الأطراف الأخرى بكل سرية. في هذه المرحلة التجريبية، نحن نتولى عنك هذه المهمة! إذا أعجبك ملف من مفضلاتك، تواصل معنا فوراً.</p>
+                <a href="https://wa.me/966590779236" target="_blank" class="bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3.5 px-8 rounded-xl shadow-md transition-transform active:scale-95 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    <span>تواصل مع الإدارة للتنسيق</span>
+                </a>
+            </div>
+
+            <!-- إخفاء جذري باستخدام display: none !important لمنع الجافاسكربت من إظهارها -->
+            <div id="incomingReqsSection" class="w-full" style="display: none !important;">
+                <div id="incomingRequestsList" class="w-full"></div>
+            </div>
+            <div id="outgoingReqsSection" class="w-full" style="display: none !important;">
+                <div id="requestsList" class="w-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="replyModal" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] hidden flex items-start justify-center p-4 fade-in">
+        <div id="replyModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-hidden mt-10">
+            <div id="replyModalHeaderBg" class="absolute top-0 left-0 right-0 h-16 bg-indigo-50 border-b border-indigo-100 -z-10"></div>
+            <button type="button" onclick="closeReplyModal()" class="absolute top-3 left-3 text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div id="replyModalIconWrapper" class="w-14 h-14 bg-white text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-slate-100 relative mt-2">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </div>
+            <h3 id="replyModalTitle" class="text-lg font-bold text-slate-800 mb-1">إرسال رسالة</h3>
+            <p id="replyModalDesc" class="text-[11px] text-slate-500 mb-4 font-medium">سيتم إرسال هذه الرسالة للطرف الآخر عبر الإدارة.</p>
+            <textarea id="replyMessage" rows="4" class="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm mb-4 text-right bg-slate-50" placeholder="اكتب رسالتك هنا..."></textarea>
+            <div id="quotaWarning" class="hidden mb-4 text-center p-2 rounded-lg bg-rose-50 border border-rose-200 shadow-sm">
+                <p class="text-[10px] font-bold text-rose-600 leading-relaxed">⚠️ تنبيه: إرسالك لهذه الرسالة سيخصم (1 نقطة) من رصيدك، وسيمنحك (5 ردود إضافية) لمواصلة المحادثة.</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="replySubmitBtn" type="button" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2">
+                    <span>تأكيد الإرسال</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl transform transition-all text-center">
+            <h3 id="msgModalTitle" class="text-lg font-bold text-slate-800 mb-2">تنبيه</h3>
+            <p id="msgModalText" class="text-xs text-slate-600 mb-6 leading-relaxed font-medium whitespace-pre-wrap"></p>
+            <button type="button" onclick="closeModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">حسناً فهمت</button>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        
+        let phoneParam = '';
+        let refIdParam = '';
+        let tabParam = 'requests';
+        
+        window.lastInteractedReqId = null;
+        window.highlightedReqId = null;
+
+        const spinnerSvg = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+        const darkSpinnerSvg = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-rose-500 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        const defaultQuickAccess = [
+            { phone: '0500000000', refId: '5620' },
+            { phone: '0566956901', refId: '2554' },
+            { phone: '0566956901', refId: '2416' },
+            { phone: '0500000000', refId: '5623' },
+            { phone: '0537674521', refId: '5555' }
+        ];
+
+        function safeGetTime(dateString) {
+            if (!dateString) return 0;
+            const safeString = String(dateString).replace(/-/g, '/').replace('T', ' '); 
+            const parsedDate = new Date(safeString);
+            return isNaN(parsedDate) ? 0 : parsedDate.getTime();
+        }
+
+        function timeAgo(dateString) {
+            if (!dateString) return "منذ فترة";
+            const safeString = String(dateString).replace(/-/g, '/').replace('T', ' ');
+            const date = new Date(safeString);
+            if (isNaN(date.getTime())) return dateString; 
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            if (diffInSeconds < 60) return "الآن";
+            const diffInMinutes = Math.floor(diffInSeconds / 60);
+            if (diffInMinutes < 60) return `منذ ${diffInMinutes} دقيقة`;
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+            const diffInDays = Math.floor(diffInHours / 24);
+            if (diffInDays === 1) return "أمس";
+            if (diffInDays === 2) return "منذ يومين";
+            if (diffInDays <= 10) return `منذ ${diffInDays} أيام`;
+            return `منذ ${diffInDays} يوم`;
+        }
+
+        function setupHeightObserver() {
+            if (window.self !== window.top) {
+                const container = document.getElementById('dashboardContent');
+                if (!container) return;
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const newHeight = entry.target.scrollHeight + 80;
+                        window.parent.postMessage({ type: 'resizeActivityIframe', height: newHeight }, '*');
+                    }
+                });
+                resizeObserver.observe(container);
+            }
+        }
+
+        function scrollToBottomChats() {
+            setTimeout(() => {
+                document.querySelectorAll('.chat-scroll-container').forEach(el => {
+                    el.scrollTop = el.scrollHeight;
+                });
+            }, 100);
+        }
+
+        window.onload = () => {
+            setupHeightObserver(); 
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            phoneParam = urlParams.get('phone') || localStorage.getItem('verified_user_phone') || "";
+            refIdParam = urlParams.get('refId') || localStorage.getItem('active_profile_refid') || "";
+            tabParam = urlParams.get('tab') || 'requests';
+            const nameParam = urlParams.get('name') || 'عميلنا العزيز';
+
+            const isIframe = window.self !== window.top;
+            const isProductionIframe = isIframe && urlParams.has('phone');
+
+            if (isProductionIframe) {
+                const welcomeEl = document.getElementById('dynamicWelcomeText');
+                if (welcomeEl) {
+                    welcomeEl.classList.remove('hidden');
+                    welcomeEl.innerText = tabParam === 'favorites' ? `مرحباً بك يا ${nameParam}، هذه قائمة مفضلاتك ⭐️` : `مرحباً بك يا ${nameParam}، هذه قائمة محادثاتك وطلباتك 💬`;
+                }
+            } else {
+                document.getElementById('fallbackLogin').classList.remove('hidden');
+                document.getElementById('fallbackLogin').classList.add('flex');
+            }
+            
+            renderQuickAccessButtons();
+
+            if (phoneParam) { let cp = phoneParam.replace('+966', ''); document.getElementById('fbPhone').value = cp.startsWith('0') ? cp.substring(1) : cp; }
+            if (refIdParam) { document.getElementById('fbRefId').value = refIdParam; }
+
+            if (!phoneParam || !refIdParam) {
+                switchTab('requests');
+            } else {
+                switchTab(tabParam);
+                
+                const cacheKey = `activity_cache_${phoneParam}_${refIdParam}`;
+                const cachedDataStr = sessionStorage.getItem(cacheKey); 
+                
+                if (cachedDataStr) {
+                    try {
+                        const cachedData = JSON.parse(cachedDataStr);
+                        renderMyFavorites(cachedData.favorites || []);
+                        renderOutgoingRequests(cachedData.outgoingRequests || []);
+                        renderIncomingRequests(cachedData.incomingRequests || []);
+                        fetchData(true); 
+                    } catch(e) { fetchData(false); }
+                } else {
+                    fetchData(false); 
+                }
+            }
+        };
+
+        function renderQuickAccessButtons() {
+            let saved = [];
+            try { saved = JSON.parse(localStorage.getItem('quick_access_accounts')) || []; } catch(e){}
+            let allAccounts = [...defaultQuickAccess];
+            saved.forEach(s => { if(!allAccounts.some(a => a.phone === s.phone && a.refId === s.refId)) allAccounts.push(s); });
+            const container = document.getElementById('quickAccessButtons');
+            container.innerHTML = '';
+            allAccounts.forEach(acc => {
+                container.innerHTML += `<button type="button" onclick="useQuickAccess('${acc.phone}', '${acc.refId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-bold py-1 px-3 rounded-md transition-colors text-[10px] whitespace-nowrap shadow-sm">ملف #${acc.refId}</button>`;
+            });
+        }
+
+        function addCurrentToQuickAccess() {
+            let p = document.getElementById('fbPhone').value.trim();
+            let r = document.getElementById('fbRefId').value.trim();
+            if (!p || !r) { showMsgModal("تنبيه", "يرجى كتابة الجوال ورقم الملف أولاً لإضافته."); return; }
+            let saved = [];
+            try { saved = JSON.parse(localStorage.getItem('quick_access_accounts')) || []; } catch(e){}
+            if(!saved.some(a => a.phone === p && a.refId === r)) {
+                saved.push({ phone: p, refId: r });
+                localStorage.setItem('quick_access_accounts', JSON.stringify(saved));
+                renderQuickAccessButtons();
+                showMsgModal("نجاح", "تمت إضافته للوصول السريع بنجاح!");
+            }
+        }
+
+        function useQuickAccess(phone, refId) {
+            let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone;
+            if(cleanPhone.startsWith('966')) cleanPhone = cleanPhone.substring(3);
+            document.getElementById('fbPhone').value = cleanPhone;
+            document.getElementById('fbRefId').value = refId;
+            applyFallbackLogin();
+        }
+
+        function applyFallbackLogin() {
+            let p = document.getElementById('fbPhone').value.trim();
+            let r = document.getElementById('fbRefId').value.trim();
+            if (!p || !r) { showMsgModal("تنبيه", "يرجى إدخال الجوال ورقم الملف بشكل صحيح."); return; }
+            let cleanPhone = p.startsWith('0') ? p.substring(1) : p;
+            if(!cleanPhone.startsWith('+')) cleanPhone = '+966' + cleanPhone;
+            phoneParam = cleanPhone;
+            refIdParam = r;
+            localStorage.setItem('verified_user_phone', cleanPhone);
+            localStorage.setItem('active_profile_refid', r);
+            
+            const btn = document.getElementById('fallbackSubmitBtn');
+            const ogHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = spinnerSvg + '<span>جاري...</span>';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            
+            fetchData().finally(() => {
+                btn.innerHTML = ogHtml;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            });
+        }
+
+        window.myFavsDataStore = {};
+        window.myReqsDataStore = {};
+        window.myIncomingReqsDataStore = {};
+        let pendingEditState = null;
+
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'refreshActivity') {
+                window.highlightedReqId = event.data.reqId || window.lastInteractedReqId;
+                fetchData(true); 
+                window.lastInteractedReqId = null;
+            }
+        });
+
+        function showMsgModal(title, text) {
+            document.getElementById('msgModalTitle').innerText = title;
+            document.getElementById('msgModalText').innerText = text;
+            document.getElementById('msgModal').classList.remove('hidden');
+        }
+        function closeModal() { document.getElementById('msgModal').classList.add('hidden'); }
+
+        async function fetchData(isSilent = false) {
+            if (!phoneParam || !refIdParam) return;
+            if (!isSilent) {
+                const reqSkeleton = `<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col relative animate-pulse"><div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2"><div class="flex items-center gap-2 flex-1"><div class="w-9 h-9 rounded-full bg-slate-200 shrink-0"></div><div class="h-4 bg-slate-200 rounded w-1/2"></div></div><div class="h-3 bg-slate-200 rounded w-12 shrink-0"></div></div><div class="p-4 flex-grow flex flex-col gap-3"><div class="h-5 bg-slate-200 rounded-full w-24 mx-auto mb-1"></div><div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex-1 min-h-[100px] flex flex-col gap-3 justify-center"><div class="self-end h-10 bg-slate-200 rounded-xl w-3/4"></div><div class="self-start h-12 bg-slate-200 rounded-xl w-2/3"></div></div></div><div class="bg-slate-50 p-3 border-t border-slate-100 flex gap-2"><div class="flex-1 h-9 bg-slate-200 rounded-xl"></div><div class="w-20 h-9 bg-slate-200 rounded-xl shrink-0"></div></div></div>`;
+                const favSkeleton = `<div class="bg-white border border-slate-200 p-3 rounded-2xl flex items-center gap-3 shadow-sm animate-pulse"><div class="w-11 h-11 shrink-0 rounded-full bg-slate-200"></div><div class="flex-1 flex flex-col gap-2 pr-1"><div class="h-3 bg-slate-200 rounded w-3/4"></div><div class="h-2 bg-slate-200 rounded w-1/3"></div></div><div class="w-8 h-8 rounded-full bg-slate-100 shrink-0"></div></div>`;
+                document.getElementById('favoritesList').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">${favSkeleton}${favSkeleton}${favSkeleton}${favSkeleton}</div>`;
+                document.getElementById('requestsList').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">${reqSkeleton}${reqSkeleton}</div>`;
+                document.getElementById('incomingRequestsList').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">${reqSkeleton}${reqSkeleton}</div>`;
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); 
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const textResult = await res.text(); 
+                
+                let result;
+                try { result = JSON.parse(textResult); } catch(parseError) { throw new Error(textResult); }
+                
+                if (result.success) {
+                    const cacheKey = `activity_cache_${phoneParam}_${refIdParam}`;
+                    sessionStorage.setItem(cacheKey, JSON.stringify(result));
+
+                    renderMyFavorites(result.favorites || []);
+                    renderOutgoingRequests(result.outgoingRequests || []);
+                    renderIncomingRequests(result.incomingRequests || []);
+                    
+                    // --- تعليق دالة التبديل التلقائي في الإصدار التجريبي لمنع ظهور المحادثات ---
+                    /*
+                    const hasIncoming = result.incomingRequests && result.incomingRequests.length > 0;
+                    if(tabParam === 'requests') {
+                        if(hasIncoming && document.getElementById('incomingReqsSection').classList.contains('hidden')) {
+                            switchReqTab('incoming');
+                        } else if (!hasIncoming && document.getElementById('outgoingReqsSection').classList.contains('hidden')) {
+                            switchReqTab('outgoing');
+                        }
+                    }
+                    */
+
+                    if (window.highlightedReqId) {
+                        setTimeout(() => {
+                            const card = document.getElementById(`card-${window.highlightedReqId}`);
+                            if (card) {
+                                if (window.self !== window.top) {
+                                    window.parent.postMessage({ type: 'scrollToTop' }, '*'); 
+                                }
+                                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                                card.classList.add('highlight-flash');
+                                setTimeout(() => {
+                                    card.classList.remove('highlight-flash');
+                                }, 8000); 
+                            }
+                            window.highlightedReqId = null;
+                        }, 300); 
+                    }
+
+                } else {
+                    if (!isSilent) {
+                        const errMsg = result.message || 'حدث خطأ في السيرفر';
+                        const errorHtml = `<div class="text-center text-sm text-rose-500 py-10 font-bold w-full bg-rose-50 rounded-xl border border-rose-100">رسالة السيرفر: ${errMsg}</div>`;
+                        document.getElementById('favoritesList').innerHTML = errorHtml;
+                        document.getElementById('requestsList').innerHTML = errorHtml;
+                        document.getElementById('incomingRequestsList').innerHTML = errorHtml;
+                    }
+                }
+            } catch (e) {
+                clearTimeout(timeoutId);
+                let userFriendlyError = "تفاصيل الخطأ: " + e.message;
+                if (e.name === 'AbortError') userFriendlyError = "تأخر استجابة الخادم بسبب الضغط.";
+                if (!isSilent) {
+                    const errorHtml = `<div class="text-center text-sm text-rose-500 py-10 font-bold w-full bg-rose-50 rounded-xl border border-rose-100">${userFriendlyError}</div>`;
+                    document.getElementById('favoritesList').innerHTML = errorHtml;
+                    document.getElementById('requestsList').innerHTML = errorHtml;
+                    document.getElementById('incomingRequestsList').innerHTML = errorHtml;
+                }
+            }
+        }
+
+        function parseChatThread(messageText, role) {
+            if (!messageText) return '<p class="text-xs text-slate-400 font-bold text-center py-4">لا توجد محادثة.</p>';
+            const chunks = messageText.split('---').map(c => c.trim()).filter(Boolean);
+            let html = '<div class="flex flex-col gap-2 w-full">';
+            
+            chunks.forEach(chunk => {
+                let isEditedByAdmin = chunk.includes('[تعديل الإدارة]');
+                let isFromStudent = chunk.includes('[من الطالب]');
+                let isFromTarget = chunk.includes('[من المطلوب]');
+                let isPureAdmin = chunk.includes('[من الإدارة]'); 
+                
+                let isMe = (role === 'student' && isFromStudent) || (role === 'target' && isFromTarget);
+                let isAdmin = isPureAdmin;
+                let cleanText = chunk.replace(/\[.*?\]:?/g, '').trim();
+                let bg = isMe ? 'bg-emerald-50 border-emerald-200' : (isAdmin ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200');
+                let align = isMe ? 'self-start text-right' : 'self-end text-right'; 
+                let labelColor = isMe ? 'text-emerald-600' : (isAdmin ? 'text-indigo-600' : 'text-slate-500');
+                let label = isMe ? 'رسالتي' : (isAdmin ? 'الإدارة' : 'الطرف الآخر');
+                
+                let editBadge = isEditedByAdmin ? `<span class="inline-block text-slate-400 text-[7px] px-1 py-0.5 rounded border border-slate-200 bg-white/50 shrink-0 font-normal shadow-sm cursor-help" title="تم تعديلها من الإدارة">تعديل (الإدارة)</span>` : ``;
+                
+                html += `
+                <div class="${align} min-w-[120px] max-w-[85%] border ${bg} p-2 rounded-xl relative shadow-sm flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-2 border-b border-black/5 pb-1 mb-0.5">
+                        <span class="text-[8px] font-black ${labelColor}">${label}</span>
+                        ${editBadge}
+                    </div>
+                    <p class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">${cleanText}</p>
+                </div>`;
+            });
+            return html + '</div>';
+        }
+
+        function getAvatarSvg(isFemale) {
+            return isFemale 
+                ? `<svg viewBox="0 0 64 64" class="w-full h-full drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`
+                : `<svg viewBox="0 0 64 64" class="w-full h-full drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>`;
+        }
+
+        function buildRequestCardHTML(reqId, targetRefId, targetInfo, reqDate, statusText, statusColor, relativeTime, chatHtml, actionAreaHtml, isFemale, isIncoming = false) {
+            let avatarColor = isFemale ? 'bg-pink-50 border-pink-100' : 'bg-blue-50 border-blue-100';
+            let avatarSvg = getAvatarSvg(isFemale);
+            let clickParams = isIncoming ? `'${targetRefId}', true` : `'${targetRefId}'`;
+
+            return `
+            <div id="card-${reqId}" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col relative text-right hover:shadow-md transition-shadow">
+                <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2">
+                    <div class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer group" onclick="viewRequestProfile(${clickParams})">
+                        <div class="w-9 h-9 rounded-full ${avatarColor} flex items-center justify-center shrink-0 border overflow-hidden p-1.5">${avatarSvg}</div>
+                        <h4 class="font-bold text-[13px] leading-tight line-clamp-2 text-indigo-700 group-hover:text-indigo-900 group-hover:underline text-right" title="عرض تفاصيل الملف">${targetInfo}</h4>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-bold shrink-0 bg-white px-2 py-1 rounded-md border border-slate-100">${reqDate}</span>
+                </div>
+                <div class="p-4 flex-grow flex flex-col gap-3">
+                    <div class="flex flex-row items-center justify-center w-full mb-1 gap-2">
+                        <span class="text-[10px] font-bold px-2.5 py-1 rounded-md border shadow-sm ${statusColor}">${statusText}</span>
+                        <div class="text-[9px] text-slate-500 font-bold flex items-center gap-1 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-sm">
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            ${relativeTime}
+                        </div>
+                    </div>
+                    <div class="chat-scroll-container overflow-y-auto custom-scrollbar h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-50/30 p-3 border border-slate-100 rounded-xl min-h-[100px] max-h-[220px]">
+                        ${chatHtml}
+                    </div>
+                </div>
+                ${actionAreaHtml}
+            </div>`;
+        }
+
+        function renderMyFavorites(favs) {
+            const container = document.getElementById('favoritesList');
+            if(!favs || favs.length === 0) {
+                container.innerHTML = `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold w-full bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد ملفات في المفضلة حالياً.</div>`;
+                return;
+            }
+            
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">';
+            window.myFavsDataStore = {};
+            favs.forEach(fav => {
+                let refId = fav.refId || fav; 
+                let unifiedName = fav.unifiedName || fav.summary || 'ملف رقم ' + refId;
+                window.myFavsDataStore[refId] = fav;
+                
+                let isFemale = fav.gender === 'أنثى' || unifiedName.includes('مطلقة') || unifiedName.includes('بكر') || unifiedName.includes('أرملة');
+                let avatarSvg = getAvatarSvg(isFemale);
+
+                html += `
+                <div onclick="viewFavoriteProfile('${refId}')" class="bg-white border border-slate-200 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-indigo-300 transition shadow-sm hover:shadow-md group">
+                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center relative bg-slate-50 border border-slate-100 overflow-hidden p-1.5">
+                        ${avatarSvg}
+                    </div>
+                    <div class="flex-1 min-w-0 text-right pr-1">
+                        <p class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug" title="${unifiedName}">${unifiedName}</p>
+                    </div>
+                    <button type="button" id="favBtn-${refId}" onclick="removeFavorite(event, '${refId}')" class="text-amber-400 text-xl shrink-0 hover:scale-125 transition-all focus:outline-none z-10 p-2 bg-slate-50 hover:bg-rose-50 rounded-full disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    </button>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function removeFavorite(event, refId) {
+            event.stopPropagation();
+            if (!phoneParam || !refIdParam) return;
+            const card = event.target.closest('div[onclick]');
+            const btn = document.getElementById(`favBtn-${refId}`);
+            if (btn) { btn.disabled = true; btn.innerHTML = darkSpinnerSvg; }
+            if(card) card.classList.add('opacity-50');
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); 
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                fetchData(true);
+            } catch(e) {
+                clearTimeout(timeoutId);
+                showMsgModal("تنبيه", e.name === 'AbortError' ? "تأخر استجابة الخادم بسبب الضغط." : "تعذر الحذف بسبب مشكلة في الاتصال.");
+            } finally {
+                if(card) card.classList.remove('opacity-50');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>`;
+                }
+            }
+        }
+
+        function viewFavoriteProfile(refId) {
+            let fav = window.myFavsDataStore[refId];
+            if (!fav) return;
+            if (window.self !== window.top) {
+                window.parent.postMessage({ type: 'openProfileModal', profileData: { refId: refId, autoBio: fav.fullBio || fav.summary || fav.unifiedName, gender: fav.gender || 'غير محدد' }, title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId }, '*');
+            } else { showMsgModal("عرض الملف", fav.fullBio || fav.summary || fav.unifiedName || "التفاصيل غير متوفرة."); }
+        }
+
+        function viewRequestProfile(refId, isIncoming = false) {
+            let req = isIncoming ? window.myIncomingReqsDataStore[refId] : window.myReqsDataStore[refId];
+            if (!req) return;
+            let bio = req.fullBio || req.targetData || req.unifiedName || req.requesterData;
+            if (window.self !== window.top) {
+                window.parent.postMessage({ type: 'openProfileModal', profileData: { refId: refId, autoBio: bio, gender: 'غير محدد' }, title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId }, '*');
+            } else { showMsgModal("عرض الملف", bio || "التفاصيل غير متوفرة."); }
+        }
+
+        function renderOutgoingRequests(reqs) {
+            const container = document.getElementById('requestsList');
+            if(!reqs || reqs.length === 0) {
+                container.innerHTML = `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold w-full bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لم تقم بإرسال أي طلبات تواصل بعد.</div>`;
+                return;
+            }
+            
+            reqs.sort((a, b) => {
+                const dateA = safeGetTime(a.lastActionDate || a.date);
+                const dateB = safeGetTime(b.lastActionDate || b.date);
+                return dateB - dateA;
+            });
+            
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full items-start">';
+            window.myReqsDataStore = {};
+            
+            reqs.forEach(req => {
+                let statusText = req.status || 'جاري المعالجة';
+                let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
+                let isRejected = statusText.includes('رفض') || statusText.includes('مرفوض') || statusText.includes('ملغى');
+                let statusColor = isAccepted ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : (isRejected ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-amber-600 bg-amber-50 border-amber-200');
+                let targetInfo = req.unifiedName || req.targetData || req.targetSummary || (req.targetRefId ? 'ملف #' + req.targetRefId : 'طلب تواصل');
+                let reqDate = req.date || '';
+                window.myReqsDataStore[req.targetRefId] = req;
+                
+                let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
+                let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
+                let isPending = statusText.includes('اعتماد');
+                let isRealLastFromTarget = realLastChunk.includes('[من المطلوب]');
+                let isRealLastFromStudent = realLastChunk.includes('[من الطالب]');
+                let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
+
+                let displayChunks = [...originalChunks];
+                if (isPending && isRealLastFromTarget) displayChunks.pop();
+                let chatHtml = parseChatThread(displayChunks.join(' --- '), 'student');
+                
+                let studentMessagesCount = originalChunks.join(' --- ').split('---').filter(c => c.includes('[من الطالب]')).length;
+                let showQuotaWarning = (studentMessagesCount > 0 && studentMessagesCount % 5 === 0);
+                let cleanLastMessage = realLastChunk.replace(/\[.*?\]:?/g, '').trim();
+                let encodedLastMsg = encodeURIComponent(cleanLastMessage);
+
+                let actionAreaHtml = '';
+                if (isRejected || isAccepted) {
+                    actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة لانتهاء حالة الطلب.</p></div>`;
+                } else if (isPending) {
+                    if (isRealLastFromTarget) {
+                        actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center flex items-center justify-center gap-2"><span class="text-amber-500 text-lg animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">يوجد إجراء قيد المراجعة من الإدارة، يرجى الانتظار...</p></div>`;
+                    } else if (isRealLastFromStudent) {
+                        actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 flex gap-2">${!isEditedByAdmin ? `<button type="button" onclick="openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm">✏️ تعديل رسالتي (قيد المراجعة)</button>` : `<div class="w-full text-center py-2 text-[10px] text-slate-500 font-bold">لا يمكن التعديل، تم التدقيق من الإدارة.</div>`}</div>`;
+                    } else {
+                         actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center"><p class="text-[10px] text-slate-500">جاري المعالجة...</p></div>`;
+                    }
+                } else {
+                    actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 flex gap-2"><button type="button" onclick="openReplyModal('${req.reqId}', 'رسالة متابعة', ${showQuotaWarning}, event)" class="flex-1 py-2 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"><span class="text-sm">💬</span> إرسال رسالة للطرف الآخر</button>${isRealLastFromStudent && !isEditedByAdmin ? `<button type="button" onclick="openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="py-2 px-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm shrink-0">✏️ تعديل</button>` : ''}</div>`;
+                }
+
+                let isFemale = targetInfo.includes('مطلقة') || targetInfo.includes('بكر') || targetInfo.includes('أرملة');
+                let actionDate = req.lastActionDate || req.date;
+                let relativeTime = timeAgo(actionDate);
+                
+                html += buildRequestCardHTML(req.reqId, req.targetRefId, targetInfo, reqDate, statusText, statusColor, relativeTime, chatHtml, actionAreaHtml, isFemale, false);
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            scrollToBottomChats();
+        }
+
+        function renderIncomingRequests(reqs) {
+            const container = document.getElementById('incomingRequestsList');
+            if(!reqs || reqs.length === 0) {
+                container.innerHTML = `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold w-full bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد طلبات واردة حالياً.</div>`;
+                return;
+            }
+
+            reqs.sort((a, b) => {
+                const dateA = safeGetTime(a.lastActionDate || a.date);
+                const dateB = safeGetTime(b.lastActionDate || b.date);
+                return dateB - dateA;
+            });
+
+            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full items-start">';
+            window.myIncomingReqsDataStore = {};
+            
+            reqs.forEach(req => {
+                let otherPartyId = req.requesterRefId || req.reqId || req.senderRefId;
+                let senderInfo = req.unifiedName || req.requesterData || req.senderSummary || (otherPartyId ? 'ملف #' + otherPartyId : 'طلب تواصل');
+                let reqDate = req.date || '';
+                let statusText = req.status || 'جاري المعالجة';
+                window.myIncomingReqsDataStore[otherPartyId] = req;
+                
+                let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
+                let isRejected = statusText.includes('رفض') || statusText.includes('مرفوض') || statusText.includes('ملغى');
+                let statusColor = isAccepted ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : (isRejected ? 'text-rose-600 bg-rose-50 border-rose-200' : 'text-indigo-600 bg-indigo-50 border-indigo-200');
+
+                let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
+                let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
+
+                let isPending = statusText.includes('اعتماد');
+                let isRealLastFromStudent = realLastChunk.includes('[من الطالب]');
+                let isRealLastFromTarget = realLastChunk.includes('[من المطلوب]');
+                let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
+
+                let displayChunks = [...originalChunks];
+                if (isPending && isRealLastFromStudent) {
+                    displayChunks.pop(); 
+                }
+                let chatHtml = parseChatThread(displayChunks.join(' --- '), 'target');
+                
+                let cleanLastMessage = realLastChunk.replace(/\[.*?\]:?/g, '').trim();
+                let encodedLastMsg = encodeURIComponent(cleanLastMessage);
+
+                let actionAreaHtml = '';
+
+                if (isRejected || isAccepted) {
+                    actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة لانتهاء حالة الطلب.</p></div>`;
+                } else if (isPending) {
+                    if (isRealLastFromStudent) {
+                        actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center flex items-center justify-center gap-2"><span class="text-amber-500 text-lg animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">يوجد إجراء قيد المراجعة من الإدارة، يرجى الانتظار...</p></div>`;
+                    } else if (isRealLastFromTarget) {
+                        actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 flex gap-2">${!isEditedByAdmin ? `<button type="button" onclick="openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm">✏️ تعديل رسالتي (قيد المراجعة)</button>` : `<div class="w-full text-center py-2 text-[10px] text-slate-500 font-bold">لا يمكن التعديل، تم التدقيق من الإدارة.</div>`}</div>`;
+                    } else {
+                         actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center"><p class="text-[10px] text-slate-500">جاري المعالجة...</p></div>`;
+                    }
+                } else {
+                    if (isRealLastFromTarget) {
+                        actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 flex gap-2"><button type="button" onclick="openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="flex-1 py-2 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"><span class="text-sm">💬</span> إرسال رسالة للطرف الآخر</button>${!isEditedByAdmin ? `<button type="button" onclick="openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="py-2 px-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1 shadow-sm shrink-0">✏️ تعديل</button>` : ''}</div>`;
+                    } else {
+                        actionAreaHtml = `<div class="bg-white p-3 border-t border-slate-100 grid grid-cols-3 gap-2"><button type="button" onclick="openReplyModal('${req.reqId}', 'موافقة مبدئية', false, event)" class="py-2 px-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-[10px] font-bold transition-colors flex flex-col items-center justify-center gap-1.5 shadow-sm"><span class="text-base">✅</span> موافقة مبدئية</button><button type="button" onclick="openReplyModal('${req.reqId}', 'اعتذار بلطف', false, event)" class="py-2 px-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-[10px] font-bold transition-colors flex flex-col items-center justify-center gap-1.5 shadow-sm"><span class="text-base">❌</span> اعتذار بلطف</button><button type="button" onclick="openReplyModal('${req.reqId}', 'رد على الطالب', false, event)" class="py-2 px-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-[10px] font-bold transition-colors flex flex-col items-center justify-center gap-1.5 shadow-sm"><span class="text-base">💬</span> رد على الطالب</button></div>`;
+                    }
+                }
+
+                let isFemale = senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة');
+                let actionDate = req.lastActionDate || req.date;
+                let relativeTime = timeAgo(actionDate);
+                
+                html += buildRequestCardHTML(req.reqId, otherPartyId, senderInfo, reqDate, statusText, statusColor, relativeTime, chatHtml, actionAreaHtml, isFemale, true);
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            scrollToBottomChats();
+        }
+
+        let currentReplyReqId = null;
+        let currentReplyType = null;
+
+        function openReplyModal(reqId, type, showWarning = false, event = null) {
+            const isIframe = window.self !== window.top && window.location.search.includes('phone=');
+            window.lastInteractedReqId = reqId; 
+            
+            if (isIframe) {
+                window.top.postMessage({
+                    type: 'openGlobalAction',
+                    context: { reqId: reqId, actionType: 'reply', replyType: type, showWarning: showWarning }
+                }, '*');
+            } else {
+                currentReplyReqId = reqId;
+                currentReplyType = type;
+                pendingEditState = null; 
+                
+                let typeText = type;
+                let titleColor = "text-indigo-800";
+                let bgHeader = "bg-indigo-50 border-indigo-100";
+                let iconColor = "text-indigo-500";
+                let btnColor = "bg-indigo-600 hover:bg-indigo-700";
+                
+                if(type === 'موافقة مبدئية') { titleColor="text-emerald-800"; bgHeader="bg-emerald-50 border-emerald-100"; iconColor="text-emerald-500"; btnColor="bg-emerald-600 hover:bg-emerald-700"; }
+                if(type === 'اعتذار بلطف') { titleColor="text-rose-800"; bgHeader="bg-rose-50 border-rose-100"; iconColor="text-rose-500"; btnColor="bg-rose-600 hover:bg-rose-700"; }
+                
+                document.getElementById('replyModalTitle').innerText = `إرسال: ${typeText}`;
+                document.getElementById('replyModalTitle').className = `text-lg font-bold mb-1 ${titleColor}`;
+                document.getElementById('replyModalHeaderBg').className = `absolute top-0 left-0 right-0 h-16 border-b -z-10 ${bgHeader}`;
+                document.getElementById('replyModalIconWrapper').className = `w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-slate-100 relative mt-2 ${iconColor}`;
+                
+                const btn = document.getElementById('replySubmitBtn');
+                btn.className = `flex-1 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2 ${btnColor}`;
+                btn.innerHTML = "<span>تأكيد الإرسال</span>";
+                btn.onclick = submitReply; 
+
+                document.getElementById('replyMessage').value = '';
+                
+                const warningEl = document.getElementById('quotaWarning');
+                if(showWarning) warningEl.classList.remove('hidden'); else warningEl.classList.add('hidden');
+
+                if (event) {
+                    const yClick = event.pageY || event.clientY;
+                    document.getElementById('replyModalBox').style.marginTop = Math.max(20, yClick - 150) + 'px';
+                }
+
+                document.getElementById('replyModal').classList.remove('hidden');
+            }
+        }
+
+        function openEditModal(reqId, encodedMsg, event = null) {
+            const isIframe = window.self !== window.top && window.location.search.includes('phone=');
+            window.lastInteractedReqId = reqId; 
+            
+            if (isIframe) {
+                window.top.postMessage({
+                    type: 'openGlobalAction',
+                    context: { reqId: reqId, actionType: 'edit', encodedMsg: encodedMsg }
+                }, '*');
+            } else {
+                currentReplyReqId = reqId;
+                pendingEditState = true; 
+                
+                document.getElementById('replyModalTitle').innerText = `✏️ تعديل رسالتك`;
+                document.getElementById('replyModalTitle').className = `text-lg font-bold mb-1 text-amber-800`;
+                document.getElementById('replyModalHeaderBg').className = `absolute top-0 left-0 right-0 h-16 border-b -z-10 bg-amber-50 border-amber-100`;
+                document.getElementById('replyModalIconWrapper').className = `w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-slate-100 relative mt-2 text-amber-500`;
+                
+                const btn = document.getElementById('replySubmitBtn');
+                btn.className = `flex-1 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700`;
+                btn.innerHTML = "<span>حفظ التعديل</span>";
+                btn.onclick = submitEdit; 
+
+                document.getElementById('replyMessage').value = decodeURIComponent(encodedMsg);
+                document.getElementById('quotaWarning').classList.add('hidden');
+
+                if (event) {
+                    const yClick = event.pageY || event.clientY;
+                    document.getElementById('replyModalBox').style.marginTop = Math.max(20, yClick - 150) + 'px';
+                }
+
+                document.getElementById('replyModal').classList.remove('hidden');
+            }
+        }
+
+        function closeReplyModal() { document.getElementById('replyModal').classList.add('hidden'); }
+
+        async function submitReply() {
+            const msg = document.getElementById('replyMessage').value.trim();
+            if (!phoneParam || !currentReplyReqId) return;
+            if (msg === '' && currentReplyType !== 'موافقة مبدئية' && currentReplyType !== 'اعتذار بلطف') { showMsgModal("تنبيه", "يرجى كتابة نص الرسالة أولاً."); return; }
+
+            const btn = document.getElementById('replySubmitBtn');
+            const ogHtml = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = spinnerSvg + '<span>جاري الإرسال...</span>';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            window.highlightedReqId = currentReplyReqId; 
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); 
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: 'replyToRequest', phone: phoneParam, reqId: currentReplyReqId, replyType: currentReplyType, replyMessage: msg }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                closeReplyModal();
+                fetchData(true);
+            } catch (e) {
+                clearTimeout(timeoutId);
+                showMsgModal("خطأ اتصال", e.name === 'AbortError' ? "تأخر استجابة الخادم بسبب الضغط." : "يرجى التحقق من الإنترنت والمحاولة مجدداً.");
+            } finally {
+                btn.innerHTML = ogHtml;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        async function submitEdit() {
+            const newMsg = document.getElementById('replyMessage').value.trim();
+            if (!phoneParam || !currentReplyReqId) return;
+            if (newMsg === '') { showMsgModal("تنبيه", "لا يمكن ترك الرسالة فارغة."); return; }
+
+            const btn = document.getElementById('replySubmitBtn');
+            const ogHtml = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = spinnerSvg + '<span>جاري الحفظ...</span>';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            window.highlightedReqId = currentReplyReqId; 
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000); 
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: 'editPendingReply', phone: phoneParam, reqId: currentReplyReqId, newMsg: newMsg }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                closeReplyModal();
+                fetchData(true);
+            } catch (e) {
+                clearTimeout(timeoutId);
+                showMsgModal("خطأ اتصال", e.name === 'AbortError' ? "تأخر استجابة الخادم بسبب الضغط." : "تعذر الاتصال بالسيرفر.");
+            } finally {
+                btn.innerHTML = ogHtml;
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        function switchReqTab(type) {
+            // تعطيل التبديل الداخلي للمحادثات في الإصدار التجريبي
+            return; 
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden', 'opacity-0');
+                el.classList.remove('block', 'opacity-100');
+            });
+
+            const btns = ['favorites', 'requests'];
+            btns.forEach(btn => {
+                const el = document.getElementById(`tabBtn-${btn}`);
+                if(el) el.className = 'flex-1 py-4 px-4 text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap flex items-center justify-center gap-2 border-b-2 border-transparent';
+            });
+
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            if(activeBtn) {
+                activeBtn.className = 'flex-1 py-4 px-4 text-sm font-bold bg-white transition-all whitespace-nowrap flex items-center justify-center gap-2 relative';
+                if(tabName === 'favorites') activeBtn.className += ' text-amber-600 border-b-2 border-amber-500 bg-amber-50/30';
+                if(tabName === 'requests') activeBtn.className += ' text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30';
+            }
+
+            const subTabsWrapper = document.getElementById('subTabsWrapper');
+            // إخفاء الأزرار الفرعية بشكل دائم في الإصدار التجريبي
+            subTabsWrapper.classList.add('hidden'); 
+
+            let targetContainer = document.getElementById(tabName + 'TabContainer');
+            if (targetContainer) {
+                targetContainer.classList.remove('hidden');
+                setTimeout(() => {
+                    targetContainer.classList.remove('opacity-0');
+                    targetContainer.classList.add('block', 'opacity-100');
+                }, 50);
+            }
+        }
+    </script>
+</body>
+</html>
