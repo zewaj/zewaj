@@ -71,7 +71,7 @@
     <!-- ==================== أولاً: شاشة التحقق OTP ==================== -->
     <div id="otpSection" class="fixed inset-0 z-[100] flex items-end justify-center sm:items-center px-0 sm:px-4 fade-in">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-        <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
+        <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 pb-10 sm:pb-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
             <div class="w-10 h-1.5 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden"></div>
 
             <div class="text-center mb-4">
@@ -94,9 +94,6 @@
                 <button id="btnSendCode" type="button" onclick="sendWhatsAppCode()" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
                     <span>أرسل كود التحقق (واتساب)</span>
                 </button>
-                <button type="button" onclick="bypassOtpForDev()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold py-2.5 rounded-xl transition-colors text-xs mt-2 border border-slate-200">
-                    دخول سريع بدون تحقق (للتطوير فقط)
-                </button>
             </div>
 
             <div id="otpStep2" class="space-y-4 hidden fade-in">
@@ -110,7 +107,7 @@
                 <p id="otpCodeError" class="text-red-500 text-[10px] font-bold text-center hidden">الكود المدخل غير صحيح.</p>
                 <button id="btnVerifyCode" type="button" onclick="verifyWhatsAppCode()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-sm transition-all active:scale-95 text-sm">الدخول للمنصة</button>
                 <div class="text-center text-[10px] text-gray-500 mt-2">
-                    لم يصلك الرمز؟ <span id="otpCountdown" class="font-bold text-[#25D366]">60</span> ثانية
+                    لم يصلك الرمز؟ <span id="otpCountdown" class="font-bold text-[#25D366]">180</span> ثانية
                     <button id="resendOtpBtn" type="button" onclick="sendWhatsAppCode()" class="block mx-auto mt-2 text-[#25D366] font-bold hover:underline hidden">إعادة إرسال الرمز</button>
                 </div>
             </div>
@@ -811,7 +808,7 @@
         }
 
         function startOtpCountdown() {
-            let timer = 60; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); resendBtn.classList.add('hidden');
+            let timer = 180; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); resendBtn.classList.add('hidden');
             const interval = setInterval(() => { timer--; countEl.innerText = timer; if(timer <= 0) { clearInterval(interval); resendBtn.classList.remove('hidden'); } }, 1000);
         }
 
@@ -850,14 +847,6 @@
             } finally {
                 btn.innerHTML = originalText; btn.disabled = false;
             }
-        }
-
-        function bypassOtpForDev() {
-            verifiedFullPhone = "+966500000000";
-            document.getElementById('otpSection')?.classList.add('hidden');
-            document.getElementById('advancedSearchBtn')?.classList.remove('hidden');
-            localStorage.setItem('verified_user_phone', verifiedFullPhone);
-            loadDashboard(); 
         }
 
         async function fetchDropdownData() {
