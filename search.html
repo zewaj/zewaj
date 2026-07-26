@@ -1143,6 +1143,21 @@
                             }
                         }
 
+                        // 4. تحديد نوع الزواج (خاص/ظروف)
+                        const mTypeParam = urlParams.get('mType');
+                        if (mTypeParam) {
+                            const mTypeMenu = document.getElementById('menu_manual_marriageType');
+                            if (mTypeMenu) {
+                                const checkboxes = mTypeMenu.querySelectorAll('input[type="checkbox"]');
+                                checkboxes.forEach(cb => {
+                                    if (cb.value.includes(mTypeParam)) {
+                                        cb.checked = true;
+                                        cb.dispatchEvent(new Event('change'));
+                                    }
+                                });
+                            }
+                        }
+
                         // تنفيذ البحث بعد اختيار الفلاتر
                         setTimeout(() => {
                             const searchForm = document.getElementById('manualSearchForm');
