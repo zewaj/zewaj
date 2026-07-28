@@ -86,6 +86,33 @@
 
         .fab-button:active { transform: scale(0.95); }
         
+        /* زر البحث الشامل العائم */
+        .fab-search-button { 
+            position: fixed; 
+            bottom: 84px; /* فوق زر الرئيسية بمسافة متناسقة */
+            right: 0; 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 80;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            padding-right: 12px; 
+            padding-left: 16px;
+            max-width: 52px; 
+            overflow: hidden;
+            white-space: nowrap;
+            border-top-left-radius: 9999px;
+            border-bottom-left-radius: 9999px;
+            display: flex;
+            align-items: center;
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+        }
+        
+        .fab-search-button:hover, .fab-search-button.expanded { max-width: 155px; }
+        .fab-search-button span { opacity: 0; max-width: 0; transition: all 0.4s ease; margin-right: 0; font-size: 0; }
+        .fab-search-button:hover span, .fab-search-button.expanded span { opacity: 1; max-width: 95px; margin-right: 8px; font-size: 0.75rem; }
+        .fab-search-button:active { transform: scale(0.95); }
+        
         .sticky-header { position: sticky; top: 0; z-index: 50; }
         
         .accordion-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-out; }
@@ -157,22 +184,25 @@
             
             <h2 id="splashTitle" class="text-lg sm:text-xl font-black text-slate-800 mb-2 leading-tight">مرحباً بكم في منصة<br><span class="text-indigo-600">أبوالعنود</span> | وسيط زواج</h2>
             
-            <!-- شارات التوثيق والموثوقية (مضغوطة وبألوان رسمية) -->
+            <!-- شارات التوثيق والموثوقية (مضغوطة وبألوان هادئة) -->
             <div class="flex flex-col gap-1.5 mb-5 mt-3 px-1 sm:px-4">
-                <div class="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] font-bold text-white bg-[#1e3a8a] px-3 py-1.5 rounded-lg shadow-md border border-[#1e3a8a]">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>وزارة الموارد البشرية والتنمية الاجتماعية</span>
                 </div>
-                <div class="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] font-bold text-white bg-[#1d4ed8] px-3 py-1.5 rounded-lg shadow-md border border-[#1d4ed8]">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div class="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span>وثيقة العمل الحر</span>
                 </div>
             </div>
 
             <div class="flex flex-col gap-2.5">
-                <button id="splashLoginBtn" onclick="closeSplashScreen('login')" class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                <button id="splashNewFamilyBtn" onclick="closeSplashScreen('new_family')" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3 rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-2 text-sm hidden">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    <span>تسجيل فرد أسرة جديد</span>
+                </button>
+                <button id="splashLoginBtn" onclick="closeSplashScreen('login')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
                     <span>دخول وتسجيل</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
                 </button>
                 <button id="splashGuestBtn" onclick="closeSplashScreen('guest')" class="w-full bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold py-2.5 rounded-xl border border-slate-200 transition-colors text-xs">
                     تصفح كزائر
@@ -608,6 +638,11 @@
         <span class="font-bold whitespace-nowrap">الرئيسية</span>
     </button>
 
+    <button id="fabSearchBtn" onclick="loadIframe('search.html')" class="fab-search-button bg-emerald-500 text-white py-3 shadow-[inset_2px_0_10px_rgba(0,0,0,0.1),-5px_0_20px_rgba(16,185,129,0.3)] flex items-center border-y border-l border-emerald-400 hover:bg-emerald-600 transition-all hidden opacity-0 invisible z-[130]">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <span class="font-bold whitespace-nowrap">البحث الشامل</span>
+    </button>
+
     <script>
         function setDocHeight() {
             document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -646,8 +681,10 @@
             const splash = document.getElementById('welcomeSplashScreen');
             const box = document.getElementById('welcomeSplashBox');
             const title = document.getElementById('splashTitle');
-            const loginBtnSpan = document.querySelector('#splashLoginBtn span');
+            const loginBtn = document.getElementById('splashLoginBtn');
+            const loginBtnSpan = loginBtn.querySelector('span');
             const guestBtn = document.getElementById('splashGuestBtn');
+            const newFamilyBtn = document.getElementById('splashNewFamilyBtn');
             const name = localStorage.getItem('verified_user_name');
 
             // إذا كان المستخدم قد دخل مسبقاً في هذه الجلسة، لا تظهر الشاشة
@@ -658,10 +695,16 @@
 
             if (name) {
                 title.innerHTML = `مرحباً بك مجدداً يا <span class="text-indigo-600">${name.split(' ')[0]}</span>`;
-                loginBtnSpan.innerText = 'الدخول للوحة التحكم';
+                loginBtnSpan.innerText = 'الدخول للمنصة';
+                loginBtn.setAttribute('onclick', "closeSplashScreen('dashboard')");
+                newFamilyBtn.classList.remove('hidden');
                 guestBtn.style.display = 'none';
             } else {
                 title.innerHTML = `مرحباً بكم في منصة<br><span class="text-indigo-600">أبوالعنود</span> | وسيط زواج`;
+                loginBtnSpan.innerText = 'دخول وتسجيل';
+                loginBtn.setAttribute('onclick', "closeSplashScreen('login')");
+                newFamilyBtn.classList.add('hidden');
+                guestBtn.style.display = 'block';
             }
 
             splash.classList.remove('hidden');
@@ -682,6 +725,8 @@
                 if(action === 'login') {
                      const phone = localStorage.getItem('verified_user_phone');
                      if(!phone) loadIframe('register.html');
+                } else if (action === 'new_family') {
+                     loadIframe('register.html?mode=new_member');
                 }
             }, 500);
         };
@@ -798,6 +843,7 @@
         // --- تأثير الزر الجداري (الرئيسية) الدرج ---
         function startFabHomePulse() {
             const btn = document.getElementById('fabHomeBtn');
+            const searchBtn = document.getElementById('fabSearchBtn');
             if (!btn) return;
             if (fabHomeInterval) clearInterval(fabHomeInterval);
             
@@ -807,6 +853,15 @@
                     setTimeout(() => {
                         btn.classList.remove('expanded');
                     }, 3000);
+                }
+                // حركة زر البحث بعد زر الرئيسية بثانية
+                if (searchBtn && searchBtn.style.display !== 'none' && !searchBtn.classList.contains('opacity-0')) {
+                    setTimeout(() => {
+                        searchBtn.classList.add('expanded');
+                        setTimeout(() => {
+                            searchBtn.classList.remove('expanded');
+                        }, 3000);
+                    }, 1000); 
                 }
             }, 45000); 
         }
@@ -932,6 +987,16 @@
                         fabHome.classList.remove('opacity-0', 'invisible');
                         fabHome.classList.add('opacity-100', 'visible');
                     }, 10);
+                    
+                    const fabSearch = document.getElementById('fabSearchBtn');
+                    const iframeSrc = document.getElementById('appIframe').src || '';
+                    if (fabSearch && !iframeSrc.includes('search.html')) {
+                        fabSearch.style.display = 'flex';
+                        setTimeout(() => {
+                            fabSearch.classList.remove('opacity-0', 'invisible');
+                            fabSearch.classList.add('opacity-100', 'visible');
+                        }, 10);
+                    }
                 }
                 
             } else {
@@ -1001,6 +1066,13 @@
             fabHome.classList.add('opacity-0', 'invisible');
             setTimeout(() => fabHome.style.display = 'none', 300);
             
+            const fabSearch = document.getElementById('fabSearchBtn');
+            if (fabSearch) {
+                fabSearch.classList.remove('opacity-100', 'visible');
+                fabSearch.classList.add('opacity-0', 'invisible');
+                setTimeout(() => fabSearch.style.display = 'none', 300);
+            }
+            
             document.getElementById('mainBody').classList.add('pb-10'); 
             document.getElementById('mainBody').style.overflow = 'auto'; 
             toggleSideMenu(true); 
@@ -1028,6 +1100,19 @@
                 setTimeout(() => {
                     fabHome.classList.remove('opacity-0', 'invisible');
                     fabHome.classList.add('opacity-100', 'visible');
+                }, 10);
+            }
+            
+            const fabSearch = document.getElementById('fabSearchBtn');
+            if (url.includes('search.html')) {
+                fabSearch.classList.remove('opacity-100', 'visible');
+                fabSearch.classList.add('opacity-0', 'invisible');
+                setTimeout(() => { fabSearch.style.display = 'none'; }, 300);
+            } else {
+                fabSearch.style.display = 'flex';
+                setTimeout(() => {
+                    fabSearch.classList.remove('opacity-0', 'invisible');
+                    fabSearch.classList.add('opacity-100', 'visible');
                 }, 10);
             }
             
