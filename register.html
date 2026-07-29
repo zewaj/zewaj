@@ -369,7 +369,7 @@
                             <input type="hidden" id="age" value="">
                         </div>
                         <div class="grid grid-cols-2 gap-3 sm:gap-4">
-                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الطول <span class="text-red-500">*</span></label><input type="number" id="height" required min="120" max="250" oninput="validateRealTime(this, 120, 250, 'الطول غير منطقي'); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="مثال: 172"><p class="text-red-500 text-[10px] font-bold mt-1 hidden"></p></div>
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الط الطول <span class="text-red-500">*</span></label><input type="number" id="height" required min="120" max="250" oninput="validateRealTime(this, 120, 250, 'الطول غير منطقي'); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="مثال: 172"><p class="text-red-500 text-[10px] font-bold mt-1 hidden"></p></div>
                             <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الوزن <span class="text-red-500">*</span></label><input type="number" id="weight" required min="40" max="200" oninput="validateRealTime(this, 40, 200, 'الوزن غير منطقي'); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm" placeholder="مثال: 68"><p class="text-red-500 text-[10px] font-bold mt-1 hidden"></p></div>
                         </div>
                         <div>
@@ -1679,8 +1679,16 @@
 
                 setVal('specialInfo', data.secretInfo || '');
                 const savedAddInfo = data.additionalInfo || ''; let cleanAddInfo = savedAddInfo;
-                if (data.gender === 'أنثى' && savedAddInfo.includes('[مواصفات الشكل:')) { const specMatch = savedAddInfo.match(/\[مواصفات الشكل:\s*(.*?)\]\s*-\s*(.*)/); if (specMatch) cleanAddInfo = specMatch[2]; }
+                
+                // تنظيف صارم لأي بيانات سابقة تخص الشكل (سواء كانت مكتوبة بـ "مواصفات الشكل" القديمة أو "الشكل" الجديدة)
+                if (data.gender === 'أنثى') {
+                    cleanAddInfo = cleanAddInfo.replace(/\[(?:الشكل|مواصفات الشكل):\s*.*?\]\s*(?:-\s*)?/g, '').trim();
+                }
+                
                 document.querySelectorAll('input[name="myInfoTags"]').forEach(cb => { if (savedAddInfo.includes(cb.value)) { cb.checked = true; cleanAddInfo = cleanAddInfo.replace(cb.value, '').replace(' | ', '').replace('، ', '').trim(); } });
+                
+                // تنظيف إضافي للشرطات الزائدة في البداية إن وجدت بسبب الحذف
+                cleanAddInfo = cleanAddInfo.replace(/^(?:-\s*|\|\s*)+/, '').trim();
                 setVal('additionalInfo', cleanAddInfo);
 
                 const savedPartner = data.partnerSpecs || ''; let cleanPartner = savedPartner;
@@ -1988,9 +1996,15 @@
             const jobSelectVal = document.getElementById('jobStatus').value; const finalJob = (jobSelectVal === 'أخرى') ? document.getElementById('customJob').value : jobSelectVal;
             let finalAdditionalInfo = getCombinedAddInfo();
             if (!isMale) {
+                // التنظيف النهائي قبل الإرسال لضمان عدم التكرار أبداً
+                finalAdditionalInfo = finalAdditionalInfo.replace(/\[(?:الشكل|مواصفات الشكل):\s*.*?\]\s*(?:-\s*)?/g, '').trim();
+                finalAdditionalInfo = finalAdditionalInfo.replace(/^(?:-\s*|\|\s*)+/, '').trim();
+
                 const hLen = document.getElementById('hairLength').value; const hTex = document.getElementById('hairTexture').value; const bShape = document.getElementById('bodyShape').value;
                 let pSpecs = []; if (hLen || hTex) pSpecs.push(`الشعر: ${hLen || ''} ${hTex ? '('+hTex+')' : ''}`.trim()); if (bShape) pSpecs.push(`الجسم: ${bShape}`);
-                if (pSpecs.length > 0) { finalAdditionalInfo = `[الشكل: ${pSpecs.join(' | ')}] - ` + finalAdditionalInfo; }
+                if (pSpecs.length > 0) { 
+                    finalAdditionalInfo = finalAdditionalInfo.length > 0 ? `[الشكل: ${pSpecs.join(' | ')}] - ` + finalAdditionalInfo : `[الشكل: ${pSpecs.join(' | ')}]`;
+                }
             }
 
             const payloadData = {
