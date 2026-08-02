@@ -1395,7 +1395,7 @@
             let itemsHtml = '';
             recentArr.forEach(item => { const isFemale = item.gender === 'أنثى' || item.gender === 'نساء' || item.sheetName === 'طلبات_النساء'; const colorClass = isFemale ? 'text-pink-600 hover:text-pink-800' : 'text-blue-600 hover:text-blue-800'; itemsHtml += `<span class="cursor-pointer mx-6 transition-colors ${colorClass} hover:underline" onclick="openProfileModal(window.currentCandidatesData['${item.refId}'], 'تفاصيل ملف', 'معلومات الملف رقم #${item.refId}')">${item.tickerText}</span>`; });
             const separator = `<span class="mx-8 text-indigo-400 font-black text-[10px] tracking-wide">✨ أبو العنود لوساطة الزواج ✨</span>`; const fullSet = itemsHtml + separator; ticker.innerHTML = fullSet + fullSet;
-            if(!window.currentCandidatesData) window.currentCandidatesData = {}; recentArr.forEach(item => { window.currentCandidatesData[item.refId] = { refId: item.refId, gender: item.gender, autoBio: item.autoBio, nationality: item.nationality || '' }; });
+            if(!window.currentCandidatesData) window.currentCandidatesData = {}; recentArr.forEach(item => { window.currentCandidatesData[item.refId] = { refId: item.refId, gender: item.gender, autoBio: item.autoBio, shortBio: item.shortBio, nationality: item.nationality || '' }; });
         }
 
         function renderFeaturedCards(featuredArr) {
@@ -1409,7 +1409,7 @@
             if(featuredArr && featuredArr.length > 0) {
                 featuredArr.forEach(item => {
                     const isFemale = item.gender === 'أنثى'; const bgColors = isFemale ? 'bg-gradient-to-br from-white to-pink-50/30 border-slate-200 hover:border-pink-300' : 'bg-gradient-to-br from-white to-indigo-50/30 border-slate-200 hover:border-indigo-300'; const titleColor = isFemale ? 'text-pink-700' : 'text-indigo-700'; const badgeColor = isFemale ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'; const icon = isFemale ? femaleSVG : maleSVG;
-                    window.currentCandidatesData[item.refId] = { refId: item.refId, gender: item.gender, autoBio: item.autoBio, nationality: item.nationality || '' };
+                    window.currentCandidatesData[item.refId] = { refId: item.refId, gender: item.gender, autoBio: item.autoBio, shortBio: item.shortBio, nationality: item.nationality || '' };
                     
                     const isFav = cachedFavs.includes(item.refId.toString());
                     const isReq = cachedReqs.includes(item.refId.toString());
