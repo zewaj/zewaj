@@ -1285,7 +1285,7 @@
                 }
 
                 const percentageDisplay = 'يدوي';
-                const encodedBriefWA = encodeURIComponent(generateBriefText(match, targetGender, safeRefId, targetGender === 'أنثى' ? '👰🏻' : '🧔🏻‍♂️'));
+                const encodedBriefWA = encodeURIComponent(match.shortBio || '');
 
                 const currentUserGender = localStorage.getItem('verified_user_gender');
                 let interactionButtonsHTML = '';
@@ -1467,20 +1467,10 @@
             let profileGender = data.gender || data.Gender || data['الجنس'];
             if (!profileGender) { profileGender = window.lastSearchedGender; }
 
-            const getV = (key1, key2, key3) => data[key1] || data[key2] || data[key3] || '---';
-            const nationality = getV('nationality', 'Nationality', 'الجنسية');
             const refId = data.refId || data.RefId || data.refID || 'غير محدد';
-            const genderEmoji = profileGender === 'أنثى' ? '👰🏻' : '🧔🏻‍♂️';
 
-            let rawBio = getV('autoBio', 'bio', 'النبذة');
-            let detailedBioText = "";
-
-            if (rawBio && rawBio.trim() !== '' && rawBio !== '---' && rawBio !== 'غير محدد') {
-                let cleanedBio = cleanAndFormatBio(rawBio, nationality);
-                detailedBioText = `> ملف ${genderEmoji} رقم: #${refId}\n` + cleanedBio;
-            } else { detailedBioText = generateBriefText(data, profileGender, refId, genderEmoji); }
-            
-            let briefBioText = generateBriefText(data, profileGender, refId, genderEmoji);
+            let detailedBioText = data.autoBio || '';
+            let briefBioText = data.shortBio || '';
             
             window.currentCleanBio = detailedBioText; 
             const encodedDetailedBio = encodeURIComponent(detailedBioText);
@@ -1682,12 +1672,9 @@
 
                 fullText += `النتيجة رقم ${counter}:\n`;
                 if (formatType === 'brief') {
-                    fullText += generateBriefText(candidate, targetGender, refId, genderEmoji) + "\n=====================\n\n";
+                    fullText += (candidate.shortBio || "") + "\n=====================\n\n";
                 } else {
-                    fullText += `> ملف ${genderEmoji} رقم: #${refId}\n`;
-                    const rawBio = candidate.autoBio || candidate.bio || candidate.Bio || candidate['نبذة عني'] || candidate['نبذة'] || "";
-                    const nat = candidate.nationality || candidate.Nationality || "";
-                    fullText += cleanAndFormatBio(rawBio, nat) + "\n=====================\n\n";
+                    fullText += (candidate.autoBio || "") + "\n=====================\n\n";
                 }
                 counter++;
             }
