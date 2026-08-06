@@ -777,6 +777,7 @@
                     localStorage.setItem('cached_requested_ids', JSON.stringify(reqIdsOnly));
                     
                     localStorage.setItem('user_balance', result.balance !== undefined ? result.balance : 3); 
+                    localStorage.setItem('active_profile_status', result.profileStatus || 'نشط'); // حفظ حالة الملف
                     updateAuthUI(); 
                     
                     if(document.getElementById('unifiedProfileModal') && !document.getElementById('unifiedProfileModal').classList.contains('hidden')){
@@ -1343,6 +1344,8 @@
             
             const userPhone = localStorage.getItem('verified_user_phone');
             const activeProfileRefId = localStorage.getItem('active_profile_refid');
+            const activeProfileStatus = localStorage.getItem('active_profile_status'); // جلب حالة الملف
+            
             if (!userPhone) { 
                 let gender = 'غير محدد';
                 if(window.currentCandidatesData && window.currentCandidatesData[refId]) {
@@ -1352,6 +1355,12 @@
                 return; 
             }
             if (!activeProfileRefId) { openLoginRequiredModal(); return; }
+            
+            // تحقق من حالة الملف (منع التواصل إذا كان قيد المراجعة)
+            if (activeProfileStatus === 'قيد المراجعة' || activeProfileStatus === 'انتظار') {
+                showToast("عفواً، ملفك حالياً قيد المراجعة من الإدارة. يمكنك استعراض المطابقات، وسيتم تفعيل طلب التواصل فور الاعتماد.", "error");
+                return;
+            }
             
             // إظهار نافذة الإطلاق التجريبي الهادئة بدون زر واتساب إضافي
             const modal = document.getElementById('betaContactModal');
