@@ -600,11 +600,18 @@
             const urlPhone = urlParams.get('phone');
             const urlRefId = urlParams.get('refId');
             const urlGender = urlParams.get('gender');
+            const urlStatus = urlParams.get('status');
 
             const tempPhone = localStorage.getItem('temp_user_phone') || urlPhone;
             const tempRefId = localStorage.getItem('temp_user_refid') || urlRefId;
             const tempGender = localStorage.getItem('temp_user_gender') || urlGender;
+            
+            window.userProfileStatus = urlStatus || localStorage.getItem('temp_user_status') || '';
+            if (urlStatus) {
+                localStorage.setItem('temp_user_status', urlStatus);
+            }
 
+            // إذا كانت الصفحة داخل إطار (iFrame) وتلقت البيانات، نُخفي عناصر الإدخال فوراً
             if (isIframe && tempPhone && tempRefId) {
                 document.body.classList.add('in-iframe');
             }
@@ -647,6 +654,7 @@
             localStorage.removeItem('temp_user_phone');
             localStorage.removeItem('temp_user_refid');
             localStorage.removeItem('temp_user_gender');
+            localStorage.removeItem('temp_user_status');
             localStorage.removeItem('cached_favorites');
             localStorage.removeItem('cached_requested_ids');
             window.location.reload();
@@ -688,7 +696,8 @@
                     skinColor: result.userData.skinColor || result.userData.SkinColor,
                     monthlyIncome: result.userData.monthlyIncome || result.userData.MonthlyIncome,
                     acceptsPolygamy: result.userData.acceptsPolygamy || result.userData.acceptMarried || result.userData.AcceptMarried,
-                    autoBio: result.userData.autoBio || result.userData.bio || result.userData['نبذة عني'] || result.userData['النبذة'] || result.userData.Bio || ""
+                    autoBio: result.userData.autoBio || result.userData.bio || result.userData['نبذة عني'] || result.userData['النبذة'] || result.userData.Bio || "",
+                    profileStatus: result.userData.profileStatus || result.userData.ProfileStatus || ""
                 };
                 
                 welcomeName.innerText = window.myUserData.name || `#${window.myUserData.refId}`;
@@ -1082,6 +1091,15 @@
         }
 
         function requestContact(refId) {
+            const status = window.userProfileStatus || (window.myUserData ? window.myUserData.profileStatus : '');
+            if (status) {
+                const decodedStatus = decodeURIComponent(status).replace(/_/g, ' ');
+                if (decodedStatus === 'قيد المراجعة' || decodedStatus === 'انتظار' || decodedStatus.includes('مراجعة') || decodedStatus.includes('انتظار')) {
+                    showToast("عفواً، ملفك حالياً قيد المراجعة من الإدارة. يمكنك استعراض المطابقات، وسيتم تفعيل خاصية طلب التواصل فور اعتماد ملفك.", "error");
+                    return false;
+                }
+            }
+
             if (window.self !== window.top) {
                 window.top.postMessage({ type: 'requestContact', refId: refId }, '*');
                 return; 
