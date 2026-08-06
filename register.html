@@ -60,13 +60,19 @@
         .group-pill input[type="radio"]:checked + label { background-color: #059669; color: white; }
     </style>
 </head>
-<body class="py-4 sm:py-8 text-gray-800 relative min-h-screen flex flex-col items-center">
+<body class="py-0 sm:py-0 text-gray-800 relative min-h-screen flex flex-col items-center">
+    
+    <div id="adminBanner" class="hidden w-full bg-orange-500 text-white text-sm font-bold text-center py-2.5 px-4 shadow-md z-[110] relative flex-col sm:flex-row justify-center items-center gap-3">
+        <span>⚠️ وضع الإدارة: التحكم بملفات العميل (<span id="adminBannerPhone" class="font-mono font-bold" dir="ltr"></span>)</span>
+        <button onclick="exitAdminMode()" class="bg-white/20 hover:bg-white/30 text-white font-bold py-1 px-4 rounded-full border border-white/40 transition-all text-xs shadow-sm">إنهاء الإدارة</button>
+    </div>
+
     <div id="syncBanner" class="fixed top-0 left-0 right-0 z-[100] bg-blue-600 text-white text-xs font-bold text-center py-1.5 transition-transform transform -translate-y-full flex items-center justify-center gap-2 shadow-md">
         <svg class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         <span id="syncText">جاري التحديث...</span>
     </div>
 
-    <div id="advancedSearchBtn" class="fixed top-4 left-4 z-[90] fade-in hidden sm:block">
+    <div id="advancedSearchBtn" class="fixed top-4 left-4 z-[90] fade-in hidden sm:block mt-8 sm:mt-0">
         <a href="engine.html?mode=manual" class="bg-white/90 backdrop-blur text-indigo-700 hover:bg-indigo-50 font-bold text-sm py-2 px-4 rounded-full border border-indigo-200 transition-colors shadow-lg flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             البحث المتقدم
@@ -84,7 +90,6 @@
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 </div>
                 <h2 class="text-lg font-bold text-gray-900 mb-1">تسجيل الدخول / طلب جديد</h2>
-                <p class="text-[11px] sm:text-xs text-gray-500">أدخل رقمك المرتبط بالواتساب للمتابعة</p>
             </div>
 
             <div id="otpStep1" class="space-y-4">
@@ -106,7 +111,7 @@
                 <div class="bg-emerald-50 border-2 border-emerald-400/40 rounded-xl p-3 shadow-sm relative overflow-hidden mb-2">
                     <div class="absolute inset-0 bg-emerald-400/10 animate-pulse"></div>
                     <p class="text-[11px] sm:text-xs font-bold text-center text-emerald-900 relative z-10 leading-relaxed">
-                        <span class="text-sm">⚠️</span> تنبيه: كود الدخول يصلك في <span class="text-emerald-600 font-extrabold text-[13px] bg-emerald-100 px-1 rounded">رسالة واتساب</span> وليس رسالة نصية (SMS).
+                        <span class="text-sm">⚠️</span> تنبيه: كود الدخول يصلك في <span class="text-emerald-600 font-extrabold text-[13px] bg-emerald-100 px-1 rounded">رسالة واتساب</span><br><span class="text-[10px] text-emerald-700">(وليس رسالة نصية SMS)</span>
                     </p>
                 </div>
                 
@@ -128,7 +133,7 @@
     </div>
 
     <!-- ==================== ثانياً: لوحة تحكم العائلة ==================== -->
-    <div id="dashboardSection" class="w-full hidden fade-in flex-1">
+    <div id="dashboardSection" class="w-full hidden fade-in flex-1 pt-4 sm:pt-8">
         <div id="profilesLoading" class="hidden flex-col items-center justify-center py-24 bg-transparent w-full fade-in">
             <div class="relative flex items-center justify-center mb-8 h-20 w-32">
                 <div class="w-16 h-16 rounded-full border-[5px] border-indigo-200 animate-[ping_2s_ease-in-out_infinite] absolute left-2 opacity-60"></div>
@@ -147,7 +152,7 @@
                         <span>🪙 رصيد التواصل: <span id="walletBalanceText">--</span></span>
                     </div>
 
-                    <button onclick="logout()" title="تسجيل خروج" class="flex items-center justify-center p-2 sm:p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm shadow-sm transition-all focus:ring-2 focus:ring-white/50 relative z-30">
+                    <button onclick="logout()" title="تسجيل خروج" id="dashboardLogoutBtn" class="flex items-center justify-center p-2 sm:p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm shadow-sm transition-all focus:ring-2 focus:ring-white/50 relative z-30">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
                 </div>
@@ -168,11 +173,13 @@
                                     <span id="familyToggleBadge" class="hidden absolute -top-1 -right-1 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span></span>
                                 </div>
                             </div>
-                            <span id="headerAccountRel" class="text-[10px] font-bold text-gray-600 bg-white/70 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-gray-200 shadow-sm shrink-0 hidden mr-3"></span>
+                            <div class="flex items-center gap-2 mr-3">
+                                <span id="headerAccountRel" class="text-[10px] font-bold text-gray-600 bg-white/70 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-gray-200 shadow-sm shrink-0 hidden"></span>
+                                <span id="headerAccountStatus" class="text-[10px] font-bold text-orange-700 bg-orange-100/90 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-orange-300 shadow-sm shrink-0 hidden"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- شريط العائلة مفتوح دائماً وتظهر فيه بطاقة "إضافة فرد" -->
                     <div id="familyCarouselWrapper" class="w-full mt-1 mb-3 fade-in bg-gray-50/80 p-2 rounded-2xl border border-gray-100 shadow-inner">
                         <div class="flex justify-between items-center px-1 mb-1.5">
                             <h4 class="text-[10px] font-bold text-gray-500">اختر الملف المطلوب للتبديل:</h4>
@@ -196,31 +203,40 @@
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center bg-gray-50/80 p-2 rounded-2xl border border-gray-100 gap-2">
-                        <!-- زر تعديل البيانات البارز -->
-                        <button onclick="handleHeroAction('edit')" class="flex-1 flex items-center justify-center gap-2 p-2.5 text-amber-600 bg-white hover:bg-amber-50 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 font-bold text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    <!-- أزرار الإجراءات السفلية في لوحة العائلة -->
+                    <div class="flex justify-between items-center bg-gray-50/80 p-2 rounded-2xl border border-gray-100 gap-1.5 sm:gap-2">
+                        <!-- زر تعديل البيانات -->
+                        <button onclick="handleHeroAction('edit')" class="flex-1 flex items-center justify-center gap-1.5 p-2 text-amber-600 bg-white hover:bg-amber-50 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 font-bold text-xs sm:text-sm whitespace-nowrap">
+                            <svg class="w-4 h-4 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             تعديل البيانات
                         </button>
-                        <!-- زر المشاركة -->
-                        <button onclick="shareFromHero()" class="p-2.5 text-[#25D366] bg-white hover:bg-[#25D366]/10 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-[#25D366]/50" title="إرسال للوسيط">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                        
+                        <!-- زر الواتساب الفاتح (للنبذة المختصرة) -->
+                        <button onclick="shareFromHero('short')" class="flex items-center justify-center gap-1 p-2 text-[#059669] bg-[#25D366]/10 hover:bg-[#25D366]/20 rounded-xl border border-emerald-200/50 shadow-sm transition-all focus:ring-2 focus:ring-[#25D366]/50" title="إرسال النبذة المختصرة للإدارة">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                            <span class="text-[9px] sm:text-[10px] font-bold">مختصرة</span>
                         </button>
+
+                        <!-- زر الواتساب الغامق (للنبذة الكاملة) -->
+                        <button onclick="shareFromHero('full')" class="flex items-center justify-center gap-1 p-2 text-white bg-[#059669] hover:bg-[#047857] rounded-xl shadow-sm transition-all focus:ring-2 focus:ring-[#047857]/50" title="إرسال النبذة الكاملة للإدارة">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                            <span class="text-[9px] sm:text-[10px] font-bold">كاملة</span>
+                        </button>
+
                         <!-- زر الحذف -->
-                        <button onclick="askDeleteConfirmHero()" class="p-2.5 text-red-500 bg-white hover:bg-red-50 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-red-200" title="حذف">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <button onclick="askDeleteConfirmHero()" class="p-2.5 text-red-500 bg-white hover:bg-red-50 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-red-200 shrink-0" title="حذف الطلب">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="flex border-b border-gray-200 mt-6 w-full max-w-3xl mx-auto overflow-x-auto hide-scroll rounded-t-xl bg-gray-50/50">
+            <div id="tabsContainer" class="flex border-b border-gray-200 mt-6 w-full max-w-3xl mx-auto overflow-x-auto hide-scroll rounded-t-xl bg-gray-50/50">
                 <button id="tabBtn-smart" onclick="switchTab('smart')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5"><span class="text-sm sm:text-base">🤖</span> المرشحين</button>
                 <button id="tabBtn-favorites" onclick="switchTab('favorites')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5"><span class="text-amber-500 text-sm sm:text-base">⭐️</span> مفضلاتي</button>
                 <button id="tabBtn-requests" onclick="switchTab('requests')" class="flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 relative"><span class="text-blue-500 text-sm sm:text-base">💬</span> طلباتي <span id="mainTabReqBadge" class="hidden absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex h-2 sm:h-2.5 w-2 sm:w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-red-500"></span></span></button>
             </div>
 
-            <!-- الحاوية المُوسعة لمنع اختناق الإطار مع تحديد الحد الأدنى للارتفاع -->
             <div id="contentContainer" class="w-full mt-6 pb-32 mb-10 px-4 md:px-0 max-w-5xl mx-auto">
                 <iframe id="contentIframe" class="w-full border-0 bg-transparent rounded-2xl overflow-hidden min-h-[600px] block" scrolling="no" src=""></iframe>
             </div>
@@ -229,8 +245,8 @@
     </div>
 
     <!-- ==================== ثالثاً: نموذج تسجيل البيانات ==================== -->
-    <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-12 mt-2 flex-1 max-w-3xl">
-        <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 mb-4 sm:mb-6">
+    <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-12 mt-2 flex-1 max-w-3xl pt-4 sm:pt-6">
+        <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 mb-4 sm:mb-6 mt-6 sm:mt-0">
             <div class="w-full bg-gray-200 h-1.5 overflow-hidden"><div id="progressBar" class="bg-emerald-600 h-1.5 progress-bar" style="width: 20%"></div></div>
             <div class="flex justify-between items-center px-4 sm:px-6 py-2.5 text-xs font-bold text-gray-500">
                 <span id="progressText">الخطوة 1 من 5</span>
@@ -247,7 +263,7 @@
             <div class="flex items-center justify-center gap-3 mt-2">
                 <button onclick="loadDashboard()" class="text-indigo-600 text-xs font-bold hover:underline">العودة للوحة العائلة</button>
                 <span class="text-gray-300">|</span>
-                <button onclick="logout()" class="text-gray-500 hover:text-red-500 text-xs font-bold hover:underline flex items-center gap-1 transition-colors">خروج</button>
+                <button onclick="logout()" id="formLogoutBtn" class="text-gray-500 hover:text-red-500 text-xs font-bold hover:underline flex items-center gap-1 transition-colors">خروج</button>
             </div>
         </div>
 
@@ -408,10 +424,10 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">التعليم <span class="text-red-500">*</span></label><select id="education" required onchange="clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- اختر --</option></select></div>
                             <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">الوظيفة <span class="text-red-500">*</span></label><select id="jobStatus" required onchange="handleJobChange(); clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select><input type="text" id="customJob" class="hidden mt-2 w-full p-2.5 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="اكتب مسمى الوظيفة..."></div>
-                            <div id="incomeDiv" class="hidden fade-in"><label class="block text-xs font-semibold text-gray-700 mb-1.5">الدخل الشهري <span class="text-red-500">*</span></label><select id="monthlyIncome" onchange="clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد النطاق --</option><option value="ثري جدا (50,000 ريال فأكثر)">ثري جدا (50,000 ريال فأكثر)</option><option value="دخل عالي (30,000 ريال فأكثر)">دخل عالي (30,000 ريال فأكثر)</option><option value="متوسط مرتفع (15,000 إلى 30,000 ريال)">متوسط مرتفع (15,000 إلى 30,000 ريال)</option><option value="متوسط (10,000 إلى 15,000 ريال)">متوسط (10,000 إلى 15,000 ريال)</option><option value="دخل محدود (4,000 إلى 10,000 ريال)">دخل محدود (4,000 إلى 10,000 ريال)</option><option value="دخل ضعيف ( أقل من 4,000 ريال)">دخل ضعيف ( أقل من 4,000 ريال)</option><option value="لا يوجد دخل">لا يوجد دخل</option></select></div>
+                            <div id="incomeDiv" class="hidden fade-in"><label class="block text-xs font-semibold text-gray-700 mb-1.5">الدخل الشهري <span class="text-red-500">*</span></label><select id="monthlyIncome" onchange="clearLiveError(this);" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-sm"><option value="" disabled selected>-- حدد النطاق --</option><option value="ثري جدا (50,000 ريال فأكثر)">ثري جدا (50,000 ريال فأكثر)</option><option value="دخل عالي (30,000 ريال فأكثر)">دخل عالي (30,000 ريال فأكثر)</option><option value="متوسط مرتفع (15,000 إلى 30,000 ريال)">متوسط مرتفع (15,000 إلى 30,000 ريال)</option><option value="متوسط (10,000 إلى 15,000 ريال)">متوسط (10,000 إلى 15,000 ريال)</option><option value="دخل محدود (4,000 إلى 10,000 ريال)">دخل محدود (4,000 إلى 10,000 ريال)</option><option value="دخل ضعيف ( أقل من 5,000 ريال)">دخل ضعيف ( أقل من 5,000 ريال)</option><option value="لا يوجد دخل">لا يوجد دخل</option></select></div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">رقم التوثيق</label><input type="text" id="finalPhoneDisplay" readonly class="w-full p-2.5 sm:p-3 border border-gray-200 bg-gray-100 rounded-xl text-left font-mono font-bold text-gray-600 cursor-not-allowed text-sm" dir="ltr"></div>
+                            <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">رقم التوثيق</label><input type="tel" id="finalPhoneDisplay" readonly class="w-full p-2.5 sm:p-3 border border-gray-200 bg-gray-100 rounded-xl text-left font-mono font-bold text-gray-600 cursor-not-allowed text-sm transition-all" dir="ltr"></div>
                             <div><label class="block text-xs font-semibold text-gray-700 mb-1.5">معلومات سرية (للإدارة فقط)</label><textarea id="specialInfo" rows="1" class="w-full p-2.5 sm:p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-sm" placeholder="ظروف عائلية أو صحية خاصة..."></textarea></div>
                         </div>
                         <div class="bg-blue-50/50 border border-blue-100 p-3 sm:p-4 rounded-xl"><label class="block text-xs font-semibold text-blue-900 mb-2">معلومات إضافية عني <span class="text-[10px] font-normal text-blue-600">(خيارات سريعة)</span></label><div id="myTagsContainer" class="flex flex-wrap gap-1.5 mb-2.5"></div><textarea id="additionalInfo" rows="2" class="w-full p-2.5 border border-blue-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 resize-none text-sm" placeholder="أو اكتب ما تود إضافته بنفسك..."></textarea></div>
@@ -441,7 +457,7 @@
     </div>
 
     <!-- ==================== النافذة المنبثقة للشروط ==================== -->
-    <div id="termsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center p-4 fade-in">
+    <div id="termsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
                 <h3 class="text-base font-bold text-white flex items-center gap-1.5">
@@ -473,30 +489,27 @@
         </div>
     </div>
 
-    <!-- ==================== شاشة النجاح ==================== -->
-    <div id="successSection" class="max-w-md mx-auto hidden fade-in my-8 sm:my-12 px-4">
-        <div class="text-center py-3 px-2 rounded-xl font-bold bg-green-50 text-green-800 border border-green-200 shadow-sm mb-4 flex items-center justify-center gap-2">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="text-sm">تم اعتماد الطلب بنجاح!</span>
-        </div>
-
-        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-4 text-center shadow-md">
-            <p class="text-[11px] sm:text-xs font-bold text-emerald-800 mb-3 leading-relaxed">يرجى إرسال ملفك الآن لوسيط الزواج (أبو العنود) للأهمية.</p>
-            <button onclick="sendToBroker()" class="w-full bg-[#059669] hover:bg-[#047857] text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-transform transform active:scale-95 flex items-center justify-center gap-2 mx-auto text-sm whatsapp-glow">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                <span>أرسل للاعتماد (واتساب)</span>
-            </button>
-            
-            <div class="mt-4 pt-3 border-t border-emerald-200">
-                <button id="engineSmartBtn" onclick="goToSmartEngine()" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-500 font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 mx-auto transition-all text-sm">
-                    <span>شاهد المرشحين لك</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                </button>
+    <!-- النافذة المنبثقة الإجبارية للاعتماد النهائي -->
+    <div id="finalActionModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[130] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative overflow-hidden border border-emerald-100">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">تم الحفظ بنجاح! 🎉</h3>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 text-center">
+                <p class="text-xs font-bold text-red-700 leading-relaxed">
+                    خطوة أخيرة هامة جداً:<br>يجب إرسال ملفك الآن للإدارة لاعتماده، وبدون هذه الخطوة لن يظهر ملفك للمشتركين.
+                </p>
+            </div>
+            <button onclick="executeFinalWhatsAppSync();" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mb-3 whatsapp-glow">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                <span class="text-sm">أرسل للاعتماد (واتساب)</span>
+            </button>
         </div>
     </div>
 
-    <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+    <!-- رسائل وتنبيهات النظام -->
+    <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl transform transition-all text-center">
             <h3 id="msgModalTitle" class="text-base font-bold text-gray-900 mb-1.5">تنبيه</h3>
             <p id="msgModalText" class="text-[11px] text-gray-600 mb-4 leading-relaxed"></p>
@@ -504,7 +517,7 @@
         </div>
     </div>
 
-    <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[140] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl text-center">
             <div id="confirmModalIconWrapper" class="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg id="confirmModalIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -518,7 +531,6 @@
         </div>
     </div>
 
-    <!-- نافذة سؤال تسجيل فرد جديد (التي تظهر تلقائياً) -->
     <div id="newMemberPromptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-hidden">
             <div class="w-16 h-16 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -539,63 +551,38 @@
         </div>
     </div>
 
-    <!-- النافذة الجديدة لخيارات إضافة فرد (جديد أو منسوخ) -->
     <div id="addMemberOptionsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl relative overflow-hidden">
+            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </div>
             <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">إضافة فرد جديد</h3>
-            <p class="text-xs text-gray-600 mb-5 text-center leading-relaxed">كيف تود إضافة الملف الجديد؟</p>
             
-            <div class="flex flex-col gap-3">
-                <!-- خيار جديد كلياً -->
-                <button onclick="startNewMemberBlank()" class="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-indigo-50 hover:border-indigo-300 transition-all text-right group">
-                    <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    </div>
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm">ملف جديد كلياً</div>
-                        <div class="text-[10px] text-gray-500">إدخال بيانات جديدة من الصفر</div>
-                    </div>
-                </button>
-                
-                <!-- خيار النسخ (إنشاء مشابه) -->
-                <button onclick="startNewMemberCopy()" class="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-emerald-50 hover:border-emerald-300 transition-all text-right group">
-                    <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                    </div>
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm" id="copyMemberBtnText">نسخ بيانات (الاسم)</div>
-                        <div class="text-[10px] text-gray-500">استنساخ الأصول والمكان لتوفير الوقت</div>
-                    </div>
-                </button>
-            </div>
-            
-            <button onclick="closeAddMemberOptionsModal()" class="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-colors text-sm">إلغاء</button>
-        </div>
-    </div>
-
-    <!-- النافذة المنبثقة الإجبارية للاعتماد النهائي -->
-    <div id="finalActionModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[120] hidden flex items-center justify-center p-4 fade-in">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative overflow-hidden border border-emerald-100">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">تم الحفظ بنجاح! 🎉</h3>
-            <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 text-center">
-                <p class="text-xs font-bold text-red-700 leading-relaxed">
-                    خطوة أخيرة هامة جداً:<br>يجب إرسال ملفك الآن للإدارة لاعتماده، وبدون هذه الخطوة لن يظهر ملفك للمشتركين.
+            <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-5 text-center">
+                <p class="text-[11px] sm:text-xs text-amber-800 font-bold leading-relaxed">
+                    تنبيه: إضافة ملف جديد تتم تحت مسؤوليتك. يُرجى العلم أنه يُسمح فقط بإضافة الأقارب من الدرجة الأولى (الأب، الأم، الأبناء، الإخوة والأخوات).
                 </p>
             </div>
-            <button onclick="sendToBroker(); closeFinalActionModal();" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mb-3 whatsapp-glow">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                <span class="text-sm">أرسل للاعتماد (واتساب)</span>
-            </button>
-            <button onclick="closeFinalActionModal()" class="text-[11px] text-gray-500 font-bold hover:text-gray-700 hover:underline">سأقوم بالإرسال لاحقاً</button>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="startNewMemberBlank()" class="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-md group font-bold text-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    البدء بتسجيل الملف
+                </button>
+            </div>
+            
+            <button onclick="closeAddMemberOptionsModal()" class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-colors text-sm">تراجع</button>
         </div>
     </div>
 
+    <!-- السكربتات الأساسية -->
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
         
+        let isAdminMode = false;
+        let adminTargetPhone = "";
+        let adminToken = "";
+
         function closeNewMemberPrompt() {
             if (document.getElementById('dontShowPromptAgain').checked) {
                 localStorage.setItem('hide_new_member_prompt', 'true');
@@ -608,18 +595,8 @@
             showMainForm('new_member');
         }
 
-        // دوال النافذة الجديدة لإضافة فرد (خيارات الإضافة)
         function openAddMemberOptionsModal() {
-            const modal = document.getElementById('addMemberOptionsModal');
-            const nameEl = document.getElementById('headerAccountName');
-            const btnText = document.getElementById('copyMemberBtnText');
-            
-            if (nameEl && btnText) {
-                const currentName = nameEl.innerText;
-                btnText.innerText = `نسخ بيانات (${currentName})`;
-            }
-            
-            modal.classList.remove('hidden');
+            document.getElementById('addMemberOptionsModal').classList.remove('hidden');
         }
 
         function closeAddMemberOptionsModal() {
@@ -633,11 +610,6 @@
         function startNewMemberBlank() {
             closeAddMemberOptionsModal();
             showMainForm('new_member');
-        }
-
-        function startNewMemberCopy() {
-            closeAddMemberOptionsModal();
-            handleHeroAction('copy'); // استدعاء دالة النسخ التي كانت موجودة مسبقاً في زر مشابه
         }
 
         let verifiedFullPhone = "";
@@ -671,7 +643,7 @@
                 "منطقة الباحة": ["الباحة", "بلجرشي", "المندق", "المخواة", "العقيق", "قلوة"]
             },
             educations: ["متوسط وما دون", "ثانوي", "دبلوم", "بكالوريوس", "ماجستير / دكتوراه"],
-            maleNationalities: ["سعودي", "إماراتي", "كويتي", "قطري", "بحريني", "عماني", "يمني", "مصري", "سوري", "أردني", "لبنياني", "فلسطيني", "عراقي", "سوداني", "مغربي", "جزائري", "تونسي", "ليبي", "تركي", "باكستاني", "هندي", "إندونيسي", "فلبيني", "أفغاني", "بنغلاديشي"],
+            maleNationalities: ["سعودي", "إماراتي", "كويتي", "قطري", "بحريني", "عماني", "يمني", "مصري", "سوري", "أردني", "لبناني", "فلسطيني", "عراقي", "سوداني", "مغربي", "جزائري", "تونسي", "ليبي", "تركي", "باكستاني", "هندي", "إندونيسي", "فلبيني", "أفغاني", "بنغلاديشي"],
             femaleNationalities: ["سعودية", "إماراتية", "كويتية", "قطرية", "بحرينية", "عمانية", "يمنية", "مصرية", "سورية", "أردنية", "لبنانية", "فلسطينية", "عراقية", "سودانية", "مغربية", "جزائرية", "تونسية", "ليبية", "تركية", "باكستانية", "هندية", "إندونيسية", "فلبينية", "أفغانية", "بنغلاديشية"],
             maleJobs: ["موظف حكومي", "موظف قطاع خاص", "عسكري", "معلم", "طبيب / قطاع صحي", "مهندس", "أعمال حرة / تجارة", "طالب", "متقاعد", "باحث عن عمل"],
             femaleJobs: ["موظفة حكومية", "موظفة قطاع خاص", "معلمة", "طبيبة / قطاع صحي", "طالبة", "ربة منزل", "عمل حر", "متقاعدة"],
@@ -835,6 +807,49 @@
         });
 
         window.onload = () => { 
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'admin_edit' && urlParams.get('targetPhone')) {
+                adminToken = localStorage.getItem('adminToken');
+                if (adminToken) {
+                    isAdminMode = true;
+                    adminTargetPhone = urlParams.get('targetPhone');
+                    verifiedFullPhone = adminTargetPhone; 
+                    
+                    document.getElementById('otpSection').classList.add('hidden');
+                    document.getElementById('advancedSearchBtn').classList.add('hidden');
+                    document.getElementById('tabsContainer').classList.add('hidden');
+                    
+                    document.getElementById('adminBanner').classList.remove('hidden');
+                    document.getElementById('adminBanner').classList.add('flex');
+                    document.getElementById('adminBannerPhone').innerText = adminTargetPhone;
+                    
+                    const phoneInput = document.getElementById('finalPhoneDisplay');
+                    if(phoneInput) {
+                        phoneInput.removeAttribute('readonly');
+                        phoneInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                        phoneInput.classList.add('bg-orange-50', 'border-orange-300', 'text-orange-800', 'focus:ring-2', 'focus:ring-orange-500');
+                        phoneInput.parentElement.querySelector('label').innerHTML += ' <span class="text-orange-600 text-[10px] bg-orange-100 px-1 rounded inline-block mr-1">(قابل للتعديل)</span>';
+                    }
+
+                    document.querySelectorAll('button[onclick="logout()"]').forEach(btn => {
+                        btn.setAttribute('onclick', 'exitAdminMode()');
+                        btn.title = "العودة للوحة الإدارة";
+                        btn.classList.replace('text-gray-500', 'text-orange-600');
+                        btn.classList.replace('hover:text-red-500', 'hover:text-orange-800');
+                        if(btn.innerText.includes('خروج')) btn.innerHTML = btn.innerHTML.replace('خروج', 'إنهاء التعديل');
+                    });
+                    
+                    buildDobDropdowns(); 
+                    dynamicDropdowns = fallbackDropdowns; 
+                    populateSharedDropdowns(); 
+                    fetchDropdownData();
+                    loadDashboard();
+                    return; 
+                } else {
+                    showMsgModal("مرفوض", "لا يوجد تصريح دخول إداري في هذا المتصفح. يرجى تسجيل الدخول من لوحة الإدارة أولاً.");
+                }
+            }
+
             buildDobDropdowns(); 
             dynamicDropdowns = fallbackDropdowns; 
             populateSharedDropdowns(); 
@@ -851,6 +866,10 @@
                 loadDashboard();
             }
         };
+
+        function exitAdminMode() {
+            window.location.href = 'admin.html';
+        }
 
         function showMsgModal(title, text) { document.getElementById('msgModalTitle').innerText = title; document.getElementById('msgModalText').innerText = text; document.getElementById('msgModal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('msgModal').classList.add('hidden'); }
@@ -871,8 +890,13 @@
             const newYes = yesBtn.cloneNode(true); yesBtn.parentNode.replaceChild(newYes, yesBtn);
             newYes.addEventListener('click', async () => { 
                 newYes.innerText = "جاري المعالجة..."; newYes.disabled = true;
-                if(onYes) await onYes(); 
-                closeConfirmModal(); 
+                try {
+                    if(onYes) await onYes(); 
+                } catch(err) {
+                    console.error("Error during confirm action:", err);
+                } finally {
+                    closeConfirmModal(); 
+                }
             });
             document.getElementById('confirmModal').classList.remove('hidden'); pendingDelete = onNo; 
         }
@@ -883,6 +907,7 @@
         }
 
         function logout() {
+            if(isAdminMode) { exitAdminMode(); return; }
             localStorage.removeItem('verified_user_phone');
             localStorage.removeItem('verified_user_name');
             localStorage.removeItem('verified_user_gender');
@@ -893,7 +918,6 @@
             verifiedFullPhone = "";
             document.getElementById('dashboardSection').classList.add('hidden');
             document.getElementById('mainFormSection').classList.add('hidden');
-            document.getElementById('successSection').classList.add('hidden');
             document.getElementById('advancedSearchBtn').classList.add('hidden');
             
             document.getElementById('otpStep1').classList.remove('hidden');
@@ -1073,7 +1097,7 @@
         }
 
         function saveDraft() {
-            if (!verifiedFullPhone) return;
+            if (!verifiedFullPhone || isAdminMode) return;
             const draftData = {
                 firstName: document.getElementById('firstName').value, relation: document.getElementById('relation').value, gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: document.getElementById('nationality').value,
                 residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: document.getElementById('ksaCity').value, worldCountry: document.getElementById('worldCountry').value,
@@ -1084,7 +1108,7 @@
         }
 
         function checkAndRestoreDraft() {
-            if (!verifiedFullPhone) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
+            if (!verifiedFullPhone || isAdminMode) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
             if (draft) {
                 showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
                     const data = JSON.parse(draft);
@@ -1105,7 +1129,12 @@
         function getMainProfileUid() { return localStorage.getItem(`mainProfileUid_${verifiedFullPhone}`); }
         function getRelation(rowIndex) { return localStorage.getItem(`relation_${verifiedFullPhone}_${rowIndex}`) || ""; }
 
+        let isDashboardLoading = false;
+
         async function loadDashboard(retryCount = 0) {
+            if (isDashboardLoading && retryCount === 0) return;
+            if (retryCount === 0) isDashboardLoading = true;
+
             editInfoState = null; currentViewData = null; currentViewedIndexInDashboard = null;
             document.getElementById('mainFormSection').classList.add('hidden');
             document.getElementById('dashboardSection').classList.remove('hidden');
@@ -1117,7 +1146,18 @@
             const cacheKey = `user_profiles_cache_${verifiedFullPhone}`;
             const localCache = localStorage.getItem(cacheKey);
 
-            if (loadingIndicator) {
+            if (retryCount === 0 && localCache && !isAdminMode) {
+                try {
+                    cachedProfiles = JSON.parse(localCache);
+                    if (cachedProfiles && cachedProfiles.length > 0) {
+                        renderDashboardUi(cachedProfiles, null, true);
+                        dashboardContent.classList.remove('hidden');
+                        loadingIndicator.classList.add('hidden');
+                        loadingIndicator.classList.remove('flex');
+                        document.getElementById('syncBanner').classList.remove('-translate-y-full'); 
+                    }
+                } catch(e) {}
+            } else if (retryCount === 0 && (!cachedProfiles || cachedProfiles.length === 0)) {
                 loadingIndicator.classList.remove('hidden');
                 loadingIndicator.classList.add('flex');
                 dashboardContent.classList.add('hidden');
@@ -1135,45 +1175,45 @@
                 clearTimeout(timeoutId);
                 const result = await res.json();
                 
-                if (loadingIndicator) {
-                    loadingIndicator.classList.add('hidden');
-                    loadingIndicator.classList.remove('flex');
-                    dashboardContent.classList.remove('hidden');
-                }
+                document.getElementById('syncBanner').classList.add('-translate-y-full');
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+                dashboardContent.classList.remove('hidden');
 
                 if (result.success) {
                     cachedProfiles = result.profiles || [];
-                    localStorage.setItem(cacheKey, JSON.stringify(cachedProfiles));
-                    renderDashboardUi(cachedProfiles);
+                    if(!isAdminMode) localStorage.setItem(cacheKey, JSON.stringify(cachedProfiles));
+                    try {
+                        renderDashboardUi(cachedProfiles);
+                    } catch(renderErr) {
+                        console.error("خطأ أثناء بناء الواجهة:", renderErr);
+                    }
                 } else {
                     if(result.message === "لم يتم العثور على أي ملفات") {
                         cachedProfiles = [];
                         showMainForm();
                     } else {
-                        showMsgModal("خطأ", result.message);
-                        logout();
+                        if (retryCount === 0) showMsgModal("خطأ", result.message);
+                        if (cachedProfiles.length === 0) logout();
                     }
                 }
+                isDashboardLoading = false;
             } catch (e) {
                 clearTimeout(timeoutId);
-                if (retryCount < 2) {
+                if (retryCount < 1) { 
                     setTimeout(() => loadDashboard(retryCount + 1), 2000);
                 } else {
-                    if (loadingIndicator) {
-                        loadingIndicator.classList.add('hidden');
-                        loadingIndicator.classList.remove('flex');
-                        dashboardContent.classList.remove('hidden');
-                    }
-                    if (localCache) {
-                        try {
-                            cachedProfiles = JSON.parse(localCache);
-                            renderDashboardUi(cachedProfiles);
-                            showMsgModal("وضع عدم الاتصال", "تم تحميل البيانات من النسخة المخبأة.");
-                        } catch(err) {
-                            showMsgModal("خطأ اتصال", "لا يوجد اتصال بالإنترنت.");
-                        }
+                    isDashboardLoading = false;
+                    document.getElementById('syncBanner').classList.add('-translate-y-full');
+                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('flex');
+                    dashboardContent.classList.remove('hidden');
+
+                    if (localCache && !isAdminMode && cachedProfiles && cachedProfiles.length > 0) {
+                        console.warn("Offline fallback used smoothly.");
                     } else {
-                        showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت وإعادة المحاولة.");
+                        showMsgModal("خطأ اتصال", "الشبكة ضعيفة أو السيرفر مشغول. يرجى المحاولة لاحقاً.");
+                        if(!cachedProfiles || cachedProfiles.length === 0) showMainForm();
                     }
                 }
             }
@@ -1182,9 +1222,7 @@
         function selectProfileInDashboard(uid) {
             closeBioSmoothly(); 
             document.getElementById('mainTabReqBadge')?.classList.add('hidden');
-            
             try { renderDashboardUi(cachedProfiles, uid); } catch(e) { console.error("Error selecting profile", e); }
-            
             switchTab('smart');
         }
 
@@ -1195,15 +1233,15 @@
             }
 
             let serverMain = profiles.find(p => p.isMain === true || p.isMain === "نعم" || p.isMain === "رئيسي");
-            if(serverMain) { localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, getProfileUid(serverMain)); }
+            if(serverMain && !isAdminMode) { localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, getProfileUid(serverMain)); }
 
-            let mainUid = getMainProfileUid();
-            if(!mainUid || !profiles.find(p => getProfileUid(p) === mainUid)) { 
+            let mainUid = isAdminMode ? getProfileUid(profiles[0]) : getMainProfileUid();
+            if(!isAdminMode && (!mainUid || !profiles.find(p => getProfileUid(p) === mainUid))) { 
                 mainUid = getProfileUid(profiles[0]); 
                 localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, mainUid); 
             }
             
-            let savedActiveUid = localStorage.getItem('active_profile_uid');
+            let savedActiveUid = !isAdminMode ? localStorage.getItem('active_profile_uid') : null;
             let determinedUid = overrideSelectUid;
             if(!determinedUid) {
                 if(savedActiveUid && profiles.find(p => getProfileUid(p) === savedActiveUid)) { determinedUid = savedActiveUid; }
@@ -1216,23 +1254,38 @@
             currentViewedIndexInDashboard = activeProfile.rowIndex; 
             currentViewData = activeProfile; 
             
-            localStorage.setItem('active_profile_uid', activeUid); 
-            localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
-            localStorage.setItem('active_profile_index', activeProfile.rowIndex); 
-            localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
-            localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
-            if (window.self !== window.top) window.top.postMessage({ type: 'updateAuthUI' }, '*');
+            if(!isAdminMode) {
+                localStorage.setItem('active_profile_uid', activeUid); 
+                localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
+                localStorage.setItem('active_profile_index', activeProfile.rowIndex); 
+                localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
+                localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
+            }
+            if (window.self !== window.top && !isAdminMode) window.top.postMessage({ type: 'updateAuthUI' }, '*');
             
             let safeName = activeProfile.name ? activeProfile.name.split(' ')[0] : 'مستخدم';
             const isMainProfile = activeUid === mainUid;
             const savedRel = activeProfile.relation || getRelation(activeProfile.rowIndex);
             const relText = savedRel ? savedRel : "غير محدد";
             
+            let statusStr = activeProfile.profileStatus || (activeProfile.fullDetails && activeProfile.fullDetails.profileStatus) || "";
+            let isUnderReview = statusStr.includes("مراجعة") || statusStr.includes("انتظار");
+
             if(!isSilentSync) {
                 document.getElementById('headerAccountName').innerText = safeName;
                 document.getElementById('headerAccountRefId').innerText = `#${activeProfile.refId || activeProfile.rowIndex}`;
+                
                 const heroRelEl = document.getElementById('headerAccountRel');
                 if(savedRel) { heroRelEl.innerText = `(${savedRel})`; heroRelEl.classList.remove('hidden'); } else { heroRelEl.classList.add('hidden'); }
+                
+                const heroStatusEl = document.getElementById('headerAccountStatus');
+                if (isUnderReview) {
+                    heroStatusEl.innerText = "⏳ قيد المراجعة";
+                    heroStatusEl.classList.remove('hidden');
+                    heroStatusEl.className = "animate-pulse text-[10px] font-bold text-orange-700 bg-orange-100/90 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-orange-300 shadow-sm shrink-0 mr-3";
+                } else {
+                    heroStatusEl.classList.add('hidden');
+                }
             }
 
             const badge = document.getElementById('heroMainBadge');
@@ -1255,12 +1308,12 @@
                         <span class="text-lg font-bold mt-[-2px]">+</span>
                     </div>
                     <div class="text-[9px] font-bold text-indigo-700 truncate w-full text-center">إضافة فرد</div>
-                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">ملف جديد</div>
+                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">تحت مسؤوليتك</div>
                 </button>
             `;
 
             let familyAlerts = [];
-            try { familyAlerts = JSON.parse(localStorage.getItem('family_alerts') || '[]'); } catch(e) {}
+            if(!isAdminMode) { try { familyAlerts = JSON.parse(localStorage.getItem('family_alerts') || '[]'); } catch(e) {} }
 
             profiles.forEach(p => {
                 const pUid = getProfileUid(p);
@@ -1305,14 +1358,22 @@
                 bioStr = `📱 الحساب المرتبط برقم: ${verifiedFullPhone}\n━━━━━━━━━━━━━━━━━━\n` + bioStr;
                 document.getElementById('heroBio').innerText = bioStr;
                 
-                localStorage.setItem('verified_user_bio', bioStr);
+                if(!isAdminMode) localStorage.setItem('verified_user_bio', bioStr);
 
                 let extractedAge = "غير محدد"; let extractedMarital = "غير محدد"; let originStr = ""; let cityStr = "غير محدد"; let natStr = "غير محدد";
                 if (activeProfile.fullDetails) {
                     extractedAge = activeProfile.fullDetails.age ? `${activeProfile.fullDetails.age} سنة` : extractedAge;
-                    extractedMarital = activeProfile.fullDetails.maritalStatus ? activeProfile.fullDetails.maritalStatus.split(' ')[0] : extractedMarital;
+                    
+                    if (activeProfile.fullDetails.maritalStatus && typeof activeProfile.fullDetails.maritalStatus === 'string') {
+                        extractedMarital = activeProfile.fullDetails.maritalStatus.split(' ')[0];
+                    }
+                    
                     cityStr = activeProfile.fullDetails.residence ? activeProfile.fullDetails.residence : cityStr;
-                    natStr = activeProfile.fullDetails.nationality ? activeProfile.fullDetails.nationality.split(' ')[0] : natStr;
+                    
+                    if (activeProfile.fullDetails.nationality && typeof activeProfile.fullDetails.nationality === 'string') {
+                        natStr = activeProfile.fullDetails.nationality.split(' ')[0];
+                    }
+
                     let originArr = [];
                     if (activeProfile.fullDetails.tribeName && activeProfile.fullDetails.tribeName !== "غير محدد" && activeProfile.fullDetails.tribeName !== "---") originArr.push(activeProfile.fullDetails.tribeName);
                     if (activeProfile.fullDetails.familyName && activeProfile.fullDetails.familyName !== "غير محدد" && activeProfile.fullDetails.familyName !== "---") originArr.push(activeProfile.fullDetails.familyName);
@@ -1337,7 +1398,7 @@
             }
             refreshUserActivity();
             
-            if (!isSilentSync) {
+            if (!isSilentSync && !isAdminMode) {
                 checkPendingIntent();
                 
                 if (!localStorage.getItem('hide_new_member_prompt')) {
@@ -1353,6 +1414,7 @@
         }
 
         async function checkPendingIntent() {
+            if (isAdminMode) return;
             const intentStr = localStorage.getItem('pending_guest_intent');
             if (!intentStr) return; 
             
@@ -1424,21 +1486,25 @@
             
             const firstName = (typeof currentViewData !== 'undefined' && currentViewData && currentViewData.name) ? currentViewData.name.split(' ')[0] : (localStorage.getItem('verified_user_name') ? localStorage.getItem('verified_user_name').split(' ')[0] : '');
 
+            let statusStr = "";
+            if (currentViewData) { statusStr = currentViewData.profileStatus || (currentViewData.fullDetails && currentViewData.fullDetails.profileStatus) || ""; }
+            let cleanStatus = statusStr ? encodeURIComponent(statusStr) : "";
+
             if (!phone || !refId) return; 
 
             if (tabName === 'smart') {
-                iframe.src = 'smart.html?phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&gender=' + encodeURIComponent(gender || '') + '&name=' + encodeURIComponent(firstName);
+                iframe.src = 'smart.html?phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&gender=' + encodeURIComponent(gender || '') + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
             } else if (tabName === 'favorites') {
-                iframe.src = 'activity.html?tab=favorites&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName);
+                iframe.src = 'activity.html?tab=favorites&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
             } else if (tabName === 'requests') {
-                iframe.src = 'activity.html?tab=requests&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName);
+                iframe.src = 'activity.html?tab=requests&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
             }
         }
 
         async function refreshUserActivity() {
             const phone = localStorage.getItem('verified_user_phone');
             const activeRefId = localStorage.getItem('active_profile_refid') || localStorage.getItem('mainProfileRefId_' + phone) || "";
-            if (!phone) return;
+            if (!phone || isAdminMode) return; 
 
             const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
 
@@ -1491,14 +1557,13 @@
                             const carousel = document.getElementById('familyCarousel');
                             let carouselHtml = "";
                             
-                            // إعادة رسم مربع "إضافة فرد جديد" في التحديث الصامت أيضاً
                             carouselHtml += `
                                 <button onclick="openAddMemberOptionsModal()" class="shrink-0 flex flex-col items-center justify-center p-1.5 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 transition-all duration-300 group min-w-[65px] snap-center cursor-pointer">
                                     <div class="relative mb-1 w-8 h-8 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm group-hover:scale-110 transition-transform">
                                         <span class="text-lg font-bold mt-[-2px]">+</span>
                                     </div>
                                     <div class="text-[9px] font-bold text-indigo-700 truncate w-full text-center">إضافة فرد</div>
-                                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">ملف جديد</div>
+                                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">تحت مسؤوليتك</div>
                                 </button>
                             `;
 
@@ -1556,7 +1621,7 @@
                 cachedProfiles.forEach(p => p.isMain = false); 
                 const newMain = cachedProfiles.find(p => getProfileUid(p) === uid);
                 if (newMain) newMain.isMain = true; 
-                localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, uid);
+                if(!isAdminMode) localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, uid);
                 renderDashboardUi(cachedProfiles, uid);
                 
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -1574,19 +1639,33 @@
             handleProfileAction(rIndex, sName, fakeBtn, actionType);
         }
 
-        function shareFromHero() {
+        function shareFromHero(type) {
             if(!currentViewData) return;
             closeBioSmoothly(); 
-            const bioText = document.getElementById('heroBio').innerText;
-            const refId = currentViewData.refId || currentViewData.rowIndex;
-            let textToShare = `> ملف رقم: #${refId}\n`;
-            let cleaned = bioText.replace(/(?:🔹|-)?\s*(طلب رقم|رقم الملف|ملف رقم):?\s*#?\d+\s*/g, ''); textToShare += cleaned.trim();
-            const encodedText = encodeURIComponent(textToShare); const brokerPhone = "966590779236"; 
-            
-            const link = document.createElement('a');
-            link.href = `https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`;
-            link.target = '_blank';
-            document.body.appendChild(link); link.click(); link.remove();
+
+            let textToShare = "";
+            const refId = currentViewData.refId || currentViewData.rowIndex || "---";
+
+            if (type === 'full') {
+                let bio = currentViewData.autoBio || (currentViewData.fullDetails && currentViewData.fullDetails.autoBio) || "";
+                if (!bio) { showMsgModal("تنبيه", "النبذة الكاملة غير متوفرة حالياً."); return; }
+                textToShare = bio;
+            } else if (type === 'short') {
+                let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || "";
+                let secretInfo = currentViewData.secretInfo || (currentViewData.fullDetails && currentViewData.fullDetails.secretInfo) || "لا يوجد";
+                let unifiedName = currentViewData.unifiedName || (currentViewData.fullDetails && currentViewData.fullDetails.unifiedName) || "---";
+                let fullName = currentViewData.name || "---";
+
+                if (!shortBio) {
+                    textToShare = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`;
+                } else {
+                    textToShare = `${shortBio}\n\n════════════════\n👤 الاسم: ${fullName}\n🔒 معلومات سرية: ${secretInfo}\n════════════════\n📱 اسم الحفظ الموحد:\n${unifiedName}`;
+                }
+            }
+
+            const encodedText = encodeURIComponent(textToShare);
+            const brokerPhone = "966590779236";
+            window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`, '_blank');
         }
 
         async function askDeleteConfirmHero() {
@@ -1596,15 +1675,23 @@
                 const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
                 try {
-                    const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "deleteProfile", phone: verifiedFullPhone, rowIndex: rIndex, sheetName: sName }), signal: controller.signal });
+                    const reqBody = { action: "deleteProfile", phone: verifiedFullPhone, rowIndex: rIndex, sheetName: sName };
+                    if(isAdminMode) { reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken }; }
+                    
+                    const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
                     clearTimeout(timeoutId);
                     const result = await res.json();
+                    
+                    document.getElementById('confirmModal').classList.add('hidden'); 
+                    
                     if(result.success) {
                         cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName);
-                        showMsgModal("نجاح", "تم الحذف بنجاح."); currentViewedIndexInDashboard = null;
+                        currentViewedIndexInDashboard = null;
                         if(cachedProfiles.length === 0) showMainForm(); else renderDashboardUi(cachedProfiles);
+                        showMsgModal("نجاح", "تم الحذف بنجاح.");
                     } else showMsgModal("خطأ", result.message);
                 } catch(e) { 
+                    document.getElementById('confirmModal').classList.add('hidden'); 
                     if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
                     else showMsgModal("خطأ", "خطأ بالاتصال"); 
                 } finally { clearTimeout(timeoutId); }
@@ -1635,7 +1722,7 @@
         function populateMainFormFromData(data, rowIndex, sheetName, actionType) {
             if (actionType === 'edit') editInfoState = { rowIndex: rowIndex, sheetName: sheetName }; else editInfoState = null; 
             
-            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
             
             const btnSubmit = document.getElementById('reviewSubmitBtn');
             const titleEl = document.getElementById('mainFormTitle');
@@ -1651,7 +1738,9 @@
             }
 
             for(let i=2; i<=5; i++) document.getElementById(`step-${i}-card`).classList.remove('locked-step', 'opacity-50');
-            populateSharedDropdowns(); buildDobDropdowns(); document.getElementById('finalPhoneDisplay').value = verifiedFullPhone;
+            populateSharedDropdowns(); buildDobDropdowns(); 
+            
+            document.getElementById('finalPhoneDisplay').value = verifiedFullPhone;
 
             if (actionType === 'copy') { setVal('firstName', ''); setVal('relation', ''); showMsgModal("تنبيه", "تأكد من تغيير (الاسم الأول) للطلب الجديد."); } 
             else { setVal('firstName', data.name || ''); setVal('relation', data.relation || getRelation(rowIndex) || ''); }
@@ -1686,56 +1775,33 @@
                 if(data.childrenCount) { document.getElementById('childrenCount').value = data.childrenCount.replace(/[^0-9]/g, ''); handleChildrenChange(); }
                 if(data.childrenStatus) { setTimeout(() => setVal('custodyStatus', data.childrenStatus), 50); }
                 
-                // Smart Date Parser Update
                 if (data.birthDate) {
                     let birthStr = String(data.birthDate).trim(); 
-                    
-                    // تنظيف النص من الكلمات الزائدة مثل (محدث، م، هـ)
-                    birthStr = birthStr.replace(/[^\d\/\-]/g, ' ').trim();
                     let nums = birthStr.match(/\d+/g);
-                    
-                    if (nums && nums.length > 0) {
+                    if (nums) {
                         let y, m, d;
-                        
-                        // البحث عن السنة (رقم مكون من 4 خانات)
-                        let yIdx = nums.findIndex(n => n.length === 4);
-                        
-                        if (nums.length >= 3) {
-                            if (yIdx === 0) { 
-                                // التنسيق: سنة/شهر/يوم (Google Sheets Formatting)
-                                y = nums[0]; m = nums[1]; d = nums[2];
-                            } else { 
-                                // التنسيق الطبيعي: يوم/شهر/سنة
-                                d = nums[0]; m = nums[1]; 
-                                y = yIdx !== -1 ? nums[yIdx] : nums[2];
+                        const yearIndex = nums.findIndex(n => n.length === 4);
+                        if (yearIndex !== -1) {
+                            y = nums[yearIndex];
+                            let otherNums = nums.filter((_, idx) => idx !== yearIndex);
+                            if (otherNums.length >= 2) {
+                                if (yearIndex === 0) { d = otherNums[1]; m = otherNums[0]; }
+                                else { d = otherNums[0]; m = otherNums[1]; }
                             }
-                        } else if (nums.length === 1 || yIdx !== -1) {
-                            // حالة وجود سنة فقط
-                            y = yIdx !== -1 ? nums[yIdx] : nums[0];
+                        } else if (nums.length === 1 && nums[0].length === 4) {
+                            y = nums[0]; 
+                        } else if (nums.length >= 3) {
+                            y = nums[2]; m = nums[1]; d = nums[0];
                         }
-
-                        if (y && y.length === 4) {
-                            let parsedYear = parseInt(y); 
-                            let ageIfHijri = 1447 - parsedYear; 
-                            let ageIfGreg = 2026 - parsedYear; 
-                            let chosenCalType = 'hijri'; 
-                            
-                            // كاشف التقويم الذكي بناءً على منطقية العمر
-                            if ((ageIfHijri < 15 || ageIfHijri > 100) && (ageIfGreg >= 15 && ageIfGreg <= 100)) {
-                                chosenCalType = 'greg';
-                            }
-                            
+                        
+                        if (y) {
+                            let parsedYear = parseInt(y); let ageIfHijri = 1447 - parsedYear; let ageIfGreg = 2026 - parsedYear; let chosenCalType = 'hijri'; 
+                            if ((ageIfHijri < 15 || ageIfHijri > 100) && (ageIfGreg >= 15 && ageIfGreg <= 100)) chosenCalType = 'greg';
                             checkRad('calType', chosenCalType); 
-                            
                             setTimeout(() => { 
                                 setVal('dobYear', y); 
-                                if (m && d) {
-                                    setVal('dobMonth', parseInt(m).toString()); 
-                                    setVal('dobDay', parseInt(d).toString()); 
-                                } else {
-                                    setVal('dobMonth', '');
-                                    setVal('dobDay', '');
-                                }
+                                if(m) setVal('dobMonth', parseInt(m).toString()); 
+                                if(d) setVal('dobDay', parseInt(d).toString()); 
                                 calculateEstimatedAge(); 
                             }, 200);
                         }
@@ -1749,14 +1815,10 @@
                 if(jobExists) setVal('jobStatus', data.job); else if(data.job) { setVal('jobStatus', 'أخرى'); setVal('customJob', data.job); }
 
                 if(data.gender !== 'أنثى') {
-                    let inc = data.monthlyIncome || '';
-                    if(inc) {
-                        // مترجم الرواتب القديمة للجديدة
-                        if(inc.includes('4,000') && inc.includes('10,000')) inc = 'دخل محدود (4,000 إلى 10,000 ريال)';
-                        else if(inc.includes('مرتفع') && inc.includes('30,000') && !inc.includes('15,000')) inc = 'دخل عالي (30,000 ريال فأكثر)';
-                        else if(inc === 'بدون دخل' || inc === 'بدون دخل ثابت') inc = 'لا يوجد دخل';
-                        else if(inc.includes('8,000') && inc.includes('15,000')) inc = 'متوسط (10,000 إلى 15,000 ريال)';
-                        
+                    if(data.monthlyIncome) {
+                        let inc = data.monthlyIncome;
+                        if(inc.includes('مرتفع') && inc.includes('30')) inc = "دخل عالي (30,000 ريال فأكثر)";
+                        else if(inc.includes('ضعيف') || (inc.includes('أقل') && inc.includes('5'))) inc = "دخل ضعيف ( أقل من 5,000 ريال)";
                         setVal('monthlyIncome', inc);
                     }
                     if(data.specialConditions) { const conds = data.specialConditions.split('،'); conds.forEach(c => { const cb = document.querySelector(`input[name="menSpecOpts"][value="${c.trim()}"]`); if(cb) cb.checked = true; }); }
@@ -1770,15 +1832,8 @@
 
                 setVal('specialInfo', data.secretInfo || '');
                 const savedAddInfo = data.additionalInfo || ''; let cleanAddInfo = savedAddInfo;
-                
-                // تنظيف صارم لأي بيانات سابقة تخص الشكل
-                if (data.gender === 'أنثى') {
-                    cleanAddInfo = cleanAddInfo.replace(/\[(?:الشكل|مواصفات الشكل):\s*.*?\]\s*(?:-\s*)?/g, '').trim();
-                }
-                
+                if (data.gender === 'أنثى') { cleanAddInfo = cleanAddInfo.replace(/\[(?:الشكل|مواصفات الشكل):\s*.*?\]\s*(?:-\s*)?/g, '').trim(); }
                 document.querySelectorAll('input[name="myInfoTags"]').forEach(cb => { if (savedAddInfo.includes(cb.value)) { cb.checked = true; cleanAddInfo = cleanAddInfo.replace(cb.value, '').replace(' | ', '').replace('، ', '').trim(); } });
-                
-                // تنظيف إضافي للشرطات الزائدة
                 cleanAddInfo = cleanAddInfo.replace(/^(?:-\s*|\|\s*)+/, '').trim();
                 setVal('additionalInfo', cleanAddInfo);
 
@@ -1810,7 +1865,7 @@
         }
 
         function showMainForm(mode = '') {
-            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('successSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden'); document.getElementById('mainFormSection').classList.remove('hidden');
             document.getElementById('registrationForm').reset(); document.getElementById('finalPhoneDisplay').value = verifiedFullPhone; buildDobDropdowns();
             for(let i=1; i<=5; i++) {
                 let b = document.getElementById(`step-${i}-badge`); if(b) { b.className = "w-7 h-7 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors"; b.innerHTML = i; }
@@ -2045,34 +2100,6 @@
             const basePartnerSpecs = document.getElementById('partnerSpecs').value.trim(); return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
         }
 
-        function generateCleanBio(refId = "---") {
-            const age = document.getElementById('calculatedAgeVal').innerText || '--'; const height = document.getElementById('height').value || '--'; const weight = document.getElementById('weight').value || '--'; const skin = document.querySelector('input[name="skinColor"]:checked')?.value || 'غير محدد';
-            const rawNationality = document.getElementById('nationality').value || 'غير محدد'; const natFlag = getFlagForText(rawNationality); const nationalityDisplay = natFlag ? `${rawNationality} ${natFlag}` : rawNationality;
-            
-            const isKsa = document.getElementById('res_ksa')?.checked; let city = "غير محدد"; let cityDisplay = "";
-            if(isKsa) { city = document.getElementById('ksaCity').value || 'السعودية'; cityDisplay = `${city}`; } else { city = document.getElementById('worldCountry').value || 'غير محدد'; const wCity = document.getElementById('worldCity').value.trim(); if(wCity) city += ` (${wCity})`; cityDisplay = city; }
-            
-            const tStatus = document.querySelector('input[name="tribalStatus"]:checked')?.value || 'غير محدد'; let tribalText = tStatus + (document.getElementById('tribal_yes')?.checked && document.getElementById('tribeName').value ? ` (${document.getElementById('tribeName').value})` : "");
-            const oLoc = document.querySelector('input[name="originLocation"]:checked')?.value; let originVal = (oLoc === "من داخل المملكة") ? document.getElementById('originInside').value : document.getElementById('originOutside').value;
-            const marital = document.getElementById('maritalStatus').value || 'غير محدد'; let childText = " (بدون أبناء)";
-            if(marital !== "أعزب" && marital !== "بكر") { const cCount = parseInt(document.getElementById('childrenCount').value) || 0; if(cCount > 0) childText = ` (الأبناء: ${cCount} - ${document.getElementById('custodyStatus').value})`; else childText = ""; } else childText = "";
-
-            const edu = document.getElementById('education').value || 'غير محدد'; const jVal = document.getElementById('jobStatus').value; const job = (jVal === 'أخرى') ? document.getElementById('customJob').value : jVal;
-            
-            let extra = "";
-            if(isMale) { const inc = document.getElementById('monthlyIncome').value || ''; extra += `🔹 المؤهل: ${edu} | الوظيفة: ${job} | الدخل: ${inc}\n🔹 الزواج المطلوب: ${document.getElementById('menMarriageType').value}\n`; } 
-            else {
-                extra += `🔹 المؤهل: ${edu} | الوظيفة: ${job}\n🔹 الزواج المطلوب: ${document.getElementById('womenMarriageType').value} | تقبل معدد؟: ${document.getElementById('acceptMarried').value}\n`;
-                const hLen = document.getElementById('hairLength').value; const hTex = document.getElementById('hairTexture').value; const bShape = document.getElementById('bodyShape').value;
-                let hairStr = ""; if (hLen || hTex) { hairStr = `الشعر: ${hLen || ''} ${hTex ? '('+hTex+')' : ''}`.trim(); }
-                let bodyStr = bShape ? `الجسم: ${bShape}` : "";
-                if (hairStr || bodyStr) { extra += `🔹 الشكل: ${[hairStr, bodyStr].filter(Boolean).join(' | ')}\n`; }
-            }
-
-            const combinedAddInfo = getCombinedAddInfo(); const combinedPartnerSpecs = getCombinedPartnerSpecs();
-            return `📄 طلب رقم: ${refId}\n\n🔹 الإقامة: ${cityDisplay}\n🔹 الجنسية: ${nationalityDisplay}\n🔹 ${tribalText} | الأصول: ${originVal}\n🔹 العمر: ${age} سنة | الطول: ${height} | الوزن: ${weight} | البشرة: ${skin}\n🔹 الحالة الاجتماعية: ${marital}${childText}\n${extra}\n💡 معلومات إضافية:\n"${combinedAddInfo || 'لا يوجد'}"\n\n💬 شروط الشريك:\n"${combinedPartnerSpecs || 'غير محدد'}"\n\n📌 للجادين، يمكنكم التواصل مع الإدارة عبر الرابط:\nhttps://wa.me/966590779236`;
-        }
-
         async function submitForm(btn) {
             const agree = document.getElementById('agreeTerms').checked; const mError = document.getElementById('modalError');
             if(!agree) { mError.classList.remove('hidden'); return; }
@@ -2087,7 +2114,6 @@
             const jobSelectVal = document.getElementById('jobStatus').value; const finalJob = (jobSelectVal === 'أخرى') ? document.getElementById('customJob').value : jobSelectVal;
             let finalAdditionalInfo = getCombinedAddInfo();
             if (!isMale) {
-                // التنظيف النهائي قبل الإرسال لضمان عدم التكرار أبداً
                 finalAdditionalInfo = finalAdditionalInfo.replace(/\[(?:الشكل|مواصفات الشكل):\s*.*?\]\s*(?:-\s*)?/g, '').trim();
                 finalAdditionalInfo = finalAdditionalInfo.replace(/^(?:-\s*|\|\s*)+/, '').trim();
 
@@ -2098,8 +2124,10 @@
                 }
             }
 
+            const submittedPhone = isAdminMode ? document.getElementById('finalPhoneDisplay').value.trim() : verifiedFullPhone;
+
             const payloadData = {
-                phone: verifiedFullPhone, name: document.getElementById('firstName').value, relation: document.getElementById('relation').value, familyName: document.getElementById('familyName')?.value || "",
+                phone: submittedPhone, name: document.getElementById('firstName').value, relation: document.getElementById('relation').value, familyName: document.getElementById('familyName')?.value || "",
                 birthDate: `${document.getElementById('dobDay').value}/${document.getElementById('dobMonth').value}/${document.getElementById('dobYear').value}|${document.querySelector('input[name="calType"]:checked').value === 'hijri' ? 'هجري' : 'ميلادي'}`,
                 gender: isMale ? "ذكر" : "أنثى", age: document.getElementById('age').value || document.getElementById('calculatedAgeVal').innerText.replace(" سنة", ""),
                 nationality: document.getElementById('nationality').value, originType: document.querySelector('input[name="tribalStatus"]:checked')?.value || "",
@@ -2116,7 +2144,15 @@
             };
 
             const reqBody = { action: editInfoState ? "updateRegistration" : "saveRegistration", data: payloadData };
-            if(editInfoState) reqBody.editInfo = editInfoState;
+            if(editInfoState) {
+                reqBody.editInfo = editInfoState;
+                if(isAdminMode) {
+                    reqBody.editInfo.isAdminBypass = true;
+                    reqBody.editInfo.adminToken = adminToken;
+                }
+            } else if (isAdminMode) {
+                reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken };
+            }
 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
@@ -2124,20 +2160,14 @@
                 try {
                     const result = JSON.parse(responseText);
                     if(result.success) {
-                        closeTermsModal(); document.getElementById('mainFormSection').classList.add('hidden'); document.getElementById('successSection').classList.remove('hidden');
-                        document.getElementById('finalActionModal').classList.remove('hidden'); // إظهار الشاشة المنبثقة الإجبارية
+                        closeTermsModal(); document.getElementById('mainFormSection').classList.add('hidden');
+                        document.getElementById('finalActionModal').classList.remove('hidden'); 
                         
-                        const reference = result.refId || result.rowIndex || "---"; const generatedBio = generateCleanBio(reference);
-
-                        registeredUserData = {
-                            refId: reference, gender: payloadData.gender, nationality: payloadData.nationality, originType: document.querySelector('input[name="tribalStatus"]:checked')?.value || "",
-                            tribeName: document.getElementById('tribeName')?.value || "غير محدد", age: payloadData.age, city: payloadData.residence, maritalStatus: payloadData.maritalStatus,
-                            skinColor: payloadData.skinColor, height: payloadData.height, weight: payloadData.weight, education: payloadData.education, job: payloadData.job,
-                            monthlyIncome: payloadData.monthlyIncome || "غير محدد", acceptsPolygamy: payloadData.acceptMarried || "غير محدد", marriageType: payloadData.marriageType, autoBio: generatedBio
-                        };
+                        registeredUserData = result.data || {};
                         
                         hasClickedWaToApprove = false;
-                        cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); localStorage.removeItem(`draft_${verifiedFullPhone}`); 
+                        cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                        if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
                     } else showMsgModal("رفض الخادم", result.message);
                 } catch(e) { showMsgModal("خطأ", "حدث خطأ بالخادم عند الحفظ."); }
             } catch(e) { 
@@ -2148,40 +2178,20 @@
             }
         }
 
-        function sendToBroker() {
-            const c = registeredUserData; if (!c || !c.refId) return;
-            const fullName = `${document.getElementById('firstName').value} ${document.getElementById('familyName')?.value || ''} ${document.getElementById('tribeName')?.value || ''}`.trim();
-            const secretInfo = document.getElementById('specialInfo').value || "لا يوجد";
-            
-            let specialConds = "لا يوجد";
-            if (c.gender === 'ذكر') { const selected = Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value); if(selected.length > 0) specialConds = selected.join(' ، '); } 
-            else { const selected = Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value); if(selected.length > 0) specialConds = selected.join(' ، '); }
-
-            let msg = `${c.autoBio}\n\n___سرية للإدارة___\nالاسم الأول : ${fullName}\nظروف خاصة : ${secretInfo}\nشروط خاصة : ${specialConds}\n_______________________\n`;
-            let shortCity = c.city ? c.city.split(' ')[0].replace(/[()]/g, '') : "";
-            let shortName = (document.getElementById('familyName')?.value || document.getElementById('tribeName')?.value || "غير محدد").split(' ')[0];
-            msg += `${c.refId} ${shortName} ${shortCity} ${c.maritalStatus} ${c.age}`;
-
-            const encodedText = encodeURIComponent(msg); const brokerPhone = "966590779236"; 
-            const link = document.createElement('a'); link.href = `https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`; link.target = '_blank'; document.body.appendChild(link); link.click(); link.remove();
-
-            hasClickedWaToApprove = true;
-            const engineBtn = document.getElementById('engineSmartBtn');
-            if (engineBtn) {
-                engineBtn.className = "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 mx-auto transition-all text-sm";
+        function executeFinalWhatsAppSync() {
+            const resData = registeredUserData;
+            if (resData && (resData.shortBio || resData.autoBio)) {
+                const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 اسم الحفظ الموحد:\n${resData.unifiedName || '---'}`;
+                const encodedMessage = encodeURIComponent(adminMessage);
+                const brokerPhone = "966590779236"; 
+                window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedMessage}`, '_blank');
             }
-        }
-
-        function goToSmartEngine() {
-            if (!hasClickedWaToApprove) { showMsgModal("تنبيه", "يرجى الضغط على (أرسل للاعتماد) أولاً لتفعيل المرشحين."); return; }
-            if (registeredUserData && registeredUserData.refId && verifiedFullPhone) {
-                sessionStorage.setItem('autoOpenSmartEngine', 'true');
-                
-                localStorage.setItem('active_profile_uid', String(registeredUserData.refId));
-                
-                document.getElementById('successSection').classList.add('hidden'); document.getElementById('registrationForm').reset();
-                loadDashboard(); window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else showMsgModal("خطأ", "البيانات غير مكتملة.");
+            
+            hasClickedWaToApprove = true;
+            document.getElementById('finalActionModal').classList.add('hidden');
+            document.getElementById('registrationForm').reset();
+            loadDashboard(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
