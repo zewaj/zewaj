@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- إعدادات التطبيق (PWA) للألوان وشريط  النظام -->
+    <!-- إعدادات التطبيق (PWA) للألوان وشريط النظام -->
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -956,9 +956,13 @@
 
             if (phone) {
                 const shortName = name ? name.split(' ')[0] : 'حسابي';
+                // تجهيز الرابط الذكي للإطار الداخلي
+                const userGender = encodeURIComponent(gender || '');
+                const userStatus = encodeURIComponent(localStorage.getItem('active_profile_status') || 'نشط');
+                const dashboardUrl = `register.html?gender=${userGender}&status=${userStatus}`;
                 
                 authArea.innerHTML = `
-                    <button onclick="loadIframe('register.html')" class="relative flex items-center gap-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full border border-indigo-200 transition-colors shadow-sm">
+                    <button onclick="loadIframe('${dashboardUrl}')" class="relative flex items-center gap-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full border border-indigo-200 transition-colors shadow-sm">
                         <div class="flex flex-col text-right">
                             <span class="text-[11px] font-black leading-none">مرحباً، ${shortName}</span>
                             <span class="text-[9px] font-bold text-indigo-500 leading-none mt-1">الرصيد: ${balance}</span>
@@ -1194,9 +1198,15 @@
                 detailedBioText = `> ملف رقم: #${refId}\n` + rawBio;
             } else { detailedBioText = `لا توجد نبذة تفصيلية متاحة للملف #${refId} حالياً.`; }
 
+            const profileStatus = data.profileStatus || data.Status || 'نشط';
+            let statusBadge = '';
+            if (profileStatus === 'تواصل مباشر') {
+                statusBadge = `<div class="mb-3 inline-flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-xs font-black shadow-sm"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>هذا الملف (تواصل مباشر) ولا يستقبل طلبات وساطة</div>`;
+            }
+
             const encodedDetailedBio = encodeURIComponent(detailedBioText);
 
-            const contentHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 shadow-sm h-full flex flex-col justify-center"><div class="border-r-4 border-indigo-500 bg-slate-50 p-4 rounded-l-xl text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap text-right" dir="rtl">${detailedBioText}</div></div>`;
+            const contentHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-3 sm:p-5 shadow-sm h-full flex flex-col justify-center">${statusBadge}<div class="border-r-4 border-indigo-500 bg-slate-50 p-4 rounded-l-xl text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap text-right" dir="rtl">${detailedBioText}</div></div>`;
             document.getElementById('upmBody').innerHTML = contentHTML;
 
             const isLoggedIn = !!localStorage.getItem('verified_user_phone');
@@ -1250,7 +1260,13 @@
                     </div>`;
             } else {
                 let contactBtnHtml = '';
-                if (isReq) {
+                if (profileStatus === 'تواصل مباشر') {
+                    contactBtnHtml = `
+                        <button disabled class="flex-1 sm:flex-none w-auto sm:w-32 h-11 sm:h-12 flex items-center justify-center bg-slate-100 text-purple-400 font-bold rounded-xl transition-all border border-slate-200 cursor-not-allowed text-xs shadow-inner" title="هذا الملف لا يستقبل طلبات تواصل">
+                            <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                            غير متاح
+                        </button>`;
+                } else if (isReq) {
                     contactBtnHtml = `
                         <button disabled class="flex-1 sm:flex-none w-auto sm:w-32 h-11 sm:h-12 flex items-center justify-center bg-gray-100 text-emerald-600 font-bold rounded-xl transition-all border border-emerald-200 cursor-not-allowed text-xs shadow-inner" title="تم إرسال الطلب مسبقاً">
                             <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
