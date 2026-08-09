@@ -79,7 +79,6 @@
         </a>
     </div>
 
-    <!-- ==================== أولاً: شاشة التحقق OTP ==================== -->
     <div id="otpSection" class="fixed inset-0 z-[100] flex items-end justify-center sm:items-center px-0 sm:px-4 fade-in">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
         <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 pb-12 sm:pb-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
@@ -107,7 +106,6 @@
             </div>
 
             <div id="otpStep2" class="space-y-4 hidden fade-in">
-                <!-- التنبيه الجديد لعدم انتظار SMS -->
                 <div class="bg-emerald-50 border-2 border-emerald-400/40 rounded-xl p-3 shadow-sm relative overflow-hidden mb-2">
                     <div class="absolute inset-0 bg-emerald-400/10 animate-pulse"></div>
                     <p class="text-[11px] sm:text-xs font-bold text-center text-emerald-900 relative z-10 leading-relaxed">
@@ -132,7 +130,6 @@
         </div>
     </div>
 
-    <!-- ==================== ثانياً: لوحة تحكم العائلة ==================== -->
     <div id="dashboardSection" class="w-full hidden fade-in flex-1 pt-4 sm:pt-8">
         <div id="profilesLoading" class="hidden flex-col items-center justify-center py-24 bg-transparent w-full fade-in">
             <div class="relative flex items-center justify-center mb-8 h-20 w-32">
@@ -244,7 +241,6 @@
         </div>
     </div>
 
-    <!-- ==================== ثالثاً: نموذج تسجيل البيانات ==================== -->
     <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-12 mt-2 flex-1 max-w-3xl pt-4 sm:pt-6">
         <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 mb-4 sm:mb-6 mt-6 sm:mt-0">
             <div class="w-full bg-gray-200 h-1.5 overflow-hidden"><div id="progressBar" class="bg-emerald-600 h-1.5 progress-bar" style="width: 20%"></div></div>
@@ -508,7 +504,6 @@
         </div>
     </div>
 
-    <!-- رسائل وتنبيهات النظام -->
     <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl transform transition-all text-center">
             <h3 id="msgModalTitle" class="text-base font-bold text-gray-900 mb-1.5">تنبيه</h3>
@@ -575,7 +570,6 @@
         </div>
     </div>
 
-    <!-- السكربتات الأساسية -->
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
         
@@ -890,13 +884,8 @@
             const newYes = yesBtn.cloneNode(true); yesBtn.parentNode.replaceChild(newYes, yesBtn);
             newYes.addEventListener('click', async () => { 
                 newYes.innerText = "جاري المعالجة..."; newYes.disabled = true;
-                try {
-                    if(onYes) await onYes(); 
-                } catch(err) {
-                    console.error("Error during confirm action:", err);
-                } finally {
-                    closeConfirmModal(); 
-                }
+                if(onYes) await onYes(); 
+                closeConfirmModal(); 
             });
             document.getElementById('confirmModal').classList.remove('hidden'); pendingDelete = onNo; 
         }
@@ -1413,94 +1402,6 @@
             }
         }
 
-        async function checkPendingIntent() {
-            if (isAdminMode) return;
-            const intentStr = localStorage.getItem('pending_guest_intent');
-            if (!intentStr) return; 
-            
-            try {
-                const intent = JSON.parse(intentStr);
-                const targetGender = intent.gender;
-                const targetRefId = intent.refId;
-                const myGender = currentViewData ? currentViewData.gender : null; 
-                const activeRefId = localStorage.getItem('active_profile_refid');
-
-                if (!myGender || !activeRefId) return;
-                
-                if (myGender === targetGender || myGender === 'غير محدد' || targetGender === 'غير محدد') {
-                    window.top.postMessage({ type: 'showMsgModal', title: 'تنبيه ذكي', message: 'الملف الذي كنت مهتماً به قبل التسجيل يعود لـ (' + targetGender + '). للتواصل معه، يرجى إضافة أو اختيار ملف من الجنس الآخر من شريط العائلة بالأعلى.' }, '*');
-                    return; 
-                }
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
-                
-                const res = await fetch(SCRIPT_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({ 
-                        action: "toggleFavorite", 
-                        phone: verifiedFullPhone, 
-                        requesterRefId: activeRefId, 
-                        refId: targetRefId 
-                    }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                
-                const result = await res.json();
-                if (result.success) {
-                    localStorage.removeItem('pending_guest_intent');
-                    window.top.postMessage({ type: 'showMsgModal', title: 'أهلاً بك معنا!', message: 'بناءً على اهتمامك قبل التسجيل، تم حفظ الملف رقم #' + targetRefId + ' في (مفضلاتك). يمكنك الدخول لتبويب مفضلاتي الآن ومراسلته براحة تامة.' }, '*');
-                    refreshUserActivity();
-                }
-            } catch (e) { console.error('خطأ في معالجة أمنية الزائر', e); }
-        }
-
-        function switchTab(tabName) {
-            const btns = ['smart', 'favorites', 'requests'];
-            btns.forEach(btn => {
-                const el = document.getElementById(`tabBtn-${btn}`);
-                if(el) {
-                    el.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
-                }
-            });
-
-            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
-            if(activeBtn) {
-                if(tabName === 'smart') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-indigo-50/30 text-indigo-600 border-indigo-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
-                if(tabName === 'favorites') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-amber-50/30 text-amber-600 border-amber-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
-                if(tabName === 'requests') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-blue-50/30 text-blue-600 border-blue-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 relative';
-            }
-
-            const iframe = document.getElementById('contentIframe');
-            if (!iframe) return;
-
-            const contentContainer = document.getElementById('contentContainer');
-            if (contentContainer) contentContainer.classList.remove('hidden');
-
-            const phone = typeof verifiedFullPhone !== 'undefined' && verifiedFullPhone ? verifiedFullPhone : localStorage.getItem('verified_user_phone');
-            let activeRefId = localStorage.getItem('active_profile_refid');
-            const refId = typeof activeRefId !== 'undefined' && activeRefId ? activeRefId : localStorage.getItem('active_profile_refid');
-            const gender = (typeof currentViewData !== 'undefined' && currentViewData) ? currentViewData.gender : localStorage.getItem('verified_user_gender');
-            
-            const firstName = (typeof currentViewData !== 'undefined' && currentViewData && currentViewData.name) ? currentViewData.name.split(' ')[0] : (localStorage.getItem('verified_user_name') ? localStorage.getItem('verified_user_name').split(' ')[0] : '');
-
-            let statusStr = "";
-            if (currentViewData) { statusStr = currentViewData.profileStatus || (currentViewData.fullDetails && currentViewData.fullDetails.profileStatus) || ""; }
-            let cleanStatus = statusStr ? encodeURIComponent(statusStr) : "";
-
-            if (!phone || !refId) return; 
-
-            if (tabName === 'smart') {
-                iframe.src = 'smart.html?phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&gender=' + encodeURIComponent(gender || '') + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
-            } else if (tabName === 'favorites') {
-                iframe.src = 'activity.html?tab=favorites&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
-            } else if (tabName === 'requests') {
-                iframe.src = 'activity.html?tab=requests&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
-            }
-        }
-
         async function refreshUserActivity() {
             const phone = localStorage.getItem('verified_user_phone');
             const activeRefId = localStorage.getItem('active_profile_refid') || localStorage.getItem('mainProfileRefId_' + phone) || "";
@@ -1612,6 +1513,94 @@
             } catch (e) { } finally { clearTimeout(timeoutId); }
         }
 
+        async function checkPendingIntent() {
+            if (isAdminMode) return;
+            const intentStr = localStorage.getItem('pending_guest_intent');
+            if (!intentStr) return; 
+            
+            try {
+                const intent = JSON.parse(intentStr);
+                const targetGender = intent.gender;
+                const targetRefId = intent.refId;
+                const myGender = currentViewData ? currentViewData.gender : null; 
+                const activeRefId = localStorage.getItem('active_profile_refid');
+
+                if (!myGender || !activeRefId) return;
+                
+                if (myGender === targetGender || myGender === 'غير محدد' || targetGender === 'غير محدد') {
+                    window.top.postMessage({ type: 'showMsgModal', title: 'تنبيه ذكي', message: 'الملف الذي كنت مهتماً به قبل التسجيل يعود لـ (' + targetGender + '). للتواصل معه، يرجى إضافة أو اختيار ملف من الجنس الآخر من شريط العائلة بالأعلى.' }, '*');
+                    return; 
+                }
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                
+                const res = await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ 
+                        action: "toggleFavorite", 
+                        phone: verifiedFullPhone, 
+                        requesterRefId: activeRefId, 
+                        refId: targetRefId 
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.removeItem('pending_guest_intent');
+                    window.top.postMessage({ type: 'showMsgModal', title: 'أهلاً بك معنا!', message: 'بناءً على اهتمامك قبل التسجيل، تم حفظ الملف رقم #' + targetRefId + ' في (مفضلاتك). يمكنك الدخول لتبويب مفضلاتي الآن ومراسلته براحة تامة.' }, '*');
+                    refreshUserActivity();
+                }
+            } catch (e) { console.error('خطأ في معالجة أمنية الزائر', e); }
+        }
+
+        function switchTab(tabName) {
+            const btns = ['smart', 'favorites', 'requests'];
+            btns.forEach(btn => {
+                const el = document.getElementById(`tabBtn-${btn}`);
+                if(el) {
+                    el.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all border-b-2 border-transparent bg-white whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                }
+            });
+
+            const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+            if(activeBtn) {
+                if(tabName === 'smart') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-indigo-50/30 text-indigo-600 border-indigo-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                if(tabName === 'favorites') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-amber-50/30 text-amber-600 border-amber-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5';
+                if(tabName === 'requests') activeBtn.className = 'flex-1 py-2.5 sm:py-3 px-1 sm:px-4 text-[11px] sm:text-sm font-bold transition-all border-b-2 bg-blue-50/30 text-blue-600 border-blue-500 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 relative';
+            }
+
+            const iframe = document.getElementById('contentIframe');
+            if (!iframe) return;
+
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer) contentContainer.classList.remove('hidden');
+
+            const phone = typeof verifiedFullPhone !== 'undefined' && verifiedFullPhone ? verifiedFullPhone : localStorage.getItem('verified_user_phone');
+            let activeRefId = localStorage.getItem('active_profile_refid');
+            const refId = typeof activeRefId !== 'undefined' && activeRefId ? activeRefId : localStorage.getItem('active_profile_refid');
+            const gender = (typeof currentViewData !== 'undefined' && currentViewData) ? currentViewData.gender : localStorage.getItem('verified_user_gender');
+            
+            const firstName = (typeof currentViewData !== 'undefined' && currentViewData && currentViewData.name) ? currentViewData.name.split(' ')[0] : (localStorage.getItem('verified_user_name') ? localStorage.getItem('verified_user_name').split(' ')[0] : '');
+
+            let statusStr = "";
+            if (currentViewData) { statusStr = currentViewData.profileStatus || (currentViewData.fullDetails && currentViewData.fullDetails.profileStatus) || ""; }
+            let cleanStatus = statusStr ? encodeURIComponent(statusStr) : "";
+
+            if (!phone || !refId) return; 
+
+            if (tabName === 'smart') {
+                iframe.src = 'smart.html?phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&gender=' + encodeURIComponent(gender || '') + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
+            } else if (tabName === 'favorites') {
+                iframe.src = 'activity.html?tab=favorites&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
+            } else if (tabName === 'requests') {
+                iframe.src = 'activity.html?tab=requests&phone=' + encodeURIComponent(phone) + '&refId=' + encodeURIComponent(refId) + '&name=' + encodeURIComponent(firstName) + '&status=' + cleanStatus;
+            }
+        }
+
         async function askSetMainProfile() {
             if(!currentViewData) return;
             closeBioSmoothly(); 
@@ -1652,14 +1641,11 @@
                 textToShare = bio;
             } else if (type === 'short') {
                 let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || "";
-                let secretInfo = currentViewData.secretInfo || (currentViewData.fullDetails && currentViewData.fullDetails.secretInfo) || "لا يوجد";
-                let unifiedName = currentViewData.unifiedName || (currentViewData.fullDetails && currentViewData.fullDetails.unifiedName) || "---";
-                let fullName = currentViewData.name || "---";
-
+                
                 if (!shortBio) {
                     textToShare = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`;
                 } else {
-                    textToShare = `${shortBio}\n\n════════════════\n👤 الاسم: ${fullName}\n🔒 معلومات سرية: ${secretInfo}\n════════════════\n📱 اسم الحفظ الموحد:\n${unifiedName}`;
+                    textToShare = shortBio;
                 }
             }
 
@@ -1682,8 +1668,6 @@
                     clearTimeout(timeoutId);
                     const result = await res.json();
                     
-                    document.getElementById('confirmModal').classList.add('hidden'); 
-                    
                     if(result.success) {
                         cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName);
                         currentViewedIndexInDashboard = null;
@@ -1691,7 +1675,6 @@
                         showMsgModal("نجاح", "تم الحذف بنجاح.");
                     } else showMsgModal("خطأ", result.message);
                 } catch(e) { 
-                    document.getElementById('confirmModal').classList.add('hidden'); 
                     if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
                     else showMsgModal("خطأ", "خطأ بالاتصال"); 
                 } finally { clearTimeout(timeoutId); }
@@ -1962,154 +1945,23 @@
 
         function closeTermsModal() { document.getElementById('termsModal').classList.add('hidden'); }
 
-        function renderSmartTags() {
-            if (isMale === null) return;
-            const nat = document.getElementById('nationality').value || "";
-            const isSaudi = nat.includes("سعودي") || nat.includes("السعودية") || nat.includes("خليجي") || nat.includes("إمارات") || nat.includes("كويت") || nat.includes("قطر") || nat.includes("بحرين") || nat.includes("عمان");
-            
-            let myTags = []; let partnerTags = [];
-            
-            const customNiqabSVG = `<svg class="w-4 h-4 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
-            const hijabIcon = `🧕`;
-
-            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
-            else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
-            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
-            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
-
-            const drawTag = (tag, isMyTag) => {
-                let iconStr = ''; let cleanTag = tag;
-                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
-                return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2.5 py-1.5 bg-white text-gray-700 text-[10px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
-            };
-
-            const myTagsC = document.getElementById('myTagsContainer'); if(myTagsC) myTagsC.innerHTML = myTags.map(tag => drawTag(tag, true)).join('');
-            const ptTagsC = document.getElementById('partnerTagsContainer'); if(ptTagsC) ptTagsC.innerHTML = partnerTags.map(tag => drawTag(tag, false)).join('');
-        }
-
-        function handleGenderChange(isSilentSync = false) {
-            isMale = document.getElementById('gender_male').checked; renderSmartTags();
-            const group = document.getElementById('tribalStatusGroup');
-            group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
-            
-            if (!isSilentSync) document.getElementById('namesContainer').classList.add('hidden');
-            
-            if(isMale) {
-                document.getElementById('menMarriageSection').classList.remove('hidden'); document.getElementById('womenMarriageSection').classList.add('hidden');
-                document.getElementById('femalePhysicalSpecs').classList.add('hidden'); document.getElementById('incomeDiv').classList.remove('hidden'); document.getElementById('monthlyIncome').required = true;
-            } else {
-                document.getElementById('womenMarriageSection').classList.remove('hidden'); document.getElementById('menMarriageSection').classList.add('hidden');
-                document.getElementById('femalePhysicalSpecs').classList.remove('hidden'); document.getElementById('incomeDiv').classList.add('hidden'); document.getElementById('monthlyIncome').required = false;
-            }
-            
-            if (!isSilentSync) { document.getElementById('childrenCountDiv').classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; }
-
-            const nats = isMale ? (dynamicDropdowns?.maleNationalities || fallbackDropdowns.maleNationalities) : (dynamicDropdowns?.femaleNationalities || fallbackDropdowns.femaleNationalities);
-            const jobs = isMale ? (dynamicDropdowns?.maleJobs || fallbackDropdowns.maleJobs) : (dynamicDropdowns?.femaleJobs || fallbackDropdowns.femaleJobs);
-            const mars = isMale ? (dynamicDropdowns?.maleMarital || fallbackDropdowns.maleMarital) : (dynamicDropdowns?.femaleMarital || fallbackDropdowns.femaleMarital);
-            const mTypes = isMale ? (dynamicDropdowns?.maleMarriageType || fallbackDropdowns.maleMarriageType) : (dynamicDropdowns?.femaleMarriageType || fallbackDropdowns.femaleMarriageType);
-            
-            let rawSkins = isMale ? (dynamicDropdowns?.maleSkinColors || fallbackDropdowns.maleSkinColors) : (dynamicDropdowns?.femaleSkinColors || fallbackDropdowns.femaleSkinColors);
-            const skins = rawSkins.map(s => s.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'));
-
-            let natOptions = '<option value="" disabled selected>-- اختر الجنسية --</option>'; if(nats) nats.forEach(nat => { let cleanVal = cleanArabicText(nat); natOptions += `<option value="${cleanVal}">${getFlagForText(cleanVal)} ${cleanVal}</option>`; });
-            const natEl = document.getElementById('nationality'); natEl.innerHTML = natOptions; natEl.classList.add('emoji-font');
-
-            let jobOptions = '<option value="" disabled selected>-- اختر الوظيفة --</option>'; if(jobs) [...jobs, "أخرى"].forEach(job => jobOptions += `<option value="${job}">${job}</option>`);
-            document.getElementById('jobStatus').innerHTML = jobOptions; if(!isSilentSync) document.getElementById('customJob').classList.add('hidden');
-
-            let marOptions = '<option value="" disabled selected>-- حدد الحالة --</option>'; if(mars) mars.forEach(m => marOptions += `<option value="${m}">${m}</option>`);
-            document.getElementById('maritalStatus').innerHTML = marOptions;
-
-            let marrOptions = '<option value="" disabled selected>-- اختر النوع --</option>'; if(mTypes) mTypes.forEach(m => marrOptions += `<option value="${m}">${m}</option>`);
-            if(isMale) document.getElementById('menMarriageType').innerHTML = marrOptions; else document.getElementById('womenMarriageType').innerHTML = marrOptions;
-
-            const skinHexCodes = ["#fefaf5", "#faead6", "#e1c699", "#c29062", "#8c5a35", "#54331c", "#2c1b12"]; 
-            const textColors = ["#1e293b", "#1e293b", "#1e293b", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]; 
-            let skinOptions = '';
-            
-            if(skins) {
-                skins.forEach((skin, index) => { 
-                    const hex = skinHexCodes[index] || "#cbd5e1"; 
-                    const textColor = textColors[index] || "#1e293b"; 
-                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-xl whitespace-nowrap text-xs font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
-                });
-                document.getElementById('skinColorGroup').innerHTML = skinOptions;
-            }
-            generateTerms(); if(!isSilentSync) saveDraft();
-        }
-
-        function handleTribalChange() {
-            const isQabili = document.getElementById('tribal_yes').checked;
-            document.getElementById('namesContainer').classList.remove('hidden'); 
-            document.getElementById('tribeNameDiv').classList.toggle('hidden', !isQabili); 
-            document.getElementById('familyNameDiv').classList.remove('hidden');
-            
-            const lbl = document.getElementById('familyLabel'); 
-            const inp = document.getElementById('familyName');
-            const tribeInp = document.getElementById('tribeName');
-            
-            const privacyHint = '<span class="text-emerald-600 font-normal text-[10px] mr-1">(لا يظهر في العام - للوسيط)</span>';
-            
-            if(isQabili) { 
-                lbl.innerHTML = `اسم العائلة <span class="text-gray-400 font-normal">(اختياري)</span> ${privacyHint}`; 
-                inp.required = false; 
-                tribeInp.required = true; 
-            } else { 
-                lbl.innerHTML = `اسم العائلة <span class="text-red-500">*</span> ${privacyHint}`; 
-                inp.required = true; 
-                tribeInp.required = false; 
-            }
-            saveDraft();
-        }
-
-        function handleMaritalStatusChange() {
-            const s = document.getElementById('maritalStatus').value; const div = document.getElementById('childrenCountDiv');
-            if(s === "أعزب" || s === "بكر") { div.classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; } else { div.classList.remove('hidden'); handleChildrenChange(); }
-            saveDraft();
-        }
-
-        function handleChildrenChange() {
-            const s = document.getElementById('maritalStatus').value; const count = parseInt(document.getElementById('childrenCount').value) || 0;
-            const div = document.getElementById('custodyDiv'); const sel = document.getElementById('custodyStatus');
-            if(count > 0 && (s.includes('مطلق') || s.includes('أرمل'))) {
-                div.classList.remove('hidden'); sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
-                if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
-            } else { div.classList.add('hidden'); }
-            saveDraft();
-        }
-
-        function handleResidenceChange() { const isKsa = document.getElementById('res_ksa').checked; document.getElementById('ksaCitiesDiv').classList.toggle('hidden', !isKsa); document.getElementById('worldCountriesDiv').classList.toggle('hidden', isKsa); saveDraft(); }
-        function toggleOriginDetails() { const isInside = document.getElementById('origin_in').checked; document.getElementById('originInsideDetails').classList.toggle('hidden', !isInside); document.getElementById('originOutsideDetails').classList.toggle('hidden', isInside); saveDraft(); }
-        function handleJobChange() { const isOther = document.getElementById('jobStatus').value === 'أخرى'; document.getElementById('customJob').classList.toggle('hidden', !isOther); document.getElementById('customJob').required = isOther; saveDraft(); }
-        function handleMenMarriageTypeChange() { document.getElementById('menSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('menMarriageType').value !== "زواج باشتراطات خاصة"); generateTerms(); saveDraft(); }
-        function handleWomenMarriageTypeChange() { document.getElementById('womenSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('womenMarriageType').value !== "زواج بظروف خاصة"); saveDraft(); }
-
-        function generateTerms() {
-            if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
-            if(isMale) { const isSpecial = document.getElementById('menMarriageType').value === "زواج باشتراطات خاصة"; container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-xs">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-xs">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; } 
-            else { container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-xs">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; }
-        }
-
-        function getCombinedAddInfo() {
-            const mySelectedTags = Array.from(document.querySelectorAll('input[name="myInfoTags"]:checked')).map(cb => cb.value).join('، ');
-            const baseAddInfo = document.getElementById('additionalInfo').value.trim(); return [mySelectedTags, baseAddInfo].filter(Boolean).join(' | ');
-        }
-        function getCombinedPartnerSpecs() {
-            const partnerSelectedTags = Array.from(document.querySelectorAll('input[name="partnerTags"]:checked')).map(cb => cb.value).join('، ');
-            const basePartnerSpecs = document.getElementById('partnerSpecs').value.trim(); return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
-        }
-
         async function submitForm(btn) {
+            // جدار الحماية الأول لمنع النقرات المزدوجة (Spam Clicking)
+            if (btn.disabled) return; 
+
             const agree = document.getElementById('agreeTerms').checked; const mError = document.getElementById('modalError');
             if(!agree) { mError.classList.remove('hidden'); return; }
             mError.classList.add('hidden');
             
             const originalText = btn.innerHTML;
             btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`; 
-            btn.disabled = true;
             
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+            // تعطيل الزر نهائياً لمنع إرسال طلب آخر
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            
+            const controller = new AbortController(); 
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
 
             const jobSelectVal = document.getElementById('jobStatus').value; const finalJob = (jobSelectVal === 'أخرى') ? document.getElementById('customJob').value : jobSelectVal;
             let finalAdditionalInfo = getCombinedAddInfo();
@@ -2156,32 +2008,54 @@
 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
-                clearTimeout(timeoutId); const responseText = await res.text();
+                clearTimeout(timeoutId); 
+                const responseText = await res.text();
                 try {
                     const result = JSON.parse(responseText);
                     if(result.success) {
-                        closeTermsModal(); document.getElementById('mainFormSection').classList.add('hidden');
+                        // نجاح: الزر يبقى معطلاً لمنع تكرار الإرسال
+                        closeTermsModal(); 
+                        document.getElementById('mainFormSection').classList.add('hidden');
                         document.getElementById('finalActionModal').classList.remove('hidden'); 
                         
                         registeredUserData = result.data || {};
-                        
                         hasClickedWaToApprove = false;
                         cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
                         if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
-                    } else showMsgModal("رفض الخادم", result.message);
-                } catch(e) { showMsgModal("خطأ", "حدث خطأ بالخادم عند الحفظ."); }
+                    } else {
+                        // خطأ برمجي من السيرفر: نفك التجميد ليصحح الخطأ
+                        showMsgModal("ملاحظة من الخادم", result.message);
+                        btn.innerHTML = originalText; 
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    }
+                } catch(e) { 
+                    showMsgModal("خطأ تقني", "حدث خطأ بالخادم عند معالجة البيانات."); 
+                    btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
             } catch(e) { 
-                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
-                else showMsgModal("خطأ اتصال", "تعذر الوصول للخادم."); 
-            } finally {
-                btn.innerHTML = originalText; btn.disabled = false;
+                // هنا حماية الـ Timeout (صندوق عقوبة الـ 15 ثانية)
+                if(e.name === 'AbortError') {
+                    showMsgModal("تنبيه أمان (ضعف الشبكة) ⚠️", "شبكة الإنترنت لديك ضعيفة جداً. ربما يكون طلبك قد وصل للإدارة بالفعل.\n\nيرجى إغلاق هذه النافذة والتحقق من (لوحة العائلة) بعد قليل للتأكد، وذلك لمنع تكرار تسجيل ملفك عدة مرات.");
+                    setTimeout(() => {
+                        btn.innerHTML = originalText; 
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    }, 15000);
+                } else { 
+                    showMsgModal("خطأ اتصال", "تعذر الوصول للخادم. يرجى التأكد من اتصالك بالإنترنت والمحاولة مجدداً."); 
+                    btn.innerHTML = originalText; 
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
             }
         }
 
         function executeFinalWhatsAppSync() {
             const resData = registeredUserData;
             if (resData && (resData.shortBio || resData.autoBio)) {
-                const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 اسم الحفظ الموحد:\n${resData.unifiedName || '---'}`;
+                // القالب الموحد المطلوب بدون عرض "اسم الحفظ الموحد"
+                const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 ${resData.unifiedName || '---'}`;
                 const encodedMessage = encodeURIComponent(adminMessage);
                 const brokerPhone = "966590779236"; 
                 window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedMessage}`, '_blank');
