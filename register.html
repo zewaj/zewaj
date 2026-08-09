@@ -79,6 +79,7 @@
         </a>
     </div>
 
+    <!-- ==================== أولاً: شاشة التحقق OTP ==================== -->
     <div id="otpSection" class="fixed inset-0 z-[100] flex items-end justify-center sm:items-center px-0 sm:px-4 fade-in">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
         <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 pb-12 sm:pb-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
@@ -106,6 +107,7 @@
             </div>
 
             <div id="otpStep2" class="space-y-4 hidden fade-in">
+                <!-- التنبيه لعدم انتظار SMS -->
                 <div class="bg-emerald-50 border-2 border-emerald-400/40 rounded-xl p-3 shadow-sm relative overflow-hidden mb-2">
                     <div class="absolute inset-0 bg-emerald-400/10 animate-pulse"></div>
                     <p class="text-[11px] sm:text-xs font-bold text-center text-emerald-900 relative z-10 leading-relaxed">
@@ -130,6 +132,7 @@
         </div>
     </div>
 
+    <!-- ==================== ثانياً: لوحة تحكم العائلة ==================== -->
     <div id="dashboardSection" class="w-full hidden fade-in flex-1 pt-4 sm:pt-8">
         <div id="profilesLoading" class="hidden flex-col items-center justify-center py-24 bg-transparent w-full fade-in">
             <div class="relative flex items-center justify-center mb-8 h-20 w-32">
@@ -172,11 +175,13 @@
                             </div>
                             <div class="flex items-center gap-2 mr-3">
                                 <span id="headerAccountRel" class="text-[10px] font-bold text-gray-600 bg-white/70 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-gray-200 shadow-sm shrink-0 hidden"></span>
+                                <!-- شارة قيد المراجعة -->
                                 <span id="headerAccountStatus" class="text-[10px] font-bold text-orange-700 bg-orange-100/90 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-orange-300 shadow-sm shrink-0 hidden"></span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- شريط العائلة مفتوح دائماً وتظهر فيه بطاقة "إضافة فرد" -->
                     <div id="familyCarouselWrapper" class="w-full mt-1 mb-3 fade-in bg-gray-50/80 p-2 rounded-2xl border border-gray-100 shadow-inner">
                         <div class="flex justify-between items-center px-1 mb-1.5">
                             <h4 class="text-[10px] font-bold text-gray-500">اختر الملف المطلوب للتبديل:</h4>
@@ -200,7 +205,6 @@
                         </div>
                     </div>
 
-                    <!-- أزرار الإجراءات السفلية في لوحة العائلة -->
                     <div class="flex justify-between items-center bg-gray-50/80 p-2 rounded-2xl border border-gray-100 gap-1.5 sm:gap-2">
                         <!-- زر تعديل البيانات -->
                         <button onclick="handleHeroAction('edit')" class="flex-1 flex items-center justify-center gap-1.5 p-2 text-amber-600 bg-white hover:bg-amber-50 rounded-xl border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 font-bold text-xs sm:text-sm whitespace-nowrap">
@@ -209,15 +213,14 @@
                         </button>
                         
                         <!-- زر الواتساب الفاتح (للنبذة المختصرة) -->
-                        <button onclick="shareFromHero('short')" class="flex items-center justify-center gap-1 p-2 text-[#059669] bg-[#25D366]/10 hover:bg-[#25D366]/20 rounded-xl border border-emerald-200/50 shadow-sm transition-all focus:ring-2 focus:ring-[#25D366]/50" title="إرسال النبذة المختصرة للإدارة">
+                        <button onclick="shareFromHero('short')" class="flex items-center justify-center gap-1 p-2 text-[#059669] bg-[#25D366]/10 hover:bg-[#25D366]/20 rounded-xl border border-emerald-200/50 shadow-sm transition-all focus:ring-2 focus:ring-[#25D366]/50" title="إرسال النبذة المختصرة">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                             <span class="text-[9px] sm:text-[10px] font-bold">مختصرة</span>
                         </button>
 
                         <!-- زر الواتساب الغامق (للنبذة الكاملة) -->
-                        <button onclick="shareFromHero('full')" class="flex items-center justify-center gap-1 p-2 text-white bg-[#059669] hover:bg-[#047857] rounded-xl shadow-sm transition-all focus:ring-2 focus:ring-[#047857]/50" title="إرسال النبذة الكاملة للإدارة">
+                        <button onclick="shareFromHero('full')" class="flex items-center justify-center gap-1 p-2 text-white bg-[#059669] hover:bg-[#047857] rounded-xl shadow-sm transition-all focus:ring-2 focus:ring-[#047857]/50" title="إرسال النبذة الكاملة">
                             <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                            <span class="text-[9px] sm:text-[10px] font-bold">كاملة</span>
                         </button>
 
                         <!-- زر الحذف -->
@@ -241,6 +244,7 @@
         </div>
     </div>
 
+    <!-- ==================== ثالثاً: نموذج تسجيل البيانات ==================== -->
     <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-12 mt-2 flex-1 max-w-3xl pt-4 sm:pt-6">
         <div class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200 mb-4 sm:mb-6 mt-6 sm:mt-0">
             <div class="w-full bg-gray-200 h-1.5 overflow-hidden"><div id="progressBar" class="bg-emerald-600 h-1.5 progress-bar" style="width: 20%"></div></div>
@@ -485,7 +489,7 @@
         </div>
     </div>
 
-    <!-- النافذة المنبثقة الإجبارية للاعتماد النهائي -->
+    <!-- النافذة المنبثقة الإجبارية للاعتماد النهائي التي تظهر فوق لوحة التحكم مباشرة -->
     <div id="finalActionModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[130] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative overflow-hidden border border-emerald-100">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
@@ -504,6 +508,7 @@
         </div>
     </div>
 
+    <!-- رسائل وتنبيهات النظام -->
     <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl transform transition-all text-center">
             <h3 id="msgModalTitle" class="text-base font-bold text-gray-900 mb-1.5">تنبيه</h3>
@@ -546,30 +551,29 @@
         </div>
     </div>
 
+    <!-- نافذة إضافة فرد جديد المُحدثة (إزالة النسخ) -->
     <div id="addMemberOptionsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
-        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl relative overflow-hidden">
-            <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl relative overflow-hidden text-center border border-indigo-100">
+            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2 text-center">إضافة فرد جديد</h3>
-            
-            <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-5 text-center">
-                <p class="text-[11px] sm:text-xs text-amber-800 font-bold leading-relaxed">
-                    تنبيه: إضافة ملف جديد تتم تحت مسؤوليتك. يُرجى العلم أنه يُسمح فقط بإضافة الأقارب من الدرجة الأولى (الأب، الأم، الأبناء، الإخوة والأخوات).
+            <h3 class="text-lg font-bold text-gray-900 mb-2">إضافة فرد جديد</h3>
+            <div class="bg-red-50/80 p-3 rounded-xl border border-red-100 mb-5">
+                <p class="text-xs text-red-800 leading-relaxed font-semibold">
+                    إضافة ملف جديد تتم تحت مسؤوليتك.<br>
+                    يُسمح فقط بإضافة <span class="font-bold text-red-600 underline">الأقارب من الدرجة الأولى</span><br>(أب، أم، أبناء، إخوان، أخوات).
                 </p>
             </div>
             
-            <div class="flex flex-col gap-3">
-                <button onclick="startNewMemberBlank()" class="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-md group font-bold text-sm">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    البدء بتسجيل الملف
-                </button>
-            </div>
-            
-            <button onclick="closeAddMemberOptionsModal()" class="w-full mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-colors text-sm">تراجع</button>
+            <button onclick="startNewMemberBlank()" class="w-full flex items-center justify-center gap-2 p-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all text-sm mb-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                بدء تسجيل ملف جديد
+            </button>
+            <button onclick="closeAddMemberOptionsModal()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-colors text-sm">إلغاء والتراجع</button>
         </div>
     </div>
 
+    <!-- السكربتات الأساسية -->
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
         
@@ -590,11 +594,17 @@
         }
 
         function openAddMemberOptionsModal() {
-            document.getElementById('addMemberOptionsModal').classList.remove('hidden');
+            const modal = document.getElementById('addMemberOptionsModal');
+            if(modal) {
+                modal.classList.remove('hidden');
+            }
         }
 
         function closeAddMemberOptionsModal() {
-            document.getElementById('addMemberOptionsModal').classList.add('hidden');
+            const modal = document.getElementById('addMemberOptionsModal');
+            if(modal) {
+                modal.classList.add('hidden');
+            }
         }
 
         function closeFinalActionModal() {
@@ -884,15 +894,27 @@
             const newYes = yesBtn.cloneNode(true); yesBtn.parentNode.replaceChild(newYes, yesBtn);
             newYes.addEventListener('click', async () => { 
                 newYes.innerText = "جاري المعالجة..."; newYes.disabled = true;
-                if(onYes) await onYes(); 
-                closeConfirmModal(); 
+                try {
+                    if(onYes) await onYes(); 
+                } catch(err) {
+                    console.error("Error during confirm action:", err);
+                } finally {
+                    closeConfirmModal(); 
+                }
             });
             document.getElementById('confirmModal').classList.remove('hidden'); pendingDelete = onNo; 
         }
 
         function closeConfirmModal() { 
-            document.getElementById('confirmModal').classList.add('hidden'); 
-            if(pendingDelete && typeof pendingDelete === 'function') { pendingDelete(); pendingDelete = null; }
+            const modal = document.getElementById('confirmModal');
+            if (modal) modal.classList.add('hidden'); 
+            
+            const yesBtn = document.getElementById('confirmYesBtn');
+            if (yesBtn) {
+                yesBtn.innerText = "نعم، متأكد";
+                yesBtn.disabled = false;
+            }
+            if(pendingDelete && typeof pendingDelete === 'function') { pendingDelete = null; }
         }
 
         function logout() {
@@ -1297,7 +1319,7 @@
                         <span class="text-lg font-bold mt-[-2px]">+</span>
                     </div>
                     <div class="text-[9px] font-bold text-indigo-700 truncate w-full text-center">إضافة فرد</div>
-                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">تحت مسؤوليتك</div>
+                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">ملف جديد</div>
                 </button>
             `;
 
@@ -1313,7 +1335,7 @@
                 const hasAlert = familyAlerts.some(id => String(id) === String(p.refId) || String(id) === pUid);
 
                 let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-100 hover:bg-gray-50";
-                let alertClass = hasAlert ? "border-red-300 bg-red-50 shadow-sm" : bgClass;
+                let alertClass = hasAlert ? "border-red-300 bg-red-50/50 shadow-sm" : bgClass;
                 let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
                 
                 const avatarSvg = p.gender === 'ذكر' 
@@ -1464,7 +1486,7 @@
                                         <span class="text-lg font-bold mt-[-2px]">+</span>
                                     </div>
                                     <div class="text-[9px] font-bold text-indigo-700 truncate w-full text-center">إضافة فرد</div>
-                                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">تحت مسؤوليتك</div>
+                                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full text-center mt-0.5">ملف جديد</div>
                                 </button>
                             `;
 
@@ -1641,7 +1663,6 @@
                 textToShare = bio;
             } else if (type === 'short') {
                 let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || "";
-                
                 if (!shortBio) {
                     textToShare = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`;
                 } else {
@@ -1668,6 +1689,8 @@
                     clearTimeout(timeoutId);
                     const result = await res.json();
                     
+                    document.getElementById('confirmModal').classList.add('hidden'); // إخفاء مباشر ومؤكد
+                    
                     if(result.success) {
                         cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName);
                         currentViewedIndexInDashboard = null;
@@ -1675,6 +1698,7 @@
                         showMsgModal("نجاح", "تم الحذف بنجاح.");
                     } else showMsgModal("خطأ", result.message);
                 } catch(e) { 
+                    document.getElementById('confirmModal').classList.add('hidden'); 
                     if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
                     else showMsgModal("خطأ", "خطأ بالاتصال"); 
                 } finally { clearTimeout(timeoutId); }
@@ -1945,8 +1969,145 @@
 
         function closeTermsModal() { document.getElementById('termsModal').classList.add('hidden'); }
 
+        function renderSmartTags() {
+            if (isMale === null) return;
+            const nat = document.getElementById('nationality').value || "";
+            const isSaudi = nat.includes("سعودي") || nat.includes("السعودية") || nat.includes("خليجي") || nat.includes("إمارات") || nat.includes("كويت") || nat.includes("قطر") || nat.includes("بحرين") || nat.includes("عمان");
+            
+            let myTags = []; let partnerTags = [];
+            
+            const customNiqabSVG = `<svg class="w-4 h-4 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
+            const hijabIcon = `🧕`;
+
+            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
+            else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
+            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+
+            const drawTag = (tag, isMyTag) => {
+                let iconStr = ''; let cleanTag = tag;
+                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
+                return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2.5 py-1.5 bg-white text-gray-700 text-[10px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
+            };
+
+            const myTagsC = document.getElementById('myTagsContainer'); if(myTagsC) myTagsC.innerHTML = myTags.map(tag => drawTag(tag, true)).join('');
+            const ptTagsC = document.getElementById('partnerTagsContainer'); if(ptTagsC) ptTagsC.innerHTML = partnerTags.map(tag => drawTag(tag, false)).join('');
+        }
+
+        function handleGenderChange(isSilentSync = false) {
+            isMale = document.getElementById('gender_male').checked; renderSmartTags();
+            const group = document.getElementById('tribalStatusGroup');
+            group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
+            
+            if (!isSilentSync) document.getElementById('namesContainer').classList.add('hidden');
+            
+            if(isMale) {
+                document.getElementById('menMarriageSection').classList.remove('hidden'); document.getElementById('womenMarriageSection').classList.add('hidden');
+                document.getElementById('femalePhysicalSpecs').classList.add('hidden'); document.getElementById('incomeDiv').classList.remove('hidden'); document.getElementById('monthlyIncome').required = true;
+            } else {
+                document.getElementById('womenMarriageSection').classList.remove('hidden'); document.getElementById('menMarriageSection').classList.add('hidden');
+                document.getElementById('femalePhysicalSpecs').classList.remove('hidden'); document.getElementById('incomeDiv').classList.add('hidden'); document.getElementById('monthlyIncome').required = false;
+            }
+            
+            if (!isSilentSync) { document.getElementById('childrenCountDiv').classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; }
+
+            const nats = isMale ? (dynamicDropdowns?.maleNationalities || fallbackDropdowns.maleNationalities) : (dynamicDropdowns?.femaleNationalities || fallbackDropdowns.femaleNationalities);
+            const jobs = isMale ? (dynamicDropdowns?.maleJobs || fallbackDropdowns.maleJobs) : (dynamicDropdowns?.femaleJobs || fallbackDropdowns.femaleJobs);
+            const mars = isMale ? (dynamicDropdowns?.maleMarital || fallbackDropdowns.maleMarital) : (dynamicDropdowns?.femaleMarital || fallbackDropdowns.femaleMarital);
+            const mTypes = isMale ? (dynamicDropdowns?.maleMarriageType || fallbackDropdowns.maleMarriageType) : (dynamicDropdowns?.femaleMarriageType || fallbackDropdowns.femaleMarriageType);
+            
+            let rawSkins = isMale ? (dynamicDropdowns?.maleSkinColors || fallbackDropdowns.maleSkinColors) : (dynamicDropdowns?.femaleSkinColors || fallbackDropdowns.femaleSkinColors);
+            const skins = rawSkins.map(s => s.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'));
+
+            let natOptions = '<option value="" disabled selected>-- اختر الجنسية --</option>'; if(nats) nats.forEach(nat => { let cleanVal = cleanArabicText(nat); natOptions += `<option value="${cleanVal}">${getFlagForText(cleanVal)} ${cleanVal}</option>`; });
+            const natEl = document.getElementById('nationality'); natEl.innerHTML = natOptions; natEl.classList.add('emoji-font');
+
+            let jobOptions = '<option value="" disabled selected>-- اختر الوظيفة --</option>'; if(jobs) [...jobs, "أخرى"].forEach(job => jobOptions += `<option value="${job}">${job}</option>`);
+            document.getElementById('jobStatus').innerHTML = jobOptions; if(!isSilentSync) document.getElementById('customJob').classList.add('hidden');
+
+            let marOptions = '<option value="" disabled selected>-- حدد الحالة --</option>'; if(mars) mars.forEach(m => marOptions += `<option value="${m}">${m}</option>`);
+            document.getElementById('maritalStatus').innerHTML = marOptions;
+
+            let marrOptions = '<option value="" disabled selected>-- اختر النوع --</option>'; if(mTypes) mTypes.forEach(m => marrOptions += `<option value="${m}">${m}</option>`);
+            if(isMale) document.getElementById('menMarriageType').innerHTML = marrOptions; else document.getElementById('womenMarriageType').innerHTML = marrOptions;
+
+            const skinHexCodes = ["#fefaf5", "#faead6", "#e1c699", "#c29062", "#8c5a35", "#54331c", "#2c1b12"]; 
+            const textColors = ["#1e293b", "#1e293b", "#1e293b", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]; 
+            let skinOptions = '';
+            
+            if(skins) {
+                skins.forEach((skin, index) => { 
+                    const hex = skinHexCodes[index] || "#cbd5e1"; 
+                    const textColor = textColors[index] || "#1e293b"; 
+                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-xl whitespace-nowrap text-xs font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
+                });
+                document.getElementById('skinColorGroup').innerHTML = skinOptions;
+            }
+            generateTerms(); if(!isSilentSync) saveDraft();
+        }
+
+        function handleTribalChange() {
+            const isQabili = document.getElementById('tribal_yes').checked;
+            document.getElementById('namesContainer').classList.remove('hidden'); 
+            document.getElementById('tribeNameDiv').classList.toggle('hidden', !isQabili); 
+            document.getElementById('familyNameDiv').classList.remove('hidden');
+            
+            const lbl = document.getElementById('familyLabel'); 
+            const inp = document.getElementById('familyName');
+            const tribeInp = document.getElementById('tribeName');
+            
+            const privacyHint = '<span class="text-emerald-600 font-normal text-[10px] mr-1">(لا يظهر في العام - للوسيط)</span>';
+            
+            if(isQabili) { 
+                lbl.innerHTML = `اسم العائلة <span class="text-gray-400 font-normal">(اختياري)</span> ${privacyHint}`; 
+                inp.required = false; 
+                tribeInp.required = true; 
+            } else { 
+                lbl.innerHTML = `اسم العائلة <span class="text-red-500">*</span> ${privacyHint}`; 
+                inp.required = true; 
+                tribeInp.required = false; 
+            }
+            saveDraft();
+        }
+
+        function handleMaritalStatusChange() {
+            const s = document.getElementById('maritalStatus').value; const div = document.getElementById('childrenCountDiv');
+            if(s === "أعزب" || s === "بكر") { div.classList.add('hidden'); document.getElementById('custodyDiv').classList.add('hidden'); document.getElementById('childrenCount').value = ""; } else { div.classList.remove('hidden'); handleChildrenChange(); }
+            saveDraft();
+        }
+
+        function handleChildrenChange() {
+            const s = document.getElementById('maritalStatus').value; const count = parseInt(document.getElementById('childrenCount').value) || 0;
+            const div = document.getElementById('custodyDiv'); const sel = document.getElementById('custodyStatus');
+            if(count > 0 && (s.includes('مطلق') || s.includes('أرمل'))) {
+                div.classList.remove('hidden'); sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
+                if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
+            } else { div.classList.add('hidden'); }
+            saveDraft();
+        }
+
+        function handleResidenceChange() { const isKsa = document.getElementById('res_ksa').checked; document.getElementById('ksaCitiesDiv').classList.toggle('hidden', !isKsa); document.getElementById('worldCountriesDiv').classList.toggle('hidden', isKsa); saveDraft(); }
+        function toggleOriginDetails() { const isInside = document.getElementById('origin_in').checked; document.getElementById('originInsideDetails').classList.toggle('hidden', !isInside); document.getElementById('originOutsideDetails').classList.toggle('hidden', isInside); saveDraft(); }
+        function handleJobChange() { const isOther = document.getElementById('jobStatus').value === 'أخرى'; document.getElementById('customJob').classList.toggle('hidden', !isOther); document.getElementById('customJob').required = isOther; saveDraft(); }
+        function handleMenMarriageTypeChange() { document.getElementById('menSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('menMarriageType').value !== "زواج باشتراطات خاصة"); generateTerms(); saveDraft(); }
+        function handleWomenMarriageTypeChange() { document.getElementById('womenSpecialSpecsWrapper').classList.toggle('hidden', document.getElementById('womenMarriageType').value !== "زواج بظروف خاصة"); saveDraft(); }
+
+        function generateTerms() {
+            if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
+            if(isMale) { const isSpecial = document.getElementById('menMarriageType').value === "زواج باشتراطات خاصة"; container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-xs">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-xs">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; } 
+            else { container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-xs">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; }
+        }
+
+        function getCombinedAddInfo() {
+            const mySelectedTags = Array.from(document.querySelectorAll('input[name="myInfoTags"]:checked')).map(cb => cb.value).join('، ');
+            const baseAddInfo = document.getElementById('additionalInfo').value.trim(); return [mySelectedTags, baseAddInfo].filter(Boolean).join(' | ');
+        }
+        function getCombinedPartnerSpecs() {
+            const partnerSelectedTags = Array.from(document.querySelectorAll('input[name="partnerTags"]:checked')).map(cb => cb.value).join('، ');
+            const basePartnerSpecs = document.getElementById('partnerSpecs').value.trim(); return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
+        }
+
         async function submitForm(btn) {
-            // جدار الحماية الأول لمنع النقرات المزدوجة (Spam Clicking)
             if (btn.disabled) return; 
 
             const agree = document.getElementById('agreeTerms').checked; const mError = document.getElementById('modalError');
@@ -1956,12 +2117,11 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`; 
             
-            // تعطيل الزر نهائياً لمنع إرسال طلب آخر
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
             const controller = new AbortController(); 
-            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            const timeoutId = setTimeout(() => controller.abort(), 20000); 
 
             const jobSelectVal = document.getElementById('jobStatus').value; const finalJob = (jobSelectVal === 'أخرى') ? document.getElementById('customJob').value : jobSelectVal;
             let finalAdditionalInfo = getCombinedAddInfo();
@@ -2013,7 +2173,6 @@
                 try {
                     const result = JSON.parse(responseText);
                     if(result.success) {
-                        // نجاح: الزر يبقى معطلاً لمنع تكرار الإرسال
                         closeTermsModal(); 
                         document.getElementById('mainFormSection').classList.add('hidden');
                         document.getElementById('finalActionModal').classList.remove('hidden'); 
@@ -2023,7 +2182,6 @@
                         cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
                         if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
                     } else {
-                        // خطأ برمجي من السيرفر: نفك التجميد ليصحح الخطأ
                         showMsgModal("ملاحظة من الخادم", result.message);
                         btn.innerHTML = originalText; 
                         btn.disabled = false;
@@ -2034,7 +2192,6 @@
                     btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 }
             } catch(e) { 
-                // هنا حماية الـ Timeout (صندوق عقوبة الـ 15 ثانية)
                 if(e.name === 'AbortError') {
                     showMsgModal("تنبيه أمان (ضعف الشبكة) ⚠️", "شبكة الإنترنت لديك ضعيفة جداً. ربما يكون طلبك قد وصل للإدارة بالفعل.\n\nيرجى إغلاق هذه النافذة والتحقق من (لوحة العائلة) بعد قليل للتأكد، وذلك لمنع تكرار تسجيل ملفك عدة مرات.");
                     setTimeout(() => {
@@ -2054,7 +2211,6 @@
         function executeFinalWhatsAppSync() {
             const resData = registeredUserData;
             if (resData && (resData.shortBio || resData.autoBio)) {
-                // القالب الموحد المطلوب بدون عرض "اسم الحفظ الموحد"
                 const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 ${resData.unifiedName || '---'}`;
                 const encodedMessage = encodeURIComponent(adminMessage);
                 const brokerPhone = "966590779236"; 
