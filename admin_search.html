@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مركز الإدارة والبيانات</title>
+    
+    <script>
+        // تعريف استباقي لمنع خطأ ReferenceError
+        window.tailwind = {
+            config: {
+                theme: { extend: { fontFamily: { sans: ['Tajawal', 'sans-serif'] } } }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .toast-enter { animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        .toast-exit { animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <header id="main-header" class="bg-white border-b border-slate-200 shadow-sm z-10 hidden">
+        <div class="px-4 py-3 flex items-center justify-between gap-2">
+            <!-- الشعار -->
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0"><i class="fas fa-database"></i></div>
+                <div class="hidden sm:block">
+                    <h1 class="font-bold text-sm leading-tight text-slate-800">مركز البيانات</h1>
+                    <div class="flex items-center gap-1 text-[9px] text-emerald-600 font-bold"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> متصل (الإصدار 5.0)</div>
+                </div>
+            </div>
+
+            <!-- زر طلبات بانتظار المراجعة -->
+            <button onclick="loadPendingProfiles()" class="flex-1 max-w-[180px] flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-full transition-colors group">
+                <i class="fas fa-clock text-amber-500 group-hover:rotate-180 transition-transform duration-500"></i>
+                <span class="text-xs font-bold whitespace-nowrap">الانتظار</span>
+                <span id="pending-counter" class="bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[20px] text-center">0</span>
+            </button>
+
+            <!-- أدوات إضافية -->
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="window.open('search.html', '_blank')" class="w-9 h-9 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors shadow-sm" title="البحث الشامل"><i class="fas fa-search-plus"></i></button>
+                <button onclick="logout()" class="w-9 h-9 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-xl transition-colors shadow-sm" title="تسجيل خروج"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+
+        <div class="px-4 pb-3">
+            <div class="max-w-md mx-auto">
+                <div class="flex bg-slate-100 p-1 rounded-xl mb-2 border border-slate-200">
+                    <button onclick="setSearchType('refId')" id="tab-ref" class="flex-1 bg-white shadow-sm text-indigo-600 text-xs font-black py-2 rounded-lg transition-all border border-slate-200/50"><i class="fas fa-hashtag mr-1 opacity-50"></i> رقم الطلب</button>
+                    <button onclick="setSearchType('phone')" id="tab-phone" class="flex-1 text-slate-500 hover:text-slate-700 text-xs font-bold py-2 rounded-lg transition-all border border-transparent"><i class="fas fa-phone-alt mr-1 opacity-50"></i> رقم الجوال</button>
+                </div>
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <input type="text" id="smart-search-input" placeholder="أدخل رقم الملف للبحث..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dir-ltr text-right placeholder:font-normal" onkeypress="if(event.key === 'Enter') performQuickSearch()">
+                        <i class="fas fa-keyboard absolute left-3 top-3.5 text-slate-400"></i>
+                    </div>
+                    <button onclick="performQuickSearch()" id="quick-search-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">بحث</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-hidden flex flex-col bg-slate-50 relative">
+        <div id="login-view" class="absolute inset-0 z-20 bg-slate-50 flex items-center justify-center p-4">
+            <div class="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-slate-100 text-center">
+                <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl"><i class="fas fa-shield-alt"></i></div>
+                <h2 class="text-2xl font-black text-slate-800 mb-2">لوحة الإدارة</h2>
+                <p class="text-slate-500 text-sm mb-8 font-medium">أدخل الرقم السري للوصول إلى مركز البيانات</p>
+                <input type="password" id="admin-password" placeholder="الرمز السري" class="w-full text-center px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-lg tracking-widest dir-ltr font-mono" onkeypress="if(event.key === 'Enter') login()">
+                <button id="login-btn" onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-200 flex justify-center items-center gap-2">تسجيل الدخول <i class="fas fa-sign-in-alt text-sm"></i></button>
+            </div>
+        </div>
+
+        <div id="dashboard-view" class="hidden flex-1 overflow-hidden flex flex-col">
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div class="max-w-7xl mx-auto pb-24">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="results-title" class="text-lg font-black text-slate-800 flex items-center gap-2"></h2>
+                    </div>
+                    <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="bulk-action-bar" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-4 z-40 transition-all duration-300 transform translate-y-32 opacity-0 border border-slate-700">
+            <div class="flex items-center gap-2 px-2 border-l border-slate-700">
+                <span id="bulk-count" class="font-black text-lg text-indigo-400">0</span>
+                <span class="text-xs font-bold text-slate-300">محدد</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="actionBulkChangeStatus()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-indigo-900/50">
+                    <i class="fas fa-layer-group"></i> إجراء جماعي
+                </button>
+                <button onclick="toggleSelectAll()" id="btn-select-all" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold transition-colors">تحديد الكل</button>
+                <button onclick="clearSelection()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-xl text-xs font-bold transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col transform scale-95 transition-transform overflow-hidden border border-slate-100">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 id="modal-title" class="font-black text-slate-800 text-base leading-tight">العنوان</h3>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 transition-colors shrink-0"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="modal-body" class="p-5 overflow-y-auto custom-scrollbar flex-1 bg-white relative"></div>
+        </div>
+    </div>
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none"></div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        
+        let state = { adminToken: localStorage.getItem('adminToken') || null, searchResults: [], pendingCount: 0, searchTarget: 'refId', selectedIds: new Set() };
+        
+        const els = {
+            loginView: document.getElementById('login-view'), dashboardView: document.getElementById('dashboard-view'), mainHeader: document.getElementById('main-header'),
+            passwordInput: document.getElementById('admin-password'), loginBtn: document.getElementById('login-btn'), resultsContainer: document.getElementById('results-container'),
+            resultsTitle: document.getElementById('results-title'), searchInput: document.getElementById('smart-search-input'), quickSearchBtn: document.getElementById('quick-search-btn'),
+            pendingCounter: document.getElementById('pending-counter'),
+            bulkBar: document.getElementById('bulk-action-bar'), bulkCount: document.getElementById('bulk-count')
+        };
+
+        // --- Core Utilities ---
+        function encodeBase64(str) { return btoa(unescape(encodeURIComponent(str || ''))); }
+        function decodeBase64(b64) { try { return decodeURIComponent(escape(atob(b64 || ''))); } catch(e) { return ''; } }
+        
+        // اصلاح دالة فك التشفير من الـ HTML
+        function decodeFromHTML(html) {
+            if (!html) return '';
+            const txt = document.createElement("textarea");
+            txt.innerHTML = html;
+            return txt.value;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
+            toast.className = `flex items-center justify-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-white ${colors} toast-enter`;
+            toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span class="font-bold text-sm text-center">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function openModal(title, bodyHTML, footerHTML = '', bodyClasses = 'p-5') {
+            document.getElementById('modal-title').innerHTML = title;
+            let fullContent = bodyHTML;
+            if(footerHTML) fullContent += `<div class="mt-4 pt-4 border-t border-slate-100 flex gap-2">${footerHTML}</div>`;
+            document.getElementById('modal-body').innerHTML = fullContent;
+            document.getElementById('modal-body').className = `overflow-y-auto custom-scrollbar flex-1 bg-slate-50 relative ${bodyClasses}`;
+            const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content');
+            backdrop.classList.remove('hidden'); void backdrop.offsetWidth; backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95');
+        }
+
+        function closeModal() {
+            const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content');
+            backdrop.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { backdrop.classList.add('hidden'); document.getElementById('modal-body').innerHTML = ''; }, 300);
+        }
+
+        function setBtnLoading(btn, isLoading, origText) {
+            if (!btn) return;
+            if (isLoading) { btn.disabled = true; btn.dataset.orig = btn.innerHTML; btn.innerHTML = `<span class="loader border-t-white border-2 w-4 h-4"></span>`; btn.classList.add('opacity-80', 'cursor-wait'); } 
+            else { btn.disabled = false; btn.innerHTML = origText || btn.dataset.orig; btn.classList.remove('opacity-80', 'cursor-wait'); }
+        }
+
+        async function apiCall(payload) {
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow', signal: controller.signal });
+                clearTimeout(timeoutId); if (!res.ok) throw new Error(`خطأ سيرفر: ${res.status}`);
+                const data = await res.json(); if (data.success === false) throw new Error(data.error || 'خطأ من السيرفر'); return data;
+            } catch (error) { 
+                clearTimeout(timeoutId); 
+                if (error.name === 'AbortError') throw new Error('تأخر السيرفر في الرد. حاول مجدداً.'); 
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    throw new Error('تم حظر الاتصال. (تأكد من اتصالك بالإنترنت، وأنه تم رفع النظام على استضافة ويب وليس من القرص المحلي).');
+                }
+                throw error; 
+            }
+        }
+
+        // --- Status Engine Dictionary (القاموس الموحد) ---
+        function getStatusConfig(status) {
+            let s = status ? status.trim() : 'نشط';
+            if (['انتظار', 'جديد'].includes(s)) s = 'جديد';
+            
+            const map = {
+                'نشط': { classes: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: 'fa-check-circle', label: 'نشط', canContact: true },
+                'تواصل مباشر': { classes: 'bg-purple-100 text-purple-700 border-purple-200', icon: 'fa-bolt', label: 'تواصل مباشر', canContact: false },
+                'خامل': { classes: 'bg-slate-200 text-slate-600 border-slate-300', icon: 'fa-moon', label: 'خامل', canContact: true },
+                'جديد': { classes: 'bg-blue-100 text-blue-700 border-blue-200', icon: 'fa-star', label: 'جديد', canContact: true },
+                'قيد المراجعة': { classes: 'bg-orange-100 text-orange-700 border-orange-200', icon: 'fa-clock', label: 'قيد المراجعة', canContact: true },
+                'تم الزواج': { classes: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: 'fa-ring', label: 'تم الزواج', canContact: true },
+                'محذوف': { classes: 'bg-red-100 text-red-700 border-red-200', icon: 'fa-trash', label: 'محذوف', canContact: true }
+            };
+            return map[s] || map['نشط'];
+        }
+
+        async function login() {
+            const pwd = els.passwordInput.value.trim(); if(!pwd) return showToast('أدخل الرمز السري', 'error');
+            setBtnLoading(els.loginBtn, true, '');
+            try { const res = await apiCall({ action: 'adminLogin', password: pwd }); state.adminToken = res.token || pwd; localStorage.setItem('adminToken', state.adminToken); showToast('تم تسجيل الدخول'); checkAuth(); } 
+            catch (error) { showToast(error.message, 'error'); } finally { setBtnLoading(els.loginBtn, false, 'تسجيل الدخول <i class="fas fa-sign-in-alt text-sm"></i>'); }
+        }
+        function logout() { localStorage.removeItem('adminToken'); state.adminToken = null; checkAuth(); }
+        function checkAuth() {
+            if (state.adminToken) { els.loginView.classList.add('hidden'); els.dashboardView.classList.remove('hidden'); els.mainHeader.classList.remove('hidden'); loadPendingProfiles(); } 
+            else { els.loginView.classList.remove('hidden'); els.dashboardView.classList.add('hidden'); els.mainHeader.classList.add('hidden'); els.passwordInput.value = ''; }
+        }
+
+        window.setSearchType = function(type) {
+            state.currentSearchType = type;
+            const btnRef = document.getElementById('tab-ref'); const btnPhone = document.getElementById('tab-phone'); const input = els.searchInput;
+            const activeClass = "flex-1 bg-white shadow-sm text-indigo-600 text-xs font-black py-2 rounded-lg transition-all border border-slate-200/50";
+            const inactiveClass = "flex-1 text-slate-500 hover:text-slate-700 text-xs font-bold py-2 rounded-lg transition-all border border-transparent";
+            if(type === 'refId') { btnRef.className = activeClass; btnPhone.className = inactiveClass; input.placeholder = "أدخل رقم الطلب..."; } 
+            else { btnPhone.className = activeClass; btnRef.className = inactiveClass; input.placeholder = "أدخل رقم الجوال..."; }
+            input.focus();
+        };
+
+        async function performQuickSearch() {
+            clearSelection();
+            const val = els.searchInput.value.trim(); if (!val) return loadPendingProfiles();
+            let payloadFilters = {}; if (state.currentSearchType === 'phone') payloadFilters.phone = val; else payloadFilters.refId = val;
+            setBtnLoading(els.quickSearchBtn, true, ''); els.resultsTitle.innerHTML = `<i class="fas fa-search text-indigo-500"></i> نتائج البحث`;
+            els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader !border-indigo-600 !border-t-transparent !w-8 !h-8 border-4"></div></div>';
+            try {
+                const res = await apiCall({ action: "adminAdvancedSearch", adminToken: state.adminToken, filters: payloadFilters });
+                state.searchResults = res.results || []; renderResults("لا توجد نتائج", "جرب رقماً آخر.");
+            } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100">${error.message}</div>`; } 
+            finally { setBtnLoading(els.quickSearchBtn, false, 'بحث'); }
+        }
+
+        async function loadPendingProfiles() {
+            clearSelection();
+            els.searchInput.value = ''; els.resultsTitle.innerHTML = `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة`;
+            els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader !border-indigo-600 !border-t-transparent !w-8 !h-8 border-4"></div></div>';
+            try {
+                const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken });
+                state.searchResults = res.results || []; state.pendingCount = state.searchResults.length; els.pendingCounter.innerText = state.pendingCount;
+                if(state.pendingCount > 0) { els.pendingCounter.classList.add('animate-bounce'); setTimeout(() => els.pendingCounter.classList.remove('animate-bounce'), 3000); }
+                renderResults("لا توجد طلبات معلقة", "كل الملفات تمت مراجعتها.");
+            } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100">${error.message}</div>`; }
+        }
+
+        function renderResults(emptyTitle, emptyDesc) {
+            els.resultsContainer.innerHTML = '';
+            if (state.searchResults.length === 0) { els.resultsContainer.innerHTML = `<div class="col-span-full py-16 flex flex-col items-center text-slate-400 bg-white rounded-3xl border border-slate-100"><i class="fas fa-folder-open text-4xl mb-3 text-slate-300"></i><h3 class="font-black text-slate-600 mb-1">${emptyTitle}</h3><p class="text-xs">${emptyDesc}</p></div>`; return; }
+
+            state.searchResults.forEach((p, index) => {
+                const isMale = p.sheetName && p.sheetName.includes('الرجال');
+                const genIcon = isMale ? '<i class="fas fa-male"></i>' : '<i class="fas fa-female"></i>';
+                const genColor = isMale ? 'text-blue-500 bg-blue-50' : 'text-pink-500 bg-pink-50';
+                
+                const st = getStatusConfig(p.profileStatus);
+                const statusBadge = `<span class="${st.classes} px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1"><i class="fas ${st.icon}"></i> ${st.label}</span>`;
+                
+                const fullName = [p.name, p.family].filter(Boolean).join(' ') || 'بدون اسم';
+                const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
+                
+                const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
+                const base64ShortBio = encodeBase64(decodedShortBio);
+                
+                const isSelected = state.selectedIds.has(p.refId);
+                const borderClass = isSelected ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-slate-100';
+
+                const cardHTML = `
+                <div id="card-${p.refId}" class="bg-white rounded-3xl shadow-sm border ${borderClass} p-5 flex flex-col transition-all relative ${st.label === 'محذوف' ? 'opacity-60 grayscale' : ''}">
+                    
+                    <!-- الترويسة العلوية الكاملة (تم استعادتها وتضمين الـ Checkbox) -->
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col gap-2">
+                            <h3 class="font-black text-slate-800 text-lg flex items-center gap-2">
+                                ${fullName}
+                            </h3>
+                            <div class="flex gap-1.5 flex-wrap">
+                                <span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded text-[10px] font-bold border border-indigo-100 font-mono">#${p.refId}</span>
+                                ${statusBadge}
+                                <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 flex items-center gap-1"><i class="fas fa-table"></i> ${p.sheetName || 'ملف'}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full ${genColor} flex items-center justify-center text-2xl shadow-sm border border-slate-50 shrink-0">
+                                ${genIcon}
+                            </div>
+                            <!-- مربع التحديد الجماعي -->
+                            <label class="flex items-center justify-center w-8 h-8 bg-white border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300'} rounded-xl cursor-pointer hover:border-indigo-400 transition-colors shrink-0 shadow-sm">
+                                <input type="checkbox" class="hidden" onchange="toggleSelection('${p.refId}')" ${isSelected ? 'checked' : ''}>
+                                <i class="fas fa-check text-sm text-indigo-600 ${isSelected ? 'opacity-100' : 'opacity-0'} transition-opacity"></i>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- شريط المدينة والعمر -->
+                    <div class="bg-slate-50 rounded-xl p-3 flex items-center justify-center gap-4 text-xs font-bold text-slate-600 mb-4 border border-slate-100">
+                        <div class="flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-slate-400"></i> ${p.city || '-'}</div>
+                        <div class="w-px h-4 bg-slate-200"></div>
+                        <div class="flex items-center gap-1.5"><i class="far fa-calendar-alt text-slate-400"></i> ${p.age ? p.age + ' سنة' : '-'}</div>
+                    </div>
+
+                    <div class="mb-4 relative">
+                        <div class="absolute -top-2.5 right-4 bg-white px-2 text-[9px] font-bold text-slate-400">النبذة المختصرة</div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-3 pt-4 rounded-xl border border-slate-100 line-clamp-4 mb-2 font-medium">${p.shortBio || 'لا توجد نبذة'}</p>
+                        <div class="flex gap-2">
+                            <button onclick="showDetailedBio('${p.refId}')" class="flex-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2"><i class="fas fa-expand-arrows-alt"></i> النبذة المفصلة</button>
+                            <button onclick="safeCopyFromBase64(this, '${base64ShortBio}')" class="bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-3 rounded-lg flex items-center justify-center transition-colors"><i class="far fa-copy"></i> <span class="text-[10px] font-bold ml-1">نسخ</span></button>
+                        </div>
+                    </div>
+                    <button onclick="openWaFromBase64('${cleanPhone}', '${base64ShortBio}')" class="w-full bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 py-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 mb-4 transition-all">
+                        <i class="fab fa-whatsapp text-lg"></i> تواصل مباشر <span class="font-mono dir-ltr ml-1">${p.phone}</span>
+                    </button>
+                    
+                    <div class="grid grid-cols-4 gap-1 pt-3 border-t border-slate-100 mt-auto">
+                        <button onclick="actionChangeStatus('${p.refId}')" class="flex flex-col items-center py-2 text-slate-400 hover:text-slate-800 bg-slate-50 rounded-xl hover:bg-slate-200 transition-colors"><i class="fas fa-sliders-h mb-1.5 text-base"></i><span class="text-[9px] font-bold">حالة</span></button>
+                        <button onclick="window.open('register.html?targetPhone=${cleanPhone}&mode=admin_edit', '_blank')" class="flex flex-col items-center py-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl hover:bg-blue-50 transition-colors"><i class="fas fa-user-edit mb-1.5 text-base"></i><span class="text-[9px] font-bold">تعديل</span></button>
+                        <button onclick="actionToggleShowcase('${p.refId}')" class="flex flex-col items-center py-2 text-slate-400 hover:text-amber-600 bg-slate-50 rounded-xl hover:bg-amber-50 transition-colors"><i class="fas fa-bullhorn mb-1.5 text-base"></i><span class="text-[9px] font-bold">تميز</span></button>
+                        <button onclick="actionMatch('${p.refId}', '${fullName}', ${isMale})" class="flex flex-col items-center py-2 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors"><i class="fas fa-people-arrows mb-1.5 text-base"></i><span class="text-[9px] font-bold">مطابقة</span></button>
+                    </div>
+                </div>`;
+                els.resultsContainer.innerHTML += cardHTML;
+            });
+        }
+
+        window.toggleSelection = function(refId) {
+            if(state.selectedIds.has(refId)) state.selectedIds.delete(refId); else state.selectedIds.add(refId);
+            updateBulkBar(); renderResults("لا توجد نتائج", "جرب رقماً آخر.");
+        };
+
+        window.toggleSelectAll = function() {
+            if(state.selectedIds.size === state.searchResults.length) { state.selectedIds.clear(); } 
+            else { state.searchResults.forEach(p => state.selectedIds.add(p.refId)); }
+            updateBulkBar(); renderResults("لا توجد نتائج", "جرب رقماً آخر.");
+        };
+
+        window.clearSelection = function() {
+            state.selectedIds.clear(); updateBulkBar();
+            if(state.searchResults.length > 0) renderResults("لا توجد نتائج", "جرب رقماً آخر.");
+        };
+
+        window.updateBulkBar = function() {
+            const count = state.selectedIds.size; els.bulkCount.innerText = count;
+            const btnAll = document.getElementById('btn-select-all');
+            if(count === state.searchResults.length && count > 0) btnAll.innerText = "إلغاء التحديد"; else btnAll.innerText = "تحديد الكل";
+            if(count > 0) els.bulkBar.classList.remove('translate-y-32', 'opacity-0'); else els.bulkBar.classList.add('translate-y-32', 'opacity-0');
+        };
+
+        window.actionBulkChangeStatus = function() {
+            const count = state.selectedIds.size;
+            if(count === 0) return;
+            const html = `
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-layer-group"></i></div>
+                    <h4 class="font-black text-slate-800 text-base">إجراء جماعي لـ (${count}) ملفات</h4>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">اختر الحالة الجديدة ليتم تطبيقها على جميع الملفات المحددة دفعة واحدة:</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <button onclick="submitBulkChangeStatus('نشط', this)" class="bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-check-circle mb-1 block text-lg"></i> نشط</button>
+                    <button onclick="submitBulkChangeStatus('تواصل مباشر', this)" class="bg-purple-50 hover:bg-purple-500 hover:text-white text-purple-700 border border-purple-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-bolt mb-1 block text-lg"></i> تواصل مباشر</button>
+                    <button onclick="submitBulkChangeStatus('خامل', this)" class="bg-slate-50 hover:bg-slate-500 hover:text-white text-slate-700 border border-slate-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-moon mb-1 block text-lg"></i> خامل</button>
+                    <button onclick="submitBulkChangeStatus('جديد', this)" class="bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 border border-blue-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-star mb-1 block text-lg"></i> جديد</button>
+                    <button onclick="submitBulkChangeStatus('قيد المراجعة', this)" class="bg-orange-50 hover:bg-orange-500 hover:text-white text-orange-700 border border-orange-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-clock mb-1 block text-lg"></i> قيد المراجعة</button>
+                    <button onclick="submitBulkChangeStatus('تم الزواج', this)" class="bg-yellow-50 hover:bg-yellow-500 hover:text-white text-yellow-700 border border-yellow-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-ring mb-1 block text-lg"></i> تم الزواج</button>
+                    <button onclick="submitBulkChangeStatus('محذوف', this)" class="bg-red-50 hover:bg-red-500 hover:text-white text-red-700 border border-red-200 py-3 rounded-xl font-bold transition-all text-sm col-span-2"><i class="fas fa-trash mb-1 block text-lg"></i> محذوف</button>
+                </div>
+            `;
+            openModal('تغيير حالة جماعي', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">إلغاء النافذة</button>`);
+        };
+        
+        async function submitBulkChangeStatus(newStatus, btnElement) {
+            setBtnLoading(btnElement, true, '');
+            const refIdsArray = Array.from(state.selectedIds);
+            try {
+                await apiCall({ action: "adminBulkChangeStatus", refIds: refIdsArray, newStatus: newStatus, adminToken: state.adminToken });
+                showToast(`تم تغيير حالة ${refIdsArray.length} ملفات إلى: ${newStatus}`);
+                clearSelection();
+                closeModal();
+                if(els.searchInput.value) performQuickSearch(); else loadPendingProfiles();
+            } catch(e) { showToast(e.message, 'error'); } 
+            finally { setBtnLoading(btnElement, false); }
+        }
+
+        window.safeCopyFromBase64 = function(btnElement, b64Text) {
+            const text = decodeBase64(b64Text); const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+            try { document.execCommand("copy"); const og = btnElement.innerHTML; btnElement.innerHTML = `<i class="fas fa-check"></i>`; btnElement.classList.add('bg-emerald-500', 'text-white'); setTimeout(() => { btnElement.innerHTML = og; btnElement.classList.remove('bg-emerald-500', 'text-white'); }, 1500); } catch (err) { showToast('فشل النسخ', 'error'); }
+            document.body.removeChild(t);
+        };
+        
+        window.openWaFromBase64 = function(phone, b64Text) {
+            if(!phone) { showToast('رقم الجوال غير متوفر', 'error'); return; }
+            let cleanPhone = phone.toString().replace(/\D/g, ''); if(cleanPhone.startsWith('05')) cleanPhone = '966' + cleanPhone.substring(1);
+            const text = decodeBase64(b64Text); const finalUrl = `https://api.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(text)}`;
+            window.open(finalUrl, '_blank');
+        };
+
+        window.showDetailedBio = function(refId) {
+            const profile = state.searchResults.find(p => p.refId === refId);
+            if (!profile) return;
+            const bioText = profile.autoBio || 'لا توجد نبذة مفصلة.';
+            const bodyHTML = `<div class="whitespace-pre-wrap text-sm leading-8 text-slate-700 font-medium bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100">${bioText}</div>`;
+            const footerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-colors">إغلاق</button><button onclick="safeCopyFromBase64(this, '${encodeBase64(bioText)}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold transition-colors"><i class="far fa-copy"></i> نسخ النبذة</button>`;
+            openModal(`النبذة المفصلة للملف #${refId}`, bodyHTML, footerHTML, 'p-4');
+        };
+
+        window.switchMatchTab = function(t) {
+            document.querySelectorAll('.match-tab-btn').forEach(b => { b.classList.remove('bg-indigo-600', 'text-white'); b.classList.add('bg-slate-100', 'text-slate-600'); });
+            let active = document.querySelector(`.match-tab-btn[data-target="${t}"]`); if(active) { active.classList.remove('bg-slate-100', 'text-slate-600'); active.classList.add('bg-indigo-600', 'text-white'); }
+            document.querySelectorAll('.match-group-block').forEach(g => { g.style.display = (t === 'all' || g.getAttribute('data-group') === t) ? 'block' : 'none'; });
+        };
+
+        async function actionMatch(refId, clientName, isMale) {
+            openModal('جاري المطابقة...', '<div class="py-12 flex justify-center"><div class="loader !border-indigo-600 !border-t-transparent !w-10 !h-10 border-4"></div></div>');
+            try {
+                const res = await apiCall({ action: "adminGetMatches", refId: refId, adminToken: state.adminToken });
+                let matches = (res.matches || []).map(m => { let p = parseInt(m.matchPercentage) || 0; return { ...m, numScore: p, cat: p >= 75 ? 'high' : (p >= 50 ? 'med' : 'low') }; }).filter(m => m.numScore >= 25).sort((a, b) => b.numScore - a.numScore);
+                
+                const myP = state.searchResults.find(p => p.refId === refId);
+                const myBioBase64 = encodeBase64(myP ? myP.shortBio : `تواصل بخصوص ملف #${refId}`);
+                
+                if (!matches.length) return openModal(`مطابقات #${refId}`, `<div class="text-center py-10 font-bold text-slate-400">لا توجد مطابقات مناسبة.</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">إغلاق</button>`);
+
+                // بناء شريط بيانات العميل الأساسي بشكل استباقي (مع إخفاء التعدد للرجل)
+                let primaryClientInfo = `
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 shadow-sm relative overflow-hidden">
+                    <div class="absolute right-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+                    <div class="text-[10px] font-black text-indigo-600 mb-1.5 flex items-center gap-1"><i class="fas fa-bullseye"></i> بيانات صاحب الملف للمقارنة:</div>
+                    <div class="flex items-center gap-2 text-[11px] font-bold text-indigo-900 flex-wrap">
+                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt opacity-60"></i> ${myP?.city || '-'}</span> <span class="text-indigo-200">|</span>
+                        <span>${myP?.nationality || 'سعودي/ة'}</span> <span class="text-indigo-200">|</span>
+                        <span>${myP?.age ? myP.age + ' سنة' : '-'}</span> <span class="text-indigo-200">|</span>
+                        <span>${myP?.maritalStatus || myP?.status || '-'}</span> <span class="text-indigo-200">|</span>
+                        ${!isMale ? `<span>تعدد: ${myP?.acceptMarried || '-'}</span> <span class="text-indigo-200">|</span>` : ''}
+                        <span class="text-indigo-600 bg-white px-1.5 rounded shadow-sm border border-indigo-100">${myP?.marriageType || '-'}</span>
+                    </div>
+                </div>`;
+
+                const groups = { high: matches.filter(m=>m.cat==='high'), med: matches.filter(m=>m.cat==='med'), low: matches.filter(m=>m.cat==='low') };
+                let html = primaryClientInfo + `
+                <div class="flex gap-2 mb-4 overflow-x-auto custom-scrollbar pb-2">
+                    <button onclick="switchMatchTab('all')" class="match-tab-btn shrink-0 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm" data-target="all">الكل (${matches.length})</button>
+                    ${groups.high.length ? `<button onclick="switchMatchTab('high')" class="match-tab-btn shrink-0 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm" data-target="high"><span class="text-emerald-500 ml-1">●</span> عالي (${groups.high.length})</button>` : ''}
+                    ${groups.med.length ? `<button onclick="switchMatchTab('med')" class="match-tab-btn shrink-0 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm" data-target="med"><span class="text-amber-500 ml-1">●</span> متوسط (${groups.med.length})</button>` : ''}
+                    ${groups.low.length ? `<button onclick="switchMatchTab('low')" class="match-tab-btn shrink-0 bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm" data-target="low"><span class="text-slate-400 ml-1">●</span> مقبول (${groups.low.length})</button>` : ''}
+                </div><div id="matches-content">`;
+
+                const renderGroup = (arr, colorCode, tabTarget) => {
+                    if(!arr.length) return '';
+                    let bulkText = "السلام عليكم، وجدنا هذه الملفات المناسبة لكم:\n\n"; arr.forEach(m => { bulkText += `ملف #${m.refId}\n${m.shortBio || ''}\n\n`; });
+                    let bulkBase64 = encodeBase64(bulkText); let myPhone = myP?.phone ? myP.phone.toString().replace(/\D/g, '') : '';
+                    let bgColor = colorCode === 'emerald' ? 'bg-emerald-50' : (colorCode === 'amber' ? 'bg-amber-50' : 'bg-slate-50');
+                    let borderColor = colorCode === 'emerald' ? 'border-emerald-200' : (colorCode === 'amber' ? 'border-amber-200' : 'border-slate-200');
+                    
+                    let groupHtml = `<div class="match-group-block mb-6" data-group="${tabTarget}">
+                        <div class="flex items-center justify-end gap-2 mb-3 ${bgColor} p-2 rounded-xl border ${borderColor}">
+                            <button onclick="safeCopyFromBase64(this, '${bulkBase64}')" class="bg-white text-slate-600 border border-slate-200 w-9 h-9 rounded-lg flex items-center justify-center shadow-sm" title="نسخ القائمة"><i class="far fa-copy"></i></button>
+                            <button onclick="openWaFromBase64('${myPhone}', '${bulkBase64}')" class="bg-amber-500 text-white w-9 h-9 rounded-lg flex items-center justify-center shadow-sm" title="إرسال للعميل الأساسي"><i class="fab fa-whatsapp text-lg"></i></button>
+                        </div><div class="space-y-3">`;
+
+                    arr.forEach(m => {
+                        let mName = [m.name, m.familyName].filter(Boolean).join(' ') || 'بدون اسم';
+                        let mSt = getStatusConfig(m.profileStatus);
+                        
+                        let actionWaBtn = mSt.canContact 
+                            ? `<button onclick="openWaFromBase64('${m.phone}', '${myBioBase64}')" class="w-10 h-10 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 flex items-center justify-center border border-emerald-200 transition-all shadow-sm"><i class="fab fa-whatsapp text-xl"></i></button>`
+                            : `<button disabled class="w-10 h-10 rounded-lg bg-slate-100 text-slate-300 flex items-center justify-center cursor-not-allowed border border-slate-200 shadow-sm" title="يمنع التواصل (تواصل مباشر)"><i class="fas fa-ban text-xl"></i></button>`;
+
+                        let dataRibbon = `<div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 mt-1 flex-wrap"><span><i class="fas fa-map-marker-alt"></i> ${m.city || '-'}</span> | <span>${m.nationality || 'سعودية/ي'}</span> | <span>${m.maritalStatus || '-'}</span> | <span>تعدد: ${m.acceptMarried || '-'}</span> | <span>${m.marriageType || '-'}</span></div>`;
+                        
+                        groupHtml += `
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative">
+                            <div class="absolute top-4 left-4 font-black text-lg text-${colorCode}-500">${m.numScore}%</div>
+                            <div class="pr-3 border-r-[3px] border-${colorCode}-400 mb-3">
+                                <h5 class="font-black text-slate-800 text-sm">${mName} <span class="text-slate-400 font-normal text-[10px] mr-1 font-mono">#${m.refId}</span> <span class="${mSt.classes} px-1.5 py-0.5 rounded text-[9px] font-bold border ml-2">${mSt.label}</span></h5>
+                                ${dataRibbon}
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-[11px] text-slate-600 leading-relaxed mb-3 border border-slate-100 font-medium">${m.shortBio || 'لا توجد نبذة'}</div>
+                            <div class="flex justify-between items-center gap-2">
+                                <div class="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-200 flex-1">
+                                    <span class="text-[11px] font-mono font-bold text-slate-600 flex-1 text-left dir-ltr">${m.phone}</span>
+                                    <button onclick="safeCopyFromBase64(this, '${encodeBase64(m.phone)}')" class="text-slate-400 hover:text-indigo-600 p-1 bg-white rounded shadow-sm border border-slate-200"><i class="far fa-copy"></i></button>
+                                </div>
+                                ${actionWaBtn}
+                            </div>
+                        </div>`;
+                    });
+                    return groupHtml + `</div></div>`;
+                };
+
+                html += renderGroup(groups.high, 'emerald', 'high'); html += renderGroup(groups.med, 'amber', 'med'); html += renderGroup(groups.low, 'slate', 'low');
+                html += `</div>`;
+                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${clientName})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">إغلاق</button>`, 'p-4 bg-slate-50');
+            } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl">${error.message}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold">إغلاق</button>`); }
+        }
+
+        function actionToggleShowcase(refId) {
+            const html = `<div class="text-center mb-6"><i class="fas fa-bullhorn text-4xl text-amber-500 mb-3"></i><h4 class="font-black text-slate-800">إعلان مميز للملف #${refId}</h4></div><input type="number" id="showcase-days" value="7" min="0" class="w-full text-center px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-xl">`;
+            const fHtml = `<button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 py-3.5 rounded-xl font-bold">إلغاء</button><button id="btn-save-showcase" onclick="submitToggleShowcase('${refId}')" class="flex-1 bg-amber-500 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-amber-200">حفظ</button>`;
+            openModal('الإعلان المميز', html, fHtml);
+        }
+        
+        async function submitToggleShowcase(refId) {
+            const days = parseInt(document.getElementById('showcase-days').value) || 0; const btn = document.getElementById('btn-save-showcase'); setBtnLoading(btn, true, '');
+            try { await apiCall({ action: "adminToggleShowcase", refId: refId, days: days, adminToken: state.adminToken }); showToast(`تم التحديث بنجاح`); closeModal(); } catch(e) { showToast(e.message, 'error'); } finally { setBtnLoading(btn, false, 'حفظ'); }
+        }
+
+        function actionChangeStatus(refId) {
+            const html = `
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i class="fas fa-sliders-h"></i></div>
+                    <h4 class="font-black text-slate-800 text-base">إدارة حالة الملف #${refId}</h4>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">اختر الحالة الجديدة من القاموس المعتمد:</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-2">
+                    <button onclick="submitChangeStatus('${refId}', 'نشط', this)" class="bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-check-circle mb-1 block text-lg"></i> نشط</button>
+                    <button onclick="submitChangeStatus('${refId}', 'تواصل مباشر', this)" class="bg-purple-50 hover:bg-purple-500 hover:text-white text-purple-700 border border-purple-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-bolt mb-1 block text-lg"></i> تواصل مباشر</button>
+                    <button onclick="submitChangeStatus('${refId}', 'خامل', this)" class="bg-slate-50 hover:bg-slate-500 hover:text-white text-slate-700 border border-slate-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-moon mb-1 block text-lg"></i> خامل</button>
+                    <button onclick="submitChangeStatus('${refId}', 'قيد المراجعة', this)" class="bg-orange-50 hover:bg-orange-500 hover:text-white text-orange-700 border border-orange-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-clock mb-1 block text-lg"></i> قيد المراجعة</button>
+                    <button onclick="submitChangeStatus('${refId}', 'تم الزواج', this)" class="bg-yellow-50 hover:bg-yellow-500 hover:text-white text-yellow-700 border border-yellow-200 py-3 rounded-xl font-bold transition-all text-sm"><i class="fas fa-ring mb-1 block text-lg"></i> تم الزواج</button>
+                    <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-500 hover:text-white text-red-700 border border-red-200 py-3 rounded-xl font-bold transition-all text-sm col-span-2"><i class="fas fa-trash mb-1 block text-lg"></i> محذوف</button>
+                </div>
+            `;
+            const fHtml = `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold">إلغاء النافذة</button>`;
+            openModal('تغيير حالة الملف', html, fHtml);
+        }
+        
+        async function submitChangeStatus(refId, newStatus, btnElement) {
+            setBtnLoading(btnElement, true, '');
+            try {
+                await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, adminToken: state.adminToken });
+                showToast(`تم تغيير الحالة إلى: ${newStatus}`);
+                closeModal();
+                if(els.searchInput.value) performQuickSearch(); else loadPendingProfiles();
+            } catch(e) { showToast(e.message, 'error'); } 
+            finally { setBtnLoading(btnElement, false); }
+        }
+
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>
