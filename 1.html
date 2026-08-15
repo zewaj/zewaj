@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>منصة أبو العنود للزواج</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden; 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: #f8fafc; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #loginRequiredModal, #unifiedProfileModal, iframe, input, textarea { -webkit-user-select: auto; user-select: auto; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* الحاوية الرئيسية للتمرير المغناطيسي السريع */
+        #mainContentArea {
+            height: 100dvh;
+            width: 100%;
+            overflow-y: auto; 
+            overflow-x: hidden;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+        
+        .snap-section {
+            scroll-snap-align: start;
+            scroll-snap-stop: always; 
+            min-height: 100dvh; 
+            width: 100%;
+            position: relative;
+        }
+
+        #compact-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            opacity: 0; visibility: hidden; transform: translateY(-100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        #bottomNav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(255, 255, 255, 0.98); 
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 8px 2px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            opacity: 0; visibility: hidden; transform: translateY(100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bars-active #compact-header { opacity: 1; visibility: visible; transform: translateY(0); }
+        .bars-active #bottomNav { opacity: 1; visibility: visible; transform: translateY(0); }
+
+        .side-menu { position: fixed; top: 0; right: 0; bottom: 0; width: 320px; max-width: 85vw; background: white; z-index: 200; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: -5px 0 25px rgba(0,0,0,0.1); display: flex; flex-direction: column;}
+        .side-menu.open { transform: translateX(0); }
+        .menu-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 190; }
+        .menu-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .accordion-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease-out; }
+        .accordion-content.open { grid-template-rows: 1fr; }
+        .accordion-inner { overflow: hidden; }
+
+        body.iframe-mode #mainContentArea { display: none; }
+        #iframeContainer { display: none; width: 100%; height: calc(100dvh - 125px); margin-top: 55px; background: white; }
+        #appIframe { width: 100%; height: 100%; border: none; }
+        
+        .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; display: flex; align-items: center; }
+        .ticker-content { display: inline-flex; width: max-content; animation: scroll-rtl 50s linear infinite; }
+        @keyframes scroll-rtl { 0% { transform: translateX(0); } 100% { transform: translateX(50%); } }
+        .ribbon { position: absolute; left: -10px; top: 0; bottom: 0; width: 20px; background: #4f46e5; transform: skewX(15deg); z-index: -1; }
+        #topProgressBar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(to right, #34d399, #6366f1); z-index: 9999; width: 0%; opacity: 0; transition: width 0.4s ease, opacity 0.3s ease; }
+        
+        .nav-item { transition: transform 0.1s; flex: 1; cursor: pointer; }
+        .nav-item:active { transform: scale(0.9); }
+    </style>
+</head>
+<body id="mainBody" class="text-slate-800">
+
+    <div id="topProgressBar"></div>
+    
+    <!-- الشريط العلوي (يظهر فقط عند النزول أو داخل الصفحات) -->
+    <header id="compact-header" class="px-4 h-[56px] flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSideMenu()" class="p-1.5 -mr-2 text-slate-600 hover:text-indigo-600 transition-colors bg-slate-50 rounded-lg border border-slate-100 shadow-sm">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            <div onclick="navigateTo('index.html')" class="cursor-pointer flex flex-col justify-center">
+                <h1 class="text-lg font-black text-indigo-900 leading-none">أبو العنود</h1>
+                <p class="text-[9px] text-indigo-500 font-bold mt-0.5">وسيط زواج موثوق</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <div id="compactAuthArea"></div>
+            <!-- زر تسجيل الخروج في الهيدر -->
+            <button id="headerLogoutBtn" onclick="logout()" class="hidden p-1.5 bg-rose-50 text-rose-500 hover:bg-rose-100 rounded-lg border border-rose-100 transition-colors shadow-sm" title="تسجيل الخروج">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- القائمة الجانبية (البحوث السريعة) -->
+    <div id="menuOverlay" class="menu-overlay" onclick="toggleSideMenu()"></div>
+    <div id="sideMenu" class="side-menu">
+        <div class="p-4 bg-indigo-600 text-white flex justify-between items-center shadow-md z-10 shrink-0">
+            <h2 class="font-bold text-lg flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                بحوث سريعة بالمناطق
+            </h2>
+            <button onclick="toggleSideMenu()" class="p-1.5 hover:bg-white/20 rounded-xl transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto bg-slate-50 custom-scrollbar">
+            <div class="space-y-6">
+                <!-- ================= مناطق الرجال ================= -->
+                <div class="overflow-hidden" id="menSectionWrapper">
+                    <h3 class="text-[11px] font-black text-indigo-400 mb-2 uppercase tracking-wider flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> رجال حسب المنطقة</h3>
+                    <div class="space-y-2">
+                        <!-- الرياض -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('رجال', 'الرياض')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الرياض (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('رجال', 'الرياض', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الرياض', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الرياض', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الرياض', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- الغربية -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('رجال', 'الغربية')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الغربية (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('رجال', 'الغربية', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الغربية', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الغربية', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الغربية', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- الشرقية -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('رجال', 'الشرقية')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الشرقية (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('رجال', 'الشرقية', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الشرقية', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الشرقية', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                <button onclick="triggerQuickSearch('رجال', 'الشرقية', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- باقي المناطق (أكورديون) -->
+                        <div class="accordion-content" id="moreMenRegions">
+                            <div class="accordion-inner pt-2 space-y-2">
+                                <!-- القصيم -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'القصيم')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">القصيم (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'القصيم', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'القصيم', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'القصيم', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'القصيم', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الأحساء -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'الأحساء')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الأحساء (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'الأحساء', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الأحساء', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الأحساء', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الأحساء', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الجنوب -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'الجنوب')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الجنوب (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'الجنوب', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الجنوب', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الجنوب', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الجنوب', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الشمال -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'الشمال')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">الشمال (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'الشمال', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الشمال', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الشمال', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'الشمال', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- المدينة المنورة -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'المدينة المنورة')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">المدينة المنورة (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'المدينة المنورة', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'المدينة المنورة', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'المدينة المنورة', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'المدينة المنورة', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- خارج السعودية -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('رجال', 'خارج السعودية')" class="font-bold text-sm text-slate-700 hover:text-indigo-600 text-right w-full">خارج السعودية (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('رجال', 'خارج السعودية', 'أعزب')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">أعزب</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'خارج السعودية', 'مطلق')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">مطلق</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'خارج السعودية', 'متزوج')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">متزوج</button>
+                                        <button onclick="triggerQuickSearch('رجال', 'خارج السعودية', '', '', 'خاص')" class="flex-1 py-1 bg-slate-50 hover:bg-indigo-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="toggleAccordion('moreMenRegions', this)" class="w-full text-center py-2 text-xs font-bold text-indigo-500 hover:text-indigo-700 flex justify-center items-center gap-1 overflow-hidden">
+                            <span class="truncate">عرض باقي المناطق</span><svg class="w-3 h-3 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ================= مناطق النساء ================= -->
+                <div class="overflow-hidden" id="womenSectionWrapper">
+                    <h3 class="text-[11px] font-black text-pink-400 mb-2 uppercase tracking-wider flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-pink-400"></span> نساء حسب المنطقة</h3>
+                    <div class="space-y-2">
+                        <!-- الرياض -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('نساء', 'الرياض')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الرياض (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('نساء', 'الرياض', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الرياض', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الرياض', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الرياض', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- الغربية -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('نساء', 'الغربية')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الغربية (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('نساء', 'الغربية', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الغربية', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الغربية', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الغربية', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- الشرقية -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                            <button onclick="triggerQuickSearch('نساء', 'الشرقية')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الشرقية (الكل)</button>
+                            <div class="flex gap-1">
+                                <button onclick="triggerQuickSearch('نساء', 'الشرقية', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الشرقية', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الشرقية', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                <button onclick="triggerQuickSearch('نساء', 'الشرقية', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                            </div>
+                        </div>
+                        <!-- باقي المناطق (أكورديون) -->
+                        <div class="accordion-content" id="moreWomenRegions">
+                            <div class="accordion-inner pt-2 space-y-2">
+                                <!-- القصيم -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'القصيم')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">القصيم (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'القصيم', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'القصيم', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'القصيم', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'القصيم', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الأحساء -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'الأحساء')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الأحساء (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'الأحساء', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الأحساء', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الأحساء', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الأحساء', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الجنوب -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'الجنوب')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الجنوب (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'الجنوب', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الجنوب', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الجنوب', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الجنوب', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- الشمال -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'الشمال')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">الشمال (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'الشمال', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الشمال', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الشمال', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'الشمال', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- المدينة المنورة -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'المدينة المنورة')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">المدينة المنورة (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'المدينة المنورة', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'المدينة المنورة', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'المدينة المنورة', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'المدينة المنورة', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                                <!-- خارج السعودية -->
+                                <div class="bg-white rounded-xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2">
+                                    <button onclick="triggerQuickSearch('نساء', 'خارج السعودية')" class="font-bold text-sm text-slate-700 hover:text-pink-600 text-right w-full">خارج السعودية (الكل)</button>
+                                    <div class="flex gap-1">
+                                        <button onclick="triggerQuickSearch('نساء', 'خارج السعودية', 'بكر')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">بكر</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'خارج السعودية', 'مطلقة')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">مطلقة</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'خارج السعودية', '', 'نعم')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">تعدد</button>
+                                        <button onclick="triggerQuickSearch('نساء', 'خارج السعودية', '', '', 'ظروف')" class="flex-1 py-1 bg-slate-50 hover:bg-pink-50 text-[10px] font-bold rounded text-slate-500">خاصة</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="toggleAccordion('moreWomenRegions', this)" class="w-full text-center py-2 text-xs font-bold text-pink-500 hover:text-pink-700 flex justify-center items-center gap-1 overflow-hidden">
+                            <span class="truncate">عرض باقي المناطق</span><svg class="w-3 h-3 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- زر الخروج -->
+            <button id="sidebarLogoutBtn" onclick="logout()" class="w-full mt-6 p-3 bg-rose-50 hover:bg-rose-100 rounded-xl text-sm font-bold text-rose-600 border border-rose-100 flex items-center justify-center gap-2 shadow-sm transition-all hidden">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                <span>تسجيل الخروج من الحساب</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- الحاوية الرئيسية للتمرير بين الشاشتين -->
+    <div id="mainContentArea">
+        
+        <!-- ================= الشاشة الأولى (الترحيبية) ================= -->
+        <section id="heroSection" class="snap-section flex flex-col justify-center items-center px-4 relative min-h-[100dvh] pt-4 pb-12">
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12 h-full">
+                
+                <!-- القسم الأيمن: العنوان ومربع الترحيب -->
+                <div class="w-full md:w-1/2 flex flex-col gap-4 md:gap-6">
+                    <!-- العنوان الرئيسي -->
+                    <div class="text-center md:text-right">
+                        <h1 class="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">أبو العنود</h1>
+                        <p class="text-base md:text-xl font-bold text-indigo-500 mt-1 md:mt-2">وسيط زواج موثوق</p>
+                    </div>
+                    
+                    <!-- صندوق الترحيب المدمج -->
+                    <div class="bg-white rounded-3xl p-4 md:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-row md:flex-col items-center gap-4 relative">
+                        <div id="heroUserIcon" class="w-14 h-14 md:w-20 md:h-20 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100 shadow-inner transition-colors duration-300">
+                            <svg class="w-7 h-7 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        
+                        <div class="flex flex-col flex-1 items-start md:items-center text-right md:text-center w-full">
+                            <p id="heroGreeting" class="text-xs md:text-sm font-bold text-slate-500 mb-0.5 md:mb-1">مرحباً بك في المنصة</p>
+                            <h2 id="heroUserName" class="text-lg md:text-2xl font-black text-slate-800 mb-2 md:mb-4 transition-opacity duration-300">مستخدم جديد؟</h2>
+                            
+                            <button id="heroAuthAction" onclick="handleHeroAuthClick()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 md:py-3.5 rounded-xl transition-all shadow-md text-xs md:text-sm">
+                                سجل الآن مجاناً
+                            </button>
+                            
+                            <div id="heroLoggedInActions" class="w-full flex flex-row gap-2 mt-2 hidden opacity-0 transition-opacity duration-500">
+                                <button onclick="editMyProfile(event)" class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[10px] md:text-sm font-bold py-2 md:py-2.5 rounded-lg border border-slate-200 flex justify-center items-center gap-1 transition-colors">
+                                    <svg class="w-3.5 h-3.5 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>تعديل
+                                </button>
+                                <button onclick="addNewFamilyMember(event)" class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[10px] md:text-sm font-bold py-2 md:py-2.5 rounded-lg border border-slate-200 flex justify-center items-center gap-1 transition-colors">
+                                    <svg class="w-3.5 h-3.5 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>إضافة فرد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم الأيسر: شبكة الخدمات -->
+                <div class="w-full md:w-1/2">
+                    <div class="grid grid-cols-2 gap-3 md:gap-5 mt-1 md:mt-0">
+                        <button onclick="navigateTo('search.html')" class="bg-white py-3 px-2 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md hover:border-emerald-200 transition-all flex flex-col items-center justify-center gap-2 md:gap-3 group">
+                            <div class="w-10 h-10 md:w-16 md:h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                                <svg class="w-5 h-5 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <span class="font-bold text-[11px] md:text-base text-slate-700">البحث الشامل</span>
+                        </button>
+                        <button onclick="handleSmartNavigation()" class="group relative bg-white flex flex-col items-center justify-center p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-amber-100 transition-all active:scale-95">
+                            <div class="absolute -top-1 -right-1 bg-amber-400 text-white text-[9px] sm:text-[10px] font-black px-2 sm:px-3 py-0.5 sm:py-1 rounded-bl-xl rounded-tr-2xl rounded-tl-sm rounded-br-sm shadow-sm rotate-12">ذكي</div>
+                            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 rounded-full flex items-center justify-center mb-2 sm:mb-4 group-hover:scale-110 transition-transform border border-amber-100">
+                                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <span class="font-bold text-slate-700 text-xs sm:text-base">المرشحين لك</span>
+                        </button>
+                        <button onclick="navigateTo('activity.html?tab=favorites')" class="bg-white py-3 px-2 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md hover:border-rose-200 transition-all flex flex-col items-center justify-center gap-2 md:gap-3 group">
+                            <div class="w-10 h-10 md:w-16 md:h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                                <svg class="w-5 h-5 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            </div>
+                            <span class="font-bold text-[11px] md:text-base text-slate-700">مفضلاتي</span>
+                        </button>
+                        <button onclick="navigateTo('activity.html?tab=requests')" class="bg-white py-3 px-2 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-200 transition-all flex flex-col items-center justify-center gap-2 md:gap-3 group">
+                            <div class="w-10 h-10 md:w-16 md:h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                                <svg class="w-5 h-5 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                            </div>
+                            <span class="font-bold text-[11px] md:text-base text-slate-700">مراسلاتي</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 animate-bounce flex flex-col items-center gap-0.5 opacity-60 pointer-events-none z-0">
+                <span class="text-[9px] font-bold text-slate-400">اسحب للمزيد</span>
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+        </section>
+
+        <!-- ================= الشاشة الثانية (لوحة التحكم) ================= -->
+        <section id="dashboardSection" class="snap-section bg-slate-50 pt-[56px] pb-[90px] relative flex flex-col">
+            
+            <!-- شريط الأخبار والطلبات -->
+            <div class="sticky top-[56px] z-[90] bg-indigo-50/95 backdrop-blur-sm border-y border-indigo-200 overflow-hidden flex items-center h-9 w-full shadow-sm transition-all" dir="ltr">
+                <div class="px-3 h-full bg-indigo-600 text-white font-black text-[10px] flex items-center z-10 shadow-lg relative shrink-0 absolute right-0" dir="rtl">
+                    جديد
+                    <div class="ribbon"></div>
+                </div>
+                <div class="ticker-wrap" dir="rtl">
+                    <div id="recentTicker" class="ticker-content font-bold text-[11px]">
+                        <span class="mx-4 text-slate-400">جاري تحميل الطلبات الحديثة...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-5xl mx-auto w-full flex-1">
+                <div class="pt-6 pb-2">
+                    <div class="px-4 mb-3 flex items-center justify-between">
+                        <h2 class="text-sm font-black text-slate-800 flex items-center gap-2">
+                            <span class="w-1.5 h-5 bg-amber-400 rounded-full"></span> ملفات مميزة
+                        </h2>
+                    </div>
+                    <div id="featuredContainer" class="flex overflow-x-auto hide-scroll gap-4 px-4 pb-4 snap-x snap-mandatory scroll-smooth">
+                        <div class="snap-center shrink-0 w-64 bg-slate-200 animate-pulse h-[140px] rounded-2xl"></div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 bg-transparent mt-2 pb-6">
+                    <div class="px-4 mb-3 pt-2 flex items-center justify-between">
+                        <h2 class="text-sm font-black text-slate-800 flex items-center gap-2">
+                            <span class="w-1.5 h-5 bg-indigo-500 rounded-full"></span> إحصائيات المنصة
+                        </h2>
+                    </div>
+                    <div id="statsCarousel" class="flex overflow-x-auto hide-scroll gap-4 px-4 pb-4 snap-x snap-mandatory scroll-smooth">
+                        <div class="snap-center shrink-0 w-[85vw] md:w-72 bg-slate-200 animate-pulse border border-indigo-100 h-[140px] rounded-3xl"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- حاوية الـ Iframe للصفحات الداخلية -->
+    <div id="iframeContainer">
+        <iframe id="appIframe" src=""></iframe>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <nav id="bottomNav">
+        <button id="nav-index" onclick="navigateTo('index.html')" class="nav-item flex flex-col items-center gap-1 text-indigo-600 w-1/6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[9px] font-bold">الرئيسية</span>
+        </button>
+        <button id="nav-search" onclick="navigateTo('search.html')" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-1/6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span class="text-[9px] font-bold">البحث</span>
+        </button>
+        <button id="nav-smart" onclick="handleSmartNavigation()" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-1/6 relative -top-3">
+            <div class="w-12 h-12 bg-gradient-to-tr from-amber-400 to-amber-500 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <span class="text-[9px] font-bold mt-0.5">المرشحين</span>
+        </button>
+        <button id="nav-favorites" onclick="navigateTo('activity.html?tab=favorites')" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-1/6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <span class="text-[9px] font-bold">مفضلاتي</span>
+        </button>
+        <button id="nav-requests" onclick="navigateTo('activity.html?tab=requests')" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-1/6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            <span class="text-[9px] font-bold">مراسلاتي</span>
+        </button>
+        <button id="nav-register" onclick="navigateTo('register.html')" class="nav-item flex flex-col items-center gap-1 text-slate-400 w-1/6">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span class="text-[9px] font-bold">حسابي</span>
+        </button>
+    </nav>
+
+    <!-- النوافذ المنبثقة -->
+    <div id="loginRequiredModal" class="fixed inset-0 z-[170] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto shadow-2xl transform scale-95 transition-transform duration-300 text-center flex flex-col gap-2">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-indigo-100">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">تسجيل الدخول مطلوب</h3>
+            <p class="text-sm text-slate-500 mb-4 leading-relaxed font-medium">عذراً، تحتاج إلى حساب مسجل للتفاعل مع هذه الخدمة. هل ترغب في تسجيل الدخول أو إنشاء حساب مجاني؟</p>
+            <div class="flex gap-3 mt-2">
+                <button onclick="closeLoginModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">رجوع</button>
+                <button onclick="navigateTo('register.html', true)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">تسجيل الدخول</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تفاصيل الملف -->
+    <div id="unifiedProfileModal" class="fixed inset-0 z-[180] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 p-4">
+        <div class="bg-[#f8fafc] w-full max-w-lg max-h-[90vh] rounded-[2rem] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 relative">
+            <div class="p-4 sm:p-5 bg-white flex items-center justify-between border-b border-slate-100 shrink-0">
+                <button onclick="closeUnifiedProfileModal()" class="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-colors shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div class="flex items-center gap-3 text-right">
+                    <div>
+                        <h3 class="text-lg font-black text-indigo-900" id="upmTitle">تفاصيل الملف</h3>
+                        <p class="text-[10px] text-indigo-500 font-bold mt-0.5" id="upmSubtitle"></p>
+                    </div>
+                    <div class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center border border-indigo-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 overflow-y-auto flex-grow custom-scrollbar" id="upmBody">
+                <!-- المحتوى يعبأ برمجيا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة التواصل المؤقتة -->
+    <div id="betaContactModal" class="fixed inset-0 z-[190] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-white rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden flex flex-col transform scale-95 transition-transform duration-300">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner border border-amber-100">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 mb-2">طلب تواصل</h3>
+                <p class="text-sm text-slate-500 leading-relaxed mb-6">يرجى استخدام رز (واتساب) الموجود لنسخ ومشاركة النبذة مع الإدارة للتواصل.</p>
+                <button onclick="closeBetaContactModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-xl transition-colors">حسناً، فهمت</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإشعارات المنبثقة Toast -->
+    <div id="toastNotification" class="fixed bottom-[-100px] left-1/2 transform -translate-x-1/2 z-[200] transition-all duration-400 opacity-0 pointer-events-none">
+        <div class="bg-slate-800 text-white px-6 py-3.5 rounded-full shadow-2xl flex items-center gap-3 border border-slate-700">
+            <div id="toastIcon" class="w-6 h-6 flex items-center justify-center rounded-full shrink-0"></div>
+            <span id="toastMessage" class="text-sm font-medium whitespace-nowrap"></span>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec"; 
+        const maleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#e0f2fe"/><path d="M12 40 C12 10, 88 10, 88 40 L95 100 L5 100 Z" fill="#ef4444"/><rect x="30" y="35" width="40" height="45" rx="15" fill="#fde68a"/><path d="M20 30 Q50 20 80 30" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><path d="M25 35 Q50 25 75 35" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="55" r="3" fill="#1f2937"/><circle cx="58" cy="55" r="3" fill="#1f2937"/><path d="M42 65 Q50 72 58 65" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
+        const femaleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#fce7f3"/><path d="M20 40 C20 10, 80 10, 80 40 L90 100 L10 100 Z" fill="#1f2937"/><circle cx="50" cy="50" r="20" fill="#fde68a"/><circle cx="42" cy="48" r="3" fill="#1f2937"/><circle cx="58" cy="48" r="3" fill="#1f2937"/><path d="M44 58 Q50 64 56 58" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
+        let authTextInterval;
+        let currentActivePage = 'index.html'; // تعقب مسار المستخدم
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            const heroSection = document.getElementById('heroSection');
+            if(heroSection) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if(entry.isIntersecting) {
+                            if(!document.body.classList.contains('iframe-mode')) {
+                                document.body.classList.remove('bars-active');
+                            }
+                        } else {
+                            document.body.classList.add('bars-active');
+                        }
+                    });
+                }, { threshold: 0.2 });
+                observer.observe(heroSection);
+            }
+        });
+
+        // رسائل postMessage للنافذة المنبثقة
+        window.addEventListener('message', function(event) {
+            const data = event.data; if (!data) return;
+            
+            if (data.type === 'openProfileModal') { 
+                window.lastOpenedProfileData = data.profileData; 
+                if (!data.profileData.gender || !data.profileData.maritalStatus) {
+                    if (typeof openProfileModal === 'function') {
+                        openProfileModal({ refId: data.profileData.refId, autoBio: '⏳ جاري جلب التفاصيل الكاملة للملف من الخوادم...' }, data.title, data.subtitle);
+                    }
+                    fetchFromGAS({ action: 'getProfileDetails', refId: data.profileData.refId })
+                    .then(res => {
+                        if(res.success && res.data) {
+                            window.lastOpenedProfileData = res.data;
+                            if (typeof openProfileModal === 'function') openProfileModal(res.data, data.title, data.subtitle); 
+                        } else {
+                            if (typeof openProfileModal === 'function') openProfileModal(data.profileData, data.title, data.subtitle);
+                        }
+                    }).catch(e => {
+                        if (typeof openProfileModal === 'function') openProfileModal(data.profileData, data.title, data.subtitle);
+                    });
+                } else {
+                    if (typeof openProfileModal === 'function') openProfileModal(data.profileData, data.title, data.subtitle);
+                }
+            }
+            if (data.type === 'updateAuthUI') { updateAuthUI(); fetchShowcaseData(); }
+        });
+
+        // دوال القائمة الجانبية والأكورديون
+        function toggleSideMenu() {
+            const menu = document.getElementById('sideMenu'); 
+            const overlay = document.getElementById('menuOverlay');
+            menu.classList.toggle('open'); 
+            overlay.classList.toggle('open');
+        }
+        
+        function toggleAccordion(id, btn) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+            if (el.classList.contains('open')) {
+                btn.innerHTML = `<span class="truncate">إخفاء المناطق</span><svg class="w-3 h-3 transform rotate-180 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+            } else {
+                btn.innerHTML = `<span class="truncate">عرض باقي المناطق</span><svg class="w-3 h-3 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+            }
+        }
+
+        function triggerQuickSearch(gender, region, status = '', poly = '', mType = '') {
+            let url = `search.html?quickSearch=true&gender=${encodeURIComponent(gender)}&region=${encodeURIComponent(region)}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (poly) url += `&poly=${encodeURIComponent(poly)}`;
+            if (mType) url += `&mType=${encodeURIComponent(mType)}`;
+            toggleSideMenu(); 
+            loadIframe(url);
+        }
+
+        // دوال الواجهة الترحيبية
+        window.handleHeroAuthClick = function() { 
+            const isLogged = localStorage.getItem('verified_user_phone');
+            if (isLogged) {
+                const userGender = encodeURIComponent(localStorage.getItem('verified_user_gender') || '');
+                const userStatus = encodeURIComponent(localStorage.getItem('active_profile_status') || 'نشط');
+                loadIframe(`register.html?gender=${userGender}&status=${userStatus}`);
+            } else {
+                sessionStorage.setItem('intended_destination', 'index.html');
+                loadIframe('register.html'); 
+            }
+        };
+
+        window.editMyProfile = function(e) {
+            if(e) e.stopPropagation();
+            const userGender = encodeURIComponent(localStorage.getItem('verified_user_gender') || '');
+            const userStatus = encodeURIComponent(localStorage.getItem('active_profile_status') || 'نشط');
+            loadIframe(`register.html?mode=edit&gender=${userGender}&status=${userStatus}`);
+        };
+
+        window.addNewFamilyMember = function(e) {
+            if(e) e.stopPropagation();
+            loadIframe('register.html?mode=new_member');
+        };
+
+        function handleSmartNavigation() {
+            const phone = localStorage.getItem('verified_user_phone');
+            if (!phone) {
+                currentActivePage = 'smart.html';
+                openLoginModal();
+                return;
+            }
+            const refId = localStorage.getItem('active_profile_refid') || '';
+            const gender = localStorage.getItem('verified_user_gender') || '';
+            let recordType = 'طلبات_الرجال';
+            if (gender && (gender.includes('أنثى') || gender.includes('نساء') || gender.includes('امرأة'))) {
+                recordType = 'طلبات_النساء';
+            }
+            loadIframe(`smart.html?embedded=true&autoPhone=${encodeURIComponent(phone)}&autoRefId=${encodeURIComponent(refId)}&autoType=${encodeURIComponent(recordType)}`);
+        }
+
+        // التحديث الذكي للواجهة والقائمة
+        function updateAuthUI() {
+            const phone = localStorage.getItem('verified_user_phone');
+            let name = localStorage.getItem('verified_user_name');
+            const gender = localStorage.getItem('verified_user_gender') || '';
+            const authArea = document.getElementById('compactAuthArea');
+            const logoutBtn1 = document.getElementById('sidebarLogoutBtn');
+            const logoutBtn2 = document.getElementById('headerLogoutBtn');
+            const menMenu = document.getElementById('menSectionWrapper');
+            const womenMenu = document.getElementById('womenSectionWrapper');
+            
+            const userNameEl = document.getElementById('heroUserName');
+            const authActionEl = document.getElementById('heroAuthAction');
+            const userIconEl = document.getElementById('heroUserIcon');
+            const loggedInActionsEl = document.getElementById('heroLoggedInActions');
+            const heroGreetingEl = document.getElementById('heroGreeting');
+            
+            clearInterval(authTextInterval);
+
+            // تفعيل نظام تعقب المسار (Redirect Intent)
+            if (phone) {
+                const destination = sessionStorage.getItem('intended_destination');
+                if (destination) {
+                    sessionStorage.removeItem('intended_destination');
+                    if (destination === 'index.html') showHomePage();
+                    else if (destination === 'smart.html') setTimeout(handleSmartNavigation, 100);
+                    else setTimeout(() => loadIframe(destination), 100);
+                }
+            }
+            
+            if (phone) {
+                if (!name || name === 'null' || name === 'undefined' || name.trim() === '') { name = 'صاحب الحساب'; }
+                const shortName = name.split(' ')[0];
+                
+                if (userNameEl) userNameEl.innerText = shortName;
+                if (heroGreetingEl) heroGreetingEl.innerText = "مرحباً بك";
+                
+                if (authActionEl) {
+                    authActionEl.innerText = "ملفك الشخصي";
+                    authActionEl.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm";
+                }
+
+                const isFemale = gender && (gender.includes('أنثى') || gender.includes('نساء') || gender.includes('انثى') || gender.includes('بنت'));
+                const isMale = gender && (gender.includes('ذكر') || gender.includes('رجل') || gender.includes('رجال'));
+                
+                if (userIconEl) {
+                    if (isFemale) {
+                        userIconEl.className = "w-16 h-16 rounded-full bg-pink-50 text-pink-500 flex items-center justify-center shrink-0 mb-3 border border-pink-100 shadow-inner transition-colors duration-300";
+                    } else if (isMale) {
+                        userIconEl.className = "w-16 h-16 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mb-3 border border-blue-100 shadow-inner transition-colors duration-300";
+                    } else {
+                        userIconEl.className = "w-16 h-16 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 mb-3 border border-slate-100 shadow-inner transition-colors duration-300";
+                    }
+                }
+
+                if (loggedInActionsEl) {
+                    loggedInActionsEl.classList.remove('hidden');
+                    setTimeout(() => loggedInActionsEl.classList.remove('opacity-0'), 50);
+                }
+                
+                authArea.innerHTML = `<button onclick="navigateTo('register.html')" class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-[10px] font-black border border-indigo-100 shadow-sm">مرحباً، ${shortName}</button>`;
+                if (logoutBtn1) logoutBtn1.classList.remove('hidden');
+                if (logoutBtn2) logoutBtn2.classList.remove('hidden');
+                
+                if (isFemale) {
+                    if (menMenu) menMenu.style.display = 'block';
+                    if (womenMenu) womenMenu.style.display = 'none';
+                } else if (isMale) {
+                    if (menMenu) menMenu.style.display = 'none';
+                    if (womenMenu) womenMenu.style.display = 'block';
+                }
+                
+            } else {
+                let showGuest = true;
+                if (userNameEl) userNameEl.innerText = 'زائر';
+                if (authActionEl) {
+                    authActionEl.innerText = 'دخول أو تسجيل';
+                    authActionEl.className = "w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm";
+                }
+                if (userIconEl) userIconEl.className = "w-16 h-16 rounded-full bg-slate-50 text-slate-400 flex items-center justify-center shrink-0 mb-3 border border-slate-100 shadow-inner transition-colors duration-300";
+                
+                if (loggedInActionsEl) loggedInActionsEl.classList.add('hidden', 'opacity-0');
+                
+                authArea.innerHTML = `<button onclick="navigateTo('register.html', true)" class="bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-bold shadow-sm">دخول</button>`;
+                
+                if (logoutBtn1) logoutBtn1.classList.add('hidden');
+                if (logoutBtn2) logoutBtn2.classList.add('hidden');
+                
+                if (menMenu) menMenu.style.display = 'block';
+                if (womenMenu) womenMenu.style.display = 'block';
+                
+                authTextInterval = setInterval(() => {
+                    showGuest = !showGuest;
+                    if(userNameEl) userNameEl.classList.add('opacity-0');
+                    if(authActionEl) authActionEl.classList.add('opacity-0');
+                    setTimeout(() => {
+                        if(showGuest) {
+                            if(userNameEl) userNameEl.innerText = 'زائر';
+                            if(authActionEl) authActionEl.innerText = 'دخول أو تسجيل';
+                        } else {
+                            if(userNameEl) userNameEl.innerText = 'مستخدم جديد؟';
+                            if(authActionEl) authActionEl.innerText = 'سجل الآن مجاناً';
+                        }
+                        if(userNameEl) userNameEl.classList.remove('opacity-0');
+                        if(authActionEl) authActionEl.classList.remove('opacity-0');
+                    }, 300);
+                }, 3500);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('verified_user_phone');
+            localStorage.removeItem('verified_user_name');
+            localStorage.removeItem('verified_user_gender');
+            localStorage.removeItem('active_profile_refid');
+            toggleSideMenu();
+            updateAuthUI();
+            showHomePage();
+            showToast('تم تسجيل الخروج بنجاح');
+        }
+
+        // الملاحة الرئيسية
+        window.navigateTo = function(page, isLoginAction = false) {
+            const isLogged = !!localStorage.getItem('verified_user_phone');
+            
+            // إذا كان المستخدم يضغط على زر الدخول، نحفظ مساره الحالي
+            if (isLoginAction) {
+                sessionStorage.setItem('intended_destination', currentActivePage);
+                loadIframe('register.html');
+                return;
+            }
+            
+            if ((page.includes('activity.html') || page.includes('smart.html')) && !isLogged) { 
+                currentActivePage = page;
+                openLoginModal(); 
+                return; 
+            }
+
+            currentActivePage = page;
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('text-indigo-600'); el.classList.add('text-slate-400');
+            });
+            const pageId = page.split('.')[0].split('?')[0];
+            const activeBtn = document.getElementById('nav-' + pageId);
+            if(activeBtn) { activeBtn.classList.remove('text-slate-400'); activeBtn.classList.add('text-indigo-600'); }
+
+            if (page === 'index.html') showHomePage();
+            else loadIframe(page);
+            closeLoginModal();
+        };
+
+        function showHomePage() {
+            currentActivePage = 'index.html';
+            const iframeContainer = document.getElementById('iframeContainer');
+            if (iframeContainer) iframeContainer.style.display = 'none';
+            
+            const appIframe = document.getElementById('appIframe');
+            if (appIframe) appIframe.src = '';
+            
+            const mainArea = document.getElementById('mainContentArea');
+            if (mainArea) {
+                mainArea.style.display = 'block';
+                mainArea.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            
+            document.body.classList.remove('iframe-mode');
+            document.body.classList.remove('bars-active');
+            
+            updateAuthUI();
+            fetchShowcaseData(); 
+        }
+
+        function loadIframe(url) {
+            currentActivePage = url;
+            const phone = localStorage.getItem('verified_user_phone');
+            const refId = localStorage.getItem('active_profile_refid') || '';
+            const fullName = localStorage.getItem('verified_user_name') || '';
+            const firstName = fullName ? fullName.split(' ')[0] : '';
+            
+            if (url.includes('activity.html')) {
+                const separator = url.includes('?') ? '&' : '?';
+                url += `${separator}embedded=true&phone=${encodeURIComponent(phone || '')}&refId=${encodeURIComponent(refId)}&userName=${encodeURIComponent(firstName)}`;
+            } else if (!url.includes('embedded=')) {
+                const separator = url.includes('?') ? '&' : '?';
+                url += `${separator}embedded=true`;
+            }
+
+            document.body.classList.add('bars-active'); 
+            const mainArea = document.getElementById('mainContentArea');
+            if (mainArea) mainArea.style.display = 'none';
+            
+            const iframeContainer = document.getElementById('iframeContainer');
+            if (iframeContainer) iframeContainer.style.display = 'block';
+            
+            document.body.classList.add('iframe-mode'); 
+
+            const progressBar = document.getElementById('topProgressBar');
+            if (progressBar) {
+                progressBar.style.opacity = '1'; progressBar.style.width = '30%';
+            }
+
+            const iframe = document.getElementById('appIframe');
+            if (iframe) {
+                iframe.onload = function() {
+                    if (progressBar) {
+                        progressBar.style.width = '100%';
+                        setTimeout(() => { progressBar.style.opacity = '0'; setTimeout(() => { progressBar.style.width = '0%'; }, 300); }, 300);
+                    }
+                };
+                iframe.src = url;
+            }
+        }
+
+        function openLoginModal() {
+            const m = document.getElementById('loginRequiredModal');
+            if (m) {
+                m.classList.remove('hidden');
+                setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
+            }
+        }
+        function closeLoginModal() {
+            const m = document.getElementById('loginRequiredModal');
+            if (m) {
+                m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            toastMsg.innerText = message;
+            toastIcon.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+            toastIcon.className = 'w-6 h-6 flex items-center justify-center rounded-full shrink-0 bg-emerald-900';
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.style.bottom = '30px';
+            setTimeout(() => {
+                toast.style.bottom = '-100px';
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // النوافذ المنبثقة للملفات
+        window.openProfileModal = function(data, title, subtitle) {
+            if(!data) return;
+            const upmTitle = document.getElementById('upmTitle');
+            const upmSubtitle = document.getElementById('upmSubtitle');
+            if (upmTitle) upmTitle.innerText = title || 'التفاصيل';
+            if (upmSubtitle) upmSubtitle.innerText = subtitle || '';
+            
+            const refId = data.refId || data.RefId || data.refID || 'غير محدد';
+            let detailedBioText = ""; 
+            let rawBio = data.autoBio || data.bio || data['النبذة'];
+            if (rawBio && rawBio.trim() !== '' && rawBio !== '---' && rawBio !== 'غير محدد') {
+                detailedBioText = `> ملف رقم: #${refId}\n` + rawBio;
+            } else {
+                detailedBioText = `لا توجد نبذة تفصيلية متاحة للملف #${refId} حالياً.`;
+            }
+
+            const encodedDetailedBio = encodeURIComponent(detailedBioText);
+            const contentHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-center h-full gap-4">
+                    <div class="border-r-4 border-indigo-500 bg-slate-50 p-4 rounded-l-xl text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap text-right" dir="rtl">${detailedBioText}</div>
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="shareBioWA(this)" data-bio="${encodedDetailedBio}" class="flex-1 max-w-[150px] flex items-center justify-center gap-2 bg-[#25D366] text-white hover:bg-[#1ebd57] font-bold py-3 rounded-xl transition-all shadow-sm"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>واتساب</button>
+                    </div>
+                </div>`;
+            const upmBody = document.getElementById('upmBody');
+            if (upmBody) upmBody.innerHTML = contentHTML;
+            const modal = document.getElementById('unifiedProfileModal'); 
+            if(modal) { 
+                modal.classList.remove('hidden'); 
+                setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10); 
+            }
+        };
+
+        window.closeUnifiedProfileModal = function() { 
+            const modal = document.getElementById('unifiedProfileModal'); 
+            if(modal) { 
+                modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300); 
+            } 
+        };
+
+        window.shareBioWA = function(btn) { 
+            let text = btn.getAttribute('data-bio'); 
+            if (text) window.open(`https://api.whatsapp.com/send?phone=966590779236&text=${text}`, '_blank'); 
+        };
+        
+        window.closeBetaContactModal = function() {
+            const modal = document.getElementById('betaContactModal');
+            if (modal) {
+                modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        };
+
+        // جلب البيانات الأساسية
+        async function fetchFromGAS(payload) {
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload), redirect: "follow"
+                });
+                if (!response.ok) throw new Error("HTTP Status " + response.status);
+                return JSON.parse(await response.text());
+            } catch (error) {
+                return { success: false };
+            }
+        }
+
+        async function fetchShowcaseData() {
+            try {
+                const result = await fetchFromGAS({ action: "getShowcaseData" });
+                if(result.success && result.data) { 
+                    let recentArr = result.data.recent || [];
+                    let featuredArr = result.data.featured || [];
+
+                    const isLogged = !!localStorage.getItem('verified_user_phone');
+                    const userGender = localStorage.getItem('verified_user_gender') || '';
+
+                    if (isLogged && userGender) {
+                        const isFemale = userGender.includes('أنثى') || userGender.includes('نساء') || userGender.includes('انثى') || userGender.includes('بنت');
+                        const isMale = userGender.includes('ذكر') || userGender.includes('رجل') || userGender.includes('رجال');
+                        
+                        if (isFemale) {
+                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال')));
+                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال')));
+                        } else if (isMale) {
+                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت')));
+                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت')));
+                        }
+                    }
+
+                    renderTicker(recentArr); 
+                    renderFeaturedCards(featuredArr); 
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderTicker(recentArr) {
+            const ticker = document.getElementById('recentTicker');
+            if(!ticker) return;
+            if(!recentArr || recentArr.length === 0) { 
+                ticker.innerHTML = '<span class="mx-4 text-slate-500 font-bold">لا توجد طلبات حديثة تناسب عرضك حالياً.</span>'; 
+                return; 
+            }
+            let itemsHtml = '';
+            window.currentCandidatesData = window.currentCandidatesData || {};
+            recentArr.forEach(item => { 
+                const isFemale = item.gender && (item.gender.includes('أنثى') || item.gender.includes('نساء') || item.gender.includes('بنت'));
+                const colorClass = isFemale ? 'text-pink-600 hover:text-pink-800' : 'text-blue-600 hover:text-blue-800'; 
+                window.currentCandidatesData[item.refId] = item;
+                const encodedData = encodeURIComponent(JSON.stringify(item));
+                itemsHtml += `<span class="cursor-pointer mx-6 transition-colors ${colorClass} hover:underline" onclick="openProfileModal(window.currentCandidatesData['${item.refId}'], 'تفاصيل ملف', 'معلومات الملف رقم #${item.refId}')">${item.tickerText}</span>`; 
+            });
+            const fullSet = itemsHtml + `<span class="mx-8 text-indigo-400 font-black text-[10px] tracking-wide">✨ أبو العنود ✨</span>`; 
+            ticker.innerHTML = fullSet + fullSet;
+        }
+
+        function renderFeaturedCards(featuredArr) {
+            const container = document.getElementById('featuredContainer'); 
+            if(!container) return;
+            if(!featuredArr || featuredArr.length === 0) {
+                container.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>لا توجد ملفات مميزة تناسبك حالياً.</div>';
+                return;
+            }
+            let htmlStr = '';
+            window.currentCandidatesData = window.currentCandidatesData || {};
+            
+            featuredArr.forEach(item => {
+                const isFemale = item.gender && (item.gender.includes('أنثى') || item.gender.includes('نساء') || item.gender.includes('بنت')); 
+                const bgColors = isFemale ? 'bg-gradient-to-br from-white to-pink-50/30 border-slate-200' : 'bg-gradient-to-br from-white to-indigo-50/30 border-slate-200'; 
+                const titleColor = isFemale ? 'text-pink-700' : 'text-indigo-700'; 
+                const badgeColor = isFemale ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'; 
+                const icon = isFemale ? femaleSVG : maleSVG;
+                window.currentCandidatesData[item.refId] = item;
+
+                htmlStr += `
+                <div onclick="openProfileModal(window.currentCandidatesData['${item.refId}'], 'تفاصيل ملف', 'معلومات الملف رقم #${item.refId}')" class="snap-center shrink-0 w-64 h-[140px] ${bgColors} border p-4 rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition-all group flex flex-col justify-between relative">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="flex flex-col">
+                            <div class="font-black text-base ${titleColor} truncate">${item.featuredTitle}</div>
+                            <span class="text-[9px] font-bold ${badgeColor} px-2 py-0.5 rounded-md border w-max mt-1">#${item.refId}</span>
+                        </div>
+                        <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-slate-50 border border-slate-100 overflow-hidden shadow-inner">${icon}</div>
+                    </div>
+                    <div class="text-xs font-bold text-slate-600 leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${item.featuredSub}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = htmlStr; 
+        }
+
+        async function fetchLiveStats() {
+            try {
+                const result = await fetchFromGAS({ action: "getStats" });
+                if(result.success && result.data) {
+                    const d = result.data; const c = document.getElementById('statsCarousel');
+                    if(!c) return;
+                    const maleAbstractSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`; 
+                    const femaleAbstractSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>`;
+                    
+                    c.innerHTML = `
+                        <div class="snap-center shrink-0 w-[85vw] md:w-72 flex flex-col justify-center bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-3xl shadow-lg shadow-indigo-200 text-white relative overflow-hidden"><div class="text-indigo-100 text-sm font-bold mb-1">إجمالي الملفات</div><div class="text-5xl font-black mb-4 tracking-tight">${d.total.men + d.total.women}</div><div class="flex justify-between items-center text-xs font-bold bg-black/20 p-3 rounded-2xl backdrop-blur-md"><div><span class="text-indigo-200 mr-1">الرجال:</span> <span>${d.total.men}</span></div><div class="w-px h-4 bg-white/20"></div><div><span class="text-pink-200 mr-1">النساء:</span> <span>${d.total.women}</span></div></div></div>
+                        <div class="snap-center shrink-0 w-[85vw] md:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">${maleAbstractSVG}</div><h3 class="text-sm font-bold text-slate-800">الحالة الاجتماعية <span class="text-blue-600">(رجال)</span></h3></div><div class="space-y-2 text-xs font-bold"><div class="flex justify-between items-center text-slate-600"><span>عزاب</span> <span>${d.marital.single.men}</span></div><div class="flex justify-between items-center text-slate-600"><span>مطلقين</span> <span>${d.marital.divorced.men}</span></div></div></div>
+                        <div class="snap-center shrink-0 w-[85vw] md:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500">${femaleAbstractSVG}</div><h3 class="text-sm font-bold text-slate-800">الحالة الاجتماعية <span class="text-pink-600">(نساء)</span></h3></div><div class="space-y-2 text-xs font-bold"><div class="flex justify-between items-center text-slate-600"><span>أبكار</span> <span>${d.marital.single.women}</span></div><div class="flex justify-between items-center text-slate-600"><span>مطلقات</span> <span>${d.marital.divorced.women}</span></div></div></div>
+                    `;
+                }
+            } catch (err) {}
+        }
+
+        window.onload = () => {
+            updateAuthUI();
+            fetchShowcaseData();
+            fetchLiveStats();
+            
+            const mainArea = document.getElementById('mainContentArea');
+            if (mainArea) {
+                mainArea.scrollTo(0, 0);
+            } else {
+                window.scrollTo(0, 0);
+            }
+        };
+    </script>
+</body>
+</html>
