@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة عمليات الوساطة - الإدارة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 350px;
+        }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .chat-bubble-student { background: linear-gradient(145deg, #e0f2fe, #bae6fd); border-bottom-right-radius: 0; }
+        .chat-bubble-target { background: linear-gradient(145deg, #fef3c7, #fde68a); border-bottom-left-radius: 0; }
+        .chat-bubble-admin-to-student { background: #f8fafc; border: 1px solid #bae6fd; border-bottom-right-radius: 0; }
+        .chat-bubble-admin-to-target { background: #f8fafc; border: 1px solid #fde68a; border-bottom-left-radius: 0; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .sync-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        .chat-scroll-container { overscroll-behavior-y: contain; scroll-behavior: smooth; } 
+
+        @keyframes successPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); border-color: #10b981; }
+            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); border-color: #34d399; }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); border-color: #e2e8f0; }
+        }
+        .highlight-flash {
+            animation: successPulse 2s ease-out 4; 
+            border-width: 2px !important;
+            border-color: #10b981 !important;
+            background-color: #f0fdf4 !important;
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased p-2 md:p-4 flex flex-col">
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 mb-4 shrink-0 flex flex-col gap-2">
+        <div class="flex items-center gap-3 overflow-x-auto hide-scroll pb-1">
+            <div class="flex items-center gap-2 shrink-0 pl-1">
+                <div class="bg-indigo-100 text-indigo-600 p-1.5 rounded-xl relative">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    <span id="autoRefreshDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse border border-white hidden"></span>
+                </div>
+                <h1 class="font-extrabold text-slate-800 text-sm hidden sm:block whitespace-nowrap">لوحة العمليات</h1>
+            </div>
+            
+            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+            
+            <div class="flex items-center gap-2 text-[11px] font-bold shrink-0">
+                <div class="bg-rose-50 text-rose-700 px-2 py-1.5 rounded-lg border border-rose-100 flex items-center gap-1">
+                    <span>نساء:</span> <span id="statWomen">...</span>
+                </div>
+                <div class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
+                    <span>رجال:</span> <span id="statMen">...</span>
+                </div>
+                <div class="bg-amber-50 text-amber-700 px-2 py-1.5 rounded-lg border border-amber-100 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    قيد الانتظار: <span id="statPending">0</span>
+                </div>
+                <div class="bg-sky-50 text-sky-700 px-2 py-1.5 rounded-lg border border-sky-100 flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    يوجد رد: <span id="statActionNeeded">0</span>
+                </div>
+            </div>
+            
+            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+            
+            <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg transition-colors border border-rose-200" title="تغيير كلمة المرور / تسجيل خروج">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </button>
+
+            <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg transition-colors border border-slate-200" title="تحديث البيانات">
+                <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
+        
+        <div class="w-full h-px bg-slate-100"></div>
+        
+        <div class="flex items-center gap-2 overflow-x-auto hide-scroll pt-1">
+            <div class="relative shrink-0 w-[160px] sm:w-[220px]">
+                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <input type="text" id="searchInput" onkeyup="applyFilters()" class="block w-full pr-8 pl-3 py-1.5 border border-slate-300 rounded-xl bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-[11px] sm:text-xs transition-colors shadow-inner" placeholder="بحث ملف، جوال، طلب...">
+            </div>
+            
+            <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-sm shrink-0">الكل</button>
+            <button onclick="setFilter('action')" id="filter-action" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse"></span> تتطلب تدخلي</button>
+            <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0">بانتظار العملاء</button>
+            <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0">مكتمل / ملغى</button>
+        </div>
+    </div>
+
+    <!-- مساحة التحميل -->
+    <div id="loadingState" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start w-full hidden shrink-0">
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm animate-pulse w-full">
+            <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-slate-200"></div><div class="h-4 bg-slate-200 rounded w-1/3"></div></div>
+            <div class="h-24 bg-slate-100 rounded-xl w-full mb-3"></div><div class="h-10 bg-slate-200 rounded-xl w-full"></div>
+        </div>
+    </div>
+
+    <!-- حاوية نظام Master-Detail الجديدة (نفس الـ ID للحفاظ على الكود القديم) -->
+    <div id="requestsTable" class="flex-grow w-full overflow-hidden hidden"></div>
+
+    <div id="forwardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+            <div id="forwardModalHeader" class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+                <h3 id="forwardModalTitle" class="text-base font-bold text-white">تنقيح وتمرير</h3>
+                <button type="button" onclick="closeForwardModal()" class="text-white/70 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-5 flex flex-col gap-3">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 flex gap-2">
+                    <svg class="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <p class="text-[11px] text-indigo-800 leading-relaxed font-medium">الرسالة المعلقة مسحوبة بالأسفل. إذا لم تعدل حرفاً واحداً ستعبر للمستقبل بدون شارة "مُعدَّلة". سيتم إرسالها للمنصة وفتح الواتساب آلياً للتنبيه.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الرسالة المُراد تمريرها (اكتب أو انسخ وعَدل):</label>
+                    <textarea id="forwardTextArea" rows="6" class="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50 custom-scrollbar" placeholder="اكتب أو عدل الرسالة هنا..."></textarea>
+                </div>
+                <input type="hidden" id="forwardReqId">
+                <input type="hidden" id="forwardDirection">
+            </div>
+            <div class="bg-slate-50 px-4 py-3 flex justify-between gap-3 border-t border-slate-200">
+                <button type="button" id="btnCancelForward" onclick="closeForwardModal()" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors border border-slate-300">إلغاء وإغلاق</button>
+                <button type="button" id="btnExecuteForward" onclick="executeForward()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
+                    إرسال الرد
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-slate-800 px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white">تحديث حالة الطلب</h3>
+                <button onclick="closeModal()" class="text-white/70 hover:text-white"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-4 flex flex-col gap-3">
+                <input type="hidden" id="currentReqId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الحالة الجديدة:</label>
+                    <select id="newStatus" class="w-full p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50">
+                        <option value="قيد الانتظار">قيد الانتظار (جديد)</option>
+                        <option value="بانتظار الطرف الأول">بانتظار الطرف الأول</option>
+                        <option value="بانتظار الطرف الثاني">بانتظار الطرف الثاني</option>
+                        <option value="مقبول مبدئياً">مقبول مبدئياً ✅</option>
+                        <option value="مرفوض - تم الاعتذار">مرفوض - تم الاعتذار ❌</option>
+                        <option value="ملغى">ملغى 🚫</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظة إدارية مخفية (اختياري):</label>
+                    <input type="text" id="adminReply" class="w-full p-2 border border-slate-300 rounded-xl outline-none text-sm bg-slate-50" placeholder="مثال: يرجى الرد سريعاً...">
+                </div>
+            </div>
+            <div class="bg-slate-50 px-4 py-3 flex justify-between gap-3 border-t">
+                <button type="button" onclick="closeModal()" id="btnCancelStatus" class="flex-1 py-2 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300">إلغاء</button>
+                <button type="button" id="btnSaveStatus" onclick="saveStatus()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2 rounded-xl">حفظ التغييرات</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+            <div id="msgModalHeader" class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+                <h3 id="msgModalTitle" class="text-base font-bold text-white">تنبيه</h3>
+            </div>
+            <div class="p-5 flex flex-col gap-3 text-center">
+                <p id="msgModalText" class="text-sm text-slate-700 font-bold leading-relaxed"></p>
+                <div id="msgModalInputContainer" class="hidden mt-2 text-right">
+                    <textarea id="msgModalInput" rows="4" class="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50 shadow-inner custom-scrollbar" placeholder="اكتب رسالتك هنا..."></textarea>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-center gap-3" id="msgModalButtons">
+            </div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col p-6 sm:p-8 items-center text-center border border-slate-100">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-indigo-100">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-xl font-extrabold text-slate-800 mb-2">بوابة الإدارة</h3>
+            <p class="text-xs text-slate-500 mb-6 font-medium leading-relaxed">الرجاء إدخال كلمة المرور (Admin Token) للوصول إلى لوحة العمليات المركزية.</p>
+            <input type="password" id="adminTokenInput" onkeypress="if(event.key === 'Enter') submitLogin()" class="w-full p-3 border-2 border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-lg tracking-widest bg-slate-50 mb-4 transition-all" placeholder="••••••••">
+            <button onclick="submitLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex justify-center items-center gap-2">
+                تسجيل الدخول <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const state = { adminToken: localStorage.getItem('adminToken') || null };
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        let allRequests = [];
+        let isFetchingData = false;
+        let isProcessingAction = false; 
+        const FETCH_TIMEOUT_MS = 20000; 
+        
+        let currentFilterType = 'all';
+        let scrollPositions = {}; 
+        
+        // المتغير الجديد للتحكم في الطلب المفتوح حالياً
+        let selectedReqId = null;
+
+        // دوال الأمان وتسجيل الدخول
+        function checkAuth() {
+            if (!state.adminToken) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('adminTokenInput').focus(), 100);
+                return false;
+            }
+            return true;
+        }
+
+        function submitLogin() {
+            const token = document.getElementById('adminTokenInput').value.trim();
+            if (!token) {
+                document.getElementById('adminTokenInput').classList.add('border-rose-500');
+                setTimeout(() => document.getElementById('adminTokenInput').classList.remove('border-rose-500'), 1000);
+                return;
+            }
+            state.adminToken = token;
+            localStorage.setItem('adminToken', token);
+            document.getElementById('loginModal').classList.add('hidden');
+            fetchData(false); 
+        }
+
+        function adminLogout() {
+            state.adminToken = null;
+            localStorage.removeItem('adminToken');
+            document.getElementById('adminTokenInput').value = '';
+            document.getElementById('requestsTable').innerHTML = '';
+            document.getElementById('statMen').innerText = '...';
+            document.getElementById('statWomen').innerText = '...';
+            selectedReqId = null;
+            checkAuth();
+        }
+
+        function handleAuthError(message) {
+            if (message && (message.toLowerCase().includes('token') || message.includes('مصرح'))) {
+                adminLogout();
+                showMsgModal("انتهت الجلسة 🔒", "تم تغيير كلمة المرور من قبل الإدارة العليا أو أن الرمز غير صحيح. يرجى إدخال الرمز الجديد.");
+                return true;
+            }
+            return false;
+        }
+
+        let autoRefreshInterval;
+        function startAutoRefresh() {
+            if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+            document.getElementById('autoRefreshDot').classList.remove('hidden');
+            
+            autoRefreshInterval = setInterval(() => {
+                const forwardHidden = document.getElementById('forwardModal').classList.contains('hidden');
+                const statusHidden = document.getElementById('statusModal').classList.contains('hidden');
+                const msgHidden = document.getElementById('msgModal').classList.contains('hidden');
+                
+                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden) {
+                    fetchData(true); 
+                }
+            }, 60000);
+        }
+
+        let msgModalResolve = null;
+        function showMsgModal(title, msg, type = 'alert') {
+            return new Promise((resolve) => {
+                msgModalResolve = resolve;
+                document.getElementById('msgModalTitle').innerText = title;
+                document.getElementById('msgModalText').innerText = msg;
+                document.getElementById('msgModal').classList.remove('hidden');
+                
+                const inputContainer = document.getElementById('msgModalInputContainer');
+                const inputEl = document.getElementById('msgModalInput');
+                const buttonsEl = document.getElementById('msgModalButtons');
+                
+                inputContainer.classList.add('hidden');
+                inputEl.value = '';
+                
+                if (type === 'alert') {
+                    document.getElementById('msgModalHeader').className = 'bg-indigo-600 px-4 py-3 flex items-center justify-between';
+                    buttonsEl.innerHTML = `<button type="button" onclick="resolveMsgModal(true)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-sm">حسناً</button>`;
+                } else if (type === 'confirm') {
+                    document.getElementById('msgModalHeader').className = 'bg-rose-600 px-4 py-3 flex items-center justify-between';
+                    buttonsEl.innerHTML = `
+                        <button type="button" onclick="resolveMsgModal(false)" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors shadow-sm">إلغاء</button>
+                        <button type="button" onclick="resolveMsgModal(true)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-sm">تأكيد الإنهاء</button>
+                    `;
+                } else if (type === 'prompt') {
+                    document.getElementById('msgModalHeader').className = 'bg-sky-600 px-4 py-3 flex items-center justify-between';
+                    inputContainer.classList.remove('hidden');
+                    buttonsEl.innerHTML = `
+                        <button type="button" onclick="resolveMsgModal(null)" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors shadow-sm">إلغاء</button>
+                        <button type="button" onclick="resolveMsgModal(document.getElementById('msgModalInput').value)" class="flex-1 bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-sm">إرسال الرسالة</button>
+                    `;
+                    setTimeout(() => inputEl.focus(), 100);
+                }
+            });
+        }
+
+        function resolveMsgModal(value) {
+            document.getElementById('msgModal').classList.add('hidden');
+            if(msgModalResolve) msgModalResolve(value);
+            msgModalResolve = null;
+        }
+
+        function initSplitter() {
+            let isResizing = false;
+            let lastX = 0;
+            let sidebar = null;
+
+            document.addEventListener('mousedown', (e) => {
+                const resizer = document.getElementById('dragResizer');
+                if (resizer && (e.target === resizer || resizer.contains(e.target))) {
+                    isResizing = true;
+                    lastX = e.clientX;
+                    sidebar = document.getElementById('sidebarArea');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing || !sidebar) return;
+                // في الاتجاه من اليمين لليسار (RTL)، سحب الماوس لليسار يزيد العرض
+                const deltaX = lastX - e.clientX;
+                const newWidth = sidebar.offsetWidth + deltaX;
+                
+                if (newWidth >= 250 && newWidth <= window.innerWidth * 0.6) {
+                    document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
+                    lastX = e.clientX;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    sidebar = null;
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+        }
+
+        window.onload = () => {
+            if (!checkAuth()) return;
+
+            const cachedData = sessionStorage.getItem('admin_requests_cache');
+            if (cachedData) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    if (parsed && parsed.success) {
+                        document.getElementById('statMen').innerText = parsed.stats.totalMen;
+                        document.getElementById('statWomen').innerText = parsed.stats.totalWomen;
+                        allRequests = parsed.requests || [];
+                        applyFilters(); 
+                        fetchData(true); 
+                    } else {
+                        fetchData(false);
+                    }
+                } catch(e) { fetchData(false); }
+            } else {
+                fetchData(false);
+            }
+            initSplitter();
+            startAutoRefresh();
+        };
+
+        async function fetchData(silent = false, highlightReqId = null) {
+            if (isFetchingData || !state.adminToken) return;
+            isFetchingData = true;
+
+            const refreshIcon = document.getElementById('refreshIcon');
+            const loadingState = document.getElementById('loadingState');
+            const requestsTable = document.getElementById('requestsTable');
+            
+            if (!silent) {
+                loadingState.classList.remove('hidden');
+                requestsTable.classList.add('hidden');
+            } else {
+                refreshIcon.classList.add('sync-spin');
+                document.querySelectorAll('.chat-scroll-container').forEach(el => {
+                    scrollPositions[el.id] = el.scrollTop;
+                });
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminGetDashboard', adminToken: state.adminToken }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+
+                if (result.success) {
+                    sessionStorage.setItem('admin_requests_cache', JSON.stringify(result));
+                    document.getElementById('statMen').innerText = result.stats.totalMen;
+                    document.getElementById('statWomen').innerText = result.stats.totalWomen;
+                    
+                    let oldDataStr = JSON.stringify(allRequests);
+                    let newDataStr = JSON.stringify(result.requests || []);
+                    
+                    allRequests = result.requests || [];
+                    
+                    if (!silent || oldDataStr !== newDataStr || highlightReqId) {
+                        applyFilters(); 
+                        
+                        if(highlightReqId) {
+                            // التمرير للعنصر في القائمة الجانبية وتطبيق الإنذار
+                            const card = document.getElementById(`card-${highlightReqId}`);
+                            if (card) {
+                                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                card.classList.add('highlight-flash');
+                                setTimeout(() => card.classList.remove('highlight-flash'), 8000);
+                            }
+                        }
+                    } else if (silent) {
+                        updateTimeElapsedSilently();
+                    }
+                } else {
+                    if (!handleAuthError(result.message)) {
+                        if (!silent) await showMsgModal("فشل جلب البيانات 🛑", result.message || "السيرفر رفض الطلب. يرجى تحديث الصفحة.");
+                    }
+                }
+            } catch (e) {
+                if (e.name === 'AbortError' && !silent) {
+                    await showMsgModal("تنبيه", 'تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.');
+                }
+            } finally {
+                isFetchingData = false;
+                if(!silent) loadingState.classList.add('hidden');
+                refreshIcon.classList.remove('sync-spin');
+            }
+        }
+
+        function getTimestamp(dateStr) {
+            if (!dateStr) return 0;
+            let c = String(dateStr).trim().replace(/\//g, '-');
+            const arabicNumbers = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
+            for (let i = 0; i < 10; i++) { c = c.replace(arabicNumbers[i], i); }
+            
+            if (c.includes('ص') || c.includes('م')) {
+                let parts = c.split(' ');
+                if(parts.length >= 3) {
+                    let time = parts[0];
+                    let date = parts[1];
+                    let ampm = parts[2];
+                    
+                    let timeParts = time.split(':');
+                    let hours = parseInt(timeParts[0]);
+                    if (ampm === 'م' && hours < 12) hours += 12;
+                    if (ampm === 'ص' && hours === 12) hours = 0;
+                    
+                    return new Date(`${date}T${hours.toString().padStart(2, '0')}:${timeParts[1]}:${timeParts[2] || '00'}`).getTime();
+                }
+            }
+            return new Date(c).getTime() || 0;
+        }
+
+        function getTimeElapsedArabic(dateString) {
+            if (!dateString) return 'الآن';
+            
+            let cleanDateStr = String(dateString).trim().replace(/\//g, '-');
+            let pastMs = new Date(cleanDateStr).getTime();
+            
+            if (isNaN(pastMs) || pastMs === 0) pastMs = getTimestamp(dateString);
+            if (pastMs === 0) return 'الآن'; 
+            
+            const now = new Date();
+            const diffInMs = now - pastMs;
+            
+            if (diffInMs < 0) return 'الآن';
+            
+            const diffInMins = Math.floor(diffInMs / (1000 * 60));
+            const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+            
+            if (diffInMins < 2) return `الآن`;
+            if (diffInMins < 60) return `منذ ${diffInMins} دقيقة`;
+            if (diffInHours < 24) return `منذ ${diffInHours} ساعة`;
+            if (diffInDays === 1) return `منذ يوم`;
+            if (diffInDays === 2) return `منذ يومين`;
+            if (diffInDays > 2 && diffInDays <= 10) return `منذ ${diffInDays} أيام`;
+            return `منذ ${diffInDays} يوماً`;
+        }
+
+        function getProfileBadge(statusStr) {
+            let s = (statusStr || 'نشط').trim();
+            if (s === 'نشط' || s === '') return `<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-emerald-200">نشط</span>`;
+            if (s === 'تواصل مباشر') return `<span class="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-purple-200">تواصل مباشر</span>`;
+            if (s === 'خامل') return `<span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-slate-300">خامل</span>`;
+            if (s === 'جديد') return `<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-blue-200">جديد</span>`;
+            if (s === 'قيد المراجعة' || s === 'مراجعة') return `<span class="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-orange-200">قيد المراجعة</span>`;
+            if (s === 'تم الزواج') return `<span class="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-yellow-300">تم الزواج 💍</span>`;
+            if (s === 'محذوف') return `<span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-rose-200">محذوف</span>`;
+            
+            return `<span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-gray-200">${s}</span>`;
+        }
+
+        function updateTimeElapsedSilently() {
+            document.querySelectorAll('.time-badge').forEach(badge => {
+                let dateStr = badge.getAttribute('data-date');
+                if(dateStr) {
+                    let newTime = getTimeElapsedArabic(dateStr);
+                    badge.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${newTime}`;
+                }
+            });
+        }
+
+        function updateDashboardStats() {
+            let pending = 0, actionNeeded = 0;
+            allRequests.forEach(r => {
+                const s = r.status || '';
+                if (r.finalApprovalGiven) {
+                    actionNeeded++;
+                } else if (r.hasRequestedContact) {
+                    pending++;
+                } else {
+                    if (s === 'قيد الانتظار' || s.includes('بانتظار رده') || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب')) pending++;
+                    if (s.includes('يوجد رد') || s.includes('اعتماد الإدارة') || s.includes('اعتماد')) actionNeeded++;
+                }
+            });
+            document.getElementById('statPending').innerText = pending;
+            document.getElementById('statActionNeeded').innerText = actionNeeded;
+        }
+
+        function parseUnifiedChat(unifiedMessage) {
+            if (!unifiedMessage || typeof unifiedMessage !== 'string') return '';
+            
+            const chunks = unifiedMessage.split('---').map(c => c.trim()).filter(c => c);
+            let html = '<div class="flex flex-col gap-3 p-2 pb-6">';
+            
+            chunks.forEach((chunk, index) => {
+                let isStudent = chunk.includes('[من الطالب]') || chunk.includes('[من الطرف الأول]');
+                let isTarget = chunk.includes('[من المطلوب]') || chunk.includes('[من الطرف الثاني]');
+                
+                let isAdminToStudent = chunk.includes('[من الإدارة للمبادر]') || chunk.includes('[من الإدارة للطالب]') || chunk.includes('[من الإدارة للطرف الأول]');
+                let isAdminToTarget = chunk.includes('[من الإدارة للمتلقي]') || chunk.includes('[من الإدارة للمطلوب]') || chunk.includes('[من الإدارة للطرف الثاني]');
+                let isAdminGeneral = chunk.includes('[من الإدارة]') && !isAdminToStudent && !isAdminToTarget;
+                
+                let isEditedByAdmin = chunk.includes('[تعديل الإدارة]');
+                let clean = chunk.replace(/\[.*?\]:?/g, '').trim();
+                
+                if (!clean) return;
+
+                let badgeHtml = isEditedByAdmin ? `<span class="text-[9px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded ml-2 border border-slate-300 flex items-center gap-1 shadow-sm">مُعدَّلة <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></span>` : '';
+
+                if (isAdminGeneral) {
+                    html += `
+                    <div class="self-center text-center max-w-[90%] my-1">
+                        <div class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 shadow-sm inline-block">
+                            <span class="font-bold block mb-1 text-slate-400 text-[10px]">ملاحظة نظامية</span>
+                            <span class="whitespace-pre-wrap">${clean}</span>
+                        </div>
+                    </div>`;
+                } else if (isAdminToStudent) {
+                    html += `
+                    <div class="self-start text-right max-w-[85%] p-2.5 rounded-2xl relative chat-bubble-admin-to-student shadow-sm">
+                        <span class="text-[9px] font-extrabold text-blue-500 block mb-1">الإدارة (إلى الطرف الأول)</span>
+                        <p class="text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">${clean}</p>
+                    </div>`;
+                } else if (isAdminToTarget) {
+                    html += `
+                    <div class="self-end text-right max-w-[85%] p-2.5 rounded-2xl relative chat-bubble-admin-to-target shadow-sm">
+                        <span class="text-[9px] font-extrabold text-amber-500 block mb-1 text-left">الإدارة (إلى الطرف الثاني)</span>
+                        <p class="text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">${clean}</p>
+                    </div>`;
+                } else if (isStudent) {
+                    let title = index === 0 ? "الطلب الأساسي" : "الطرف الأول";
+                    html += `
+                    <div class="self-start text-right max-w-[85%] p-2.5 rounded-2xl relative chat-bubble-student border border-blue-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] font-extrabold text-blue-800">${title}</span>
+                            ${badgeHtml}
+                        </div>
+                        <p class="text-[13px] text-slate-800 whitespace-pre-wrap leading-relaxed">${clean}</p>
+                    </div>`;
+                } else {
+                    html += `
+                    <div class="self-end text-right max-w-[85%] p-2.5 rounded-2xl relative chat-bubble-target border border-amber-100 shadow-sm">
+                        <div class="flex items-center justify-between flex-row-reverse mb-1 gap-2">
+                            <span class="text-[10px] font-extrabold text-amber-800">الطرف الثاني</span>
+                            ${badgeHtml}
+                        </div>
+                        <p class="text-[13px] text-slate-800 whitespace-pre-wrap leading-relaxed">${clean}</p>
+                    </div>`;
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function setFilter(type) {
+            currentFilterType = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0";
+            });
+            const activeBtn = document.getElementById(`filter-${type}`);
+            let extraHTML = type === 'action' ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse"></span> ' : '';
+            activeBtn.className = `filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-sm shrink-0 flex items-center gap-1.5`;
+            if (type === 'action') activeBtn.innerHTML = extraHTML + 'تتطلب تدخلي';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            renderTable();
+        }
+
+        // الدوال الجديدة للتحكم في العرض
+        function openRequest(reqId) {
+            selectedReqId = reqId;
+            renderTable();
+        }
+
+        function closeRequest() {
+            selectedReqId = null;
+            renderTable();
+        }
+
+        function getShortName(dataString) {
+            if (!dataString) return '-';
+            const words = dataString.split(/[ \-]/);
+            return words[0] + (words.length > 1 ? '...' : '');
+        }
+
+        // دالة الترسيم المعدلة كلياً لتعمل بنظام (Master-Detail)
+        function renderTable() {
+            const container = document.getElementById('requestsTable');
+            updateDashboardStats();
+            
+            const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+
+            let filteredRequests = allRequests.filter(req => {
+                const s = req.status || 'قيد الانتظار';
+                let matchesStatus = false;
+                
+                if (currentFilterType === 'all') matchesStatus = true;
+                else if (currentFilterType === 'action') matchesStatus = req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد');
+                else if (currentFilterType === 'waiting') matchesStatus = (!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده');
+                else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى');
+
+                if (!matchesStatus) return false;
+                if (searchTerm === '') return true;
+                
+                const searchString = `${req.reqId || ''} ${req.requesterPhone || ''} ${req.targetPhone || ''} ${req.requesterData || ''} ${req.targetData || ''}`.toLowerCase();
+                return searchString.includes(searchTerm);
+            });
+
+            filteredRequests.sort((a, b) => {
+                if (a.finalApprovalGiven && !b.finalApprovalGiven) return -1;
+                if (!a.finalApprovalGiven && b.finalApprovalGiven) return 1;
+
+                const dateA = getTimestamp(a.lastActionDate || a.date);
+                const dateB = getTimestamp(b.lastActionDate || b.date);
+                return dateB - dateA;
+            });
+            
+            if (filteredRequests.length === 0) {
+                container.innerHTML = `<div class="w-full text-center py-12 text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm mt-4">لا توجد طلبات تطابق الفلتر الحالي.</div>`;
+                container.className = "flex-grow w-full overflow-hidden flex"; // تأكد من ظهوره
+                return;
+            }
+
+            // بناء هيكل الصفحة المقسم
+            let html = `<div class="flex w-full h-full gap-2 sm:gap-4 overflow-hidden">`;
+
+            // 1. القائمة الجانبية (Master)
+            let sidebarVisibility = selectedReqId ? 'hidden lg:flex' : 'flex';
+            html += `<div id="sidebarArea" class="w-full lg:w-[320px] xl:w-[350px] shrink-0 flex-col gap-2 overflow-y-auto custom-scrollbar pb-10 pr-1 ${sidebarVisibility}" style="width: var(--sidebar-width, 350px); min-width: 250px; max-width: 50vw;">`;
+            
+            filteredRequests.forEach((req) => {
+                const s = req.status || 'قيد الانتظار';
+                let statusBadge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 shrink-0 whitespace-nowrap">جديد / انتظار</span>`;
+                
+                if (req.finalApprovalGiven) {
+                    statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 تدخلي فوراً</span>`;
+                } else if (req.hasRequestedContact) {
+                    statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">طلب تواصل</span>`;
+                } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
+                    statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
+                } else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) {
+                    statusBadge = `<span class="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 whitespace-nowrap">انتظار العملاء</span>`;
+                } else if (s.includes('مقبول')) {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً</span>`;
+                } else if (s.includes('مرفوض') || s.includes('ملغى')) {
+                    statusBadge = `<span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-200 shrink-0 whitespace-nowrap">مغلق</span>`;
+                }
+
+                let timeElapsed = getTimeElapsedArabic(req.lastActionDate || req.date);
+                let timeBadge = `<span class="time-badge text-slate-400 text-[9px] font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsed}</span>`;
+                if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || req.finalApprovalGiven) timeBadge = '';
+
+                let isSelected = req.reqId === selectedReqId;
+                let cardClass = isSelected ? 'bg-indigo-50 border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm';
+                let flashClass = req.finalApprovalGiven && !isSelected ? 'highlight-flash' : '';
+
+                html += `
+                <div id="card-${req.reqId}" onclick="openRequest('${req.reqId}')" class="cursor-pointer border rounded-2xl p-3 transition-all ${cardClass} ${flashClass}">
+                    <div class="flex justify-between items-start mb-2 gap-2">
+                        <span class="text-[10px] font-extrabold text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded border border-slate-300 shadow-sm shrink-0">#${req.reqId}</span>
+                        <div class="flex flex-col items-end gap-1 text-left w-full overflow-hidden">
+                            ${statusBadge}
+                            ${timeBadge}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] font-bold pt-2 border-t border-slate-200/60">
+                        <div class="text-blue-700 truncate w-[45%] pr-1" title="${req.requesterData || '-'}">${req.requesterData || '-'}</div>
+                        <div class="text-slate-300 text-[10px] mx-1 shrink-0">VS</div>
+                        <div class="text-amber-700 truncate w-[45%] pl-1 text-left" title="${req.targetData || '-'}">${req.targetData || '-'}</div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`; // نهاية القائمة الجانبية
+
+            // الفاصل التفاعلي (Splitter) - يظهر فقط في الشاشات الكبيرة
+            let splitterVisibility = selectedReqId ? 'hidden lg:flex' : 'hidden';
+            html += `
+            <div id="dragResizer" class="${splitterVisibility} w-1.5 bg-slate-200 hover:bg-indigo-400 cursor-col-resize shrink-0 transition-colors rounded-full mx-0.5 items-center justify-center group relative z-20" title="اسحب لتغيير العرض">
+                <div class="h-8 w-1 bg-slate-400 rounded-full group-hover:bg-white transition-colors"></div>
+            </div>
+            `;
+
+
+            // 2. شاشة العمل الرئيسية (Detail)
+            let detailVisibility = selectedReqId ? 'flex' : 'hidden lg:flex';
+            html += `<div id="detailArea" class="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm flex-col min-w-[300px] ${detailVisibility}">`;
+
+            if (selectedReqId) {
+                const req = filteredRequests.find(r => r.reqId === selectedReqId);
+                if (req) {
+                    const s = req.status || 'قيد الانتظار';
+                    // استخراج الشارات والأزرار الخاصة بالطلب المفتوح
+                    let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
+                    if (req.finalApprovalGiven) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
+                    else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
+                    else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (s.includes('مقبول')) statusBadgeFull = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (s.includes('مرفوض') || s.includes('ملغى')) statusBadgeFull = `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-200 shrink-0 whitespace-nowrap">${s}</span>`;
+
+                    let timeElapsedFull = getTimeElapsedArabic(req.lastActionDate || req.date);
+                    let timeBadgeFull = `<span class="time-badge bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-bold px-1.5 py-1 rounded-md flex items-center gap-1 shadow-sm shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}" title="وقت الانتظار"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsedFull}</span>`;
+                    if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || req.finalApprovalGiven) timeBadgeFull = '';
+
+                    let reqStatusBadge = getProfileBadge(req.requesterProfileStatus);
+                    let targetStatusBadge = getProfileBadge(req.targetProfileStatus);
+                    let chatThread = parseUnifiedChat(req.message);
+                    
+                    let actionButtonHTML = '';
+                    if (req.finalApprovalGiven) {
+                        actionButtonHTML = `<button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full px-4 py-2 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md"><svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="truncate">أرشفة الطلب (تم التواصل وإتمام الإجراءات)</span></button>`;
+                    } else if (s === 'قيد الانتظار' || s.includes('يوجد رد من الطرف الأول') || s.includes('رد من الطالب')) {
+                        actionButtonHTML = `<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full px-4 py-2 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
+                    } else if (s.includes('تم الرد من الطرف الثاني') || s.includes('الرد من المطلوب') || s.includes('اعتماد الإدارة لرد')) {
+                        actionButtonHTML = `<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full px-4 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
+                    } else if (s.includes('بانتظار الطرف الثاني') || s.includes('بانتظار الطرف الأول') || s.includes('المطلوب') || s.includes('الطالب') || s.includes('بانتظار رده')) {
+                        actionButtonHTML = `
+                        <div class="flex flex-col sm:flex-row gap-2 w-full">
+                            <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
+                            <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
+                            <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>
+                        </div>`;
+                    }
+
+                    // تركيب شاشة التفاصيل
+                    html += `
+                    <!-- الرأس (Header) -->
+                    <div class="shrink-0 flex flex-col z-10 shadow-sm bg-white">
+                        <div class="p-2 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2">
+                            <div class="flex items-center gap-2">
+                                <button onclick="closeRequest()" class="lg:hidden p-1.5 bg-white hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors shadow-sm shrink-0" title="عودة للقائمة">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </button>
+                                <button onclick="openModal('${req.reqId}', '${s}')" class="p-1 bg-white hover:bg-slate-200 text-slate-500 rounded border border-slate-200 transition-colors shadow-sm shrink-0" title="تحديث الحالة يدوياً">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                </button>
+                                ${statusBadgeFull}
+                                ${timeBadgeFull}
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-700 bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300 shadow-sm shrink-0">الطلب #${req.reqId}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 bg-white border-b border-slate-200 text-xs shadow-sm z-10 relative">
+                            <div class="p-1.5 sm:p-2 border-l border-slate-200 text-right bg-blue-50/20">
+                                <div class="flex items-center justify-between flex-wrap gap-1 mb-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[11px] font-extrabold text-blue-700">الطرف الأول</span>
+                                        ${reqStatusBadge}
+                                    </div>
+                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 pr-1.5 rounded border border-blue-100 shadow-sm shrink-0">
+                                        <span class="text-[9px] text-slate-600 font-bold truncate">جوال: ${req.requesterPhone || '-'}</span>
+                                        ${req.requesterPhone ? `<a href="https://wa.me/${String(req.requesterPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                    </div>
+                                </div>
+                                <div class="font-bold text-blue-900 leading-relaxed text-[10px]">
+                                    <span class="line-clamp-2" title="${req.requesterData || '-'}">${req.requesterData || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="p-1.5 sm:p-2 text-right bg-amber-50/20">
+                                <div class="flex items-center justify-between flex-wrap gap-1 mb-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[11px] font-extrabold text-amber-700">الطرف الثاني</span>
+                                        ${targetStatusBadge}
+                                    </div>
+                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 pr-1.5 rounded border border-amber-100 shadow-sm shrink-0">
+                                        <span class="text-[9px] text-slate-600 font-bold truncate">جوال: ${req.targetPhone || '-'}</span>
+                                        ${req.targetPhone ? `<a href="https://wa.me/${String(req.targetPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                    </div>
+                                </div>
+                                <div class="font-bold text-amber-900 leading-relaxed text-[10px]">
+                                    <span class="line-clamp-2" title="${req.targetData || '-'}">${req.targetData || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المنتصف (Chat Area) -->
+                    <div class="flex-grow min-h-0 relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-50" style="background-color: #f8fafc;">
+                        <div id="scroll-${req.reqId}" class="absolute inset-0 overflow-y-auto chat-scroll-container custom-scrollbar bg-white/50 border-x border-white/40">
+                            ${chatThread}
+                        </div>
+                    </div>
+                    
+                    <!-- الأسفل (Footer) -->
+                    <div class="shrink-0 p-1.5 sm:p-2 bg-white border-t border-slate-200 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                        ${actionButtonHTML}
+                    </div>
+                    `;
+                } else {
+                    selectedReqId = null; // لم يعد الطلب موجوداً في الفلتر الحالي
+                }
+            }
+            
+            // حالة عدم تحديد أي طلب (Placeholder)
+            if (!selectedReqId) {
+                html += `
+                <div class="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+                    <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    <p class="font-bold text-lg text-slate-500">اختر طلباً من القائمة لعرض تفاصيله</p>
+                    <p class="text-sm mt-1 text-slate-400">حدد بطاقة من الجانب الأيمن لإدارة المحادثة</p>
+                </div>
+                `;
+            }
+
+            html += `</div></div>`; // نهاية الشاشة الرئيسية وحاوية الـ Flex
+
+            container.innerHTML = html;
+            container.className = "flex-grow w-full overflow-hidden flex"; // إظهار الحاوية كـ Flex Container
+
+            // استعادة موضع التمرير للشات إذا كان هناك طلب مفتوح
+            if (selectedReqId) {
+                const scrollEl = document.getElementById(`scroll-${selectedReqId}`);
+                if (scrollEl) {
+                    if (scrollPositions[scrollEl.id] !== undefined) {
+                        scrollEl.scrollTop = scrollPositions[scrollEl.id];
+                    } else {
+                        scrollEl.scrollTop = scrollEl.scrollHeight;
+                    }
+                }
+            }
+        }
+
+        function openForwardModal(reqId, direction) {
+            const req = allRequests.find(r => r.reqId === reqId);
+            if(!req) return;
+
+            document.getElementById('forwardReqId').value = reqId;
+            document.getElementById('forwardDirection').value = direction;
+            
+            let modalTitle = direction === 'toTarget' ? "تجهيز العرض للطرف الثاني" : "تنقيح وتمرير للطرف الأول";
+            let titleColor = direction === 'toTarget' ? "bg-amber-500" : "bg-indigo-600";
+            
+            const headerEl = document.getElementById('forwardModalHeader');
+            document.getElementById('forwardModalTitle').innerText = modalTitle;
+            headerEl.className = `${titleColor} px-4 py-3 flex items-center justify-between`;
+
+            const chunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
+            let lastUserMsg = "";
+            if (chunks.length > 0) {
+                lastUserMsg = chunks[chunks.length - 1].replace(/\[.*?\]:?/g, '').trim();
+            }
+
+            document.getElementById('forwardTextArea').value = lastUserMsg;
+            document.getElementById('forwardTextArea').setAttribute('data-original', lastUserMsg);
+            document.getElementById('forwardModal').classList.remove('hidden');
+        }
+
+        function closeForwardModal() { document.getElementById('forwardModal').classList.add('hidden'); }
+
+        async function executeForward() {
+            const reqId = document.getElementById('forwardReqId').value;
+            const direction = document.getElementById('forwardDirection').value;
+            const newText = document.getElementById('forwardTextArea').value.trim();
+            const originalText = document.getElementById('forwardTextArea').getAttribute('data-original');
+            
+            if(!reqId || !newText) return; 
+            const req = allRequests.find(r => r.reqId === reqId);
+            if(!req) return;
+
+            const btn = document.getElementById('btnExecuteForward');
+            const cancelBtn = document.getElementById('btnCancelForward');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = `جاري الإرسال...`;
+            btn.disabled = true;
+            cancelBtn.disabled = true;
+
+            let newStatus = direction === 'toTarget' ? "بانتظار الطرف الثاني" : "بانتظار الطرف الأول";
+            let targetPhoneNum = String(direction === 'toTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+            
+            let isEdited = (newText !== originalText);
+            let oldChunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
+            oldChunks.pop(); 
+            
+            let senderRoleTag = direction === 'toTarget' ? '[من الطرف الأول]' : '[من الطرف الثاني]';
+            
+            let logTag = senderRoleTag;
+            if (isEdited) {
+                logTag += ' [تعديل الإدارة]:'; 
+            } else {
+                logTag += ':';
+            }
+            
+            let formattedNewMessage = logTag + " " + newText;
+            oldChunks.push(formattedNewMessage);
+            let completeNewThread = oldChunks.join("\n\n---\n\n");
+            let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
+
+            try {
+                let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
+                
+                let waMessage = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\n`;
+                waMessage += `يوجد رسالة/تحديث بخصوص طلب التوفيق رقم (${req.reqId})\n\n`;
+                waMessage += `* نبذة عن الطرف الآخر:\n${senderDataInfo || 'بيانات غير متوفرة'}\n\n`;
+                waMessage += `* الرسالة:\n"${newText}"\n\n`;
+                waMessage += `* يرجى الدخول للمنصة للرد عبر الرابط التالي:\nhttps://zewaj.github.io/zewaj/\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
+                
+                let waLink = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
+                window.open(waLink, '_blank');
+            } catch(waErr) { console.warn("حظر فتح الواتساب."); }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+                
+                if(result.success) {
+                    closeForwardModal();
+                    scrollPositions = {}; 
+                    await fetchData(true, reqId); 
+                } else {
+                    await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
+                }
+            } catch(e) {
+                if (e.name === 'AbortError') await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
+            } finally {
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
+                cancelBtn.disabled = false;
+            }
+        }
+
+        async function executeAdminAction(reqId, actionType) {
+            if(isProcessingAction) return;
+            const req = allRequests.find(r => r.reqId === reqId);
+            if(!req) return;
+            
+            let adminMessage = "";
+            let newStatus = "";
+            let waPhone = "";
+            let waIntro = "";
+            let prefixTag = "";
+
+            if(actionType === 'msgStudent') {
+                adminMessage = await showMsgModal("رسالة للطرف الأول", "اكتب رسالتك للطرف الأول:", "prompt");
+                if(!adminMessage) return;
+                newStatus = "بانتظار الطرف الأول";
+                prefixTag = "[من الإدارة للطرف الأول]: ";
+                waPhone = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.targetData || 'غير متوفرة'}`;
+            } else if(actionType === 'msgTarget') {
+                adminMessage = await showMsgModal("رسالة للطرف الثاني", "اكتب رسالتك للطرف الثاني:", "prompt");
+                if(!adminMessage) return;
+                newStatus = "بانتظار الطرف الثاني";
+                prefixTag = "[من الإدارة للطرف الثاني]: ";
+                waPhone = String(req.targetPhone).replace(/[^0-9]/g, '');
+                waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.requesterData || 'غير متوفرة'}`;
+            } else if(actionType === 'closeChat') {
+                let confirmClose = await showMsgModal("تأكيد الإنهاء", "هل أنت متأكد من إنهاء هذه المحادثة وإلغاء الطلب نهائياً؟", "confirm");
+                if(!confirmClose) return;
+                adminMessage = "تم إنهاء المحادثة وإغلاق الطلب لعدم التجاوب أو لانتهاء الغرض.";
+                newStatus = "ملغى";
+                prefixTag = "[من الإدارة]: ";
+            }
+
+            isProcessingAction = true;
+            document.getElementById('refreshIcon').classList.add('sync-spin');
+            
+            let oldChunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
+            let formattedNewMessage = prefixTag + adminMessage;
+            oldChunks.push(formattedNewMessage);
+            let completeNewThread = oldChunks.join("\n\n---\n\n");
+            
+            let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
+
+            if (actionType !== 'closeChat' && waPhone) {
+                try {
+                    let waFullMsg = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\nرسالة إدارية ${waIntro}\n\n* الرسالة:\n"${adminMessage}"\n\n* يرجى الدخول للمنصة للرد عبر الرابط التالي:\nhttps://zewaj.github.io/zewaj/\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
+                    let waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(waFullMsg)}`;
+                    window.open(waLink, '_blank');
+                } catch(e) {}
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+                
+                if(result.success) {
+                    scrollPositions = {}; 
+                    await fetchData(true, reqId);
+                } else {
+                    await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
+                }
+            } catch(e) {
+                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
+            } finally {
+                isProcessingAction = false;
+                document.getElementById('refreshIcon').classList.remove('sync-spin');
+            }
+        }
+
+        function openModal(reqId, currentStatus) {
+            document.getElementById('currentReqId').value = reqId;
+            document.getElementById('adminReply').value = '';
+            
+            let statusSelect = document.getElementById('newStatus');
+            let found = Array.from(statusSelect.options).some(opt => opt.value === currentStatus);
+            if(found) statusSelect.value = currentStatus;
+            else {
+                let newOption = new Option(currentStatus, currentStatus);
+                statusSelect.add(newOption);
+                statusSelect.value = currentStatus;
+            }
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('statusModal').classList.add('hidden'); }
+
+        async function saveStatus() {
+            const reqId = document.getElementById('currentReqId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            const adminReply = document.getElementById('adminReply').value.trim();
+            
+            const btn = document.getElementById('btnSaveStatus');
+            const cancelBtn = document.getElementById('btnCancelStatus');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = "جاري الحفظ..."; 
+            btn.disabled = true; cancelBtn.disabled = true;
+
+            let payloadText = adminReply ? `[من الإدارة]: ${adminReply}` : "";
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                const result = await res.json();
+                
+                if (result.success) {
+                    closeModal();
+                    scrollPositions = {};
+                    await fetchData(true, reqId);
+                } else await showMsgModal("تنبيه", result.message || "النظام مشغول.");
+            } catch(e) {
+                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
+            } finally {
+                btn.innerHTML = originalHtml; 
+                btn.disabled = false; cancelBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
