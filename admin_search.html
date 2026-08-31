@@ -394,20 +394,44 @@
             const genColor = isMale ? 'text-blue-500 bg-blue-50 border-blue-100' : 'text-pink-500 bg-pink-50 border-pink-100';
             
             const st = getStatusConfig(p.profileStatus);
-            const statusBadge = `<span class="${st.classes} px-2 py-0.5 rounded-md text-[10px] font-black border flex items-center gap-1"><i class="fas ${st.icon}"></i> ${st.label}</span>`;
+            const statusBadge = `<span class="${st.classes} px-2 py-0.5 rounded-md text-[10px] font-black border flex items-center gap-1 shadow-sm"><i class="fas ${st.icon}"></i> ${st.label}</span>`;
             
-            // 1. تحديد الاسم الأساسي للعميل ليكون هو العنوان العريض
-            const originalName = [p.name, p.family].filter(Boolean).join(' ') || 'بدون اسم';
-            // تأمين الاسم من علامات التنصيص لتجنب أخطاء الجافاسكربت في الأزرار
-            const safeClientName = originalName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            // --- استخراج نوع الزواج وتنسيقه (ذكاء اصطناعي مصغر في الواجهة) ---
+            // 1. نحاول أخذه من السيرفر مباشرة (إذا قام المهندس بتحديثه)
+            let extractedMarriageType = p.marriageType;
             
-            // 2. تجهيز اسم الحفظ الموحد للعرض وللنسخ
-            const displayUnifiedName = p.unifiedName ? p.unifiedName : 'اسم الحفظ الموحد غير متوفر';
-            const textToCopy = p.unifiedName ? p.unifiedName : 'اسم الحفظ الموحد غير متوفر من السيرفر';
+            // 2. إذا لم يرسله السيرفر، نستخرجه من النبذة المختصرة كحل بديل فوري
+            if (!extractedMarriageType && p.shortBio) {
+                const decodedBio = decodeFromHTML(p.shortBio);
+                const match = decodedBio.match(/(زواج تقليدي معلن|زواج باشتراطات خاصة|زواج بظروف خاصة|زواج مسيار)/i);
+                if (match) extractedMarriageType = match[0];
+            }
             
+            const displayMarriageType = extractedMarriageType || 'نوع الزواج غير محدد';
+            
+            // 3. إعطاء كل نوع زواج لون وأيقونة مميزة لسرعة الفرز البصري
+            let mtClass = 'bg-slate-50 text-slate-600 border-slate-200';
+            let mtIcon = 'fa-ring'; 
+            if (displayMarriageType.includes('تقليدي')) {
+                mtClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                mtIcon = 'fa-seedling';
+            } else if (displayMarriageType.includes('اشتراطات')) {
+                mtClass = 'bg-purple-50 text-purple-700 border-purple-200';
+                mtIcon = 'fa-handshake';
+            } else if (displayMarriageType.includes('ظروف')) {
+                mtClass = 'bg-orange-50 text-orange-700 border-orange-200';
+                mtIcon = 'fa-feather-alt';
+            }
+
+            const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm"><i class="fas ${mtIcon}"></i> ${displayMarriageType}</span>`;
+            // -----------------------------------------------------------
+
             const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
             const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
             const base64ShortBio = encodeBase64(decodedShortBio);
+            
+            // تعريف المتغير المفقود لزر المطابقة مع حماية من علامات التنصيص
+            const safeClientName = (p.unifiedName || p.name || 'بدون اسم').replace(/'/g, "\\'");
             
             const isSelected = state.selectedIds.has(p.refId);
             const borderClass = isSelected ? 'border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50/10' : 'border-slate-100 hover:border-slate-300';
@@ -416,27 +440,28 @@
             <div id="card-${p.refId}" class="bg-white rounded-3xl shadow-sm border ${borderClass} p-5 flex flex-col h-full transition-all relative ${st.label === 'محذوف' ? 'opacity-60 grayscale' : ''}">
                 
                 <div class="flex justify-between items-start mb-4">
-                    <div class="flex flex-col gap-2 flex-1 min-w-0 pr-3">
-                        <!-- الاسم الأساسي للعميل -->
-                        <h3 class="font-black text-slate-800 text-lg leading-tight truncate" title="${originalName}">
-                            ${originalName}
+                    <!-- القسم الأيمن: النصوص والشارات -->
+                    <div class="flex flex-col items-start gap-2 flex-1 min-w-0 pr-1">
+                        <h3 class="font-black text-slate-800 text-lg leading-tight truncate text-right w-full" title="${p.name || 'بدون اسم'}">
+                            ${p.name || 'بدون اسم'}
                         </h3>
                         
-                        <!-- صندوق اسم الحفظ الموحد مع زر النسخ -->
                         <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1.5 w-fit max-w-full">
-                            <span class="text-[10px] font-bold text-slate-500 font-mono leading-snug truncate">${displayUnifiedName}</span>
-                            <button onclick="safeCopyFromBase64(this, '${encodeBase64(textToCopy)}')" class="text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm text-xs shrink-0" title="نسخ اسم الحفظ الموحد">
+                            <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${p.unifiedName ? p.unifiedName : '<span class="text-red-400">اسم الحفظ الموحد غير متوفر</span>'}</span>
+                            <button onclick="safeCopyFromBase64(this, '${encodeBase64(p.unifiedName)}')" class="text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm text-xs shrink-0" title="نسخ اسم الحفظ الموحد">
                                 <i class="far fa-copy"></i>
                             </button>
                         </div>
 
-                        <!-- الشارات (بدون رقم الطلب لتفادي التكرار) -->
-                        <div class="flex gap-1.5 flex-wrap mt-1">
+                        <!-- الشارات الجديدة (الحالة + نوع الزواج) -->
+                        <div class="flex gap-1.5 flex-wrap mt-1 justify-start">
                             ${statusBadge}
-                            <span class="bg-slate-50 text-slate-500 px-2 py-0.5 rounded-md text-[10px] font-bold border border-slate-200 flex items-center gap-1"><i class="fas fa-table"></i> ${p.sheetName || 'ملف'}</span>
+                            ${marriageTypeBadge}
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
+
+                    <!-- القسم الأيسر: الأيقونات (صورة الجنس ومربع الاختيار) -->
+                    <div class="flex items-center gap-2 shrink-0 pl-2">
                         <label class="flex items-center justify-center w-8 h-8 bg-white border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300'} rounded-xl cursor-pointer hover:border-indigo-400 transition-colors shadow-sm shrink-0">
                             <input type="checkbox" class="hidden" onchange="toggleSelection('${p.refId}')" ${isSelected ? 'checked' : ''}>
                             <i class="fas fa-check text-sm text-indigo-600 ${isSelected ? 'opacity-100' : 'opacity-0'} transition-opacity"></i>
