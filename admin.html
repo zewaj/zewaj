@@ -1,3 +1,6 @@
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 1: إعدادات الصفحة وخطوط التصميم 🔴🔴🔴 -->
+<!-- ======================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -7,11 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 2: أكواد الـ CSS (الستايل والألوان) 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <style>
         :root {
             --sidebar-width: 350px;
         }
-        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; height: 100vh; overflow: hidden; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; height: 100vh; height: 100dvh; overflow: hidden; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -50,74 +56,92 @@
 </head>
 <body class="text-slate-800 antialiased p-2 md:p-4 flex flex-col">
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 mb-4 shrink-0 flex flex-col gap-2">
-        <div class="flex items-center gap-3 overflow-x-auto hide-scroll pb-1">
-            <div class="flex items-center gap-2 shrink-0 pl-1">
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 3: الشريط العلوي (الإحصائيات والفلاتر) 🔴🔴🔴 -->
+<!-- ======================================================== -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 mb-3 shrink-0 flex items-center justify-between gap-2 z-40 relative">
+        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto hide-scroll">
+            <div class="flex items-center gap-2 shrink-0 pr-1 hidden sm:flex">
                 <div class="bg-indigo-100 text-indigo-600 p-1.5 rounded-xl relative">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
                     <span id="autoRefreshDot" class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse border border-white hidden"></span>
                 </div>
-                <h1 class="font-extrabold text-slate-800 text-sm hidden sm:block whitespace-nowrap">لوحة العمليات</h1>
             </div>
             
-            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
-            
-            <div class="flex items-center gap-2 text-[11px] font-bold shrink-0">
+            <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold shrink-0">
                 <div class="bg-rose-50 text-rose-700 px-2 py-1.5 rounded-lg border border-rose-100 flex items-center gap-1">
                     <span>نساء:</span> <span id="statWomen">...</span>
                 </div>
                 <div class="bg-blue-50 text-blue-700 px-2 py-1.5 rounded-lg border border-blue-100 flex items-center gap-1">
                     <span>رجال:</span> <span id="statMen">...</span>
                 </div>
-                <div class="bg-amber-50 text-amber-700 px-2 py-1.5 rounded-lg border border-amber-100 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    قيد الانتظار: <span id="statPending">0</span>
-                </div>
-                <div class="bg-sky-50 text-sky-700 px-2 py-1.5 rounded-lg border border-sky-100 flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                    يوجد رد: <span id="statActionNeeded">0</span>
+            </div>
+
+            <div class="w-px h-5 bg-slate-200 shrink-0 mx-1"></div>
+
+            <div class="flex items-center gap-1 shrink-0">
+                <button onclick="setFilter('all')" id="filter-all" class="filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0" title="عرض كل الطلبات">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                </button>
+                <button onclick="setFilter('action')" id="filter-action" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="تتطلب تدخلي فوراً">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    <span id="badgeAction" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+                </button>
+                <button onclick="setFilter('queue')" id="filter-queue" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="قائمة الانتظار">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </button>
+                <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="بانتظار ردود العملاء">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="badgeWaiting" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+                </button>
+                <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                </button>
+            </div>
+        </div>
+
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 4: شريط البحث وأزرار التحديث والقفل 🔴🔴🔴 -->
+<!-- ======================================================== -->
+        <div class="flex items-center gap-1.5 shrink-0 pl-1">
+            <div class="relative flex items-center group shrink-0">
+                <input type="text" id="searchInput" onkeyup="applyFilters()" 
+                    class="transition-all duration-300 outline-none border rounded-xl bg-slate-50 text-[11px] sm:text-xs z-10
+                           w-8 h-8 sm:w-[150px] sm:focus:w-[200px] sm:h-9 
+                           pl-3 pr-8 sm:px-3 sm:pr-8
+                           text-transparent placeholder-transparent border-transparent cursor-pointer 
+                           focus:w-[150px] focus:cursor-text focus:text-slate-700 focus:placeholder-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-inner
+                           sm:cursor-text sm:text-slate-700 sm:placeholder-slate-400 sm:border-slate-300 sm:bg-slate-50 sm:shadow-inner" 
+                    placeholder="بحث ملف، جوال...">
+                <div class="absolute right-0 pr-2 pointer-events-none text-slate-400 z-20 group-focus-within:text-indigo-500 transition-colors">
+                    <svg class="w-4 h-4 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
             </div>
-            
-            <div class="w-px h-5 bg-slate-200 shrink-0"></div>
-            
-            <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg transition-colors border border-rose-200" title="تغيير كلمة المرور / تسجيل خروج">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            </button>
-
-            <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-lg transition-colors border border-slate-200" title="تحديث البيانات">
+            <div class="w-px h-5 bg-slate-200 shrink-0 mx-0.5"></div>
+            <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-xl transition-colors border border-slate-200" title="تحديث البيانات">
                 <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </button>
-        </div>
-        
-        <div class="w-full h-px bg-slate-100"></div>
-        
-        <div class="flex items-center gap-2 overflow-x-auto hide-scroll pt-1">
-            <div class="relative shrink-0 w-[160px] sm:w-[220px]">
-                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-                <input type="text" id="searchInput" onkeyup="applyFilters()" class="block w-full pr-8 pl-3 py-1.5 border border-slate-300 rounded-xl bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-[11px] sm:text-xs transition-colors shadow-inner" placeholder="بحث ملف، جوال، طلب...">
-            </div>
-            
-            <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-sm shrink-0">الكل</button>
-            <button onclick="setFilter('action')" id="filter-action" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse"></span> تتطلب تدخلي</button>
-            <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0">بانتظار العملاء</button>
-            <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0">مكتمل / ملغى</button>
+            <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-xl transition-colors border border-rose-200" title="قفل / تسجيل خروج">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </button>
         </div>
     </div>
 
-    <!-- مساحة التحميل -->
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 5: مساحات العرض (التحميل + الجدول الرئيسي) 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <div id="loadingState" class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start w-full hidden shrink-0">
         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm animate-pulse w-full">
             <div class="flex items-center gap-4 mb-4"><div class="w-12 h-12 rounded-full bg-slate-200"></div><div class="h-4 bg-slate-200 rounded w-1/3"></div></div>
             <div class="h-24 bg-slate-100 rounded-xl w-full mb-3"></div><div class="h-10 bg-slate-200 rounded-xl w-full"></div>
         </div>
     </div>
-
-    <!-- حاوية نظام Master-Detail الجديدة (نفس الـ ID للحفاظ على الكود القديم) -->
+    
     <div id="requestsTable" class="flex-grow w-full overflow-hidden hidden"></div>
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 6: نوافذ منبثقة (تنقيح وتمرير للعملاء) 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <div id="forwardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
             <div id="forwardModalHeader" class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
@@ -140,13 +164,14 @@
             </div>
             <div class="bg-slate-50 px-4 py-3 flex justify-between gap-3 border-t border-slate-200">
                 <button type="button" id="btnCancelForward" onclick="closeForwardModal()" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl transition-colors border border-slate-300">إلغاء وإغلاق</button>
-                <button type="button" id="btnExecuteForward" onclick="executeForward()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                    إرسال الرد
-                </button>
+                <button type="button" id="btnExecuteForward" onclick="executeForward()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">إرسال الرد</button>
             </div>
         </div>
     </div>
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 7: نوافذ منبثقة (تحديث الحالة يدوياً) 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <div id="statusModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-slate-800 px-4 py-3 flex items-center justify-between">
@@ -178,6 +203,9 @@
         </div>
     </div>
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 8: نوافذ منبثقة (تنبيهات وأسئلة النظام) 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col border border-slate-200">
             <div id="msgModalHeader" class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
@@ -189,11 +217,73 @@
                     <textarea id="msgModalInput" rows="4" class="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50 shadow-inner custom-scrollbar" placeholder="اكتب رسالتك هنا..."></textarea>
                 </div>
             </div>
-            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-center gap-3" id="msgModalButtons">
+            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-center gap-3" id="msgModalButtons"></div>
+        </div>
+    </div>
+
+    <!-- نافذة إدارة طابور الانتظار -->
+    <div id="queueManagementModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-purple-600 px-4 py-3 flex items-center justify-between shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">⚙️ إدارة طابور الانتظار</h3>
+                <button onclick="closeQueueModal()" class="text-white/70 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-3 bg-purple-50 border-b border-purple-100 shrink-0 text-[11px] text-purple-800 font-medium">
+                اسحب بالأسهم لترتيب الأولوية. يمكنك إزالة المتقدمين المرفوضين لاسترجاع نقاطهم.
+            </div>
+            <div class="p-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar bg-slate-50 flex-grow" id="queueListContainer">
+                <!-- سيتم حقن الطابور هنا برمجياً -->
+            </div>
+            <div class="bg-white px-4 py-3 flex justify-between gap-3 border-t border-slate-200 shrink-0">
+                <button type="button" onclick="closeQueueModal()" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors">إغلاق</button>
+                <button type="button" id="btnSaveQueueOrder" onclick="saveQueueOrder()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">حفظ الترتيب</button>
             </div>
         </div>
     </div>
 
+    <!-- نافذة إنهاء المحادثة المخصصة (الجديدة) -->
+    <div id="closeChatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-rose-600 px-4 py-3 flex items-center justify-between shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> إنهاء المحادثة نهائياً</h3>
+                <button onclick="resolveCloseChat(null)" class="text-white/70 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-4 bg-rose-50 border-b border-rose-100 shrink-0 flex gap-3 items-start">
+                <p class="text-xs text-rose-800 font-bold leading-relaxed">
+                    ⚠️ تنبيه هام: اختيار (الزواج) أو (حذف الملف) سيقوم تلقائياً بإلغاء جميع المنتظرين في الطابور لهذا الشخص وإرجاع نقاطهم فوراً.
+                </p>
+            </div>
+            <div class="p-5 flex flex-col gap-3 bg-slate-50 flex-grow">
+                <label class="block text-sm font-extrabold text-slate-700 mb-1">يرجى تحديد سبب الإلغاء بدقة:</label>
+                
+                <button onclick="resolveCloseChat('مرفوض - تم الاعتذار')" class="w-full text-right px-4 py-3 bg-white border border-amber-300 hover:bg-amber-50 rounded-xl transition-all shadow-sm group">
+                    <div class="font-bold text-amber-700 text-sm group-hover:text-amber-800">1. اعتذار لعدم التوافق ❌</div>
+                    <div class="text-[10px] text-slate-500 mt-1">يُغلق هذا الطلب فقط، ويمرر الدور للشخص التالي في طابور الانتظار (إن وجد).</div>
+                </button>
+
+                <button onclick="resolveCloseChat('تم الزواج')" class="w-full text-right px-4 py-3 bg-white border border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all shadow-sm group">
+                    <div class="font-bold text-emerald-700 text-sm group-hover:text-emerald-800">2. تم الزواج بفضل الله 💍</div>
+                    <div class="text-[10px] text-slate-500 mt-1">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</div>
+                </button>
+
+                <button onclick="resolveCloseChat('محذوف')" class="w-full text-right px-4 py-3 bg-white border border-rose-300 hover:bg-rose-50 rounded-xl transition-all shadow-sm group">
+                    <div class="font-bold text-rose-700 text-sm group-hover:text-rose-800">3. حذف الملف نهائياً 🗑️</div>
+                    <div class="text-[10px] text-slate-500 mt-1">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</div>
+                </button>
+            </div>
+            <div class="bg-white px-4 py-3 flex justify-between gap-3 border-t border-slate-200 shrink-0">
+                <button type="button" onclick="resolveCloseChat(null)" class="w-full py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors">إلغاء التراجع</button>
+            </div>
+        </div>
+    </div>
+
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 9: نافذة تسجيل الدخول 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[999] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col p-6 sm:p-8 items-center text-center border border-slate-100">
             <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-indigo-100">
@@ -208,21 +298,24 @@
         </div>
     </div>
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 10: تهيئة المتغيرات الأساسية للـ JS 🔴🔴🔴 -->
+<!-- ======================================================== -->
     <script>
         const state = { adminToken: localStorage.getItem('adminToken') || null };
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
         let allRequests = [];
         let isFetchingData = false;
         let isProcessingAction = false; 
-        const FETCH_TIMEOUT_MS = 20000; 
+        const FETCH_TIMEOUT_MS = 60000; 
         
         let currentFilterType = 'all';
         let scrollPositions = {}; 
-        
-        // المتغير الجديد للتحكم في الطلب المفتوح حالياً
         let selectedReqId = null;
 
-        // دوال الأمان وتسجيل الدخول
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 11: دوال تسجيل الدخول والخروج 🔴🔴🔴 -->
+<!-- ======================================================== -->
         function checkAuth() {
             if (!state.adminToken) {
                 document.getElementById('loginModal').classList.remove('hidden');
@@ -265,6 +358,9 @@
             return false;
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 12: تحديث تلقائي، نافذة الرسائل والفاصل 🔴🔴🔴 -->
+<!-- ======================================================== -->
         let autoRefreshInterval;
         function startAutoRefresh() {
             if(autoRefreshInterval) clearInterval(autoRefreshInterval);
@@ -274,8 +370,10 @@
                 const forwardHidden = document.getElementById('forwardModal').classList.contains('hidden');
                 const statusHidden = document.getElementById('statusModal').classList.contains('hidden');
                 const msgHidden = document.getElementById('msgModal').classList.contains('hidden');
+                const queueHidden = document.getElementById('queueManagementModal').classList.contains('hidden');
+                const closeChatHidden = document.getElementById('closeChatModal').classList.contains('hidden');
                 
-                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden) {
+                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden && queueHidden && closeChatHidden) {
                     fetchData(true); 
                 }
             }, 60000);
@@ -303,7 +401,7 @@
                     document.getElementById('msgModalHeader').className = 'bg-rose-600 px-4 py-3 flex items-center justify-between';
                     buttonsEl.innerHTML = `
                         <button type="button" onclick="resolveMsgModal(false)" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors shadow-sm">إلغاء</button>
-                        <button type="button" onclick="resolveMsgModal(true)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-sm">تأكيد الإنهاء</button>
+                        <button type="button" onclick="resolveMsgModal(true)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold py-2.5 rounded-xl transition-colors shadow-sm">تأكيد الإجراء</button>
                     `;
                 } else if (type === 'prompt') {
                     document.getElementById('msgModalHeader').className = 'bg-sky-600 px-4 py-3 flex items-center justify-between';
@@ -323,6 +421,20 @@
             msgModalResolve = null;
         }
 
+        let closeChatResolve = null;
+        function openCloseChatModal() {
+            return new Promise((resolve) => {
+                closeChatResolve = resolve;
+                document.getElementById('closeChatModal').classList.remove('hidden');
+            });
+        }
+
+        function resolveCloseChat(status) {
+            document.getElementById('closeChatModal').classList.add('hidden');
+            if (closeChatResolve) closeChatResolve(status);
+            closeChatResolve = null;
+        }
+
         function initSplitter() {
             let isResizing = false;
             let lastX = 0;
@@ -339,28 +451,51 @@
                 }
             });
 
+            document.addEventListener('touchstart', (e) => {
+                const resizer = document.getElementById('dragResizer');
+                if (resizer && (e.target === resizer || resizer.contains(e.target))) {
+                    isResizing = true;
+                    lastX = e.touches[0].clientX;
+                    sidebar = document.getElementById('sidebarArea');
+                    document.body.style.userSelect = 'none';
+                }
+            }, {passive: true});
+
             document.addEventListener('mousemove', (e) => {
                 if (!isResizing || !sidebar) return;
-                // في الاتجاه من اليمين لليسار (RTL)، سحب الماوس لليسار يزيد العرض
                 const deltaX = lastX - e.clientX;
                 const newWidth = sidebar.offsetWidth + deltaX;
-                
                 if (newWidth >= 250 && newWidth <= window.innerWidth * 0.6) {
                     document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
                     lastX = e.clientX;
                 }
             });
 
-            document.addEventListener('mouseup', () => {
+            document.addEventListener('touchmove', (e) => {
+                if (!isResizing || !sidebar) return;
+                const deltaX = lastX - e.touches[0].clientX;
+                const newWidth = sidebar.offsetWidth + deltaX;
+                if (newWidth >= 250 && newWidth <= window.innerWidth * 0.6) {
+                    document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
+                    lastX = e.touches[0].clientX;
+                }
+            }, {passive: true});
+
+            const stopResize = () => {
                 if (isResizing) {
                     isResizing = false;
                     sidebar = null;
                     document.body.style.cursor = '';
                     document.body.style.userSelect = '';
                 }
-            });
+            };
+            document.addEventListener('mouseup', stopResize);
+            document.addEventListener('touchend', stopResize);
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 13: دالة جلب البيانات من السيرفر 🔴🔴🔴 -->
+<!-- ======================================================== -->
         window.onload = () => {
             if (!checkAuth()) return;
 
@@ -429,7 +564,6 @@
                         applyFilters(); 
                         
                         if(highlightReqId) {
-                            // التمرير للعنصر في القائمة الجانبية وتطبيق الإنذار
                             const card = document.getElementById(`card-${highlightReqId}`);
                             if (card) {
                                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -456,6 +590,9 @@
             }
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 14: دوال تنسيق التواريخ والأوقات 🔴🔴🔴 -->
+<!-- ======================================================== -->
         function getTimestamp(dateStr) {
             if (!dateStr) return 0;
             let c = String(dateStr).trim().replace(/\//g, '-');
@@ -507,6 +644,19 @@
             return `منذ ${diffInDays} يوماً`;
         }
 
+        function updateTimeElapsedSilently() {
+            document.querySelectorAll('.time-badge').forEach(badge => {
+                let dateStr = badge.getAttribute('data-date');
+                if(dateStr) {
+                    let newTime = getTimeElapsedArabic(dateStr);
+                    badge.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${newTime}`;
+                }
+            });
+        }
+
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 15: دوال الشارات (Badges) والمحادثات 🔴🔴🔴 -->
+<!-- ======================================================== -->
         function getProfileBadge(statusStr) {
             let s = (statusStr || 'نشط').trim();
             if (s === 'نشط' || s === '') return `<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-emerald-200">نشط</span>`;
@@ -518,33 +668,6 @@
             if (s === 'محذوف') return `<span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-rose-200">محذوف</span>`;
             
             return `<span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-gray-200">${s}</span>`;
-        }
-
-        function updateTimeElapsedSilently() {
-            document.querySelectorAll('.time-badge').forEach(badge => {
-                let dateStr = badge.getAttribute('data-date');
-                if(dateStr) {
-                    let newTime = getTimeElapsedArabic(dateStr);
-                    badge.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${newTime}`;
-                }
-            });
-        }
-
-        function updateDashboardStats() {
-            let pending = 0, actionNeeded = 0;
-            allRequests.forEach(r => {
-                const s = r.status || '';
-                if (r.finalApprovalGiven) {
-                    actionNeeded++;
-                } else if (r.hasRequestedContact) {
-                    pending++;
-                } else {
-                    if (s === 'قيد الانتظار' || s.includes('بانتظار رده') || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب')) pending++;
-                    if (s.includes('يوجد رد') || s.includes('اعتماد الإدارة') || s.includes('اعتماد')) actionNeeded++;
-                }
-            });
-            document.getElementById('statPending').innerText = pending;
-            document.getElementById('statActionNeeded').innerText = actionNeeded;
         }
 
         function parseUnifiedChat(unifiedMessage) {
@@ -613,40 +736,57 @@
             return html;
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 16: دوال الفلترة وإحصائيات الأزرار 🔴🔴🔴 -->
+<!-- ======================================================== -->
+        function updateDashboardStats() {
+            let pending = 0, actionNeeded = 0;
+            allRequests.forEach(r => {
+                const s = r.status || '';
+                if (r.finalApprovalGiven) {
+                    actionNeeded++;
+                } else if (r.hasRequestedContact) {
+                    pending++;
+                } else {
+                    if (s === 'قيد الانتظار' || s.includes('بانتظار رده') || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب')) pending++;
+                    if (s.includes('يوجد رد') || s.includes('اعتماد الإدارة') || s.includes('اعتماد')) actionNeeded++;
+                }
+            });
+            
+            const badgeAction = document.getElementById('badgeAction');
+            const badgeWaiting = document.getElementById('badgeWaiting');
+            
+            if (badgeAction) {
+                badgeAction.innerText = actionNeeded;
+                if(actionNeeded > 0) badgeAction.classList.remove('hidden');
+                else badgeAction.classList.add('hidden');
+            }
+            if (badgeWaiting) {
+                badgeWaiting.innerText = pending;
+                if(pending > 0) badgeWaiting.classList.remove('hidden');
+                else badgeWaiting.classList.add('hidden');
+            }
+        }
+
         function setFilter(type) {
             currentFilterType = type;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-slate-50 text-slate-600 border border-slate-200 shrink-0";
+                btn.className = "filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative";
             });
             const activeBtn = document.getElementById(`filter-${type}`);
-            let extraHTML = type === 'action' ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block animate-pulse"></span> ' : '';
-            activeBtn.className = `filter-btn px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all bg-indigo-600 text-white shadow-sm shrink-0 flex items-center gap-1.5`;
-            if (type === 'action') activeBtn.innerHTML = extraHTML + 'تتطلب تدخلي';
+            if (activeBtn) {
+                activeBtn.className = `filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm border-transparent shrink-0 relative`;
+            }
             applyFilters();
         }
 
-        function applyFilters() {
-            renderTable();
-        }
+        function applyFilters() { renderTable(); }
+        function openRequest(reqId) { selectedReqId = reqId; renderTable(); }
+        function closeRequest() { selectedReqId = null; renderTable(); }
 
-        // الدوال الجديدة للتحكم في العرض
-        function openRequest(reqId) {
-            selectedReqId = reqId;
-            renderTable();
-        }
-
-        function closeRequest() {
-            selectedReqId = null;
-            renderTable();
-        }
-
-        function getShortName(dataString) {
-            if (!dataString) return '-';
-            const words = dataString.split(/[ \-]/);
-            return words[0] + (words.length > 1 ? '...' : '');
-        }
-
-        // دالة الترسيم المعدلة كلياً لتعمل بنظام (Master-Detail)
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 17: رسم الجدول (القائمة الجانبية Master) 🔴🔴🔴 -->
+<!-- ======================================================== -->
         function renderTable() {
             const container = document.getElementById('requestsTable');
             updateDashboardStats();
@@ -660,6 +800,7 @@
                 if (currentFilterType === 'all') matchesStatus = true;
                 else if (currentFilterType === 'action') matchesStatus = req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد');
                 else if (currentFilterType === 'waiting') matchesStatus = (!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده');
+                else if (currentFilterType === 'queue') matchesStatus = s.includes('قائمة الانتظار');
                 else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى');
 
                 if (!matchesStatus) return false;
@@ -680,16 +821,14 @@
             
             if (filteredRequests.length === 0) {
                 container.innerHTML = `<div class="w-full text-center py-12 text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm mt-4">لا توجد طلبات تطابق الفلتر الحالي.</div>`;
-                container.className = "flex-grow w-full overflow-hidden flex"; // تأكد من ظهوره
+                container.className = "flex-grow w-full overflow-hidden flex"; 
                 return;
             }
 
-            // بناء هيكل الصفحة المقسم
-            let html = `<div class="flex w-full h-full gap-2 sm:gap-4 overflow-hidden">`;
+            let html = `<div class="flex w-full h-full gap-1 sm:gap-2 overflow-hidden">`;
 
-            // 1. القائمة الجانبية (Master)
             let sidebarVisibility = selectedReqId ? 'hidden lg:flex' : 'flex';
-            html += `<div id="sidebarArea" class="w-full lg:w-[320px] xl:w-[350px] shrink-0 flex-col gap-2 overflow-y-auto custom-scrollbar pb-10 pr-1 ${sidebarVisibility}" style="width: var(--sidebar-width, 350px); min-width: 250px; max-width: 50vw;">`;
+            html += `<div id="sidebarArea" class="w-full lg:w-[320px] xl:w-[350px] shrink-0 flex-col gap-2 overflow-y-auto custom-scrollbar pb-10 pr-1 ${sidebarVisibility}" style="width: var(--sidebar-width, 350px); min-width: 250px; max-width: 60vw;">`;
             
             filteredRequests.forEach((req) => {
                 const s = req.status || 'قيد الانتظار';
@@ -701,6 +840,8 @@
                     statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">طلب تواصل</span>`;
                 } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
                     statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
+                } else if (s.includes('قائمة الانتظار')) {
+                    statusBadge = `<span class="bg-purple-100 text-purple-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-200 shrink-0 whitespace-nowrap">طابور الانتظار</span>`;
                 } else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) {
                     statusBadge = `<span class="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 whitespace-nowrap">انتظار العملاء</span>`;
                 } else if (s.includes('مقبول')) {
@@ -733,26 +874,25 @@
                     </div>
                 </div>`;
             });
-            html += `</div>`; // نهاية القائمة الجانبية
+            html += `</div>`; 
 
-            // الفاصل التفاعلي (Splitter) - يظهر فقط في الشاشات الكبيرة
             let splitterVisibility = selectedReqId ? 'hidden lg:flex' : 'hidden';
             html += `
-            <div id="dragResizer" class="${splitterVisibility} w-1.5 bg-slate-200 hover:bg-indigo-400 cursor-col-resize shrink-0 transition-colors rounded-full mx-0.5 items-center justify-center group relative z-20" title="اسحب لتغيير العرض">
+            <div id="dragResizer" class="${splitterVisibility} w-1.5 bg-slate-200 hover:bg-indigo-400 cursor-col-resize shrink-0 transition-colors rounded-full mx-0.5 flex items-center justify-center group relative z-20" title="اسحب لتغيير العرض">
                 <div class="h-8 w-1 bg-slate-400 rounded-full group-hover:bg-white transition-colors"></div>
             </div>
             `;
 
-
-            // 2. شاشة العمل الرئيسية (Detail)
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 18: رسم تفاصيل الطلب (Detail View & Buttons) 🔴🔴🔴 -->
+<!-- ======================================================== -->
             let detailVisibility = selectedReqId ? 'flex' : 'hidden lg:flex';
-            html += `<div id="detailArea" class="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm flex-col min-w-[300px] ${detailVisibility}">`;
+            html += `<div id="detailArea" class="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm flex-col min-w-[280px] ${detailVisibility}">`;
 
             if (selectedReqId) {
                 const req = filteredRequests.find(r => r.reqId === selectedReqId);
                 if (req) {
                     const s = req.status || 'قيد الانتظار';
-                    // استخراج الشارات والأزرار الخاصة بالطلب المفتوح
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
                     if (req.finalApprovalGiven) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
                     else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
@@ -770,26 +910,47 @@
                     let chatThread = parseUnifiedChat(req.message);
                     
                     let actionButtonHTML = '';
-                    if (req.finalApprovalGiven) {
-                        actionButtonHTML = `<button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full px-4 py-2 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md"><svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> <span class="truncate">أرشفة الطلب (تم التواصل وإتمام الإجراءات)</span></button>`;
-                    } else if (s === 'قيد الانتظار' || s.includes('يوجد رد من الطرف الأول') || s.includes('رد من الطالب')) {
-                        actionButtonHTML = `<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full px-4 py-2 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
-                    } else if (s.includes('تم الرد من الطرف الثاني') || s.includes('الرد من المطلوب') || s.includes('اعتماد الإدارة لرد')) {
-                        actionButtonHTML = `<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full px-4 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
-                    } else if (s.includes('بانتظار الطرف الثاني') || s.includes('بانتظار الطرف الأول') || s.includes('المطلوب') || s.includes('الطالب') || s.includes('بانتظار رده')) {
-                        actionButtonHTML = `
-                        <div class="flex flex-col sm:flex-row gap-2 w-full">
-                            <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
-                            <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
-                            <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="flex-1 py-1.5 px-2 text-[11px] font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm whitespace-nowrap"><svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>
-                        </div>`;
+                    
+                    let queueButton = '';
+                    if (s.includes('قائمة الانتظار')) {
+                        let targetIdProxy = req.targetRefId || req.targetPhone;
+                        queueButton = `<button onclick="openQueueModal('${targetIdProxy}')" class="w-full mb-3 px-4 py-2.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">⚙️ إدارة طابور الانتظار لهذا العميل</button>`;
                     }
 
-                    // تركيب شاشة التفاصيل
+                    if (req.finalApprovalGiven) {
+                        actionButtonHTML = `
+                        ${queueButton}
+                        <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
+                            ℹ️ إشعار آلي: قام النظام بإرسال رسالة التبشير وتفاصيل السداد (حسب التسعيرة) للرجل. بانتظار إرفاق الوصل.
+                        </div>
+                        <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full px-4 py-3 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 
+                            إغلاق وأرشفة الطلب (تم التواصل والدفع)
+                        </button>`;
+                    } else if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى')) {
+                        actionButtonHTML = `<div class="text-center text-xs text-slate-400 font-bold p-2">هذا الطلب مغلق أو منتهي</div>`;
+                    } else if (s.includes('اعتماد') || s.includes('يوجد رد') || s === 'قيد الانتظار') {
+                        let chunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
+                        let lastMsg = chunks.length > 0 ? chunks[chunks.length - 1] : "";
+                        
+                        if (lastMsg.includes('[من المطلوب]') || lastMsg.includes('[من الطرف الثاني]')) {
+                            actionButtonHTML = `${queueButton}<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full px-4 py-3 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
+                        } else {
+                            actionButtonHTML = `${queueButton}<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full px-4 py-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
+                        }
+                    } else {
+                        actionButtonHTML = `
+                        ${queueButton}
+                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full justify-between mb-3">
+                            <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
+                            <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
+                        </div>
+                        <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
+                    }
+
                     html += `
-                    <!-- الرأس (Header) -->
                     <div class="shrink-0 flex flex-col z-10 shadow-sm bg-white">
-                        <div class="p-2 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2">
+                        <div class="p-2 sm:p-2.5 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2">
                             <div class="flex items-center gap-2">
                                 <button onclick="closeRequest()" class="lg:hidden p-1.5 bg-white hover:bg-slate-100 text-slate-600 rounded-lg border border-slate-200 transition-colors shadow-sm shrink-0" title="عودة للقائمة">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -804,60 +965,59 @@
                         </div>
                         
                         <div class="grid grid-cols-2 bg-white border-b border-slate-200 text-xs shadow-sm z-10 relative">
-                            <div class="p-1.5 sm:p-2 border-l border-slate-200 text-right bg-blue-50/20">
+                            <!-- صندوق الطرف الأول -->
+                            <div class="p-1.5 sm:p-2 border-l border-slate-200 text-right bg-blue-50/20 flex flex-col justify-center">
                                 <div class="flex items-center justify-between flex-wrap gap-1 mb-1">
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-[11px] font-extrabold text-blue-700">الطرف الأول</span>
                                         ${reqStatusBadge}
                                     </div>
-                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 pr-1.5 rounded border border-blue-100 shadow-sm shrink-0">
+                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 px-1.5 rounded border border-blue-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate">جوال: ${req.requesterPhone || '-'}</span>
-                                        ${req.requesterPhone ? `<a href="https://wa.me/${String(req.requesterPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.requesterPhone ? `<a href="https://wa.me/${String(req.requesterPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
                                     </div>
                                 </div>
-                                <div class="font-bold text-blue-900 leading-relaxed text-[10px]">
-                                    <span class="line-clamp-2" title="${req.requesterData || '-'}">${req.requesterData || '-'}</span>
+                                <div class="font-bold text-blue-900 leading-snug text-[10px] line-clamp-2" title="${req.requesterData || '-'}">
+                                    ${req.requesterData || '-'}
                                 </div>
                             </div>
-                            <div class="p-1.5 sm:p-2 text-right bg-amber-50/20">
+                            <!-- صندوق الطرف الثاني -->
+                            <div class="p-1.5 sm:p-2 text-right bg-amber-50/20 flex flex-col justify-center">
                                 <div class="flex items-center justify-between flex-wrap gap-1 mb-1">
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-[11px] font-extrabold text-amber-700">الطرف الثاني</span>
                                         ${targetStatusBadge}
                                     </div>
-                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 pr-1.5 rounded border border-amber-100 shadow-sm shrink-0">
+                                    <div class="flex items-center gap-1 bg-white inline-flex p-0.5 px-1.5 rounded border border-amber-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate">جوال: ${req.targetPhone || '-'}</span>
-                                        ${req.targetPhone ? `<a href="https://wa.me/${String(req.targetPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.targetPhone ? `<a href="https://wa.me/${String(req.targetPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded-full border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
                                     </div>
                                 </div>
-                                <div class="font-bold text-amber-900 leading-relaxed text-[10px]">
-                                    <span class="line-clamp-2" title="${req.targetData || '-'}">${req.targetData || '-'}</span>
+                                <div class="font-bold text-amber-900 leading-snug text-[10px] line-clamp-2" title="${req.targetData || '-'}">
+                                    ${req.targetData || '-'}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- المنتصف (Chat Area) -->
                     <div class="flex-grow min-h-0 relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-opacity-50" style="background-color: #f8fafc;">
                         <div id="scroll-${req.reqId}" class="absolute inset-0 overflow-y-auto chat-scroll-container custom-scrollbar bg-white/50 border-x border-white/40">
                             ${chatThread}
                         </div>
                     </div>
                     
-                    <!-- الأسفل (Footer) -->
-                    <div class="shrink-0 p-1.5 sm:p-2 bg-white border-t border-slate-200 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                    <div class="shrink-0 p-1.5 sm:p-2 bg-white border-t border-slate-200 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style="padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);">
                         ${actionButtonHTML}
                     </div>
                     `;
                 } else {
-                    selectedReqId = null; // لم يعد الطلب موجوداً في الفلتر الحالي
+                    selectedReqId = null; 
                 }
             }
             
-            // حالة عدم تحديد أي طلب (Placeholder)
             if (!selectedReqId) {
                 html += `
-                <div class="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+                <div class="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-300 m-1">
                     <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <p class="font-bold text-lg text-slate-500">اختر طلباً من القائمة لعرض تفاصيله</p>
                     <p class="text-sm mt-1 text-slate-400">حدد بطاقة من الجانب الأيمن لإدارة المحادثة</p>
@@ -865,12 +1025,11 @@
                 `;
             }
 
-            html += `</div></div>`; // نهاية الشاشة الرئيسية وحاوية الـ Flex
+            html += `</div></div>`; 
 
             container.innerHTML = html;
-            container.className = "flex-grow w-full overflow-hidden flex"; // إظهار الحاوية كـ Flex Container
+            container.className = "flex-grow min-h-0 w-full overflow-hidden flex pb-2"; 
 
-            // استعادة موضع التمرير للشات إذا كان هناك طلب مفتوح
             if (selectedReqId) {
                 const scrollEl = document.getElementById(`scroll-${selectedReqId}`);
                 if (scrollEl) {
@@ -883,6 +1042,9 @@
             }
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 19: تنفيذ إجراءات التمرير (Forward) 🔴🔴🔴 -->
+<!-- ======================================================== -->
         function openForwardModal(reqId, direction) {
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
@@ -976,6 +1138,7 @@
                 if(result.success) {
                     closeForwardModal();
                     scrollPositions = {}; 
+                    sessionStorage.removeItem('admin_requests_cache');
                     await fetchData(true, reqId); 
                 } else {
                     await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
@@ -989,6 +1152,9 @@
             }
         }
 
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 20: تنفيذ إجراءات الإدارة الإضافية والحفظ 🔴🔴🔴 -->
+<!-- ======================================================== -->
         async function executeAdminAction(reqId, actionType) {
             if(isProcessingAction) return;
             const req = allRequests.find(r => r.reqId === reqId);
@@ -1001,24 +1167,31 @@
             let prefixTag = "";
 
             if(actionType === 'msgStudent') {
-                adminMessage = await showMsgModal("رسالة للطرف الأول", "اكتب رسالتك للطرف الأول:", "prompt");
+                adminMessage = await showMsgModal("رسالة للطرف الأول", "اكتب رسالتك للطرف الأول (ستُسجل باسم الطرف الثاني):", "prompt");
                 if(!adminMessage) return;
                 newStatus = "بانتظار الطرف الأول";
-                prefixTag = "[من الإدارة للطرف الأول]: ";
+                prefixTag = "[من الطرف الثاني] [تعديل الإدارة]: "; 
                 waPhone = String(req.requesterPhone).replace(/[^0-9]/g, '');
                 waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.targetData || 'غير متوفرة'}`;
             } else if(actionType === 'msgTarget') {
-                adminMessage = await showMsgModal("رسالة للطرف الثاني", "اكتب رسالتك للطرف الثاني:", "prompt");
+                adminMessage = await showMsgModal("رسالة للطرف الثاني", "اكتب رسالتك للطرف الثاني (ستُسجل باسم الطرف الأول):", "prompt");
                 if(!adminMessage) return;
                 newStatus = "بانتظار الطرف الثاني";
-                prefixTag = "[من الإدارة للطرف الثاني]: ";
+                prefixTag = "[من الطرف الأول] [تعديل الإدارة]: "; 
                 waPhone = String(req.targetPhone).replace(/[^0-9]/g, '');
                 waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.requesterData || 'غير متوفرة'}`;
             } else if(actionType === 'closeChat') {
-                let confirmClose = await showMsgModal("تأكيد الإنهاء", "هل أنت متأكد من إنهاء هذه المحادثة وإلغاء الطلب نهائياً؟", "confirm");
-                if(!confirmClose) return;
-                adminMessage = "تم إنهاء المحادثة وإغلاق الطلب لعدم التجاوب أو لانتهاء الغرض.";
-                newStatus = "ملغى";
+                // فتح نافذة الإغلاق المخصصة بدلاً من رسالة التأكيد البسيطة
+                let chosenStatus = await openCloseChatModal();
+                if(!chosenStatus) return; // تم إلغاء الإجراء من قبل المدير
+
+                let reasonText = "";
+                if (chosenStatus === "مرفوض - تم الاعتذار") reasonText = "لعدم التوافق";
+                else if (chosenStatus === "تم الزواج") reasonText = "بسبب إتمام الزواج بفضل الله";
+                else if (chosenStatus === "محذوف") reasonText = "بسبب حذف الملف نهائياً";
+
+                adminMessage = `[إغلاق/اعتذار من قبل الإدارة] تم إنهاء المحادثة وإغلاق الطلب ${reasonText}.`;
+                newStatus = chosenStatus; 
                 prefixTag = "[من الإدارة]: ";
             }
 
@@ -1054,6 +1227,7 @@
                 
                 if(result.success) {
                     scrollPositions = {}; 
+                    sessionStorage.removeItem('admin_requests_cache');
                     await fetchData(true, reqId);
                 } else {
                     await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
@@ -1111,6 +1285,7 @@
                 if (result.success) {
                     closeModal();
                     scrollPositions = {};
+                    sessionStorage.removeItem('admin_requests_cache');
                     await fetchData(true, reqId);
                 } else await showMsgModal("تنبيه", result.message || "النظام مشغول.");
             } catch(e) {
@@ -1118,6 +1293,127 @@
             } finally {
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; cancelBtn.disabled = false;
+            }
+        }
+
+        let currentQueueList = [];
+
+        function openQueueModal(targetRefIdOrPhone) {
+            currentQueueList = allRequests.filter(r => 
+                (r.status || '').includes('قائمة الانتظار') && 
+                (r.targetRefId === targetRefIdOrPhone || r.targetPhone === targetRefIdOrPhone)
+            );
+            
+            renderQueueList();
+            document.getElementById('queueManagementModal').classList.remove('hidden');
+        }
+
+        function closeQueueModal() {
+            document.getElementById('queueManagementModal').classList.add('hidden');
+        }
+
+        function renderQueueList() {
+            const container = document.getElementById('queueListContainer');
+            if (currentQueueList.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 text-sm py-6 font-bold">الطابور فارغ حالياً.</p>';
+                return;
+            }
+
+            let html = '';
+            currentQueueList.forEach((req, index) => {
+                let isFirst = index === 0;
+                let isLast = index === currentQueueList.length - 1;
+                
+                html += `
+                <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm gap-2 transition-all hover:border-purple-300">
+                    <div class="flex flex-col gap-1 w-full overflow-hidden">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold shrink-0">#${req.reqId}</span>
+                            ${isFirst ? '<span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">الأول بالطابور</span>' : ''}
+                        </div>
+                        <span class="text-xs font-bold text-slate-800 truncate" title="${req.requesterData}">${req.requesterData || '-'}</span>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1 shrink-0">
+                        <button onclick="moveQueueItem(${index}, -1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}" ${isFirst ? 'disabled' : ''} title="رفع لأعلى">⬆️</button>
+                        <button onclick="moveQueueItem(${index}, 1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : ''}" ${isLast ? 'disabled' : ''} title="إنزال لأسفل">⬇️</button>
+                    </div>
+
+                    <div class="w-px h-10 bg-slate-200 shrink-0 mx-1"></div>
+                    
+                    <button onclick="removeQueueItem('${req.reqId}')" class="shrink-0 p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition-colors" title="إزالة من الطابور واسترجاع النقاط">
+                        ❌
+                    </button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function moveQueueItem(index, direction) {
+            if (index + direction < 0 || index + direction >= currentQueueList.length) return;
+            const temp = currentQueueList[index];
+            currentQueueList[index] = currentQueueList[index + direction];
+            currentQueueList[index + direction] = temp;
+            renderQueueList(); 
+        }
+
+        async function removeQueueItem(reqId) {
+            let confirmRemove = await showMsgModal("تأكيد الإزالة", "هل أنت متأكد من إلغاء هذا الطلب وإزالته من طابور الانتظار (واسترجاع نقاطه)؟", "confirm");
+            if (!confirmRemove) return;
+
+            document.getElementById('refreshIcon').classList.add('sync-spin');
+            
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminRemoveFromQueue', adminToken: state.adminToken, reqId: reqId })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    currentQueueList = currentQueueList.filter(r => r.reqId !== reqId);
+                    renderQueueList();
+                    sessionStorage.removeItem('admin_requests_cache');
+                    fetchData(true);
+                } else {
+                    showMsgModal("تنبيه", result.message || "فشل إزالة الطلب من السيرفر.");
+                }
+            } catch (e) {
+                showMsgModal("خطأ", "فشل الاتصال بالسيرفر. يرجى المحاولة لاحقاً.");
+            } finally {
+                document.getElementById('refreshIcon').classList.remove('sync-spin');
+            }
+        }
+
+        async function saveQueueOrder() {
+            if (currentQueueList.length === 0) return;
+            
+            const btn = document.getElementById('btnSaveQueueOrder');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = "جاري الحفظ...";
+            btn.disabled = true;
+
+            const orderedReqIds = currentQueueList.map(r => r.reqId);
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminReorderQueue', adminToken: state.adminToken, orderedReqIds: orderedReqIds })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    closeQueueModal();
+                    sessionStorage.removeItem('admin_requests_cache');
+                    await fetchData(true); 
+                } else {
+                    showMsgModal("تنبيه", result.message || "فشل حفظ الترتيب الجديد.");
+                }
+            } catch (e) {
+                showMsgModal("خطأ", "تأخرت استجابة السيرفر.");
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         }
     </script>
