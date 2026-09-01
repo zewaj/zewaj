@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مركز  الإدارة والبيانات</title>
+    <title>مركز الإدارة والبيانات</title>
     
     <script>
         window.tailwind = {
@@ -35,9 +35,9 @@
 </head>
 <body class="text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden">
 
-    <header id="main-header" class="bg-white border-b border-slate-200 shadow-sm z-10 hidden shrink-0 w-full">
-        <!-- الصف العلوي -->
-        <div class="px-2 sm:px-4 py-3 flex items-center justify-between gap-1 sm:gap-2 w-full">
+    <!-- Header (Sticky) -->
+    <header id="main-header" class="hidden bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50 shrink-0">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
             
             <!-- يمين: الانتقال للوحة المراسلات -->
             <button onclick="window.location.href='admin.html'" class="flex items-center gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-2 rounded-xl transition-all shadow-md shadow-indigo-200 active:scale-95 cursor-pointer">
@@ -45,38 +45,25 @@
                 <span class="font-black text-xs sm:text-sm leading-tight">لوحة المراسلات</span>
             </button>
 
-            <!-- وسط: زر الانتظار -->
-            <button onclick="loadPendingProfiles()" class="flex-1 mx-1 sm:mx-auto max-w-[180px] flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 px-2 sm:px-4 py-2 rounded-xl transition-colors shadow-sm group active:scale-95">
-                <span class="text-xs sm:text-sm font-bold whitespace-nowrap">الانتظار</span>
-                <span id="pending-counter" class="bg-amber-500 text-white text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm">0</span>
-                <i class="fas fa-clock text-amber-500 group-hover:rotate-180 transition-transform duration-500 text-xs sm:text-sm"></i>
-            </button>
-
-            <!-- يسار: الإجراءات -->
-            <div class="flex items-center gap-1 sm:gap-2 shrink-0 z-20">
-                <button onclick="window.open('search.html', '_blank')" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-colors shadow-sm cursor-pointer" title="البحث الشامل"><i class="fas fa-search-plus text-sm sm:text-lg"></i></button>
-                <button onclick="logout()" class="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-50 hover:bg-red-50 text-slate-500 hover:text-red-500 rounded-xl transition-colors shadow-sm cursor-pointer" title="تسجيل خروج"><i class="fas fa-sign-out-alt text-sm sm:text-lg"></i></button>
-            </div>
-        </div>
-
-        <!-- الصف السفلي: شريط البحث مرتب (بحث يسار، إدخال يمين) -->
-        <div class="px-3 sm:px-4 pb-4">
-            <div class="max-w-md mx-auto relative">
-                <div class="segmented-control mb-2 w-full sm:w-3/4 mx-auto">
-                    <input type="radio" id="search-type-ref" name="search-type" value="refId" class="hidden" checked onchange="updateSearchPlaceholder()">
-                    <label for="search-type-ref"><i class="fas fa-hashtag opacity-50 ml-1"></i>رقم الطلب</label>
-                    <input type="radio" id="search-type-phone" name="search-type" value="phone" class="hidden" onchange="updateSearchPlaceholder()">
-                    <label for="search-type-phone"><i class="fas fa-phone-alt opacity-50 ml-1"></i>رقم الجوال</label>
-                    <div class="segmented-bg"></div>
-                </div>
-                
-                <div class="flex flex-row-reverse gap-2">
-                    <button onclick="performQuickSearch()" id="quick-search-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 sm:px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">بحث</button>
-                    <div class="relative flex-1">
-                        <input type="text" id="smart-search-input" placeholder="أدخل رقم الملف للبحث..." class="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dir-rtl text-right placeholder:font-normal placeholder:text-slate-400" onkeypress="if(event.key === 'Enter') performQuickSearch()">
-                        <i class="fas fa-keyboard absolute right-3 top-3.5 text-slate-400"></i>
+            <!-- وسط: زر الانتظار العريض -->
+            <div class="flex-1 flex justify-center max-w-xl">
+                <button onclick="loadPendingProfiles()" id="pending-btn" class="group relative w-full sm:w-[80%] bg-gradient-to-r from-amber-100 to-yellow-50 hover:from-amber-200 hover:to-yellow-100 border border-amber-200/60 rounded-2xl p-2 sm:p-3 flex items-center justify-center gap-3 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]">
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-amber-700 text-sm sm:text-base">الانتظار</span>
+                        <span id="pending-badge" class="bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">0</span>
                     </div>
-                </div>
+                    <i class="fas fa-clock text-amber-500 text-lg group-hover:rotate-12 transition-transform"></i>
+                </button>
+            </div>
+
+            <!-- يسار: أزرار البحث العلوية وتسجيل الخروج -->
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+                <button onclick="document.getElementById('smart-search-input').focus(); window.scrollTo({top: 0, behavior: 'smooth'});" class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="الذهاب للبحث">
+                    <i class="fas fa-search text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
+                </button>
+                <button onclick="logout()" class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="تسجيل الخروج">
+                    <i class="fas fa-sign-out-alt text-base sm:text-lg group-hover:-translate-x-1 transition-transform"></i>
+                </button>
             </div>
         </div>
     </header>
@@ -97,18 +84,46 @@
         <div id="dashboard-view" class="hidden flex-1 overflow-hidden flex flex-col">
             <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div class="max-w-7xl mx-auto pb-24">
+                    
+                    <!-- شريط البحث المدمج (دائماً مرئي وتم إصلاح الجوال) -->
+                    <div class="bg-white rounded-3xl p-4 sm:p-5 mb-6 shadow-sm border border-slate-100">
+                        <div class="flex flex-col md:flex-row gap-3 items-center">
+                            <!-- أزرار اختيار نوع البحث -->
+                            <div class="segmented-control w-full md:w-64 shrink-0">
+                                <input type="radio" id="search-type-ref" name="search-type" value="refId" class="hidden" checked onchange="updateSearchPlaceholder()">
+                                <label for="search-type-ref"><i class="fas fa-hashtag opacity-50 ml-1"></i>رقم الطلب</label>
+                                <input type="radio" id="search-type-phone" name="search-type" value="phone" class="hidden" onchange="updateSearchPlaceholder()">
+                                <label for="search-type-phone"><i class="fas fa-phone-alt opacity-50 ml-1"></i>رقم الجوال</label>
+                                <div class="segmented-bg"></div>
+                            </div>
+                            
+                            <!-- حقل الإدخال وزر البحث (متجاوران دائماً) -->
+                            <div class="flex flex-row gap-2 w-full flex-1">
+                                <div class="relative flex-1">
+                                    <input type="text" id="smart-search-input" placeholder="أدخل رقم الملف للبحث..." class="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dir-rtl text-right placeholder:font-normal placeholder:text-slate-400" onkeypress="if(event.key === 'Enter') performQuickSearch()">
+                                    <i class="fas fa-keyboard absolute right-3 top-3.5 text-slate-400"></i>
+                                </div>
+                                <button onclick="performQuickSearch()" id="quick-search-btn" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center shadow-md shadow-indigo-200 gap-2">بحث <i class="fas fa-search text-xs hidden sm:inline"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- عنوان النتائج والفلاتر -->
                     <div class="flex flex-col mb-4 gap-3">
                         <h2 id="results-title" class="text-lg font-black text-slate-800 flex items-center gap-2"></h2>
                         <div id="filters-container" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 hidden">
                             <!-- يبرمج بواسطة JS -->
                         </div>
                     </div>
+                    
+                    <!-- حاوية البطاقات -->
                     <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
             </div>
         </div>
         
-        <div id="bulk-action-bar" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-4 z-40 transition-all duration-300 transform translate-y-32 opacity-0 border border-slate-700">
+        <!-- شريط الإجراءات الجماعية -->
+        <div id="bulk-action-bar" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-4 z-40 transition-all duration-300 transform translate-y-32 opacity-0 border border-slate-700 w-max max-w-[90vw]">
             <div class="flex items-center gap-2 px-2 border-l border-slate-700">
                 <span id="bulk-count" class="font-black text-lg text-indigo-400">0</span>
                 <span class="text-xs font-bold text-slate-300">محدد</span>
@@ -121,16 +136,17 @@
         </div>
     </main>
 
+    <!-- النوافذ المنبثقة والتنبيهات -->
     <div id="modal-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity flex items-center justify-center p-4">
         <div id="modal-content" class="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col transform scale-95 transition-transform overflow-hidden border border-slate-100">
-            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                 <h3 id="modal-title" class="font-black text-slate-800 text-base leading-tight">العنوان</h3>
                 <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 transition-colors shrink-0"><i class="fas fa-times"></i></button>
             </div>
             <div id="modal-body" class="p-5 overflow-y-auto custom-scrollbar flex-1 bg-white relative"></div>
         </div>
     </div>
-    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 w-full max-w-xs px-4 pointer-events-none"></div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
@@ -138,7 +154,6 @@
         let state = { 
             adminToken: localStorage.getItem('adminToken') || null, 
             searchResults: [], 
-            pendingCount: 0, 
             selectedIds: new Set(),
             activeFilters: new Set(['جديد', 'قيد المراجعة', 'نشر']),
             viewingSpecialStatus: false
@@ -148,7 +163,7 @@
             loginView: document.getElementById('login-view'), dashboardView: document.getElementById('dashboard-view'), mainHeader: document.getElementById('main-header'),
             passwordInput: document.getElementById('admin-password'), loginBtn: document.getElementById('login-btn'), resultsContainer: document.getElementById('results-container'),
             resultsTitle: document.getElementById('results-title'), searchInput: document.getElementById('smart-search-input'), quickSearchBtn: document.getElementById('quick-search-btn'),
-            pendingCounter: document.getElementById('pending-counter'), filtersContainer: document.getElementById('filters-container'),
+            pendingBadge: document.getElementById('pending-badge'), filtersContainer: document.getElementById('filters-container'),
             bulkBar: document.getElementById('bulk-action-bar'), bulkCount: document.getElementById('bulk-count')
         };
 
@@ -161,14 +176,14 @@
             const container = document.getElementById('toast-container'); const toast = document.createElement('div');
             const colors = type === 'success' ? 'bg-emerald-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-red-600');
             const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
-            toast.className = `flex items-center justify-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-white ${colors} toast-enter`;
+            toast.className = `flex items-center justify-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-white ${colors} toast-enter pointer-events-auto`;
             toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span class="font-bold text-sm text-center">${message}</span>`;
             container.appendChild(toast); setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
         function openModal(title, bodyHTML, footerHTML = '', bodyClasses = 'p-5') {
             document.getElementById('modal-title').innerHTML = title; let fullContent = bodyHTML;
-            if(footerHTML) fullContent += `<div class="mt-4 pt-4 border-t border-slate-100 flex gap-2">${footerHTML}</div>`;
+            if(footerHTML) fullContent += `<div class="mt-4 pt-4 border-t border-slate-100 flex gap-2 shrink-0">${footerHTML}</div>`;
             document.getElementById('modal-body').innerHTML = fullContent; document.getElementById('modal-body').className = `overflow-y-auto custom-scrollbar flex-1 bg-slate-50 relative ${bodyClasses}`;
             const backdrop = document.getElementById('modal-backdrop'); const content = document.getElementById('modal-content');
             backdrop.classList.remove('hidden'); void backdrop.offsetWidth; backdrop.classList.remove('opacity-0'); content.classList.remove('scale-95');
@@ -203,6 +218,7 @@
             return map[s] || map['نشط'];
         }
 
+        // Auto-Retry API Call Function
         async function apiCall(payload, retries = 2) {
             for (let attempt = 0; attempt <= retries; attempt++) {
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -222,7 +238,7 @@
                     }
 
                     if (error.name === 'AbortError') throw new Error('تأخر السيرفر في الرد. حاول مجدداً.'); 
-                    if (isFileProtocol) throw new Error('حماية المتصفح: يمنع الاتصال بقواعد البيانات من (سطح المكتب) لدواعي أمنية. يرجى فتح النظام من رابط الويب (Google Sites).');
+                    if (isFileProtocol) throw new Error('حماية المتصفح: يمنع الاتصال من (سطح المكتب). افتح النظام من استضافة آمنة.');
                     if (isNetwork) throw new Error('فشل الاتصال بالإنترنت أو السيرفر محجوب.');
                     throw error; 
                 }
@@ -255,7 +271,8 @@
                 if (state.activeFilters.size === 1) return showToast('يجب إبقاء فلتر واحد على الأقل', 'warning');
                 state.activeFilters.delete(filterId);
             } else { state.activeFilters.add(filterId); }
-            renderFiltersUI(); renderResults("لا توجد نتائج مطابقة للفلاتر", "حاول تفعيل فلاتر أخرى.");
+            renderFiltersUI(); 
+            renderResults();
         };
 
         window.toggleDropdownFilters = function() {
@@ -277,7 +294,7 @@
             try {
                 const res = await apiCall({ action: "adminGetProfilesByStatus", status: status, adminToken: state.adminToken });
                 state.searchResults = res.results || [];
-                renderResults("لا توجد ملفات", `لا يوجد أي ملف مسجل بحالة (${status}).`);
+                renderResults();
             } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`; }
         };
 
@@ -308,10 +325,11 @@
         }
 
         function updateDynamicCounter() {
+            const count = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label)).length;
+            els.pendingBadge.innerText = count;
             const dynamicCountEl = document.getElementById('dynamic-count');
             if (dynamicCountEl) {
-                const currentVisible = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label)).length;
-                dynamicCountEl.innerText = currentVisible;
+                dynamicCountEl.innerText = count;
                 dynamicCountEl.classList.add('scale-110', 'bg-amber-200');
                 setTimeout(() => dynamicCountEl.classList.remove('scale-110', 'bg-amber-200'), 200);
             }
@@ -323,15 +341,15 @@
             const isPhone = document.getElementById('search-type-phone').checked;
             let payloadFilters = {}; if (isPhone) payloadFilters.phone = val; else payloadFilters.refId = val;
             
-            setBtnLoading(els.quickSearchBtn, true, ''); els.resultsTitle.innerHTML = `<i class="fas fa-search text-indigo-500"></i> نتائج البحث`;
+            setBtnLoading(els.quickSearchBtn, true, ''); els.resultsTitle.innerHTML = `<i class="fas fa-search text-indigo-500"></i> نتائج البحث <span id="dynamic-count" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono">0</span>`;
             els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-8 h-8 border-4"></div></div>';
             try {
                 const res = await apiCall({ action: "adminAdvancedSearch", adminToken: state.adminToken, filters: payloadFilters });
                 state.searchResults = res.results || [];
                 state.activeFilters = new Set(state.searchResults.map(p => getStatusConfig(p.profileStatus).label)); 
-                renderResults("لا توجد نتائج", "تأكد من الرقم وحاول مجدداً.");
+                renderResults();
             } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`; } 
-            finally { setBtnLoading(els.quickSearchBtn, false, 'بحث'); }
+            finally { setBtnLoading(els.quickSearchBtn, false, 'بحث <i class="fas fa-search text-xs hidden sm:inline"></i>'); }
         }
 
         window.loadPendingProfiles = async function() {
@@ -345,16 +363,60 @@
             try {
                 const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken });
                 state.searchResults = res.results || []; 
-                state.pendingCount = state.searchResults.length; 
-                els.pendingCounter.innerText = state.pendingCount;
-                if(state.pendingCount > 0) { els.pendingCounter.classList.add('animate-bounce'); setTimeout(() => els.pendingCounter.classList.remove('animate-bounce'), 3000); }
-                
                 renderFiltersUI();
-                renderResults("لا توجد طلبات هنا", "تأكد من إعدادات الفلاتر بالأعلى.");
+                renderResults();
             } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`; }
         };
 
-        function renderResults(emptyTitle, emptyDesc) {
+        function syncCheckboxesUI() {
+            document.querySelectorAll('.card-checkbox-wrapper').forEach(wrapper => {
+                const refId = wrapper.dataset.ref;
+                const isSelected = state.selectedIds.has(refId);
+                const icon = wrapper.querySelector('.check-icon');
+                if(isSelected) {
+                    wrapper.classList.add('border-indigo-600', 'bg-indigo-50');
+                    wrapper.classList.remove('border-slate-300');
+                    icon.classList.replace('opacity-0', 'opacity-100');
+                } else {
+                    wrapper.classList.remove('border-indigo-600', 'bg-indigo-50');
+                    wrapper.classList.add('border-slate-300');
+                    icon.classList.replace('opacity-100', 'opacity-0');
+                }
+            });
+        }
+
+        window.toggleSelection = function(refId) {
+            if(state.selectedIds.has(refId)) state.selectedIds.delete(refId); 
+            else state.selectedIds.add(refId);
+            syncCheckboxesUI();
+            updateBulkBar(); 
+        };
+
+        window.toggleSelectAll = function() {
+            const filteredResults = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label));
+            let allSelected = true;
+            filteredResults.forEach(p => { if(!state.selectedIds.has(p.refId)) allSelected = false; });
+            if(allSelected && filteredResults.length > 0) { filteredResults.forEach(p => state.selectedIds.delete(p.refId)); } 
+            else { filteredResults.forEach(p => state.selectedIds.add(p.refId)); }
+            syncCheckboxesUI();
+            updateBulkBar();
+        };
+
+        window.clearSelection = function() { 
+            state.selectedIds.clear(); 
+            syncCheckboxesUI();
+            updateBulkBar(); 
+        };
+
+        window.updateBulkBar = function() {
+            const count = state.selectedIds.size; els.bulkCount.innerText = count;
+            const btnAll = document.getElementById('btn-select-all');
+            const filteredCount = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label)).length;
+            if(count > 0 && count >= filteredCount) btnAll.innerText = "إلغاء التحديد"; else btnAll.innerText = "تحديد الكل";
+            if(count > 0) els.bulkBar.classList.remove('translate-y-32', 'opacity-0'); else els.bulkBar.classList.add('translate-y-32', 'opacity-0');
+        };
+
+        function renderResults() {
             els.resultsContainer.innerHTML = '';
             
             const filteredResults = state.searchResults
@@ -367,7 +429,10 @@
 
             updateDynamicCounter();
 
-            if (filteredResults.length === 0) { els.resultsContainer.innerHTML = `<div class="col-span-full py-16 flex flex-col items-center text-slate-400 bg-white rounded-3xl border border-slate-100"><i class="fas fa-folder-open text-4xl mb-3 text-slate-300"></i><h3 class="font-black text-slate-600 mb-1">${emptyTitle}</h3><p class="text-xs">${emptyDesc}</p></div>`; return; }
+            if (filteredResults.length === 0) { 
+                els.resultsContainer.innerHTML = `<div class="col-span-full py-16 flex flex-col items-center text-slate-400 bg-white rounded-3xl border border-slate-100"><i class="fas fa-folder-open text-4xl mb-3 text-slate-300"></i><h3 class="font-black text-slate-600 mb-1">لا توجد نتائج هنا</h3><p class="text-xs">حاول تغيير إعدادات الفلاتر.</p></div>`; 
+                return; 
+            }
 
             filteredResults.forEach((p) => {
                 const isMale = p.sheetName && p.sheetName.includes('الرجال');
@@ -375,13 +440,14 @@
                 const genColor = isMale ? 'text-blue-500 bg-blue-50 border-blue-100' : 'text-pink-500 bg-pink-50 border-pink-100';
                 
                 const st = getStatusConfig(p.profileStatus);
-                const statusBadge = `<span class="${st.classes} px-2 py-0.5 rounded-md text-[10px] font-black border flex items-center gap-1 shadow-sm"><i class="fas ${st.icon}"></i> ${st.label}</span>`;
+                const statusBadge = `<span class="${st.classes} px-2 py-0.5 rounded-md text-[10px] font-black border flex items-center gap-1 shadow-sm shrink-0"><i class="fas ${st.icon}"></i> ${st.label}</span>`;
                 
                 let extractedMarriageType = p.marriageType;
                 if (!extractedMarriageType && p.shortBio) {
                     const decodedBio = decodeFromHTML(p.shortBio);
-                    const match = decodedBio.match(/(زواج تقليدي معلن|زواج باشتراطات خاصة|زواج بظروف خاصة|زواج مسيار)/i);
-                    if (match) extractedMarriageType = match[0];
+                    if (decodedBio.match(/(زواج تقليدي معلن|تقليدي معلن)/i)) extractedMarriageType = 'زواج تقليدي معلن';
+                    else if (decodedBio.match(/(اشتراطات|زواج باشتراطات)/i)) extractedMarriageType = 'زواج باشتراطات خاصة';
+                    else if (decodedBio.match(/(ظروف|زواج بظروف)/i)) extractedMarriageType = 'زواج بظروف خاصة';
                 }
                 const displayMarriageType = extractedMarriageType || 'نوع الزواج غير محدد';
                 
@@ -389,7 +455,7 @@
                 if (displayMarriageType.includes('تقليدي')) { mtClass = 'bg-emerald-50 text-emerald-700 border-emerald-200'; mtIcon = 'fa-seedling'; } 
                 else if (displayMarriageType.includes('اشتراطات')) { mtClass = 'bg-purple-50 text-purple-700 border-purple-200'; mtIcon = 'fa-handshake'; } 
                 else if (displayMarriageType.includes('ظروف')) { mtClass = 'bg-orange-50 text-orange-700 border-orange-200'; mtIcon = 'fa-feather-alt'; }
-                const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm"><i class="fas ${mtIcon}"></i> ${displayMarriageType}</span>`;
+                const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm shrink-0"><i class="fas ${mtIcon}"></i> ${displayMarriageType}</span>`;
 
                 const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
                 const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
@@ -397,7 +463,7 @@
                 
                 const realName = p.name || 'بدون اسم';
                 const safeClientName = realName.replace(/'/g, "\\'"); 
-                const displayUnified = p.unifiedName || 'اسم الحفظ الموحد غير متوفر من السيرفر';
+                const displayUnified = p.unifiedName || '(اسم الحفظ الموحد غير متوفر)';
                 const b64UnifiedToCopy = p.unifiedName ? encodeBase64(p.unifiedName) : encodeBase64('(اسم الحفظ الموحد غير متوفر من السيرفر)');
                 
                 const isSelected = state.selectedIds.has(p.refId);
@@ -406,27 +472,29 @@
                 const cardHTML = `
                 <div id="card-${p.refId}" class="bg-white rounded-3xl shadow-sm border ${borderClass} p-5 flex flex-col h-full transition-all relative ${st.label === 'محذوف' ? 'opacity-60 grayscale' : ''}">
                     
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex flex-col items-start gap-1 flex-1 min-w-0 pr-1 text-right">
-                            <h3 class="font-black text-slate-800 text-lg leading-tight truncate w-full" title="${realName}">${realName}</h3>
-                            <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1.5 w-fit max-w-full mt-1">
-                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${displayUnified}</span>
+                    <div class="flex justify-between items-start mb-4 gap-4">
+                        <div class="flex-1 min-w-0 text-right">
+                            <h3 class="font-black text-slate-800 text-xl truncate mb-1" title="${realName}">${realName}</h3>
+                            <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1.5 w-fit max-w-full">
                                 <button onclick="safeCopyFromBase64(this, '${b64UnifiedToCopy}')" class="text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm text-xs shrink-0" title="نسخ اسم الحفظ الموحد">
                                     <i class="far fa-copy"></i>
                                 </button>
+                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${displayUnified}</span>
                             </div>
                             <div class="flex gap-1.5 flex-wrap mt-2 justify-start">
                                 ${statusBadge}
                                 ${marriageTypeBadge}
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0 pl-2">
+
+                        <!-- الأيقونات في أقصى اليسار: الصورة ثم مربع الاختيار في الزاوية -->
+                        <div class="flex items-center gap-2 shrink-0">
                             <div class="w-10 h-10 rounded-full ${genColor} flex items-center justify-center text-xl shadow-sm border shrink-0">
                                 ${genIcon}
                             </div>
-                            <label class="flex items-center justify-center w-8 h-8 bg-white border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300'} rounded-xl cursor-pointer hover:border-indigo-400 transition-colors shadow-sm shrink-0">
+                            <label data-ref="${p.refId}" class="card-checkbox-wrapper flex items-center justify-center w-8 h-8 bg-white border-2 ${isSelected ? 'border-indigo-600 bg-indigo-50' : 'border-slate-300'} rounded-xl cursor-pointer hover:border-indigo-400 transition-colors shadow-sm shrink-0">
                                 <input type="checkbox" class="hidden" onchange="toggleSelection('${p.refId}')" ${isSelected ? 'checked' : ''}>
-                                <i class="fas fa-check text-sm text-indigo-600 ${isSelected ? 'opacity-100' : 'opacity-0'} transition-opacity"></i>
+                                <i class="check-icon fas fa-check text-sm text-indigo-600 ${isSelected ? 'opacity-100' : 'opacity-0'} transition-opacity"></i>
                             </label>
                         </div>
                     </div>
@@ -455,7 +523,7 @@
                         
                         <div class="grid grid-cols-4 gap-2 pt-4 border-t border-slate-100">
                             <button onclick="actionChangeStatus('${p.refId}')" class="flex flex-col items-center py-2.5 text-slate-400 hover:text-slate-800 bg-slate-50 rounded-xl hover:bg-slate-200 transition-colors border border-transparent hover:border-slate-300 shadow-sm"><i class="fas fa-sliders-h mb-1.5 text-lg"></i><span class="text-[10px] font-bold">حالة</span></button>
-                            <button onclick="window.open('register.html?targetPhone=${cleanPhone}&mode=admin_edit', '_blank')" class="flex flex-col items-center py-2.5 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200 shadow-sm"><i class="fas fa-user-edit mb-1.5 text-lg"></i><span class="text-[10px] font-bold">تعديل/إضافة</span></button>
+                            <button onclick="window.open('register.html?targetPhone=${cleanPhone}&mode=admin_edit', '_blank')" class="flex flex-col items-center py-2.5 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-200 shadow-sm"><i class="fas fa-user-edit mb-1.5 text-lg"></i><span class="text-[10px] font-bold">تعديل وإضافة</span></button>
                             <button onclick="actionToggleShowcase('${p.refId}')" class="flex flex-col items-center py-2.5 text-slate-400 hover:text-amber-600 bg-slate-50 rounded-xl hover:bg-amber-50 transition-colors border border-transparent hover:border-amber-200 shadow-sm"><i class="fas fa-bullhorn mb-1.5 text-lg"></i><span class="text-[10px] font-bold">تميز</span></button>
                             <button onclick="actionMatch('${p.refId}', '${safeClientName}', ${isMale})" class="flex flex-col items-center py-2.5 text-slate-400 hover:text-indigo-600 bg-slate-50 rounded-xl hover:bg-indigo-50 transition-colors border border-transparent hover:border-indigo-200 shadow-sm"><i class="fas fa-people-arrows mb-1.5 text-lg"></i><span class="text-[10px] font-bold">مطابقة</span></button>
                         </div>
@@ -463,31 +531,8 @@
                 </div>`;
                 els.resultsContainer.innerHTML += cardHTML;
             });
+            syncCheckboxesUI();
         }
-
-        window.toggleSelection = function(refId) {
-            if(state.selectedIds.has(refId)) state.selectedIds.delete(refId); else state.selectedIds.add(refId);
-            updateBulkBar(); 
-        };
-
-        window.toggleSelectAll = function() {
-            const filteredResults = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label));
-            let allSelected = true;
-            filteredResults.forEach(p => { if(!state.selectedIds.has(p.refId)) allSelected = false; });
-            if(allSelected && filteredResults.length > 0) { filteredResults.forEach(p => state.selectedIds.delete(p.refId)); } 
-            else { filteredResults.forEach(p => state.selectedIds.add(p.refId)); }
-            updateBulkBar(); renderResults("لا توجد نتائج", "تأكد من الفلاتر.");
-        };
-
-        window.clearSelection = function() { state.selectedIds.clear(); updateBulkBar(); if(state.searchResults.length > 0) renderResults("لا توجد نتائج", "تأكد من الفلاتر."); };
-
-        window.updateBulkBar = function() {
-            const count = state.selectedIds.size; els.bulkCount.innerText = count;
-            const btnAll = document.getElementById('btn-select-all');
-            const filteredCount = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label)).length;
-            if(count > 0 && count >= filteredCount) btnAll.innerText = "إلغاء التحديد"; else btnAll.innerText = "تحديد الكل";
-            if(count > 0) els.bulkBar.classList.remove('translate-y-32', 'opacity-0'); else els.bulkBar.classList.add('translate-y-32', 'opacity-0');
-        };
 
         window.actionBulkChangeStatus = function() {
             const count = state.selectedIds.size; if(count === 0) return;
@@ -512,7 +557,7 @@
                     </button>
                 </div>
             `;
-            openModal('الإجراءات الجماعية', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 max-w-sm mx-auto');
+            openModal('الإجراءات الجماعية', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 mx-auto');
         };
 
         window.bulkCopyBios = function(btnElement) {
@@ -534,7 +579,9 @@
                 await apiCall({ action: "adminBulkChangeStatus", refIds: refIdsArray, newStatus: newStatus, adminToken: state.adminToken });
                 showToast(`تم تغيير حالة ${refIdsArray.length} ملفات إلى: ${newStatus}`);
                 state.searchResults.forEach(p => { if (state.selectedIds.has(p.refId)) p.profileStatus = newStatus; });
-                clearSelection(); closeModal(); renderResults("لا توجد نتائج مطابقة للفلاتر", "تم تحديث الملفات بنجاح.");
+                clearSelection(); 
+                closeModal(); 
+                renderResults(); 
             } catch(e) { showToast(e.message, 'error'); } finally { setBtnLoading(btnElement, false); }
         }
 
@@ -561,20 +608,20 @@
         window.actionChangeStatus = function(refId) {
             const html = `
                 <div class="text-center mb-6">
-                    <div class="w-12 h-12 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-3 text-xl shadow-sm border border-slate-100"><i class="fas fa-sliders-h"></i></div>
-                    <h4 class="font-black text-slate-800 text-sm">حالة الملف #${refId}</h4>
+                    <div class="w-10 h-10 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-3 text-lg shadow-sm border border-slate-100"><i class="fas fa-sliders-h"></i></div>
+                    <h4 class="font-black text-slate-800 text-xs">حالة الملف #${refId}</h4>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <button onclick="submitChangeStatus('${refId}', 'نشط', this)" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-check-circle mb-1 block text-base"></i> نشط</button>
-                    <button onclick="submitChangeStatus('${refId}', 'نشر', this)" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-paper-plane mb-1 block text-base"></i> نشر</button>
-                    <button onclick="submitChangeStatus('${refId}', 'جديد', this)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-star mb-1 block text-base"></i> جديد</button>
-                    <button onclick="submitChangeStatus('${refId}', 'خامل', this)" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-moon mb-1 block text-base"></i> خامل</button>
-                    <button onclick="submitChangeStatus('${refId}', 'قيد المراجعة', this)" class="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-clock mb-1 block text-base"></i> المراجعة</button>
-                    <button onclick="submitChangeStatus('${refId}', 'تم الزواج', this)" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm"><i class="fas fa-ring mb-1 block text-base"></i> الزواج</button>
-                    <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2.5 rounded-xl font-bold transition-all text-xs col-span-2 shadow-sm"><i class="fas fa-trash mb-1 block text-base"></i> محذوف</button>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <button onclick="submitChangeStatus('${refId}', 'نشط', this)" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-check-circle mb-1 text-base"></i> نشط</button>
+                    <button onclick="submitChangeStatus('${refId}', 'نشر', this)" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-paper-plane mb-1 text-base"></i> نشر</button>
+                    <button onclick="submitChangeStatus('${refId}', 'جديد', this)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-star mb-1 text-base"></i> جديد</button>
+                    <button onclick="submitChangeStatus('${refId}', 'خامل', this)" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-moon mb-1 text-base"></i> خامل</button>
+                    <button onclick="submitChangeStatus('${refId}', 'قيد المراجعة', this)" class="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-clock mb-1 text-base"></i> المراجعة</button>
+                    <button onclick="submitChangeStatus('${refId}', 'تم الزواج', this)" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-ring mb-1 text-base"></i> الزواج</button>
+                    <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center col-span-3"><i class="fas fa-trash mb-1 text-base"></i> محذوف</button>
                 </div>
             `;
-            openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 max-w-sm mx-auto');
+            openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 mx-auto');
         };
         
         window.submitChangeStatus = async function(refId, newStatus, btnElement) {
@@ -585,7 +632,7 @@
                 const profile = state.searchResults.find(p => p.refId === refId);
                 if (profile) profile.profileStatus = newStatus;
                 closeModal(); 
-                renderResults("لا توجد نتائج مطابقة للفلاتر", "تم تحديث الملف بنجاح.");
+                renderResults(); 
             } catch(e) { showToast(e.message, 'error'); } finally { setBtnLoading(btnElement, false); }
         };
 
