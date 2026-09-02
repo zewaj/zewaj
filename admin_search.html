@@ -100,7 +100,7 @@
                             <!-- حقل الإدخال وزر البحث (متجاوران دائماً) -->
                             <div class="flex flex-row gap-2 w-full flex-1">
                                 <div class="relative flex-1">
-                                    <input type="text" id="smart-search-input" placeholder="أدخل رقم الملف للبحث..." class="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dir-rtl text-right placeholder:font-normal placeholder:text-slate-400" onkeypress="if(event.key === 'Enter') performQuickSearch()">
+                                    <input type="text" id="smart-search-input" placeholder="أدخل رقم أو عدة أرقام تفصل بينها فاصلة..." class="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all font-bold text-slate-700 dir-rtl text-right placeholder:font-normal placeholder:text-slate-400" onkeypress="if(event.key === 'Enter') performQuickSearch()">
                                     <i class="fas fa-keyboard absolute right-3 top-3.5 text-slate-400"></i>
                                 </div>
                                 <button onclick="performQuickSearch()" id="quick-search-btn" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center shadow-md shadow-indigo-200 gap-2">بحث <i class="fas fa-search text-xs hidden sm:inline"></i></button>
@@ -218,7 +218,6 @@
             return map[s] || map['نشط'];
         }
 
-        // Auto-Retry API Call Function
         async function apiCall(payload, retries = 2) {
             for (let attempt = 0; attempt <= retries; attempt++) {
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
@@ -263,7 +262,9 @@
         }
 
         window.updateSearchPlaceholder = function() {
-            const isPhone = document.getElementById('search-type-phone').checked; els.searchInput.placeholder = isPhone ? "أدخل رقم الجوال..." : "أدخل رقم الملف..."; els.searchInput.focus();
+            const isPhone = document.getElementById('search-type-phone').checked; 
+            els.searchInput.placeholder = isPhone ? "أدخل رقم الجوال..." : "أدخل رقم أو عدة أرقام تفصل بينها فاصلة..."; 
+            els.searchInput.focus();
         };
 
         window.toggleFilter = function(filterId) {
@@ -457,6 +458,10 @@
                 else if (displayMarriageType.includes('ظروف')) { mtClass = 'bg-orange-50 text-orange-700 border-orange-200'; mtIcon = 'fa-feather-alt'; }
                 const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm shrink-0"><i class="fas ${mtIcon}"></i> ${displayMarriageType}</span>`;
 
+                // --- شارة الرصيد التفاعلية بلون وردي فاقع ---
+                const currentBalance = p.walletBalance || 0;
+                const walletBadge = `<button onclick="actionUpdateWallet('${p.refId}', ${currentBalance}, ${isMale}, '${displayMarriageType}')" class="bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1.5 shadow-sm shrink-0 transition-colors cursor-pointer group" title="إدارة الرصيد"><i class="far fa-gem text-pink-500 group-hover:scale-110 transition-transform"></i> ${currentBalance}</button>`;
+
                 const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
                 const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
                 const base64ShortBio = encodeBase64(decodedShortBio);
@@ -469,6 +474,8 @@
                 const isSelected = state.selectedIds.has(p.refId);
                 const borderClass = isSelected ? 'border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50/10' : 'border-slate-100 hover:border-slate-300';
                 
+                // تم تعديل ترتيب الأيقونات في الكارد العلوي (صورة الشخصية ثم مربع الاختيار)
+                // وتم تعديل ترتيب بيانات الحفظ الموحد (النص ثم زر النسخ)
                 const cardHTML = `
                 <div id="card-${p.refId}" class="bg-white rounded-3xl shadow-sm border ${borderClass} p-5 flex flex-col h-full transition-all relative ${st.label === 'محذوف' ? 'opacity-60 grayscale' : ''}">
                     
@@ -476,18 +483,19 @@
                         <div class="flex-1 min-w-0 text-right">
                             <h3 class="font-black text-slate-800 text-xl truncate mb-1" title="${realName}">${realName}</h3>
                             <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1.5 w-fit max-w-full">
+                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${displayUnified}</span>
                                 <button onclick="safeCopyFromBase64(this, '${b64UnifiedToCopy}')" class="text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm text-xs shrink-0" title="نسخ اسم الحفظ الموحد">
                                     <i class="far fa-copy"></i>
                                 </button>
-                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${displayUnified}</span>
                             </div>
-                            <div class="flex gap-1.5 flex-wrap mt-2 justify-start">
+                            <div class="flex gap-1.5 flex-wrap mt-2 justify-start items-center">
                                 ${statusBadge}
                                 ${marriageTypeBadge}
+                                ${walletBadge}
                             </div>
                         </div>
 
-                        <!-- الأيقونات في أقصى اليسار: الصورة ثم مربع الاختيار في الزاوية -->
+                        <!-- الأيقونات في أقصى اليسار: الصورة ثم مربع الاختيار -->
                         <div class="flex items-center gap-2 shrink-0">
                             <div class="w-10 h-10 rounded-full ${genColor} flex items-center justify-center text-xl shadow-sm border shrink-0">
                                 ${genIcon}
@@ -557,7 +565,7 @@
                     </button>
                 </div>
             `;
-            openModal('الإجراءات الجماعية', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 mx-auto');
+            openModal('الإجراءات الجماعية', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 sm:p-6 w-full');
         };
 
         window.bulkCopyBios = function(btnElement) {
@@ -602,7 +610,7 @@
             const bioText = decodeFromHTML(profile.autoBio || 'لا توجد نبذة مفصلة.');
             const bodyHTML = `<div class="whitespace-pre-wrap text-sm leading-8 text-slate-700 font-medium bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100">${bioText}</div>`;
             const footerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-colors">إغلاق</button><button onclick="safeCopyFromBase64(this, '${encodeBase64(bioText)}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold transition-colors"><i class="far fa-copy"></i> نسخ النبذة</button>`;
-            openModal(`النبذة المفصلة للملف #${refId}`, bodyHTML, footerHTML, 'p-4');
+            openModal(`النبذة المفصلة للملف #${refId}`, bodyHTML, footerHTML, 'p-4 w-full');
         };
 
         window.actionChangeStatus = function(refId) {
@@ -611,7 +619,7 @@
                     <div class="w-10 h-10 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-3 text-lg shadow-sm border border-slate-100"><i class="fas fa-sliders-h"></i></div>
                     <h4 class="font-black text-slate-800 text-xs">حالة الملف #${refId}</h4>
                 </div>
-                <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="grid grid-cols-3 gap-2 mb-4 w-full">
                     <button onclick="submitChangeStatus('${refId}', 'نشط', this)" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-check-circle mb-1 text-base"></i> نشط</button>
                     <button onclick="submitChangeStatus('${refId}', 'نشر', this)" class="bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-paper-plane mb-1 text-base"></i> نشر</button>
                     <button onclick="submitChangeStatus('${refId}', 'جديد', this)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-star mb-1 text-base"></i> جديد</button>
@@ -621,7 +629,7 @@
                     <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center col-span-3"><i class="fas fa-trash mb-1 text-base"></i> محذوف</button>
                 </div>
             `;
-            openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 mx-auto');
+            openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 w-full');
         };
         
         window.submitChangeStatus = async function(refId, newStatus, btnElement) {
@@ -639,12 +647,72 @@
         window.actionToggleShowcase = function(refId) {
             const html = `<div class="text-center mb-6"><i class="fas fa-bullhorn text-4xl text-amber-500 mb-3"></i><h4 class="font-black text-slate-800">إعلان مميز للملف #${refId}</h4></div><input type="number" id="showcase-days" value="7" min="0" class="w-full text-center px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl mb-4 text-xl">`;
             const fHtml = `<button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 py-3.5 rounded-xl font-bold">إلغاء</button><button id="btn-save-showcase" onclick="submitToggleShowcase('${refId}')" class="flex-1 bg-amber-500 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-amber-200">حفظ</button>`;
-            openModal('الإعلان المميز', html, fHtml);
+            openModal('الإعلان المميز', html, fHtml, 'p-4 w-full');
         };
         
         window.submitToggleShowcase = async function(refId) {
             const days = parseInt(document.getElementById('showcase-days').value) || 0; const btn = document.getElementById('btn-save-showcase'); setBtnLoading(btn, true, '');
             try { await apiCall({ action: "adminToggleShowcase", refId: refId, days: days, adminToken: state.adminToken }); showToast(`تم التحديث بنجاح`); closeModal(); } catch(e) { showToast(e.message, 'error'); } finally { setBtnLoading(btn, false, 'حفظ'); }
+        };
+
+        window.actionUpdateWallet = function(refId, currentBalance, isMale, marriageType) {
+            // تحديد القيم المقترحة بناءً على منطق الأعمال
+            const def1 = isMale ? 24 : 10; 
+            const def2 = marriageType.includes('اشتراطات') ? 150 : 50; 
+            
+            const html = `
+                <div class="text-center mb-5">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-sm border border-indigo-100"><i class="far fa-gem"></i></div>
+                    <h4 class="font-black text-slate-800 text-sm mb-1">تحديث رصيد الملف #${refId}</h4>
+                    <p class="text-[11px] text-slate-500 font-bold">الرصيد الحالي: <span class="text-indigo-600 text-sm font-black mx-1">${currentBalance}</span> نقطة</p>
+                </div>
+                
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 mb-4">
+                    <p class="text-[10px] font-bold text-slate-400 mb-2.5 text-center">أزرار سريعة بناءً على حالة العميل</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="document.getElementById('wallet-input').value = ${def1}" class="bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex flex-col items-center gap-1 active:scale-95"><i class="fas fa-bolt text-amber-500 mb-0.5 text-base"></i> ${def1}</button>
+                        <button onclick="document.getElementById('wallet-input').value = ${def2}" class="bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex flex-col items-center gap-1 active:scale-95"><i class="fas fa-star text-amber-500 mb-0.5 text-base"></i> ${def2}</button>
+                        <button onclick="document.getElementById('wallet-input').value = 0" class="bg-white border border-slate-200 hover:border-red-400 hover:bg-red-50 text-slate-700 py-2.5 rounded-xl text-xs font-black transition-all shadow-sm flex flex-col items-center gap-1 active:scale-95"><i class="fas fa-undo-alt text-slate-400 mb-0.5 text-base"></i> تصفير</button>
+                    </div>
+                </div>
+
+                <div class="relative mt-2">
+                    <label class="absolute -top-2.5 right-4 bg-white px-2 text-[10px] font-black text-indigo-600">الرصيد الجديد المراد اعتماده</label>
+                    <input type="number" id="wallet-input" value="${currentBalance}" class="w-full text-center px-4 py-4 bg-white border-2 border-indigo-100 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all text-2xl font-black text-slate-700 dir-ltr shadow-inner" inputmode="numeric">
+                </div>
+            `;
+            
+            const footer = `
+                <button onclick="closeModal()" class="w-1/3 bg-slate-100 text-slate-600 py-3.5 rounded-xl font-bold shadow-sm text-sm transition-colors hover:bg-slate-200">إلغاء</button>
+                <button onclick="submitUpdateWallet('${refId}', this)" class="w-2/3 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-black shadow-lg shadow-indigo-200 text-sm flex items-center justify-center gap-2 transition-all active:scale-95">حفظ الرصيد <i class="fas fa-check-circle"></i></button>
+            `;
+            
+            openModal('إدارة الرصيد', html, footer, 'p-4 sm:p-5 w-full');
+            setTimeout(() => { document.getElementById('wallet-input').select(); }, 100);
+        };
+
+        window.submitUpdateWallet = async function(refId, btnElement) {
+            const inputEl = document.getElementById('wallet-input');
+            const newBalance = parseInt(inputEl.value);
+            
+            if (isNaN(newBalance) || newBalance < 0) return showToast('الرجاء إدخال رصيد صحيح', 'warning');
+            
+            setBtnLoading(btnElement, true, '');
+            try {
+                await apiCall({ action: "adminUpdateWallet", refId: refId, newBalance: newBalance, adminToken: state.adminToken });
+                
+                showToast(`تم تحديث الرصيد إلى ${newBalance} بنجاح`);
+                
+                const profile = state.searchResults.find(p => p.refId === refId);
+                if (profile) profile.walletBalance = newBalance;
+                
+                closeModal(); 
+                renderResults();
+            } catch(e) { 
+                showToast(e.message, 'error'); 
+            } finally { 
+                setBtnLoading(btnElement, false); 
+            }
         };
 
         window.switchMatchTab = function(t) {
@@ -654,7 +722,7 @@
         };
 
         window.actionMatch = async function(refId, clientName, isMale) {
-            openModal('جاري المطابقة...', '<div class="py-12 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-10 h-10 border-4"></div></div>');
+            openModal('جاري المطابقة...', '<div class="py-12 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-10 h-10 border-4"></div></div>', '', 'p-4 w-full');
             try {
                 const res = await apiCall({ action: "adminGetMatches", refId: refId, adminToken: state.adminToken });
                 let matches = (res.matches || []).map(m => { let p = parseInt(m.matchPercentage) || 0; return { ...m, numScore: p, cat: p >= 75 ? 'high' : (p >= 50 ? 'med' : 'low') }; }).filter(m => m.numScore >= 25).sort((a, b) => b.numScore - a.numScore);
@@ -662,7 +730,7 @@
                 const myP = state.searchResults.find(p => p.refId === refId);
                 const myBioBase64 = encodeBase64(myP ? decodeFromHTML(myP.shortBio) : `تواصل بخصوص ملف #${refId}`);
                 
-                if (!matches.length) return openModal(`مطابقات #${refId}`, `<div class="text-center py-10 font-bold text-slate-400">لا توجد مطابقات مناسبة.</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">إغلاق</button>`);
+                if (!matches.length) return openModal(`مطابقات #${refId}`, `<div class="text-center py-10 font-bold text-slate-400">لا توجد مطابقات مناسبة.</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">إغلاق</button>`, 'p-4 w-full');
 
                 let primaryClientInfo = `
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 shadow-sm relative overflow-hidden">
@@ -728,8 +796,8 @@
                 };
 
                 html += renderGroup(groups.high, 'emerald', 'high'); html += renderGroup(groups.med, 'amber', 'med'); html += renderGroup(groups.low, 'slate', 'low'); html += `</div>`;
-                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${clientName})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50');
-            } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100">${error.message}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`); }
+                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${clientName})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50 w-full');
+            } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100">${error.message}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 w-full'); }
         };
 
         window.onload = checkAuth;
