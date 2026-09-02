@@ -1105,7 +1105,7 @@
             }
         }
         
-        /* 
+/* 
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 21 : دوال تسجيل الخروج وتحميل الإطارات ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -1132,21 +1132,19 @@
         }
 
         function logout() {
-            localStorage.removeItem('verified_user_phone');
-            localStorage.removeItem('verified_user_name');
-            localStorage.removeItem('verified_user_gender');
-            localStorage.removeItem('active_profile_refid');
-            localStorage.removeItem('cached_wallet_balance');
-            localStorage.removeItem('master_activity_cache');
-            localStorage.removeItem('verified_user_mType');
+            // 1. مسح الذاكرة المحلية بالكامل (LocalStorage) لضمان عدم بقاء أي كاش قديم
+            localStorage.clear();
             
-            const menu = document.getElementById('sideMenu'); 
-            const overlay = document.getElementById('menuOverlay');
-            if (menu) menu.classList.remove('open'); 
-            if (overlay) overlay.classList.remove('open');
+            // 2. مسح ذاكرة الجلسة (SessionStorage)
+            sessionStorage.clear();
             
-            updateAuthUI();
-            showHomePage();
+            // 3. مسح الكوكيز (إن وجدت)
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // 4. إعادة توجيه وتحديث الصفحة بالكامل لمسح الذاكرة العشوائية (RAM) والمتغيرات
+            window.location.href = window.location.pathname;
         }
 
         function showHomePage() {
@@ -1166,10 +1164,10 @@
             
             updateAuthUI();
             updateNavHighlight('home');
-            fetchShowcaseData(); 
+            if (typeof fetchShowcaseData === 'function') fetchShowcaseData(); 
             
             const phone = localStorage.getItem('verified_user_phone');
-            if (phone) fetchGlobalWalletBalance(phone);
+            if (phone && typeof fetchGlobalWalletBalance === 'function') fetchGlobalWalletBalance(phone);
         }
 
         function loadIframe(url) {
@@ -1211,10 +1209,12 @@
 
             if(url.includes('requests')) {
                 const dot = document.getElementById('requestsNotificationDot');
-                if(dot) dot.classList.add('hidden');
+                const badge = document.getElementById('heroRequestsBadge');
+                if(dot) { dot.classList.add('hidden'); dot.classList.remove('flex'); }
+                if(badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
             }
             
-            if (phone) {
+            if (phone && typeof fetchGlobalWalletBalance === 'function') {
                 setTimeout(() => {
                     fetchGlobalWalletBalance(phone);
                 }, 500); 
@@ -1235,7 +1235,7 @@
             loadIframe('register.html');
         }
 
-/* 
+        /* 
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 22 : نافذة الملف الشامل والنسخ ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
