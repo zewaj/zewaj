@@ -502,11 +502,6 @@
         </section>
     </div>
 
-    <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-    <!-- ✂️ ---------- [ القسم رقم 11 : حاوية الإطار والشريط السفلي ] ---------- ✂️ -->
-    <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-    </div> <!-- 👈 هذا الوسم كان مفقوداً وهو سبب اختفاء الجزء السفلي -->
-
     <!-- Iframe Container for Sub-pages -->
     <div id="iframeContainer">
         <iframe id="appIframe" src=""></iframe>
@@ -717,7 +712,8 @@
                 const destination = sessionStorage.getItem('intended_destination');
                 
                 if (phone) {
-                    fetchGlobalWalletBalance(phone).then(() => {
+                    // 🟢 إضافة أمر التحديث الإجباري (true) عند تسجيل الدخول الناجح
+                    fetchGlobalWalletBalance(phone, true).then(() => {
                         updateAuthUI();
                         if (!destination) {
                             showHomePage(); 
@@ -732,7 +728,7 @@
             if (data.action === 'profileSwitched') {
                 updateAuthUI(); 
                 const phone = localStorage.getItem('verified_user_phone');
-                if (phone) { fetchGlobalWalletBalance(phone); } 
+                if (phone) { fetchGlobalWalletBalance(phone, true); } // 🟢 تحديث إجباري عند التبديل
             }
         });
 
@@ -746,7 +742,10 @@
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload), redirect: "follow"
                 });
-                if (!response.ok) throw new Error("HTTP Status " + response.status);
+                if (!response.ok) {
+                    console.warn(`⚠️ تعذر الوصول إلى الخادم (الخطأ: ${response.status}). يرجى التأكد من نشر سكربت جوجل.`);
+                    return { success: false };
+                }
                 return JSON.parse(await response.text());
             } catch (error) {
                 console.error("Fetch Error:", error);
@@ -754,10 +753,17 @@
             }
         }
 
-        async function fetchGlobalWalletBalance(phone) {
+        // 🟢 استقبال متغير forceRefresh وتمريره للسيرفر
+        async function fetchGlobalWalletBalance(phone, forceRefresh = false) {
             const reqRef = localStorage.getItem('active_profile_refid');
             try {
-                const result = await fetchFromGAS({ action: 'syncUserActivity', phone: phone, requesterRefId: reqRef, timestamp: Date.now() });
+                const result = await fetchFromGAS({ 
+                    action: 'syncUserActivity', 
+                    phone: phone, 
+                    requesterRefId: reqRef, 
+                    timestamp: Date.now(),
+                    forceRefresh: forceRefresh // 🟢 إخبار السيرفر بكسر الكاش
+                });
                 if(result.success) {
                     
                     // 🟢 [تفعيل الأرقام والشاشات المنبثقة]
@@ -916,9 +922,14 @@
         window.handleHeroAuthClick = function() { 
             const isLogged = localStorage.getItem('verified_user_phone');
             if (isLogged) {
-                const userGender = encodeURIComponent(localStorage.getItem('verified_user_gender') || '');
-                const userStatus = encodeURIComponent(localStorage.getItem('active_profile_status') || 'نشط');
-                loadIframe(`register.html?gender=${userGender}&status=${userStatus}`);
+                const refId = localStorage.getItem('active_profile_refid');
+                if (!refId || refId === 'null') {
+                    loadIframe('register.html?action=add');
+                } else {
+                    const userGender = encodeURIComponent(localStorage.getItem('verified_user_gender') || '');
+                    const userStatus = encodeURIComponent(localStorage.getItem('active_profile_status') || 'نشط');
+                    loadIframe(`register.html?gender=${userGender}&status=${userStatus}`);
+                }
             } else {
                 goToLogin('');
             }
@@ -943,7 +954,12 @@
                 openLoginModal();
                 return;
             }
-            const refId = localStorage.getItem('active_profile_refid') || '';
+            const refId = localStorage.getItem('active_profile_refid');
+            if (!refId || refId === 'null') {
+                showToast("يرجى إكمال بيانات ملفك الشخصي أولاً.");
+                loadIframe('register.html?action=add');
+                return;
+            }
             const gender = localStorage.getItem('verified_user_gender') || '';
             let recordType = 'طلبات_الرجال';
             if (gender && (gender.includes('أنثى') || gender.includes('نساء') || gender.includes('امرأة') || gender.includes('بنت'))) {
@@ -961,6 +977,8 @@
             const phone = localStorage.getItem('verified_user_phone');
             let name = localStorage.getItem('verified_user_name');
             const gender = localStorage.getItem('verified_user_gender') || '';
+            const refId = localStorage.getItem('active_profile_refid');
+            const userStatus = localStorage.getItem('active_profile_status');
             
             const authArea = document.getElementById('compactAuthArea');
             const logoutBtn1 = document.getElementById('sidebarLogoutBtn');
@@ -978,6 +996,12 @@
             
             clearInterval(authTextInterval);
 
+            // 🟢 السيناريو الأول: ملف محذوف
+            if (phone && userStatus === 'محذوف') {
+                logout(); // تسجيل خروج إجباري وتنظيف الذاكرة
+                return;
+            }
+
             if (phone) {
                 const destination = sessionStorage.getItem('intended_destination');
                 if (destination) {
@@ -991,75 +1015,108 @@
             const currentCacheBal = localStorage.getItem('cached_wallet_balance') || window.userPointsBalance || '0';
 
             if (phone) {
-                if (!name || name === 'null' || name === 'undefined' || name.trim() === '') { name = 'صاحب الحساب'; }
-                const shortName = name.split(' ')[0];
-                
-                const userStatus = localStorage.getItem('active_profile_status') || 'قيد المراجعة';
+                // 🟢 السيناريو الثاني: مستخدم مسجل ولكن لم يكمل بياناته (لا يوجد refId)
+                if (!refId || refId === 'null' || refId === 'undefined') {
+                    if (userNameEl) userNameEl.innerText = 'أكمل بياناتك';
+                    if (heroGreetingEl) heroGreetingEl.innerText = "التسجيل غير مكتمل";
+                    if (userStatusEl) userStatusEl.classList.add('hidden');
+                    
+                    if (heroBalanceContainer) {
+                        heroBalanceContainer.classList.add('hidden');
+                        heroBalanceContainer.classList.remove('flex');
+                    }
+                    
+                    if (authActionEl) {
+                        authActionEl.innerText = 'إكمال التسجيل الآن';
+                        authActionEl.className = "w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 md:py-3.5 rounded-xl transition-all shadow-md text-xs md:text-sm animate-pulse";
+                    }
+                    if (userIconEl) {
+                        userIconEl.className = "w-14 h-14 md:w-20 md:h-20 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0 border border-rose-100 shadow-inner transition-colors duration-300";
+                    }
+                    
+                    if (loggedInActionsEl) loggedInActionsEl.classList.add('hidden', 'opacity-0');
+                    if (heroLogoutBtn) heroLogoutBtn.classList.remove('hidden');
 
-                if (userNameEl) userNameEl.innerText = shortName;
-                if (heroGreetingEl) heroGreetingEl.innerText = "مرحباً بك";
-                
-                if (userStatusEl) {
-                    userStatusEl.innerText = userStatus;
-                    userStatusEl.classList.remove('hidden');
-                    if (userStatus.includes('مراجعة') || userStatus.includes('انتظار') || userStatus.includes('جديد')) {
-                        userStatusEl.className = "text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200 mt-0.5 md:mt-0";
+                    authArea.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-rose-600">غير مكتمل</span>
+                            <button onclick="logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg border border-rose-100 transition-colors" title="تسجيل خروج">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    if (logoutBtn1) logoutBtn1.classList.remove('hidden');
+                    if (menMenu) menMenu.style.display = 'none';
+                    if (womenMenu) womenMenu.style.display = 'none';
+                } else {
+                    // 🟢 مستخدم طبيعي مكتمل البيانات
+                    if (!name || name === 'null' || name === 'undefined' || name.trim() === '') { name = 'صاحب الحساب'; }
+                    const shortName = name.split(' ')[0];
+                    const displayStatus = userStatus || 'قيد المراجعة';
+
+                    if (userNameEl) userNameEl.innerText = shortName;
+                    if (heroGreetingEl) heroGreetingEl.innerText = "مرحباً بك";
+                    
+                    if (userStatusEl) {
+                        userStatusEl.innerText = displayStatus;
+                        userStatusEl.classList.remove('hidden');
+                        if (displayStatus.includes('مراجعة') || displayStatus.includes('انتظار') || displayStatus.includes('جديد')) {
+                            userStatusEl.className = "text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-600 border-amber-200 mt-0.5 md:mt-0";
+                        } else {
+                            userStatusEl.className = "text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-600 border-emerald-200 mt-0.5 md:mt-0";
+                        }
+                    }
+
+                    if (heroBalanceContainer) {
+                        heroBalanceContainer.classList.remove('hidden');
+                        heroBalanceContainer.classList.add('flex');
+                    }
+                    updateWalletDisplay();
+
+                    if (authActionEl) {
+                        authActionEl.innerText = 'ملفك الشخصي';
+                        authActionEl.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 md:py-3.5 rounded-xl transition-all shadow-md text-xs md:text-sm";
+                    }
+                    if (userIconEl) {
+                        userIconEl.className = "w-14 h-14 md:w-20 md:h-20 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-inner transition-colors duration-300";
+                    }
+                    
+                    if (loggedInActionsEl) {
+                        loggedInActionsEl.classList.remove('hidden');
+                        setTimeout(() => loggedInActionsEl.classList.remove('opacity-0'), 50);
+                    }
+                    if (heroLogoutBtn) heroLogoutBtn.classList.remove('hidden');
+
+                    authArea.innerHTML = `
+                        <div class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm">
+                            <span class="text-xs font-bold text-indigo-700" id="headerWalletBal">${currentCacheBal}</span>
+                            <span class="text-blue-500 text-xs">💎</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-slate-700">مرحباً، ${shortName}</span>
+                            <button onclick="logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg border border-rose-100 transition-colors" title="تسجيل خروج">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    
+                    if (logoutBtn1) logoutBtn1.classList.remove('hidden');
+                    
+                    const isFemale = gender && (gender.includes('أنثى') || gender.includes('نساء') || gender.includes('انثى') || gender.includes('بنت'));
+                    const isMale = gender && (gender.includes('ذكر') || gender.includes('رجل') || gender.includes('رجال'));
+
+                    if (isFemale) {
+                        if (menMenu) menMenu.style.display = 'block';
+                        if (womenMenu) womenMenu.style.display = 'none';
+                    } else if (isMale) {
+                        if (menMenu) menMenu.style.display = 'none';
+                        if (womenMenu) womenMenu.style.display = 'block';
                     } else {
-                        userStatusEl.className = "text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-600 border-emerald-200 mt-0.5 md:mt-0";
+                        if (menMenu) menMenu.style.display = 'block';
+                        if (womenMenu) womenMenu.style.display = 'block';
                     }
                 }
-
-                if (heroBalanceContainer) {
-                    heroBalanceContainer.classList.remove('hidden');
-                    heroBalanceContainer.classList.add('flex');
-                }
-                updateWalletDisplay();
-
-                if (authActionEl) {
-                    authActionEl.innerText = 'ملفك الشخصي';
-                    // تم تعديل الكلاسات للحفاظ على المقاسات الجديدة للجوال
-                    authActionEl.className = "w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 md:py-3.5 rounded-xl transition-all shadow-md text-xs md:text-sm";
-                }
-                if (userIconEl) {
-                    // تم تعديل الكلاسات للحفاظ على المقاسات الجديدة للجوال
-                    userIconEl.className = "w-14 h-14 md:w-20 md:h-20 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-inner transition-colors duration-300";
-                }
-                
-                if (loggedInActionsEl) {
-                    loggedInActionsEl.classList.remove('hidden');
-                    setTimeout(() => loggedInActionsEl.classList.remove('opacity-0'), 50);
-                }
-                if (heroLogoutBtn) heroLogoutBtn.classList.remove('hidden');
-
-                authArea.innerHTML = `
-                    <div class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm">
-                        <span class="text-xs font-bold text-indigo-700" id="headerWalletBal">${currentCacheBal}</span>
-                        <span class="text-blue-500 text-xs">💎</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[11px] font-bold text-slate-700">مرحباً، ${shortName}</span>
-                        <button onclick="logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg border border-rose-100 transition-colors" title="تسجيل خروج">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        </button>
-                    </div>
-                `;
-                
-                if (logoutBtn1) logoutBtn1.classList.remove('hidden');
-                
-                const isFemale = gender && (gender.includes('أنثى') || gender.includes('نساء') || gender.includes('انثى') || gender.includes('بنت'));
-                const isMale = gender && (gender.includes('ذكر') || gender.includes('رجل') || gender.includes('رجال'));
-
-                if (isFemale) {
-                    if (menMenu) menMenu.style.display = 'block';
-                    if (womenMenu) womenMenu.style.display = 'none';
-                } else if (isMale) {
-                    if (menMenu) menMenu.style.display = 'none';
-                    if (womenMenu) womenMenu.style.display = 'block';
-                } else {
-                    if (menMenu) menMenu.style.display = 'block';
-                    if (womenMenu) womenMenu.style.display = 'block';
-                }
-                
             } else {
                 let showGuest = true;
                 if (userNameEl) userNameEl.innerText = 'زائر';
@@ -1105,8 +1162,7 @@
             }
         }
         
-/* 
-        <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+/* <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 21 : دوال تسجيل الخروج وتحميل الإطارات ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
@@ -1183,7 +1239,13 @@
             const refId = localStorage.getItem('active_profile_refid') || '';
             const fullName = localStorage.getItem('verified_user_name') || '';
             const firstName = fullName ? fullName.split(' ')[0] : '';
-            
+
+            // 🟢 إجبار المستخدم غير المكتمل على إكمال التسجيل
+            if (phone && (!refId || refId === 'null') && !url.includes('register.html') && !url.includes('contact.html')) {
+                showToast("يرجى إكمال بيانات التسجيل أولاً لتتمكن من تصفح المنصة.");
+                url = 'register.html?action=add';
+            }
+
             let urlObj = new URL(url, window.location.origin + window.location.pathname);
             urlObj.searchParams.set('embedded', 'true'); 
             urlObj.searchParams.set('t', Date.now()); 
@@ -1235,8 +1297,7 @@
             loadIframe('register.html');
         }
 
-        /* 
-        <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+        /* <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 22 : نافذة الملف الشامل والنسخ ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
@@ -1453,8 +1514,7 @@
             } catch (e) { console.error("Toggle Favorite Sync Error:", e); }
         }
 
-        /* 
-        <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+        /* <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 23 : نافذة طلب التواصل واحتساب الرسوم ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
@@ -1597,86 +1657,6 @@
             }
         }
 
-        async function confirmMasterContactRequest(forceQueue = false) {
-            const phone = localStorage.getItem('verified_user_phone');
-            if(!phone || !window.activeContactRefId) return;
-
-            const btn = document.getElementById('mcmConfirmBtn');
-            if(btn) { btn.disabled = true; btn.innerHTML = '<span class="animate-pulse">جاري التنفيذ...</span>'; }
-
-            // 🟢 استخدام المتغيرات المحفوظة من الخطوة السابقة بدلاً من التخمين الخطأ!
-            let isSpecial = window.currentContactIsSpecial || false;
-            let isDirect = window.currentContactIsDirect || false;
-
-            let config = {};
-            try { config = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch(e){}
-            
-            let requiredPoints = 0;
-            if (!isDirect) {
-                const costRegular = config.CONTACT_COST_REGULAR !== undefined ? config.CONTACT_COST_REGULAR : 5;
-                const costSpecial = config.CONTACT_COST_SPECIAL_WOMEN !== undefined ? config.CONTACT_COST_SPECIAL_WOMEN : 25;
-                requiredPoints = isSpecial ? costSpecial : costRegular;
-                
-                if (parseInt(localStorage.getItem('cached_wallet_balance') || '0') < requiredPoints) {
-                    showToast(`❌ رصيدك غير كافٍ. تحتاج إلى ${requiredPoints} نقاط على الأقل.`);
-                    closeMasterContactModal();
-                    return;
-                }
-            }
-
-            const reqRef = localStorage.getItem('active_profile_refid');
-            const payload = {
-                action: 'requestContact',
-                phone: phone,
-                requesterRefId: reqRef,
-                targetRefId: window.activeContactRefId,
-                forceQueue: forceQueue
-            };
-
-            const result = await fetchFromGAS(payload);
-
-            if(result.success) {
-                showToast(isDirect ? '✅ تم إرسال طلب التواصل المباشر للإدارة.' : '✅ تم إرسال طلب التواصل بنجاح!');
-                closeMasterContactModal();
-                if(typeof closeUnifiedProfileModal === 'function') closeUnifiedProfileModal(); 
-                if (typeof loadIframe === 'function') loadIframe('activity.html?tab=requests');
-            } else if (result.requireQueueConfirm) {
-                const contentArea = document.getElementById('mcmContentArea');
-                const actionButtons = document.getElementById('mcmActionButtons');
-                contentArea.innerHTML = `
-                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm flex flex-col items-center text-center gap-2">
-                        <span class="text-3xl">⏳</span>
-                        <h3 class="font-black text-amber-700">هذا الملف مشغول حالياً</h3>
-                        <p class="text-sm text-amber-600 font-bold">هل ترغب بحجز ${result.cost || requiredPoints} نقطة والانضمام لقائمة الانتظار؟</p>
-                        <p class="text-xs text-amber-500">يمكنك الانسحاب لاحقاً واسترجاع نقاطك كاملة.</p>
-                    </div>
-                `;
-                actionButtons.innerHTML = `
-                    <button onclick="closeMasterContactModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">إلغاء الأمر</button>
-                    <button id="mcmConfirmBtn" onclick="confirmMasterContactRequest(true)" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">تأكيد الانضمام</button>
-                `;
-            } else {
-                showToast('❌ حدث خطأ: ' + (result.message || 'يرجى المحاولة لاحقاً'));
-                closeMasterContactModal();
-            }
-        }
-
-        function showUnreadModal() {
-            const m = document.getElementById('unreadAlertModal');
-            if (m) {
-                m.classList.remove('hidden');
-                setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
-            }
-        }
-
-        function closeUnreadModal() {
-            const m = document.getElementById('unreadAlertModal');
-            if(m) {
-                m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
-                setTimeout(() => m.classList.add('hidden'), 300);
-            }
-        }
-
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 24 : تأكيد إرسال طلب التواصل ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -1806,6 +1786,22 @@
             }
         }
 
+        function showUnreadModal() {
+            const m = document.getElementById('unreadAlertModal');
+            if (m) {
+                m.classList.remove('hidden');
+                setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
+            }
+        }
+
+        function closeUnreadModal() {
+            const m = document.getElementById('unreadAlertModal');
+            if(m) {
+                m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
+                setTimeout(() => m.classList.add('hidden'), 300);
+            }
+        }
+
         function showToast(message) {
             const toast = document.createElement('div');
             toast.className = 'fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl text-sm font-bold z-[300] flex items-center gap-2 opacity-0 transition-opacity duration-300 w-max max-w-[90vw]';
@@ -1844,7 +1840,7 @@
             try { 
                 await fetchFromGAS({ action: 'toggleFavorite', phone: phone, requesterRefId: reqRefId, refId: refId }); 
             } catch (e) { 
-                console.error("Toggle Favorite Sync Error"); 
+                console.warn("Toggle Favorite Sync Error"); 
             } 
         } 
 
@@ -1876,9 +1872,15 @@
                     
                     renderTicker(recentArr); 
                     renderFeaturedCards(featuredArr); 
-                } 
+                } else {
+                    // في حال فشل الاتصال بالسيرفر
+                    renderTicker([]); 
+                    renderFeaturedCards([]); 
+                }
             } catch (err) { 
-                console.error(err); 
+                console.warn(err); 
+                renderTicker([]); 
+                renderFeaturedCards([]); 
             } 
         }
 
@@ -1906,7 +1908,7 @@
             const container = document.getElementById('featuredContainer'); 
             if(!container) return;
             if(!featuredArr || featuredArr.length === 0) {
-                container.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>لا توجد ملفات مميزة تناسبك حالياً.</div>';
+                container.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>لا توجد بيانات متاحة للعرض حالياً.</div>';
                 return;
             }
             let htmlStr = '';
@@ -1942,11 +1944,11 @@
         async function fetchLiveStats() {
             try {
                 const result = await fetchFromGAS({ action: "getStats" });
+                const c = document.getElementById('statsCarousel');
+                if(!c) return;
+
                 if(result.success && result.data) {
                     const d = result.data; 
-                    const c = document.getElementById('statsCarousel');
-                    if(!c) return;
-                    
                     const maleAbstractSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>`; 
                     const femaleAbstractSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>`;
                     
@@ -1957,8 +1959,14 @@
                     `;
                     c.innerHTML = statsHtml + statsHtml;
                     setupInfiniteSnapScroll('statsCarousel');
+                } else {
+                    c.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 px-4">تعذر تحميل الإحصائيات (رابط السيرفر غير متصل حالياً).</div>';
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.warn(err); 
+                const c = document.getElementById('statsCarousel');
+                if(c) c.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 px-4">تعذر تحميل الإحصائيات (رابط السيرفر غير متصل حالياً).</div>';
+            }
         }
 
         window.onload = () => {
