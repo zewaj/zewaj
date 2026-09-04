@@ -1,34 +1,34 @@
-<!-- =================== القسم 1: إعدادات  الصفحة والأنماط (Head & Styles) =================== -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 1: إعدادات الصفحة والخطوط 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة     الزواج - تسجيل / دخول</title>
+    <title>منصة الزواج - تسجيل / دخول</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+/* 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 2: أنماط CSS الأساسية والتمرير 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+*/
         body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
-        
         .emoji-font { font-family: "Twemoji Mozilla", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "EmojiOne Color", "Android Emoji", sans-serif !important; }
-
-        .accordion-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-out; }
-        .accordion-content.open { grid-template-rows: 1fr; }
-        .accordion-inner { overflow: hidden; }
         
-        .skin-radio-group input[type="radio"] { display: none; }
-        .skin-radio-group input[type="radio"]:checked + label { 
-            border-color: #059669 !important; transform: scale(1.05); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3); z-index: 10;
-        }
-        
-        .smart-tag input[type="checkbox"] { display: none; }
-        .smart-tag input[type="checkbox"]:checked + div { background-color: #059669; color: white; border-color: #059669; }
-        .smart-tag div { transition: all 0.2s ease; }
-
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
+/* 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 3: أنماط CSS للحركات والتأثيرات 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+*/
         .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -37,17 +37,30 @@
             from { box-shadow: 0 0 10px rgba(37, 211, 102, 0.4); transform: scale(1); }
             to { box-shadow: 0 0 20px rgba(37, 211, 102, 0.8); transform: scale(1.02); }
         }
-
-        .otp-input { text-align: center; font-family: monospace; font-size: 1.5rem; }
-        
-        /* تأثيرات التحقق الفوري */
-        .error-field { border-color: #ef4444 !important; background-color: #fef2f2 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); transition: all 0.3s ease; }
-        .success-field { border-color: #10b981 !important; box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2); transition: all 0.3s ease; }
-        
-        .locked-step { opacity: 0.5; pointer-events: none; }
-        .modal-backdrop { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
         .progress-bar { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         
+        .accordion-content { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s ease-out; }
+        .accordion-content.open { grid-template-rows: 1fr; }
+        .accordion-inner { overflow: hidden; }
+
+/* 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 4: أنماط CSS للمكونات والتحقق 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+*/
+        .otp-input { text-align: center; font-family: monospace; font-size: 1.5rem; }
+        .error-field { border-color: #ef4444 !important; background-color: #fef2f2 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); transition: all 0.3s ease; }
+        .success-field { border-color: #10b981 !important; box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2); transition: all 0.3s ease; }
+        .locked-step { opacity: 0.5; pointer-events: none; }
+        .modal-backdrop { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        
+        .skin-radio-group input[type="radio"] { display: none; }
+        .skin-radio-group input[type="radio"]:checked + label { border-color: #059669 !important; transform: scale(1.05); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3); z-index: 10; }
+        
+        .smart-tag input[type="checkbox"] { display: none; }
+        .smart-tag input[type="checkbox"]:checked + div { background-color: #059669; color: white; border-color: #059669; }
+        .smart-tag div { transition: all 0.2s ease; }
+
         .group-pill { display: flex; width: 100%; border-radius: 0.75rem; overflow: hidden; border: 1px solid #cbd5e1; background-color: white; }
         .group-pill input[type="radio"] { display: none; }
         .group-pill label { flex: 1; text-align: center; padding: 0.5rem 0; font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin: 0; border: none; }
@@ -55,14 +68,17 @@
         .group-pill > div:not(:last-child) { border-left: 1px solid #cbd5e1; }
         .group-pill input[type="radio"]:checked + label { background-color: #059669; color: white; }
         
-        /* حقول "أخرى" الديناميكية */
         .dynamic-other-input { transition: all 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         .dynamic-other-input.show { max-height: 100px; opacity: 1; margin-top: 0.5rem; }
     </style>
 </head>
 <body class="text-gray-800 relative min-h-screen flex flex-col items-center p-2 sm:p-4">
-    
-    <!-- =================== القسم 2: التنبيهات العلوية (Banners) =================== -->
+
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 5: التنبيهات العلوية ومؤشر المزامنة 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="adminBanner" class="hidden fixed top-0 left-0 right-0 w-full bg-orange-500 text-white text-sm font-bold text-center py-2.5 px-4 shadow-md z-[80] flex-col sm:flex-row justify-center items-center gap-3">
         <span>⚠️ وضع الإدارة: التحكم بملفات العميل (<span id="adminBannerPhone" class="font-mono font-bold" dir="ltr"></span>)</span>
         <button onclick="exitAdminMode()" class="bg-white/20 hover:bg-white/30 text-white font-bold py-1 px-4 rounded-full border border-white/40 transition-all text-xs shadow-sm">إنهاء الإدارة</button>
@@ -76,7 +92,11 @@
         <span class="text-[10px] font-bold text-gray-500">تحديث...</span>
     </div>
 
-    <!-- =================== القسم 3: نافذة تسجيل الدخول والتحقق (OTP Section) =================== -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 6: نافذة الدخول - الهيكل الأساسي 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="otpSection" class="fixed inset-0 z-[100] flex items-end justify-center sm:items-center px-0 sm:px-4 fade-in">
         <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md"></div>
         <div id="otpSheet" class="relative w-full max-w-md bg-white rounded-t-[2rem] sm:rounded-2xl p-5 pb-12 sm:pb-5 shadow-2xl transform transition-transform duration-500 translate-y-full">
@@ -89,6 +109,11 @@
                 <h2 class="text-lg font-bold text-gray-900 mb-1">تسجيل الدخول / طلب جديد</h2>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 7: نافذة الدخول - إدخال رقم الجوال 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div id="otpStep1" class="space-y-4">
                 <div class="flex shadow-sm" dir="ltr">
                     <select id="otpCountryCode" class="p-2.5 sm:p-3 border border-gray-300 rounded-l-xl bg-gray-50 text-center w-[80px] sm:w-[90px] shrink-0 outline-none text-xs sm:text-sm focus:ring-2 focus:ring-[#25D366] emoji-font font-bold text-gray-700">
@@ -102,6 +127,11 @@
                 </button>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 8: نافذة الدخول - إدخال الرمز والتحقق 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div id="otpStep2" class="space-y-4 hidden fade-in">
                 <p class="text-xs text-gray-500 text-center font-bold">أدخل الرمز المكون من 4 أرقام</p>
                 <div class="flex justify-center gap-3" dir="ltr">
@@ -120,8 +150,11 @@
         </div>
     </div>
 
-    <!-- ==🟥🟥🟥== القسم 4: لوحة تحكم العائلة والملفات (Dashboard Section) ==🟥🟥🟥== -->
-
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 9: لوحة العائلة - واجهة التحميل 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="dashboardSection" class="w-full hidden fade-in flex-1 pt-0 pb-10 flex flex-col">
         <div id="profilesLoading" class="hidden flex-col items-center justify-center py-24 bg-transparent w-full fade-in">
             <div class="relative flex items-center justify-center mb-8 h-20 w-32">
@@ -136,7 +169,11 @@
         
         <div id="dashboardContent" class="hidden mx-auto w-full max-w-4xl flex flex-col lg:flex-row gap-4">
             
-            <!-- القسم الأيمن: الملف الشخصي والنبذة (مضغوط) -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 10: لوحة العائلة - الحساب الرئيسي والبطاقة 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="w-full lg:w-2/3 flex flex-col gap-3">
                 <div id="heroCardContainer" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative transition-all duration-500 w-full">
                     <div class="h-16 sm:h-20 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 relative rounded-t-2xl flex justify-end items-start p-3">
@@ -164,9 +201,18 @@
                             </div>
                         </div>
 
-                        <!-- تم إزالة زري المراسلات والمفضلة من هنا لتجنب التكرار -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 11: (تم الحذف نهائياً بناءً على طلب الإدارة) 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
 
-                        <div id="heroShortSummary" class="mt-4 text-center w-full bg-gray-50/80 rounded-lg p-1.5 border border-gray-100 mb-2"></div>
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 12: لوحة العائلة - النبذة التلقائية وأزرار التحكم 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
+                        <div id="heroShortSummary" class="mt-2 text-center w-full bg-gray-50/80 rounded-lg p-1.5 border border-gray-100 mb-2"></div>
 
                         <div class="mb-3 relative">
                             <button onclick="toggleBio(event)" type="button" class="w-full flex items-center justify-between bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold py-2 px-2.5 rounded-lg border border-blue-200 transition-colors shadow-sm">
@@ -190,25 +236,29 @@
                             <div class="w-1/2 flex gap-1">
                                 <button onclick="openShareCopyModal('whatsapp')" class="flex-1 flex flex-col items-center justify-center gap-0.5 p-1 text-[#059669] bg-white hover:bg-[#25D366]/10 rounded-lg border border-gray-200 shadow-sm transition-all font-bold text-[8px]">
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                                    <span>واتساب</span>
-                                </button>
+                                        <span>واتساب</span>
+                                    </button>
 
-                                <button onclick="openShareCopyModal('copy')" class="flex-1 flex flex-col items-center justify-center gap-0.5 p-1 text-blue-600 bg-white hover:bg-blue-50 rounded-lg border border-gray-200 shadow-sm transition-all font-bold text-[8px]">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                    <span>نسخ</span>
-                                </button>
+                                    <button onclick="openShareCopyModal('copy')" class="flex-1 flex flex-col items-center justify-center gap-0.5 p-1 text-blue-600 bg-white hover:bg-blue-50 rounded-lg border border-gray-200 shadow-sm transition-all font-bold text-[8px]">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <span>نسخ</span>
+                                    </button>
 
-                                <button onclick="askDeleteConfirmHero()" class="flex-1 flex flex-col items-center justify-center gap-0.5 p-1 text-red-500 bg-white hover:bg-red-50 rounded-lg border border-gray-200 shadow-sm transition-all font-bold text-[8px]">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    <span>حذف</span>
-                                </button>
+                                    <button onclick="askDeleteConfirmHero()" class="flex-1 flex flex-col items-center justify-center gap-0.5 p-1 text-red-500 bg-white hover:bg-red-50 rounded-lg border border-gray-200 shadow-sm transition-all font-bold text-[8px]">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <span>حذف</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- القسم الأيسر: أفراد العائلة -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 13: لوحة العائلة - قائمة أفراد العائلة 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="w-full lg:w-1/3 flex flex-col gap-3">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-3 relative overflow-hidden h-full">
                     <div class="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600"></div>
@@ -218,19 +268,19 @@
                             أفراد العائلة
                         </span>
                     </h4>
-                    <!-- شبكة أفراد العائلة -->
-                    <div id="familyGrid" class="grid grid-cols-2 lg:grid-cols-1 gap-2">
-                        <!-- سيتم تعبئتها ديناميكياً -->
-                    </div>
+                    <div id="familyGrid" class="grid grid-cols-2 lg:grid-cols-1 gap-2"></div>
                 </div>
             </div>
 
         </div>
     </div>
     
-    <!-- ==🟥🟥🟥== القسم 5: نموذج التسجيل وشريط التقدم (Main Form Section) ==🟥🟥🟥== -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 14: نموذج التسجيل - شريط التقدم والعنوان 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="mainFormSection" class="w-full mx-auto hidden fade-in pb-10 flex-1 max-w-3xl pt-0">
-        <!-- شريط التقدم الذكي -->
         <div class="relative z-40 bg-white rounded-2xl shadow-sm border border-gray-200 mb-4 mx-4 sm:mx-0 overflow-hidden mt-2">
             <div class="w-full bg-gray-100 h-2"><div id="progressBar" class="bg-gradient-to-l from-emerald-400 to-emerald-600 h-2 progress-bar" style="width: 0%"></div></div>
             <div class="flex justify-between items-center px-4 sm:px-6 py-2.5 text-xs font-bold text-gray-500">
@@ -252,6 +302,11 @@
 
         <form id="registrationForm" class="space-y-3 px-2 sm:px-4" onsubmit="return false;">
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 15: نموذج التسجيل - الخطوة 1: البيانات الأساسية 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="step-1-card">
                 <div class="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(1)">
                     <div class="flex items-center gap-3"><span id="step-1-badge" class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors">1</span><h2 class="text-sm font-bold text-gray-800">البيانات الأساسية</h2></div>
@@ -286,6 +341,11 @@
                 </div>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 16: نموذج التسجيل - الخطوة 2: الجنسية والأصول 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-2-card">
                 <div class="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(2)">
                     <div class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors" id="step-2-badge">2</span><h2 class="text-sm font-bold text-gray-800">الجنسية، الإقامة والأصول</h2></div>
@@ -312,6 +372,12 @@
                                 <div id="familyNameDiv" class="hidden"><label id="familyLabel" class="block text-[11px] font-semibold text-gray-700 mb-1">اسم العائلة</label><input type="text" id="familyName" class="w-full p-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs" placeholder="اكتب اسم العائلة..."></div>
                             </div>
                         </div>
+
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 17: نموذج التسجيل - الخطوة 2: الإقامة الحالية 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
                         <div>
                             <label class="block text-[11px] font-semibold text-gray-700 mb-1">أين تقع أصول العائلة أو القبيلة؟ <span class="text-red-500">*</span></label>
                             <div class="group-pill shadow-sm mb-2.5" id="originLocationGroupWrapper">
@@ -339,6 +405,11 @@
                 </div>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 18: نموذج التسجيل - الخطوة 3: الحالة الاجتماعية ونوع الزواج 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-3-card">
                 <div class="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(3)">
                     <div class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-3-badge">3</span><h2 class="text-sm font-bold text-gray-800">الحالة الاجتماعية ونوع الزواج</h2></div>
@@ -366,6 +437,11 @@
                 </div>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 19: نموذج التسجيل - الخطوة 4: تاريخ الميلاد والمواصفات 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-4-card">
                 <div class="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(4)">
                     <div class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-4-badge">4</span><h2 class="text-sm font-bold text-gray-800">المواصفات وتاريخ الميلاد</h2></div>
@@ -403,6 +479,11 @@
                 </div>
             </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 20: نموذج التسجيل - الخطوة 5: التعليم والوظيفة والدخل 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden locked-step transition-opacity duration-300" id="step-5-card">
                 <div class="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-gray-100" onclick="toggleAccordion(5)">
                     <div class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs" id="step-5-badge">5</span><h2 class="text-sm font-bold text-gray-800">المؤهلات والاعتماد</h2></div>
@@ -413,10 +494,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
                                 <label class="block text-[11px] font-semibold text-gray-700 mb-1">التعليم <span class="text-red-500">*</span></label>
-                                <select id="education" required class="api-dynamic-select w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- اختر --</option></select>
-                                <div class="dynamic-other-input" id="education_other_wrapper">
-                                    <input type="text" id="customEducation" class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs bg-gray-50" placeholder="اكتب المؤهل هنا...">
-                                </div>
+                                <select id="education" required class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- اختر --</option></select>
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-gray-700 mb-1">الوظيفة <span class="text-red-500">*</span></label>
@@ -427,12 +505,17 @@
                             </div>
                             <div id="incomeDiv" class="hidden fade-in"><label class="block text-[11px] font-semibold text-gray-700 mb-1">الدخل الشهري <span class="text-red-500">*</span></label><select id="monthlyIncome" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- حدد النطاق --</option><option value="ثري جدا (50,000 ريال فأكثر)">ثري جدا (50,000 ريال فأكثر)</option><option value="دخل عالي (30,000 ريال فأكثر)">دخل عالي (30,000 ريال فأكثر)</option><option value="متوسط مرتفع (15,000 إلى 30,000 ريال)">متوسط مرتفع (15,000 إلى 30,000 ريال)</option><option value="متوسط (10,000 إلى 15,000 ريال)">متوسط (10,000 إلى 15,000 ريال)</option><option value="دخل محدود (4,000 إلى 10,000 ريال)">دخل محدود (4,000 إلى 10,000 ريال)</option><option value="دخل ضعيف ( أقل من 5,000 ريال)">دخل ضعيف ( أقل من 5,000 ريال)</option><option value="لا يوجد دخل">لا يوجد دخل</option></select></div>
                         </div>
+
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 21: نموذج التسجيل - الخطوة 5: المعلومات الإضافية والشروط 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div><label class="block text-[11px] font-semibold text-gray-700 mb-1">رقم التوثيق</label><input type="tel" id="finalPhoneDisplay" readonly class="w-full p-2.5 border border-gray-200 bg-gray-100 rounded-xl text-left font-mono font-bold text-gray-600 cursor-not-allowed text-xs transition-all" dir="ltr"></div>
                             <div><label class="block text-[11px] font-semibold text-gray-700 mb-1">معلومات سرية (للإدارة فقط)</label><textarea id="specialInfo" rows="1" class="w-full p-2.5 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 resize-none text-xs" placeholder="ظروف عائلية أو صحية خاصة..."></textarea></div>
                         </div>
                         
-                        <!-- صندوق: معلومات إضافية -->
                         <div class="bg-blue-50/50 border border-blue-100 p-3 rounded-xl">
                             <label class="block text-[11px] font-semibold text-blue-900 mb-1.5">معلومات إضافية عني <span class="text-[9px] font-normal text-blue-600">(خيارات سريعة)</span></label>
                             <div id="myTagsContainer" class="flex flex-wrap gap-1 mb-2"></div>
@@ -442,7 +525,6 @@
                             </div>
                         </div>
 
-                        <!-- صندوق: شروط الشريك -->
                         <div class="bg-indigo-50/50 border border-indigo-100 p-3 rounded-xl">
                             <label class="block text-[11px] font-semibold text-indigo-900 mb-1.5">شروط الشريك المطلوب <span class="text-red-500">*</span></label>
                             <div id="partnerTagsContainer" class="flex flex-wrap gap-1 mb-2"></div>
@@ -475,7 +557,11 @@
         </form>
     </div>
 
-    <!-- ==🟥🟥🟥== القسم 6: النوافذ المنبثقة (Modals) =================== -->
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 22: النوافذ المنبثقة - الشروط والاعتماد 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="termsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
@@ -508,6 +594,11 @@
         </div>
     </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 23: النوافذ المنبثقة - خيارات النشر والنسخ 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="shareCopyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[140] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl text-center relative">
             <button type="button" onclick="closeShareCopyModal()" class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-600">
@@ -540,6 +631,11 @@
         </div>
     </div>
 
+<!-- 
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥 القسم 24: النوافذ المنبثقة - تأكيد الحفظ والرسائل التنبيهية 🟥🟥🟥🟥🟥
+🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+-->
     <div id="finalActionModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[130] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-hidden border border-emerald-100">
             <div class="w-14 h-14 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
@@ -581,7 +677,11 @@
     </div>
 
     <script>
-        // =================== القسم 7: المتغيرات العامة ودوال الواجهة (JS Globals & UI) =================== 
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 25: جافاسكريبت - المتغيرات العامة ودوال التوجيه 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
         
         let isAdminMode = false;
@@ -589,26 +689,14 @@
         let adminToken = "";
         let pendingActionType = ""; 
 
-        // دوال التنقل للمفضلة والمراسلات
         function goToRequests() {
-            if (window.self !== window.top) {
-                window.top.postMessage({ action: 'navigate', url: 'activity.html?tab=requests' }, '*');
-            } else {
-                window.location.href = 'activity.html?tab=requests';
-            }
+            if (window.self !== window.top) { window.top.postMessage({ action: 'navigate', url: 'activity.html?tab=requests' }, '*'); } 
+            else { window.location.href = 'activity.html?tab=requests'; }
         }
 
         function goToFavorites() {
-            if (window.self !== window.top) {
-                window.top.postMessage({ action: 'navigate', url: 'activity.html?tab=favorites' }, '*');
-            } else {
-                window.location.href = 'activity.html?tab=favorites';
-            }
-        }
-
-        function closeFinalActionModal() {
-            const modal = document.getElementById('finalActionModal');
-            if(modal) modal.classList.add('hidden');
+            if (window.self !== window.top) { window.top.postMessage({ action: 'navigate', url: 'activity.html?tab=favorites' }, '*'); } 
+            else { window.location.href = 'activity.html?tab=favorites'; }
         }
 
         let verifiedFullPhone = "";
@@ -622,6 +710,371 @@
         let cachedProfiles = [];
         let registeredUserData = {};
 
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 26: جافاسكريبت - دوال الواجهة وشريط التقدم الذكي 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('registrationForm');
+            if(form) {
+                form.addEventListener('input', handleFormInteraction);
+                form.addEventListener('change', handleFormInteraction);
+                
+                document.querySelectorAll('.api-dynamic-select').forEach(select => {
+                    select.addEventListener('change', handleDynamicOther);
+                });
+            }
+            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+        });
+
+        function handleFormInteraction(e) {
+            if(e.target.hasAttribute('required') || e.target.classList.contains('conditional-required')) {
+                validateSingleField(e.target);
+            }
+            updateSmartProgressBar();
+            if(typeof saveDraft === 'function') saveDraft();
+        }
+
+        function updateCharCount(inputId, counterId) {
+            const input = document.getElementById(inputId); const counter = document.getElementById(counterId);
+            if (!input || !counter) return;
+            const maxLength = parseInt(input.getAttribute('maxlength')) || 120;
+            const remaining = maxLength - input.value.length;
+            counter.innerText = remaining;
+            if (remaining <= 15) { counter.className = "text-red-500 font-bold animate-pulse"; } 
+            else { counter.className = inputId === 'additionalInfo' ? "text-blue-600 font-bold transition-colors" : "text-indigo-600 font-bold transition-colors"; }
+        }
+
+        function validateSingleField(field) {
+            if(field.type === 'radio' || field.type === 'checkbox') {
+                const group = document.getElementById(field.name + 'GroupWrapper');
+                if(group && document.querySelector(`input[name="${field.name}"]:checked`)) group.classList.remove('error-field');
+            } else {
+                if(field.value.trim() !== '') { field.classList.remove('error-field'); field.classList.add('success-field'); } 
+                else { field.classList.remove('success-field'); }
+            }
+        }
+
+        function updateSmartProgressBar() {
+            const form = document.getElementById('registrationForm'); if(!form) return;
+            const requiredElements = Array.from(form.querySelectorAll('[required], .conditional-required')).filter(el => el.offsetParent !== null && !el.closest('.hidden'));
+            const uniqueRadioGroups = new Set(); let totalRequired = 0; let filledRequired = 0;
+
+            requiredElements.forEach(el => {
+                if (el.type === 'radio') {
+                    if (!uniqueRadioGroups.has(el.name)) {
+                        uniqueRadioGroups.add(el.name); totalRequired++;
+                        if (document.querySelector(`input[name="${el.name}"]:checked`)) filledRequired++;
+                    }
+                } else { totalRequired++; if (el.value.trim() !== '') filledRequired++; }
+            });
+
+            const percentage = totalRequired === 0 ? 0 : Math.round((filledRequired / totalRequired) * 100);
+            const pb = document.getElementById('progressBar'); const pt = document.getElementById('progressText');
+            if (pb) pb.style.width = `${percentage}%`; if (pt) pt.innerText = `نسبة الإنجاز: ${percentage}%`;
+            
+            if(percentage === 100 && pb) { pb.classList.replace('from-emerald-400', 'from-green-500'); pb.classList.replace('to-emerald-600', 'to-green-600'); } 
+            else if (pb) { pb.classList.replace('from-green-500', 'from-emerald-400'); pb.classList.replace('to-green-600', 'to-emerald-600'); }
+        }
+
+        function validateStep(stepNum) {
+            const stepContent = document.getElementById(`step-${stepNum}-content`); if(!stepContent) return { isValid: true };
+            let isValid = true; 
+            const requiredElements = Array.from(stepContent.querySelectorAll('[required], .conditional-required')).filter(el => !el.closest('.hidden') && el.offsetParent !== null);
+            stepContent.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
+
+            const radioGroups = new Set();
+            requiredElements.forEach(el => {
+                if(el.type === 'radio') { radioGroups.add(el.name); } 
+                else if(el.value.trim() === '') { isValid = false; el.classList.add('error-field', 'animate-bounce'); setTimeout(() => el.classList.remove('animate-bounce'), 500); }
+            });
+
+            radioGroups.forEach(name => {
+                if(!document.querySelector(`input[name="${name}"]:checked`)) { isValid = false; const groupContainer = document.getElementById(name + 'GroupWrapper'); if(groupContainer) groupContainer.classList.add('error-field'); }
+            });
+            return { isValid };
+        }
+
+        function toggleAccordion(targetStep) {
+            for(let i = 1; i < targetStep; i++) {
+                const validation = validateStep(i);
+                if(!validation.isValid) { markStepAsError(i); openSpecificStep(i); return; } 
+                else { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
+            }
+            openSpecificStep(targetStep);
+        }
+
+        function openSpecificStep(stepNumber) {
+            for(let i=1; i<=5; i++) { 
+                const ct = document.getElementById(`step-${i}-content`); if(ct) ct.classList.remove('open'); 
+                const ic = document.getElementById(`step-${i}-icon`); if(ic) { const sv = ic.querySelector('svg'); if(sv) sv.classList.remove('rotate-180'); }
+            }
+            const tgtCt = document.getElementById(`step-${stepNumber}-content`); if(tgtCt) tgtCt.classList.add('open'); 
+            const tgtIc = document.getElementById(`step-${stepNumber}-icon`); if(tgtIc) { const svg = tgtIc.querySelector('svg'); if(svg) svg.classList.add('rotate-180'); }
+        }
+
+        function nextStep(currentStep) {
+            const validation = validateStep(currentStep);
+            if(validation.isValid) {
+                let badge = document.getElementById(`step-${currentStep}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
+                if(currentStep < 5) { const nextCard = document.getElementById(`step-${currentStep + 1}-card`); if(nextCard) { nextCard.classList.remove('locked-step', 'opacity-50'); openSpecificStep(currentStep + 1); setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
+            } else { 
+                markStepAsError(currentStep); 
+                const stepContent = document.getElementById(`step-${currentStep}-content`); let errDiv = stepContent.querySelector('.step-error-msg');
+                if(!errDiv) { errDiv = document.createElement('div'); errDiv.className = 'step-error-msg text-[10px] text-red-500 font-bold mt-2 text-center animate-pulse'; stepContent.querySelector('.accordion-inner').appendChild(errDiv); }
+                errDiv.innerText = "يرجى تعبئة جميع الحقول المحددة باللون الأحمر للمتابعة."; setTimeout(() => { if(errDiv) errDiv.remove(); }, 3000);
+            }
+        }
+
+        function markStepAsError(stepNum) { let badge = document.getElementById(`step-${stepNum}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs animate-pulse"; badge.innerHTML = "!"; } }
+
+        function setVal(id, val) { 
+            const el = document.getElementById(id); 
+            if(el) { 
+                if (el.tagName === 'SELECT' && val) {
+                    let optExists = Array.from(el.options).some(opt => opt.value === val || opt.text.trim() === val.trim());
+                    if(!optExists) { el.add(new Option(val + ' (مُدخل)', val)); }
+                }
+                el.value = val; el.dispatchEvent(new Event('change')); clearLiveError(el);
+            } 
+        }
+        
+        function checkRad(name, val) { 
+            let el = document.querySelector(`input[name="${name}"][value="${val}"]`); 
+            if(el) { el.checked = true; el.dispatchEvent(new Event('change')); if(name === 'skinColor') { const sc = document.getElementById('skinColorGroup'); if(sc) sc.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); } } 
+        }
+
+        function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-red-500', 'bg-red-50'); }
+        
+        function clearLiveErrorGroup(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            if(wrapper) { wrapper.querySelectorAll('input[type="radio"]').forEach(inp => { const label = wrapper.querySelector(`label[for="${inp.id}"]`); if(label) label.classList.remove('border-red-500', 'bg-red-50'); }); }
+        }
+
+        function clearAllValidationErrors() {
+            document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
+            const skinGroup = document.getElementById('skinColorGroup'); if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
+            ['originLocationGroupWrapper', 'residenceLocGroupWrapper'].forEach(clearLiveErrorGroup);
+            for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
+        }
+
+        function toggleBio(event) {
+            if(event) event.stopPropagation();
+            const bioDiv = document.getElementById('bioContentDiv'); const bioIcon = document.getElementById('bioIcon');
+            if (bioDiv) { bioDiv.classList.toggle('hidden'); if (bioIcon) bioIcon.classList.toggle('rotate-180'); }
+        }
+
+        function closeBioSmoothly() {
+            const bioDiv = document.getElementById('bioContentDiv'); const bioIcon = document.getElementById('bioIcon');
+            if (bioDiv && !bioDiv.classList.contains('hidden')) { bioDiv.classList.add('hidden'); if(bioIcon) bioIcon.classList.remove('rotate-180'); }
+        }
+
+        function saveDraft() {
+            if (!verifiedFullPhone || isAdminMode) return;
+            const fnEl = document.getElementById('firstName'); const rEl = document.getElementById('relation'); const nEl = document.getElementById('nationality');
+            const ksEl = document.getElementById('ksaCity'); const wcEl = document.getElementById('worldCountry'); const msEl = document.getElementById('maritalStatus');
+            const hEl = document.getElementById('height'); const wtEl = document.getElementById('weight'); const edEl = document.getElementById('education'); const jbEl = document.getElementById('jobStatus');
+            
+            const draftData = {
+                firstName: fnEl ? fnEl.value : '', relation: rEl ? rEl.value : '', gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: nEl ? nEl.value : '',
+                residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: ksEl ? ksEl.value : '', worldCountry: wcEl ? wcEl.value : '',
+                maritalStatus: msEl ? msEl.value : '', height: hEl ? hEl.value : '', weight: wtEl ? wtEl.value : '', education: edEl ? edEl.value : '', jobStatus: jbEl ? jbEl.value : ''
+            };
+            localStorage.setItem(`draft_${verifiedFullPhone}`, JSON.stringify(draftData));
+            const indicator = document.getElementById('draftIndicator'); if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
+        }
+
+        function checkAndRestoreDraft() {
+            if (!verifiedFullPhone || isAdminMode) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
+            if (draft) {
+                showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
+                    const data = JSON.parse(draft);
+                    if(data.gender) {
+                        checkRad('gender', data.gender);
+                        setTimeout(() => {
+                            if(data.firstName) setVal('firstName', data.firstName); if(data.relation) setVal('relation', data.relation); if(data.nationality) setVal('nationality', data.nationality); if(data.residenceLoc) checkRad('residenceLoc', data.residenceLoc);
+                            if(data.ksaCity) setVal('ksaCity', data.ksaCity); if(data.worldCountry) setVal('worldCountry', data.worldCountry); if(data.maritalStatus) setVal('maritalStatus', data.maritalStatus);
+                            if(data.height) setVal('height', data.height); if(data.weight) setVal('weight', data.weight); if(data.education) setVal('education', data.education); if(data.jobStatus) setVal('jobStatus', data.jobStatus);
+                            showMsgModal("نجاح", "تمت استعادة البيانات المحفوظة.");
+                        }, 500);
+                    }
+                }, () => { localStorage.removeItem(`draft_${verifiedFullPhone}`); });
+            }
+        }
+
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 27: جافاسكريبت - دوال تسجيل الدخول والـ OTP 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
+        window.onload = () => { 
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'admin_edit' && urlParams.get('targetPhone')) {
+                adminToken = localStorage.getItem('adminToken');
+                if (adminToken) {
+                    isAdminMode = true; adminTargetPhone = urlParams.get('targetPhone'); verifiedFullPhone = adminTargetPhone; 
+                    const otpSec = document.getElementById('otpSection'); if(otpSec) otpSec.classList.add('hidden');
+                    const admBan = document.getElementById('adminBanner'); if(admBan) { admBan.classList.remove('hidden'); admBan.classList.add('flex'); }
+                    const admPhone = document.getElementById('adminBannerPhone'); if(admPhone) admPhone.innerText = adminTargetPhone;
+                    
+                    const phoneInput = document.getElementById('finalPhoneDisplay');
+                    if(phoneInput) {
+                        phoneInput.removeAttribute('readonly'); phoneInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                        phoneInput.classList.add('bg-orange-50', 'border-orange-300', 'text-orange-800', 'focus:ring-2', 'focus:ring-orange-500');
+                        phoneInput.parentElement.querySelector('label').innerHTML += ' <span class="text-orange-600 text-[10px] bg-orange-100 px-1 rounded inline-block mr-1">(قابل للتعديل)</span>';
+                    }
+
+                    document.querySelectorAll('button[onclick="logout()"]').forEach(btn => {
+                        btn.setAttribute('onclick', 'exitAdminMode()'); btn.title = "العودة للوحة الإدارة";
+                        btn.classList.replace('text-gray-500', 'text-orange-600'); btn.classList.replace('hover:text-red-500', 'hover:text-orange-800');
+                        if(btn.innerText.includes('خروج')) btn.innerHTML = btn.innerHTML.replace('خروج', 'إنهاء التعديل');
+                    });
+                    
+                    buildDobDropdowns(); dynamicDropdowns = fallbackDropdowns; populateSharedDropdowns(); fetchDropdownData(); loadDashboard();
+                    return; 
+                } else { showMsgModal("مرفوض", "لا يوجد تصريح دخول إداري في هذا المتصفح."); }
+            }
+
+            buildDobDropdowns(); dynamicDropdowns = fallbackDropdowns; populateSharedDropdowns(); fetchDropdownData(); 
+
+            const preVerifiedPhone = localStorage.getItem('verified_user_phone');
+            if (preVerifiedPhone) {
+                verifiedFullPhone = preVerifiedPhone;
+                const otpSec = document.getElementById('otpSection'); if(otpSec) otpSec.classList.add('hidden');
+                loadDashboard();
+            }
+        };
+
+        function exitAdminMode() { window.location.href = 'admin.html'; }
+
+        function showMsgModal(title, text) { 
+            const tEl = document.getElementById('msgModalTitle'); const xEl = document.getElementById('msgModalText'); const mEl = document.getElementById('msgModal');
+            if(tEl) tEl.innerText = title; if(xEl) xEl.innerText = text; if(mEl) mEl.classList.remove('hidden'); 
+        }
+
+        function closeModal() { const mEl = document.getElementById('msgModal'); if(mEl) mEl.classList.add('hidden'); }
+
+        function showConfirmModal(text, onYes, onNo) {
+            const tEl = document.getElementById('confirmModalTitle'); const xEl = document.getElementById('confirmModalText'); const iW = document.getElementById('confirmModalIconWrapper'); const iE = document.getElementById('confirmModalIcon'); const yBtn = document.getElementById('confirmYesBtn'); const mEl = document.getElementById('confirmModal');
+            if(tEl) tEl.innerText = "تأكيد الإجراء"; if(xEl) xEl.innerText = text;
+            if(iW) iW.className = "w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-2.5";
+            if(iE) iE.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>`;
+            if(yBtn) {
+                yBtn.innerText = "نعم، متأكد"; yBtn.disabled = false; yBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 rounded-xl transition-colors text-xs";
+                const newYes = yBtn.cloneNode(true); yBtn.parentNode.replaceChild(newYes, yBtn);
+                newYes.addEventListener('click', async () => { newYes.innerText = "جاري المعالجة..."; newYes.disabled = true; try { if(onYes) await onYes(); } catch(err) { console.error(err); } finally { closeConfirmModal(); } });
+            }
+            if(mEl) mEl.classList.remove('hidden'); 
+        }
+
+        function closeConfirmModal() { const modal = document.getElementById('confirmModal'); if (modal) modal.classList.add('hidden'); const yesBtn = document.getElementById('confirmYesBtn'); if (yesBtn) { yesBtn.innerText = "نعم، متأكد"; yesBtn.disabled = false; } }
+
+        function logout() {
+            if(isAdminMode) { exitAdminMode(); return; }
+            localStorage.removeItem('verified_user_phone'); localStorage.removeItem('verified_user_name'); localStorage.removeItem('verified_user_gender'); localStorage.removeItem('active_profile_refid'); localStorage.removeItem('active_profile_index');
+            verifiedFullPhone = "";
+            const dash = document.getElementById('dashboardSection'); if(dash) dash.classList.add('hidden');
+            const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
+            
+            const o1 = document.getElementById('otpStep1'); if(o1) o1.classList.remove('hidden');
+            const o2 = document.getElementById('otpStep2'); if(o2) o2.classList.add('hidden');
+            const oi = document.getElementById('otpPhoneInput'); if(oi) oi.value = '';
+            ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
+            
+            const pe = document.getElementById('otpPhoneError'); if(pe) pe.classList.add('hidden');
+            const ce = document.getElementById('otpCodeError'); if(ce) ce.classList.add('hidden');
+
+            const os = document.getElementById('otpSection'); if(os) os.classList.remove('hidden');
+            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+        }
+
+        async function sendWhatsAppCode() {
+            const phoneEl = document.getElementById('otpPhoneInput'); const codeEl = document.getElementById('otpCountryCode'); const errEl = document.getElementById('otpPhoneError');
+            if(!phoneEl || !codeEl || !errEl) return;
+            const phone = phoneEl.value.trim(); const code = codeEl.value; 
+
+            if(!phone || phone.length < 6 || isNaN(phone)) { errEl.classList.remove('hidden'); return; }
+            errEl.classList.add('hidden'); let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone; verifiedFullPhone = code + cleanPhone;
+            
+            if (cleanPhone === '566956901') {
+                const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
+                localStorage.setItem('verified_user_phone', verifiedFullPhone);
+                await loadDashboard();
+                if (cachedProfiles && cachedProfiles.length > 0) {
+                    if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authSuccess' }, '*');
+                } else {
+                    if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'profileSwitched' }, '*');
+                }
+                return;
+            }
+
+            const btn = document.getElementById('btnSendCode'); if(!btn) return;
+            const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
+                clearTimeout(timeoutId); const text = await res.text();
+                try {
+                    const result = JSON.parse(text);
+                    if (result.success) { const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); startOtpCountdown(); } 
+                    else showMsgModal("خطأ", result.message);
+                } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
+            } catch (e) {
+                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت."); 
+            } finally { btn.innerHTML = originalText; btn.disabled = false; }
+        }
+
+        function startOtpCountdown() {
+            let timer = 180; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); 
+            if(!countEl || !resendBtn) return;
+            resendBtn.classList.add('hidden');
+            const interval = setInterval(() => { timer--; countEl.innerText = timer; if(timer <= 0) { clearInterval(interval); resendBtn.classList.remove('hidden'); } }, 1000);
+        }
+
+        function moveOtpFocus(curr, nextId) { if(curr.value.length >= 1 && nextId) { const nx = document.getElementById(nextId); if(nx) nx.focus(); } }
+        function handleOtpBackspace(event, curr, prevId) { if (event.key === 'Backspace' && curr.value === '' && prevId) { const pr = document.getElementById(prevId); if(pr) pr.focus(); } }
+
+        async function verifyWhatsAppCode() {
+            const o1=document.getElementById('otp1'); const o2=document.getElementById('otp2'); const o3=document.getElementById('otp3'); const o4=document.getElementById('otp4');
+            if(!o1 || !o2 || !o3 || !o4) return;
+            const c = o1.value + o2.value + o3.value + o4.value;
+            const err = document.getElementById('otpCodeError'); if(!err) return;
+            if(c.length !== 4) { err.innerText = "الرجاء إدخال الرمز كاملاً."; err.classList.remove('hidden'); return; }
+
+            const btn = document.getElementById('btnVerifyCode'); if(!btn) return;
+            const originalText = btn.innerHTML; btn.innerHTML = "جاري التحقق..."; btn.disabled = true;
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "verifyOtp", phone: verifiedFullPhone, code: c }), signal: controller.signal });
+                clearTimeout(timeoutId); const text = await res.text();
+                try {
+                    const result = JSON.parse(text);
+                    if(result.success) {
+                        err.classList.add('hidden'); const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
+                        localStorage.setItem('verified_user_phone', verifiedFullPhone);
+                        await loadDashboard(); 
+                        if (cachedProfiles && cachedProfiles.length > 0) {
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authSuccess' }, '*');
+                        } else {
+                            if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'profileSwitched' }, '*');
+                        }
+                    } else { err.innerText = result.message || "الكود غير صحيح."; err.classList.remove('hidden'); }
+                } catch(e) { err.innerText="السيرفر يرسل بيانات خاطئة."; err.classList.remove('hidden'); }
+            } catch(e) { 
+                if(e.name === 'AbortError') { err.innerText="تأخر استجابة السيرفر بسبب الزحام."; err.classList.remove('hidden'); }
+                else { err.innerText="حدث خطأ بالاتصال."; err.classList.remove('hidden'); }
+            } finally { btn.innerHTML = originalText; btn.disabled = false; }
+        }
+
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 28: جافاسكريبت - تهيئة القوائم المنسدلة وخيار "أخرى" 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
         const fallbackDropdowns = {
             residenceCountries: ["السعودية", "الإمارات", "الكويت", "قطر", "البحرين", "عمان", "اليمن", "مصر", "الأردن", "سوريا", "لبنان", "فلسطين", "العراق", "السودان", "المغرب", "الجزائر", "تونس", "ليبيا", "تركيا", "باكستان", "الهند", "إندونيسيا", "ماليزيا", "الفلبين", "أمريكا", "أوروبا"],
             regionsData: {
@@ -677,433 +1130,6 @@
 
         function cleanArabicText(text) { if(!text) return ""; return text.replace(/[a-zA-Z]+/g, '').trim(); }
 
-        function updateCharCount(inputId, counterId) {
-            const input = document.getElementById(inputId);
-            const counter = document.getElementById(counterId);
-            if (!input || !counter) return;
-
-            const maxLength = parseInt(input.getAttribute('maxlength')) || 120;
-            const currentLength = input.value.length;
-            const remaining = maxLength - currentLength;
-
-            counter.innerText = remaining;
-
-            if (remaining <= 15) {
-                counter.className = "text-red-500 font-bold animate-pulse";
-            } else {
-                if(inputId === 'additionalInfo') {
-                    counter.className = "text-blue-600 font-bold transition-colors";
-                } else {
-                    counter.className = "text-indigo-600 font-bold transition-colors";
-                }
-            }
-        }
-
-        function setVal(id, val) { 
-            const el = document.getElementById(id); 
-            if(el) { 
-                if (el.tagName === 'SELECT' && val) {
-                    let optExists = Array.from(el.options).some(opt => opt.value === val || opt.text.trim() === val.trim());
-                    if(!optExists) { const newOpt = new Option(val + ' (مُدخل)', val); el.add(newOpt); }
-                }
-                el.value = val; el.dispatchEvent(new Event('change')); 
-                if(typeof clearLiveError === 'function') clearLiveError(el);
-            } 
-        }
-        
-        function checkRad(name, val) { 
-            let el = document.querySelector(`input[name="${name}"][value="${val}"]`); 
-            if(el) { 
-                el.checked = true; 
-                el.dispatchEvent(new Event('change')); 
-                if(name === 'skinColor') { 
-                    const sc = document.getElementById('skinColorGroup'); 
-                    if(sc) sc.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); 
-                } 
-            } 
-        }
-
-        function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-red-500', 'bg-red-50'); }
-        
-        function clearLiveErrorGroup(wrapperId) {
-            const wrapper = document.getElementById(wrapperId);
-            if(wrapper) {
-                const inputs = wrapper.querySelectorAll('input[type="radio"]');
-                inputs.forEach(inp => { 
-                    const label = wrapper.querySelector(`label[for="${inp.id}"]`); 
-                    if(label) label.classList.remove('border-red-500', 'bg-red-50'); 
-                });
-            }
-        }
-
-        function clearAllValidationErrors() {
-            document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
-            const skinGroup = document.getElementById('skinColorGroup');
-            if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
-            ['originLocationGroupWrapper', 'residenceLocGroupWrapper'].forEach(clearLiveErrorGroup);
-            for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
-        }
-
-        function toggleBio(event) {
-            if(event) event.stopPropagation();
-            const bioDiv = document.getElementById('bioContentDiv');
-            const bioIcon = document.getElementById('bioIcon');
-            if (bioDiv) {
-                bioDiv.classList.toggle('hidden');
-                if (bioIcon) bioIcon.classList.toggle('rotate-180');
-            }
-        }
-
-        function closeBioSmoothly() {
-            const bioDiv = document.getElementById('bioContentDiv');
-            const bioIcon = document.getElementById('bioIcon');
-            if (bioDiv && !bioDiv.classList.contains('hidden')) {
-                bioDiv.classList.add('hidden');
-                if(bioIcon) bioIcon.classList.remove('rotate-180');
-            }
-        }
-
-        document.addEventListener('click', function(event) {
-            const bioDiv = document.getElementById('bioContentDiv');
-            const toggleBtn = document.getElementById('bioContentDiv')?.previousElementSibling; 
-            if (bioDiv && !bioDiv.classList.contains('hidden')) {
-                if (!bioDiv.contains(event.target) && (!toggleBtn || !toggleBtn.contains(event.target))) {
-                    closeBioSmoothly();
-                }
-            }
-        });
-
-        // نظام التحقق الفوري الذكي وتحديث شريط التقدم 
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('registrationForm');
-            if(form) {
-                form.addEventListener('input', handleFormInteraction);
-                form.addEventListener('change', handleFormInteraction);
-                
-                document.querySelectorAll('.api-dynamic-select').forEach(select => {
-                    select.addEventListener('change', handleDynamicOther);
-                });
-            }
-            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
-        });
-
-        function handleFormInteraction(e) {
-            if(e.target.hasAttribute('required') || e.target.classList.contains('conditional-required')) {
-                validateSingleField(e.target);
-            }
-            updateSmartProgressBar();
-            if(typeof saveDraft === 'function') saveDraft();
-        }
-
-        function validateSingleField(field) {
-            if(field.type === 'radio' || field.type === 'checkbox') {
-                const group = document.getElementById(field.name + 'GroupWrapper');
-                if(group) {
-                    if(document.querySelector(`input[name="${field.name}"]:checked`)) {
-                        group.classList.remove('error-field');
-                    }
-                }
-            } else {
-                if(field.value.trim() !== '') {
-                    field.classList.remove('error-field');
-                    field.classList.add('success-field');
-                } else {
-                    field.classList.remove('success-field');
-                }
-            }
-        }
-
-        function updateSmartProgressBar() {
-            const form = document.getElementById('registrationForm');
-            if(!form) return;
-
-            const requiredElements = Array.from(form.querySelectorAll('[required], .conditional-required')).filter(el => {
-                return el.offsetParent !== null && !el.closest('.hidden');
-            });
-
-            const uniqueRadioGroups = new Set();
-            let totalRequired = 0;
-            let filledRequired = 0;
-
-            requiredElements.forEach(el => {
-                if (el.type === 'radio') {
-                    if (!uniqueRadioGroups.has(el.name)) {
-                        uniqueRadioGroups.add(el.name);
-                        totalRequired++;
-                        if (document.querySelector(`input[name="${el.name}"]:checked`)) filledRequired++;
-                    }
-                } else {
-                    totalRequired++;
-                    if (el.value.trim() !== '') filledRequired++;
-                }
-            });
-
-            const percentage = totalRequired === 0 ? 0 : Math.round((filledRequired / totalRequired) * 100);
-            const pb = document.getElementById('progressBar'); 
-            const pt = document.getElementById('progressText');
-            
-            if (pb) pb.style.width = `${percentage}%`;
-            if (pt) pt.innerText = `نسبة الإنجاز: ${percentage}%`;
-            
-            if(percentage === 100 && pb) {
-                pb.classList.remove('from-emerald-400', 'to-emerald-600');
-                pb.classList.add('from-green-500', 'to-green-600');
-            } else if (pb) {
-                pb.classList.add('from-emerald-400', 'to-emerald-600');
-                pb.classList.remove('from-green-500', 'to-green-600');
-            }
-        }
-
-        function showMsgModal(title, text) { 
-            const tEl = document.getElementById('msgModalTitle');
-            const xEl = document.getElementById('msgModalText');
-            const mEl = document.getElementById('msgModal');
-            if(tEl) tEl.innerText = title; 
-            if(xEl) xEl.innerText = text; 
-            if(mEl) mEl.classList.remove('hidden'); 
-        }
-
-        function closeModal() { 
-            const mEl = document.getElementById('msgModal');
-            if(mEl) mEl.classList.add('hidden'); 
-        }
-
-        function showConfirmModal(text, onYes, onNo) {
-            const tEl = document.getElementById('confirmModalTitle');
-            const xEl = document.getElementById('confirmModalText');
-            const iW = document.getElementById('confirmModalIconWrapper');
-            const iE = document.getElementById('confirmModalIcon');
-            const yBtn = document.getElementById('confirmYesBtn');
-            const mEl = document.getElementById('confirmModal');
-
-            if(tEl) tEl.innerText = "تأكيد الإجراء"; 
-            if(xEl) xEl.innerText = text;
-            
-            if(iW) iW.className = "w-10 h-10 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-2.5";
-            if(iE) iE.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>`;
-
-            if(yBtn) {
-                yBtn.innerText = "نعم، متأكد";
-                yBtn.disabled = false;
-                yBtn.className = "flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-1.5 rounded-xl transition-colors text-xs";
-                
-                const newYes = yBtn.cloneNode(true); 
-                yBtn.parentNode.replaceChild(newYes, yBtn);
-                newYes.addEventListener('click', async () => { 
-                    newYes.innerText = "جاري المعالجة..."; newYes.disabled = true;
-                    try {
-                        if(onYes) await onYes(); 
-                    } catch(err) {
-                        console.error("Error during confirm action:", err);
-                    } finally {
-                        closeConfirmModal(); 
-                    }
-                });
-            }
-            if(mEl) mEl.classList.remove('hidden'); 
-        }
-
-        function closeConfirmModal() { 
-            const modal = document.getElementById('confirmModal');
-            if (modal) modal.classList.add('hidden'); 
-            
-            const yesBtn = document.getElementById('confirmYesBtn');
-            if (yesBtn) {
-                yesBtn.innerText = "نعم، متأكد";
-                yesBtn.disabled = false;
-            }
-        }
-
-        function exitAdminMode() {
-            window.location.href = 'admin.html';
-        }
-
-        // =================== القسم 8: دوال تسجيل الدخول والـ (JS OTP & Auth) ===================
-        window.onload = () => { 
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'admin_edit' && urlParams.get('targetPhone')) {
-                adminToken = localStorage.getItem('adminToken');
-                if (adminToken) {
-                    isAdminMode = true;
-                    adminTargetPhone = urlParams.get('targetPhone');
-                    verifiedFullPhone = adminTargetPhone; 
-                    
-                    const otpSec = document.getElementById('otpSection'); if(otpSec) otpSec.classList.add('hidden');
-                    
-                    const admBan = document.getElementById('adminBanner'); 
-                    if(admBan) {
-                        admBan.classList.remove('hidden');
-                        admBan.classList.add('flex');
-                    }
-                    const admPhone = document.getElementById('adminBannerPhone');
-                    if(admPhone) admPhone.innerText = adminTargetPhone;
-                    
-                    const phoneInput = document.getElementById('finalPhoneDisplay');
-                    if(phoneInput) {
-                        phoneInput.removeAttribute('readonly');
-                        phoneInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
-                        phoneInput.classList.add('bg-orange-50', 'border-orange-300', 'text-orange-800', 'focus:ring-2', 'focus:ring-orange-500');
-                        phoneInput.parentElement.querySelector('label').innerHTML += ' <span class="text-orange-600 text-[10px] bg-orange-100 px-1 rounded inline-block mr-1">(قابل للتعديل)</span>';
-                    }
-
-                    document.querySelectorAll('button[onclick="logout()"]').forEach(btn => {
-                        btn.setAttribute('onclick', 'exitAdminMode()');
-                        btn.title = "العودة للوحة الإدارة";
-                        btn.classList.replace('text-gray-500', 'text-orange-600');
-                        btn.classList.replace('hover:text-red-500', 'hover:text-orange-800');
-                        if(btn.innerText.includes('خروج')) btn.innerHTML = btn.innerHTML.replace('خروج', 'إنهاء التعديل');
-                    });
-                    
-                    buildDobDropdowns(); 
-                    dynamicDropdowns = fallbackDropdowns; 
-                    populateSharedDropdowns(); 
-                    fetchDropdownData();
-                    loadDashboard();
-                    return; 
-                } else {
-                    showMsgModal("مرفوض", "لا يوجد تصريح دخول إداري في هذا المتصفح. يرجى تسجيل الدخول من لوحة الإدارة أولاً.");
-                }
-            }
-
-            buildDobDropdowns(); 
-            dynamicDropdowns = fallbackDropdowns; 
-            populateSharedDropdowns(); 
-            fetchDropdownData(); 
-
-            const preVerifiedPhone = localStorage.getItem('verified_user_phone');
-            if (preVerifiedPhone) {
-                verifiedFullPhone = preVerifiedPhone;
-                const otpSec = document.getElementById('otpSection'); if(otpSec) otpSec.classList.add('hidden');
-                loadDashboard();
-            }
-        };
-
-        function logout() {
-            if(isAdminMode) { exitAdminMode(); return; }
-            localStorage.removeItem('verified_user_phone');
-            localStorage.removeItem('verified_user_name');
-            localStorage.removeItem('verified_user_gender');
-            localStorage.removeItem('active_profile_refid');
-            localStorage.removeItem('active_profile_index');
-            
-            verifiedFullPhone = "";
-            const dash = document.getElementById('dashboardSection'); if(dash) dash.classList.add('hidden');
-            const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
-            
-            const o1 = document.getElementById('otpStep1'); if(o1) o1.classList.remove('hidden');
-            const o2 = document.getElementById('otpStep2'); if(o2) o2.classList.add('hidden');
-            const oi = document.getElementById('otpPhoneInput'); if(oi) oi.value = '';
-            
-            ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
-            
-            const pe = document.getElementById('otpPhoneError'); if(pe) pe.classList.add('hidden');
-            const ce = document.getElementById('otpCodeError'); if(ce) ce.classList.add('hidden');
-
-            const os = document.getElementById('otpSection'); if(os) os.classList.remove('hidden');
-            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
-        }
-
-        async function sendWhatsAppCode() {
-            const phoneEl = document.getElementById('otpPhoneInput');
-            const codeEl = document.getElementById('otpCountryCode');
-            const errEl = document.getElementById('otpPhoneError');
-            
-            if(!phoneEl || !codeEl || !errEl) return;
-            const phone = phoneEl.value.trim(); const code = codeEl.value; 
-
-            if(!phone || phone.length < 6 || isNaN(phone)) { errEl.classList.remove('hidden'); return; }
-            errEl.classList.add('hidden'); let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone; verifiedFullPhone = code + cleanPhone;
-            
-            // Bypass للتجربة
-            if (cleanPhone === '566956901') {
-                const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
-                localStorage.setItem('verified_user_phone', verifiedFullPhone);
-                await loadDashboard();
-                if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ action: 'authSuccess' }, '*');
-                }
-                return;
-            }
-
-            const btn = document.getElementById('btnSendCode'); if(!btn) return;
-            const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-            try {
-                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
-                clearTimeout(timeoutId);
-                const text = await res.text();
-                try {
-                    const result = JSON.parse(text);
-                    if (result.success) { 
-                        const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); 
-                        const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); 
-                        startOtpCountdown(); 
-                    } 
-                    else showMsgModal("خطأ", result.message);
-                } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
-            } catch (e) {
-                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
-                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت."); 
-            } finally {
-                btn.innerHTML = originalText; btn.disabled = false;
-            }
-        }
-
-        function startOtpCountdown() {
-            let timer = 180; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); 
-            if(!countEl || !resendBtn) return;
-            resendBtn.classList.add('hidden');
-            const interval = setInterval(() => { timer--; countEl.innerText = timer; if(timer <= 0) { clearInterval(interval); resendBtn.classList.remove('hidden'); } }, 1000);
-        }
-
-        function moveOtpFocus(curr, nextId) { if(curr.value.length >= 1 && nextId) { const nx = document.getElementById(nextId); if(nx) nx.focus(); } }
-        
-        function handleOtpBackspace(event, curr, prevId) {
-            if (event.key === 'Backspace' && curr.value === '' && prevId) {
-                const pr = document.getElementById(prevId); if(pr) pr.focus();
-            }
-        }
-
-        async function verifyWhatsAppCode() {
-            const o1=document.getElementById('otp1'); const o2=document.getElementById('otp2'); const o3=document.getElementById('otp3'); const o4=document.getElementById('otp4');
-            if(!o1 || !o2 || !o3 || !o4) return;
-            const c = o1.value + o2.value + o3.value + o4.value;
-            const err = document.getElementById('otpCodeError'); if(!err) return;
-            if(c.length !== 4) { err.innerText = "الرجاء إدخال الرمز كاملاً."; err.classList.remove('hidden'); return; }
-
-            const btn = document.getElementById('btnVerifyCode'); if(!btn) return;
-            const originalText = btn.innerHTML; btn.innerHTML = "جاري التحقق..."; btn.disabled = true;
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-            try {
-                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "verifyOtp", phone: verifiedFullPhone, code: c }), signal: controller.signal });
-                clearTimeout(timeoutId);
-                const text = await res.text();
-                try {
-                    const result = JSON.parse(text);
-                    if(result.success) {
-                        err.classList.add('hidden'); 
-                        const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
-                        localStorage.setItem('verified_user_phone', verifiedFullPhone);
-                        await loadDashboard(); 
-                        if (window.parent && window.parent !== window) {
-                            window.parent.postMessage({ action: 'authSuccess' }, '*');
-                        }
-                    } else { err.innerText = result.message || "الكود غير صحيح."; err.classList.remove('hidden'); }
-                } catch(e) { err.innerText="السيرفر يرسل بيانات خاطئة."; err.classList.remove('hidden'); }
-            } catch(e) { 
-                if(e.name === 'AbortError') { err.innerText="تأخر استجابة السيرفر بسبب الزحام."; err.classList.remove('hidden'); }
-                else { err.innerText="حدث خطأ بالاتصال."; err.classList.remove('hidden'); }
-            } finally {
-                btn.innerHTML = originalText; btn.disabled = false;
-            }
-        }
-
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-        // 🟦🟦🟦 ======== بداية القسم (9 - 1) ======== 🟦🟦🟦
-        // 🟦🟦🟦 [ جلب البيانات من السيرفر وبناء القوائم الأساسية ] 🟦🟦🟦
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
         async function fetchDropdownData() {
             const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000); 
             try {
@@ -1157,44 +1183,84 @@
             const kEl = document.getElementById('ksaCity'); if(kEl) kEl.innerHTML = cityOptions;
             const oiEl = document.getElementById('originInside'); if(oiEl) oiEl.innerHTML = originInsideOptions; 
 
+            // إضافة قائمة التعليم بدون خيار أخرى
             let eduOptions = '<option value="" disabled selected>-- اختر المؤهل --</option>';
-            if(edus) edus.forEach(edu => eduOptions += `<option value="${edu}">${edu}</option>`);
+            if(edus) edus.filter(e => e !== 'أخرى').forEach(edu => eduOptions += `<option value="${edu}">${edu}</option>`);
             const eEl = document.getElementById('education'); if(eEl) eEl.innerHTML = eduOptions;
         }
 
+        function handleDynamicOther(e) {
+            const selectElement = e.target; const otherWrapperId = selectElement.id + '_other_wrapper'; const wrapper = document.getElementById(otherWrapperId);
+            if(wrapper) {
+                const innerInput = wrapper.querySelector('input');
+                if(selectElement.value === 'أخرى') { wrapper.classList.add('show'); if(innerInput) innerInput.classList.add('conditional-required'); } 
+                else { wrapper.classList.remove('show'); if(innerInput) { innerInput.classList.remove('conditional-required', 'error-field'); innerInput.value = ''; } }
+                updateSmartProgressBar();
+            }
+        }
 
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-        // 🟦🟦🟦 ======== بداية القسم (9 - 2) ======== 🟦🟦🟦
-        // 🟦🟦🟦 [ حقول "أخرى" الديناميكية وحسابات التقويم والعمر ] 🟦🟦🟦
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
+        function handleGenderChange(isSilentSync = false) {
+            const gm = document.getElementById('gender_male'); if(gm) isMale = gm.checked; 
+            renderSmartTags();
+            const group = document.getElementById('tribalStatusGroup');
+            if(group) group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
+            
+            if (!isSilentSync) { const nc = document.getElementById('namesContainer'); if(nc) nc.classList.add('hidden'); }
+            
+            const mmSec = document.getElementById('menMarriageSection'); const wmSec = document.getElementById('womenMarriageSection');
+            const fpSec = document.getElementById('femalePhysicalSpecs'); const incDiv = document.getElementById('incomeDiv'); const mInc = document.getElementById('monthlyIncome');
+
+            if(isMale) {
+                if(mmSec) mmSec.classList.remove('hidden'); if(wmSec) wmSec.classList.add('hidden');
+                if(fpSec) fpSec.classList.add('hidden'); if(incDiv) incDiv.classList.remove('hidden'); if(mInc) mInc.required = true;
+            } else {
+                if(wmSec) wmSec.classList.remove('hidden'); if(mmSec) mmSec.classList.add('hidden');
+                if(fpSec) fpSec.classList.remove('hidden'); if(incDiv) incDiv.classList.add('hidden'); if(mInc) mInc.required = false;
+            }
+            
+            if (!isSilentSync) { const ccd = document.getElementById('childrenCountDiv'); if(ccd) ccd.classList.add('hidden'); const cd = document.getElementById('custodyDiv'); if(cd) cd.classList.add('hidden'); const cc = document.getElementById('childrenCount'); if(cc) cc.value = ""; }
+
+            const nats = isMale ? (dynamicDropdowns?.maleNationalities || fallbackDropdowns.maleNationalities) : (dynamicDropdowns?.femaleNationalities || fallbackDropdowns.femaleNationalities);
+            const jobs = isMale ? (dynamicDropdowns?.maleJobs || fallbackDropdowns.maleJobs) : (dynamicDropdowns?.femaleJobs || fallbackDropdowns.femaleJobs);
+            const mars = isMale ? (dynamicDropdowns?.maleMarital || fallbackDropdowns.maleMarital) : (dynamicDropdowns?.femaleMarital || fallbackDropdowns.femaleMarital);
+            const mTypes = isMale ? (dynamicDropdowns?.maleMarriageType || fallbackDropdowns.maleMarriageType) : (dynamicDropdowns?.femaleMarriageType || fallbackDropdowns.femaleMarriageType);
+            const skins = (isMale ? (dynamicDropdowns?.maleSkinColors || fallbackDropdowns.maleSkinColors) : (dynamicDropdowns?.femaleSkinColors || fallbackDropdowns.femaleSkinColors)).map(s => s.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'));
+
+            let natOptions = '<option value="" disabled selected>-- اختر الجنسية --</option>'; if(nats) nats.forEach(nat => { let cleanVal = cleanArabicText(nat); natOptions += `<option value="${cleanVal}">${getFlagForText(cleanVal)} ${cleanVal}</option>`; });
+            const natEl = document.getElementById('nationality'); if(natEl) { natEl.innerHTML = natOptions; natEl.classList.add('emoji-font'); }
+
+            let jobOptions = '<option value="" disabled selected>-- اختر الوظيفة --</option>'; 
+            if(jobs) {
+                // إزالة أي خيار "أخرى" قادم من السيرفر لتجنب التكرار، ثم إضافتها مرة واحدة في النهاية
+                jobs.filter(j => j !== 'أخرى').forEach(job => jobOptions += `<option value="${job}">${job}</option>`);
+                jobOptions += `<option value="أخرى" class="font-bold text-indigo-600">+ أخرى (اكتب يدوياً)</option>`;
+            }
+            const js = document.getElementById('jobStatus'); if(js) js.innerHTML = jobOptions; 
+            if(!isSilentSync) { const jobWrapper = document.getElementById('jobStatus_other_wrapper'); if(jobWrapper) { jobWrapper.classList.remove('show'); const cj = document.getElementById('customJob'); if(cj) { cj.classList.remove('conditional-required', 'error-field'); cj.value = ''; } } }
+
+            let marOptions = '<option value="" disabled selected>-- حدد الحالة --</option>'; if(mars) mars.forEach(m => marOptions += `<option value="${m}">${m}</option>`);
+            const ms = document.getElementById('maritalStatus'); if(ms) ms.innerHTML = marOptions;
+
+            let marrOptions = '<option value="" disabled selected>-- اختر النوع --</option>'; if(mTypes) mTypes.forEach(m => marrOptions += `<option value="${m}">${m}</option>`);
+            const mmType = document.getElementById('menMarriageType'); const wmType = document.getElementById('womenMarriageType');
+            if(isMale && mmType) mmType.innerHTML = marrOptions; else if(wmType) wmType.innerHTML = marrOptions;
+
+            const skinHexCodes = ["#fefaf5", "#faead6", "#e1c699", "#c29062", "#8c5a35", "#54331c", "#2c1b12"]; const textColors = ["#1e293b", "#1e293b", "#1e293b", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]; 
+            let skinOptions = '';
+            if(skins) {
+                skins.forEach((skin, index) => { 
+                    const hex = skinHexCodes[index] || "#cbd5e1"; const textColor = textColors[index] || "#1e293b"; 
+                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-lg whitespace-nowrap text-[10px] font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
+                });
+                const scg = document.getElementById('skinColorGroup'); if(scg) scg.innerHTML = skinOptions;
+            }
+            generateTerms(); if(!isSilentSync) saveDraft();
+        }
+
         function buildDobDropdowns() {
             const dSel = document.getElementById('dobDay'); 
             if(dSel) { dSel.innerHTML = '<option value="" disabled selected>اليوم</option>'; for(let i=1; i<=31; i++) dSel.innerHTML += `<option value="${i}">${i}</option>`; }
             handleCalendarSwitch();
-        }
-        
-        function handleDynamicOther(e) {
-            const selectElement = e.target;
-            const otherWrapperId = selectElement.id + '_other_wrapper';
-            const wrapper = document.getElementById(otherWrapperId);
-            
-            if(wrapper) {
-                const innerInput = wrapper.querySelector('input');
-                if(selectElement.value === 'أخرى' || selectElement.value.includes('أخرى')) {
-                    wrapper.classList.add('show');
-                    if(innerInput) {
-                        innerInput.classList.remove('hidden'); 
-                        innerInput.classList.add('conditional-required');
-                    }
-                } else {
-                    wrapper.classList.remove('show');
-                    if(innerInput) {
-                        innerInput.classList.remove('conditional-required', 'error-field');
-                        innerInput.value = ''; 
-                    }
-                }
-                updateSmartProgressBar();
-            }
         }
 
         function handleCalendarSwitch() {
@@ -1223,11 +1289,6 @@
             if(box) box.classList.remove('hidden'); if(val) val.innerText = estAge; if(ageInp) ageInp.value = estAge;
         }
 
-
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-        // 🟦🟦🟦 ======== بداية القسم (9 - 3) ========      🟦🟦🟦
-        // 🟦🟦🟦 [ التحقق الفوري ونظام حفظ المسودات الذكي ] 🟦🟦🟦
-        // 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
         function sanitizeAndConvertDigits(inputEl) {
             if(!inputEl) return;
             let val = inputEl.value; const arabicNorm = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
@@ -1238,52 +1299,122 @@
         function validateRealTime(inputEl, minVal, maxVal, errorMsg) {
             if(!inputEl) return;
             const val = parseInt(inputEl.value); const errorEl = inputEl.nextElementSibling;
-            if (inputEl.value && (isNaN(val) || val < minVal || val > maxVal)) { 
-                inputEl.classList.add('border-red-500', 'bg-red-50'); 
-                if(errorEl) { errorEl.innerText = `${errorMsg}`; errorEl.classList.remove('hidden'); }
-            } 
-            else { 
-                inputEl.classList.remove('border-red-500', 'bg-red-50'); 
-                if(errorEl) errorEl.classList.add('hidden'); 
+            if (inputEl.value && (isNaN(val) || val < minVal || val > maxVal)) { inputEl.classList.add('border-red-500', 'bg-red-50'); if(errorEl) { errorEl.innerText = `${errorMsg}`; errorEl.classList.remove('hidden'); } } 
+            else { inputEl.classList.remove('border-red-500', 'bg-red-50'); if(errorEl) errorEl.classList.add('hidden'); }
+            saveDraft();
+        }
+
+        function handleTribalChange() {
+            const ty = document.getElementById('tribal_yes'); const isQabili = ty ? ty.checked : false;
+            const nc = document.getElementById('namesContainer'); if(nc) nc.classList.remove('hidden'); 
+            const td = document.getElementById('tribeNameDiv'); if(td) td.classList.toggle('hidden', !isQabili); 
+            const fd = document.getElementById('familyNameDiv'); if(fd) fd.classList.remove('hidden');
+            const lbl = document.getElementById('familyLabel'); const inp = document.getElementById('familyName'); const tribeInp = document.getElementById('tribeName');
+            const privacyHint = '<span class="text-emerald-600 font-normal text-[9px] mr-1">(لا يظهر في العام - للوسيط)</span>';
+            
+            if(isQabili) { 
+                if(lbl) lbl.innerHTML = `اسم العائلة <span class="text-gray-400 font-normal">(اختياري)</span> ${privacyHint}`; 
+                if(inp) inp.required = false; if(tribeInp) tribeInp.required = true; 
+            } else { 
+                if(lbl) lbl.innerHTML = `اسم العائلة <span class="text-red-500">*</span> ${privacyHint}`; 
+                if(inp) inp.required = true; if(tribeInp) tribeInp.required = false; 
             }
             saveDraft();
         }
 
-        function saveDraft() {
-            if (!verifiedFullPhone || isAdminMode) return;
-            
-            const fnEl = document.getElementById('firstName'); const rEl = document.getElementById('relation'); const nEl = document.getElementById('nationality');
-            const ksEl = document.getElementById('ksaCity'); const wcEl = document.getElementById('worldCountry'); const msEl = document.getElementById('maritalStatus');
-            const hEl = document.getElementById('height'); const wtEl = document.getElementById('weight'); const edEl = document.getElementById('education'); const jbEl = document.getElementById('jobStatus');
-            
-            const draftData = {
-                firstName: fnEl ? fnEl.value : '', relation: rEl ? rEl.value : '', gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: nEl ? nEl.value : '',
-                residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: ksEl ? ksEl.value : '', worldCountry: wcEl ? wcEl.value : '',
-                maritalStatus: msEl ? msEl.value : '', height: hEl ? hEl.value : '', weight: wtEl ? wtEl.value : '', education: edEl ? edEl.value : '', jobStatus: jbEl ? jbEl.value : ''
-            };
-            localStorage.setItem(`draft_${verifiedFullPhone}`, JSON.stringify(draftData));
-            const indicator = document.getElementById('draftIndicator'); if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
+        function handleMaritalStatusChange() {
+            const ms = document.getElementById('maritalStatus'); const s = ms ? ms.value : ''; 
+            const div = document.getElementById('childrenCountDiv'); const cd = document.getElementById('custodyDiv'); const cc = document.getElementById('childrenCount');
+            if(s === "أعزب" || s === "بكر") { if(div) div.classList.add('hidden'); if(cd) cd.classList.add('hidden'); if(cc) cc.value = ""; } else { if(div) div.classList.remove('hidden'); handleChildrenChange(); }
+            saveDraft();
         }
 
-        function checkAndRestoreDraft() {
-            if (!verifiedFullPhone || isAdminMode) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
-            if (draft) {
-                showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
-                    const data = JSON.parse(draft);
-                    if(data.gender) {
-                        checkRad('gender', data.gender);
-                        setTimeout(() => {
-                            if(data.firstName) setVal('firstName', data.firstName); if(data.relation) setVal('relation', data.relation); if(data.nationality) setVal('nationality', data.nationality); if(data.residenceLoc) checkRad('residenceLoc', data.residenceLoc);
-                            if(data.ksaCity) setVal('ksaCity', data.ksaCity); if(data.worldCountry) setVal('worldCountry', data.worldCountry); if(data.maritalStatus) setVal('maritalStatus', data.maritalStatus);
-                            if(data.height) setVal('height', data.height); if(data.weight) setVal('weight', data.weight); if(data.education) setVal('education', data.education); if(data.jobStatus) setVal('jobStatus', data.jobStatus);
-                            showMsgModal("نجاح", "تمت استعادة البيانات المحفوظة.");
-                        }, 500);
-                    }
-                }, () => { localStorage.removeItem(`draft_${verifiedFullPhone}`); });
+        function handleChildrenChange() {
+            const ms = document.getElementById('maritalStatus'); const s = ms ? ms.value : ''; 
+            const cc = document.getElementById('childrenCount'); const count = cc ? (parseInt(cc.value) || 0) : 0;
+            const div = document.getElementById('custodyDiv'); const sel = document.getElementById('custodyStatus');
+            if(count > 0 && (s.includes('مطلق') || s.includes('أرمل'))) {
+                if(div) div.classList.remove('hidden'); 
+                if(sel) {
+                    sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
+                    if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
+                }
+            } else { if(div) div.classList.add('hidden'); }
+            saveDraft();
+        }
+
+        function handleResidenceChange() { 
+            const rKsa = document.getElementById('res_ksa'); const isKsa = rKsa ? rKsa.checked : false; 
+            const kcDiv = document.getElementById('ksaCitiesDiv'); if(kcDiv) kcDiv.classList.toggle('hidden', !isKsa); 
+            const wcDiv = document.getElementById('worldCountriesDiv'); if(wcDiv) wcDiv.classList.toggle('hidden', isKsa); 
+            saveDraft(); 
+        }
+        function toggleOriginDetails() { 
+            const oIn = document.getElementById('origin_in'); const isInside = oIn ? oIn.checked : false; 
+            const oiD = document.getElementById('originInsideDetails'); if(oiD) oiD.classList.toggle('hidden', !isInside); 
+            const ooD = document.getElementById('originOutsideDetails'); if(ooD) ooD.classList.toggle('hidden', isInside); 
+            saveDraft(); 
+        }
+        function handleJobChange() { 
+            const js = document.getElementById('jobStatus'); const isOther = js ? (js.value === 'أخرى') : false; 
+            const wrapper = document.getElementById('jobStatus_other_wrapper'); const cj = document.getElementById('customJob'); 
+            if(wrapper) {
+                if(isOther) { wrapper.classList.add('show'); if(cj) cj.classList.add('conditional-required'); } 
+                else { wrapper.classList.remove('show'); if(cj) { cj.classList.remove('conditional-required', 'error-field'); cj.value = ''; } }
+            }
+            updateSmartProgressBar(); saveDraft(); 
+        }
+        function handleMenMarriageTypeChange() { 
+            const msw = document.getElementById('menSpecialSpecsWrapper'); const mmt = document.getElementById('menMarriageType');
+            if(msw && mmt) msw.classList.toggle('hidden', mmt.value !== "زواج باشتراطات خاصة"); 
+            generateTerms(); saveDraft(); 
+        }
+        function handleWomenMarriageTypeChange() { 
+            const wsw = document.getElementById('womenSpecialSpecsWrapper'); const wmt = document.getElementById('womenMarriageType');
+            if(wsw && wmt) wsw.classList.toggle('hidden', wmt.value !== "زواج بظروف خاصة"); 
+            saveDraft(); 
+        }
+
+        function generateTerms() {
+            if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
+            if(!container) return;
+            if(isMale) { 
+                const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false; 
+                container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px]">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; 
+            } else { 
+                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; 
             }
         }
 
-        // ===========🟦🟦🟦======== القسم 10: دوال لوحة العائلة (JS Dashboard) ======🟦🟦🟦=============
+        function renderSmartTags() {
+            if (isMale === null) return;
+            const nEl = document.getElementById('nationality'); const nat = nEl ? (nEl.value || "") : "";
+            const isSaudi = nat.includes("سعودي") || nat.includes("السعودية") || nat.includes("خليجي") || nat.includes("إمارات") || nat.includes("كويت") || nat.includes("قطر") || nat.includes("بحرين") || nat.includes("عمان");
+            
+            let myTags = []; let partnerTags = [];
+            const customNiqabSVG = `<svg class="w-3.5 h-3.5 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
+            const hijabIcon = `🧕`;
+
+            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
+            else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
+            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+
+            const drawTag = (tag, isMyTag) => {
+                let iconStr = ''; let cleanTag = tag;
+                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
+                return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2 py-1 bg-white text-gray-700 text-[9px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
+            };
+
+            const myTagsC = document.getElementById('myTagsContainer'); if(myTagsC) myTagsC.innerHTML = myTags.map(tag => drawTag(tag, true)).join('');
+            const ptTagsC = document.getElementById('partnerTagsContainer'); if(ptTagsC) ptTagsC.innerHTML = partnerTags.map(tag => drawTag(tag, false)).join('');
+        }
+
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 29: جافاسكريبت - تحديث واجهة لوحة العائلة والمزامنة 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
         function getProfileUid(p) { return p.refId ? String(p.refId) : String(p.sheetName + '_' + p.rowIndex); }
         function getMainProfileUid() { return localStorage.getItem(`mainProfileUid_${verifiedFullPhone}`); }
         function getRelation(rowIndex) { return localStorage.getItem(`relation_${verifiedFullPhone}_${rowIndex}`) || ""; }
@@ -1297,9 +1428,7 @@
                 showMainForm();
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (action === 'edit') {
-                if (currentViewData) {
-                    handleHeroAction('edit');
-                }
+                if (currentViewData) { handleHeroAction('edit'); }
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -1361,37 +1490,23 @@
                         if(retryCount === 0 && (!localCache || !JSON.parse(localCache).length)) {
                             processUrlActions(); 
                         }
-                    } catch(renderErr) {
-                        console.error("خطأ أثناء بناء الواجهة:", renderErr);
-                    }
+                    } catch(renderErr) { console.error("خطأ أثناء بناء الواجهة:", renderErr); }
                 } else {
-                    if(result.message === "لم يتم العثور على أي ملفات") {
-                        cachedProfiles = [];
-                        showMainForm();
-                    } else {
-                        if (retryCount === 0) showMsgModal("خطأ", result.message);
-                        if (cachedProfiles.length === 0) logout();
-                    }
+                    if(result.message === "لم يتم العثور على أي ملفات") { cachedProfiles = []; showMainForm(); } 
+                    else { if (retryCount === 0) showMsgModal("خطأ", result.message); if (cachedProfiles.length === 0) logout(); }
                 }
                 isDashboardLoading = false;
             } catch (e) {
                 clearTimeout(timeoutId);
-                if (retryCount < 1) { 
-                    setTimeout(() => loadDashboard(retryCount + 1), 2000);
-                } else {
+                if (retryCount < 1) { setTimeout(() => loadDashboard(retryCount + 1), 2000); } 
+                else {
                     isDashboardLoading = false;
-                    const sBanner = document.getElementById('syncBanner'); 
-                    if(sBanner) { sBanner.classList.remove('opacity-100'); sBanner.classList.add('opacity-0'); }
-                    
+                    const sBanner = document.getElementById('syncBanner'); if(sBanner) { sBanner.classList.remove('opacity-100'); sBanner.classList.add('opacity-0'); }
                     if(loadingIndicator) { loadingIndicator.classList.add('hidden'); loadingIndicator.classList.remove('flex'); }
                     if(dashboardContent) dashboardContent.classList.remove('hidden');
 
-                    if (localCache && !isAdminMode && cachedProfiles && cachedProfiles.length > 0) {
-                        console.warn("Offline fallback used smoothly.");
-                    } else {
-                        showMsgModal("خطأ اتصال", "الشبكة ضعيفة أو السيرفر مشغول. يرجى المحاولة لاحقاً.");
-                        if(!cachedProfiles || cachedProfiles.length === 0) showMainForm();
-                    }
+                    if (localCache && !isAdminMode && cachedProfiles && cachedProfiles.length > 0) { console.warn("Offline fallback used smoothly."); } 
+                    else { showMsgModal("خطأ اتصال", "الشبكة ضعيفة أو السيرفر مشغول. يرجى المحاولة لاحقاً."); if(!cachedProfiles || cachedProfiles.length === 0) showMainForm(); }
                 }
             }
         }
@@ -1399,58 +1514,40 @@
         function selectProfileInDashboard(uid) {
             closeBioSmoothly(); 
             try { 
-                // السطر الجديد لمسح بيانات الفرد القديم من الكاش
-                localStorage.removeItem('master_activity_cache');
-
                 renderDashboardUi(cachedProfiles, uid, false); 
                 if (window.parent && window.parent !== window) {
-                    setTimeout(() => {
-                        window.parent.postMessage({ action: 'profileSwitched' }, '*');
-                    }, 50);
+                    setTimeout(() => { window.parent.postMessage({ action: 'profileSwitched' }, '*'); }, 50);
                 }
             } catch(e) { console.error("Error selecting profile", e); }
         }
 
         function renderDashboardUi(profiles, overrideSelectUid = null, isSilentSync = false) {
-            if(!profiles || profiles.length === 0) {
-                 if(!isSilentSync) showMainForm();
-                 return;
-            }
+            if(!profiles || profiles.length === 0) { if(!isSilentSync) showMainForm(); return; }
 
             let serverMain = profiles.find(p => p.isMain === true || p.isMain === "نعم" || p.isMain === "رئيسي");
             if(serverMain && !isAdminMode) { localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, getProfileUid(serverMain)); }
 
             let mainUid = isAdminMode ? getProfileUid(profiles[0]) : getMainProfileUid();
-            if(!isAdminMode && (!mainUid || !profiles.find(p => getProfileUid(p) === mainUid))) { 
-                mainUid = getProfileUid(profiles[0]); 
-                localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, mainUid); 
-            }
+            if(!isAdminMode && (!mainUid || !profiles.find(p => getProfileUid(p) === mainUid))) { mainUid = getProfileUid(profiles[0]); localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, mainUid); }
             
             let savedActiveUid = !isAdminMode ? localStorage.getItem('active_profile_uid') : null;
             let determinedUid = overrideSelectUid;
-            if(!determinedUid) {
-                if(savedActiveUid && profiles.find(p => getProfileUid(p) === savedActiveUid)) { determinedUid = savedActiveUid; }
-                else { determinedUid = mainUid; }
-            }
+            if(!determinedUid) { if(savedActiveUid && profiles.find(p => getProfileUid(p) === savedActiveUid)) { determinedUid = savedActiveUid; } else { determinedUid = mainUid; } }
 
             const activeProfile = profiles.find(p => getProfileUid(p) === determinedUid) || profiles[0];
             const activeUid = getProfileUid(activeProfile);
             
-            currentViewedIndexInDashboard = activeProfile.rowIndex; 
-            currentViewData = activeProfile; 
+            currentViewedIndexInDashboard = activeProfile.rowIndex; currentViewData = activeProfile; 
             
             if(!isAdminMode) {
-                localStorage.setItem('active_profile_uid', activeUid); 
-                localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
-                localStorage.setItem('active_profile_index', activeProfile.rowIndex); 
-                localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
+                localStorage.setItem('active_profile_uid', activeUid); localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
+                localStorage.setItem('active_profile_index', activeProfile.rowIndex); localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
                 localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
             }
             
             let safeName = activeProfile.name ? activeProfile.name.split(' ')[0] : 'مستخدم';
             const isMainProfile = activeUid === mainUid;
-            const savedRel = activeProfile.relation || getRelation(activeProfile.rowIndex);
-            const relText = savedRel ? savedRel : "غير محدد";
+            const savedRel = activeProfile.relation || getRelation(activeProfile.rowIndex); const relText = savedRel ? savedRel : "غير محدد";
             
             let statusStr = activeProfile.profileStatus || (activeProfile.fullDetails && activeProfile.fullDetails.profileStatus) || "";
             let isUnderReview = statusStr.includes("مراجعة") || statusStr.includes("انتظار") || statusStr.includes("جديد");
@@ -1463,106 +1560,54 @@
             
             const heroStatusEl = document.getElementById('headerAccountStatus');
             if(heroStatusEl) {
-                if (isUnderReview) {
-                    heroStatusEl.innerText = "⏳ قيد المراجعة";
-                    heroStatusEl.classList.remove('hidden');
-                } else {
-                    heroStatusEl.classList.add('hidden');
-                }
+                if (isUnderReview) { heroStatusEl.innerHTML = "⏳ قيد المراجعة"; heroStatusEl.className = "text-[9px] font-bold text-orange-700 bg-orange-100/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-orange-300 shadow-sm shrink-0"; } 
+                else { heroStatusEl.innerHTML = "✅ نشط"; heroStatusEl.className = "text-[9px] font-bold text-emerald-700 bg-emerald-100/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-emerald-300 shadow-sm shrink-0"; }
+                heroStatusEl.classList.remove('hidden');
             }
 
             const badge = document.getElementById('heroMainBadge');
             if(badge) {
-                if(isMainProfile) {
-                    badge.className = "absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 text-[8px] font-bold px-2 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-1 whitespace-nowrap z-20 cursor-default";
-                    badge.innerHTML = "👑 رئيسي"; badge.onclick = null;
-                } else {
-                    badge.className = "absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur text-gray-500 hover:text-amber-600 hover:border-amber-300 border border-gray-200 text-[8px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1 whitespace-nowrap z-20 cursor-pointer transition-all hover:scale-105";
-                    badge.innerHTML = "تعيين رئيسي";
-                    badge.onclick = () => { askSetMainProfile(); };
-                }
+                if(isMainProfile) { badge.className = "absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 text-[8px] font-bold px-2 py-0.5 rounded-full border border-amber-300 shadow flex items-center gap-1 whitespace-nowrap z-20 cursor-default"; badge.innerHTML = "👑 رئيسي"; badge.onclick = null; } 
+                else { badge.className = "absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur text-gray-500 hover:text-amber-600 hover:border-amber-300 border border-gray-200 text-[8px] font-bold px-2 py-0.5 rounded-full shadow flex items-center gap-1 whitespace-nowrap z-20 cursor-pointer transition-all hover:scale-105"; badge.innerHTML = "تعيين رئيسي"; badge.onclick = () => { askSetMainProfile(); }; }
             }
 
-            const familyGrid = document.getElementById('familyGrid'); 
-            let carouselHtml = "";
+            const familyGrid = document.getElementById('familyGrid'); let carouselHtml = "";
+            carouselHtml += `<button onclick="showMainForm()" class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 transition-all duration-300 group cursor-pointer w-full text-center relative h-full min-h-[75px]"><div class="relative w-6 h-6 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform mb-1"><span class="text-base font-bold mt-[-2px]">+</span></div><div class="text-[9px] sm:text-[10px] font-bold text-indigo-800 truncate w-full">إضافة فرد</div><div class="text-[8px] text-indigo-500 font-medium truncate w-full">ملف جديد</div></button>`;
 
-            carouselHtml += `
-                <button onclick="showMainForm()" class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 transition-all duration-300 group cursor-pointer w-full text-center relative h-full min-h-[75px]">
-                    <div class="relative w-6 h-6 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform mb-1">
-                        <span class="text-base font-bold mt-[-2px]">+</span>
-                    </div>
-                    <div class="text-[9px] sm:text-[10px] font-bold text-indigo-800 truncate w-full">إضافة فرد</div>
-                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full">ملف جديد</div>
-                </button>
-            `;
-
-            let familyAlerts = [];
-            if(!isAdminMode) { try { familyAlerts = JSON.parse(localStorage.getItem('family_alerts') || '[]'); } catch(e) {} }
+            let familyAlerts = []; if(!isAdminMode) { try { familyAlerts = JSON.parse(localStorage.getItem('family_alerts') || '[]'); } catch(e) {} }
 
             profiles.forEach(p => {
-                const pUid = getProfileUid(p);
-                const isIterMain = pUid === mainUid; 
-                const isActive = pUid === activeUid;
-                const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
-                
+                const pUid = getProfileUid(p); const isIterMain = pUid === mainUid; const isActive = pUid === activeUid; const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
                 const hasAlert = familyAlerts.some(id => String(id) === String(p.refId) || String(id) === pUid);
 
                 let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-200 hover:bg-gray-50";
-                
                 let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
-                
-                const avatarSvg = p.gender === 'ذكر' 
-                    ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>`
-                    : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-                
+                const avatarSvg = p.gender === 'ذكر' ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>` : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
                 const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
 
-                carouselHtml += `
-                    <button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]">
-                        <div class="relative shrink-0 mb-0.5">
-                            ${avatarSvg}
-                            ${hasAlert ? '<div class="absolute -top-0.5 -right-0.5">' + pulseDot + '</div>' : ''}
-                        </div>
-                        <div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">
-                            ${shortName}
-                        </div>
-                        <div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">
-                            ${iterRel}
-                        </div>
-                        ${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}
-                    </button>
-                `;
+                carouselHtml += `<button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]"><div class="relative shrink-0 mb-0.5">${avatarSvg}${hasAlert ? '<div class="absolute -top-0.5 -right-0.5">' + pulseDot + '</div>' : ''}</div><div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">${shortName}</div><div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">${iterRel}</div>${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}</button>`;
             });
             if(familyGrid) familyGrid.innerHTML = carouselHtml;
 
             const heroAvatar = document.getElementById('heroAvatar');
-            if(heroAvatar) heroAvatar.innerHTML = activeProfile.gender === 'ذكر' 
-                ? '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>'
-                : '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>';
+            if(heroAvatar) heroAvatar.innerHTML = activeProfile.gender === 'ذكر' ? '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>' : '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
             let bioStr = activeProfile.autoBio || (activeProfile.fullDetails && activeProfile.fullDetails.autoBio) || "";
             if(!bioStr || typeof bioStr !== 'string' || bioStr.trim() === "") bioStr = "النبذة التلقائية قيد التحديث في قاعدة البيانات...";
             bioStr = `📱 الحساب المرتبط برقم: ${verifiedFullPhone}\n━━━━━━━━━━━━━━━━━━\n` + bioStr;
             const hBio = document.getElementById('heroBio'); if(hBio) hBio.innerText = bioStr;
-            
             if(!isAdminMode) localStorage.setItem('verified_user_bio', bioStr);
 
             let extractedAge = "غير محدد"; let extractedMarital = "غير محدد"; let originStr = ""; let cityStr = "غير محدد"; let natStr = "غير محدد";
             if (activeProfile.fullDetails) {
                 extractedAge = activeProfile.fullDetails.age ? `${activeProfile.fullDetails.age} سنة` : extractedAge;
-                if (activeProfile.fullDetails.maritalStatus && typeof activeProfile.fullDetails.maritalStatus === 'string') {
-                    extractedMarital = activeProfile.fullDetails.maritalStatus.split(' ')[0];
-                }
+                if (activeProfile.fullDetails.maritalStatus && typeof activeProfile.fullDetails.maritalStatus === 'string') { extractedMarital = activeProfile.fullDetails.maritalStatus.split(' ')[0]; }
                 cityStr = activeProfile.fullDetails.residence ? activeProfile.fullDetails.residence : cityStr;
-                if (activeProfile.fullDetails.nationality && typeof activeProfile.fullDetails.nationality === 'string') {
-                    natStr = activeProfile.fullDetails.nationality.split(' ')[0];
-                }
-
+                if (activeProfile.fullDetails.nationality && typeof activeProfile.fullDetails.nationality === 'string') { natStr = activeProfile.fullDetails.nationality.split(' ')[0]; }
                 let originArr = [];
                 if (activeProfile.fullDetails.tribeName && activeProfile.fullDetails.tribeName !== "غير محدد" && activeProfile.fullDetails.tribeName !== "---") originArr.push(activeProfile.fullDetails.tribeName);
                 if (activeProfile.fullDetails.familyName && activeProfile.fullDetails.familyName !== "غير محدد" && activeProfile.fullDetails.familyName !== "---") originArr.push(activeProfile.fullDetails.familyName);
-                if (originArr.length > 0) originStr = originArr.join(' - ');
-                else if (activeProfile.fullDetails.originType && activeProfile.fullDetails.originType !== "غير محدد") originStr = activeProfile.fullDetails.originType;
+                if (originArr.length > 0) originStr = originArr.join(' - '); else if (activeProfile.fullDetails.originType && activeProfile.fullDetails.originType !== "غير محدد") originStr = activeProfile.fullDetails.originType;
             } else if (activeProfile.autoBio && typeof activeProfile.autoBio === 'string') {
                 const ageMatch = activeProfile.autoBio.match(/العمر:\s*(\d+)/); if (ageMatch) extractedAge = `${ageMatch[1]} سنة`;
                 const maritalMatch = activeProfile.autoBio.match(/الحالة الاجتماعية:\s*([^\s]+)/); if (maritalMatch) extractedMarital = maritalMatch[1];
@@ -1578,7 +1623,6 @@
                 if (extractedAge !== "غير محدد") sentenceArr.push(extractedAge);
                 summaryContainer.innerHTML = `<span class="text-[9px] sm:text-[10px] text-gray-600 leading-relaxed font-bold">${sentenceArr.join(' • ')}</span>`;
             }
-            
             refreshUserActivity();
         }
 
@@ -1599,82 +1643,40 @@
                 const result = await res.json();
                 
                 if (result.success) {
-                    let familyAlerts = [];
-                    try { if (result.familyAlerts) familyAlerts = result.familyAlerts; } catch(e){}
+                    let familyAlerts = []; try { if (result.familyAlerts) familyAlerts = result.familyAlerts; } catch(e){}
 
                     const hasIncoming = result.incomingRequests && result.incomingRequests.length > 0;
                     const hasOutgoingUpdates = result.outgoingRequests && result.outgoingRequests.some(req => req.reply || (req.status && (req.status.includes('قبول') || req.status.includes('رفض') || req.status.includes('مرفوض') || req.status.includes('مقبول'))));
                     const shouldHaveAlert = hasIncoming || hasOutgoingUpdates;
 
                     const msgDot = document.getElementById('messagesRedDot');
-                    if (msgDot) {
-                        if (shouldHaveAlert) msgDot.classList.remove('hidden');
-                        else msgDot.classList.add('hidden');
-                    }
+                    if (msgDot) { if (shouldHaveAlert) msgDot.classList.remove('hidden'); else msgDot.classList.add('hidden'); }
 
                     let isActiveAlert = familyAlerts.some(id => String(id) === String(activeRefId) || (currentViewData && String(id) === getProfileUid(currentViewData)));
 
-                    if (shouldHaveAlert && !isActiveAlert) {
-                        familyAlerts.push(String(activeRefId));
-                        isActiveAlert = true;
-                    } else if (!shouldHaveAlert && isActiveAlert) {
-                        familyAlerts = familyAlerts.filter(id => String(id) !== String(activeRefId) && (!currentViewData || String(id) !== getProfileUid(currentViewData)) && (!currentViewData || String(id) !== String(currentViewData.rowIndex)));
-                        isActiveAlert = false;
-                    }
+                    if (shouldHaveAlert && !isActiveAlert) { familyAlerts.push(String(activeRefId)); isActiveAlert = true; } 
+                    else if (!shouldHaveAlert && isActiveAlert) { familyAlerts = familyAlerts.filter(id => String(id) !== String(activeRefId) && (!currentViewData || String(id) !== getProfileUid(currentViewData)) && (!currentViewData || String(id) !== String(currentViewData.rowIndex))); isActiveAlert = false; }
 
                     localStorage.setItem('family_alerts', JSON.stringify(familyAlerts));
 
                     if (cachedProfiles && cachedProfiles.length > 0) {
                         try {
-                            const familyGrid = document.getElementById('familyGrid');
-                            if(!familyGrid) return;
+                            const familyGrid = document.getElementById('familyGrid'); if(!familyGrid) return;
                             let carouselHtml = "";
-                            
-                            carouselHtml += `
-                                <button onclick="showMainForm()" class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 transition-all duration-300 group cursor-pointer w-full text-center relative h-full min-h-[75px]">
-                                    <div class="relative w-6 h-6 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform mb-1">
-                                        <span class="text-base font-bold mt-[-2px]">+</span>
-                                    </div>
-                                    <div class="text-[9px] sm:text-[10px] font-bold text-indigo-800 truncate w-full">إضافة فرد</div>
-                                    <div class="text-[8px] text-indigo-500 font-medium truncate w-full">ملف جديد</div>
-                                </button>
-                            `;
+                            carouselHtml += `<button onclick="showMainForm()" class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100 transition-all duration-300 group cursor-pointer w-full text-center relative h-full min-h-[75px]"><div class="relative w-6 h-6 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm shrink-0 group-hover:scale-110 transition-transform mb-1"><span class="text-base font-bold mt-[-2px]">+</span></div><div class="text-[9px] sm:text-[10px] font-bold text-indigo-800 truncate w-full">إضافة فرد</div><div class="text-[8px] text-indigo-500 font-medium truncate w-full">ملف جديد</div></button>`;
 
-                            const mainUid = getMainProfileUid();
-                            const activeUid = localStorage.getItem('active_profile_uid');
+                            const mainUid = getMainProfileUid(); const activeUid = localStorage.getItem('active_profile_uid');
                             
                             cachedProfiles.forEach(p => {
-                                const pUid = getProfileUid(p);
-                                const isIterMain = pUid === mainUid; 
-                                const isActive = pUid === activeUid;
-                                const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
-                                
+                                const pUid = getProfileUid(p); const isIterMain = pUid === mainUid; const isActive = pUid === activeUid; const iterRel = p.relation || getRelation(p.rowIndex) || "غير محدد";
                                 const hasAlert = familyAlerts.some(id => String(id) === String(p.refId) || String(id) === pUid);
 
                                 let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-100 hover:bg-gray-50";
                                 let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
-                                
-                                const avatarSvg = p.gender === 'ذكر' 
-                                    ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>`
-                                    : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-                                
+                                const avatarSvg = p.gender === 'ذكر' ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>` : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
                                 const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
 
-                                carouselHtml += `
-                                    <button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]">
-                                        <div class="relative shrink-0 mb-0.5">
-                                            ${avatarSvg}
-                                            ${hasAlert ? '<div class="absolute -top-0.5 -right-0.5 z-10">' + pulseDot + '</div>' : ''}
-                                        </div>
-                                        <div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">
-                                            ${shortName}
-                                        </div>
-                                        <div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">
-                                            ${iterRel}
-                                        </div>
-                                        ${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}
-                                    </button>
-                                `;
+                                carouselHtml += `<button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]"><div class="relative shrink-0 mb-0.5">${avatarSvg}${hasAlert ? '<div class="absolute -top-0.5 -right-0.5 z-10">' + pulseDot + '</div>' : ''}</div><div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">${shortName}</div><div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">${iterRel}</div>${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}</button>`;
                             });
                             familyGrid.innerHTML = carouselHtml;
                         } catch(e) {}
@@ -1693,13 +1695,8 @@
                 const newMain = cachedProfiles.find(p => getProfileUid(p) === uid);
                 if (newMain) newMain.isMain = true; 
                 if(!isAdminMode) localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, uid);
-                
                 renderDashboardUi(cachedProfiles, uid);
                 
-                if (window.parent && window.parent !== window) {
-                    setTimeout(() => { window.parent.postMessage({ action: 'profileSwitched' }, '*'); }, 50);
-                }
-
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
                 try { 
                     await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "setMainProfile", phone: verifiedFullPhone, rowIndex: rIndex, sheetName: sName }), signal: controller.signal }); 
@@ -1760,50 +1757,21 @@
                 textToCopy = bio;
             } else if (type === 'short') {
                 let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || "";
-                if (!shortBio) {
-                    textToCopy = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`;
-                } else {
-                    textToCopy = shortBio;
-                }
+                if (!shortBio) { textToCopy = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`; } else { textToCopy = shortBio; }
             }
 
-            const tempTextArea = document.createElement("textarea");
-            tempTextArea.value = textToCopy;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
+            const tempTextArea = document.createElement("textarea"); tempTextArea.value = textToCopy; document.body.appendChild(tempTextArea); tempTextArea.select();
             
-            try {
-                document.execCommand('copy');
-                showMsgModal("تم النسخ بنجاح ✅", "تم نسخ النبذة، يمكنك لصقها الآن في أي مكان.");
-            } catch (err) {
-                showMsgModal("عذراً", "حدث خطأ أثناء محاولة النسخ. جهازك قد لا يدعم هذه الخاصية.");
-            }
-            
+            try { document.execCommand('copy'); showMsgModal("تم النسخ بنجاح ✅", "تم نسخ النبذة، يمكنك لصقها الآن في أي مكان."); } catch (err) { showMsgModal("عذراً", "حدث خطأ أثناء محاولة النسخ. جهازك قد لا يدعم هذه الخاصية."); }
             document.body.removeChild(tempTextArea);
         }
 
         function shareFromHero(type) {
             if(!currentViewData) return;
-            
-            let textToShare = "";
-            const refId = currentViewData.refId || currentViewData.rowIndex || "---";
-
-            if (type === 'full') {
-                let bio = currentViewData.autoBio || (currentViewData.fullDetails && currentViewData.fullDetails.autoBio) || "";
-                if (!bio) { showMsgModal("تنبيه", "النبذة الكاملة غير متوفرة حالياً."); return; }
-                textToShare = bio;
-            } else if (type === 'short') {
-                let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || "";
-                if (!shortBio) {
-                    textToShare = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`;
-                } else {
-                    textToShare = shortBio;
-                }
-            }
-
-            const encodedText = encodeURIComponent(textToShare);
-            const brokerPhone = "966590779236";
-            window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`, '_blank');
+            let textToShare = ""; const refId = currentViewData.refId || currentViewData.rowIndex || "---";
+            if (type === 'full') { let bio = currentViewData.autoBio || (currentViewData.fullDetails && currentViewData.fullDetails.autoBio) || ""; if (!bio) { showMsgModal("تنبيه", "النبذة الكاملة غير متوفرة حالياً."); return; } textToShare = bio; } 
+            else if (type === 'short') { let shortBio = currentViewData.shortBio || (currentViewData.fullDetails && currentViewData.fullDetails.shortBio) || ""; if (!shortBio) { textToShare = `ملف رقم: #${refId}\nيحتاج لتحديث النبذة المختصرة من الإدارة.`; } else { textToShare = shortBio; } }
+            const encodedText = encodeURIComponent(textToShare); const brokerPhone = "966590779236"; window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedText}`, '_blank');
         }
 
         async function askDeleteConfirmHero() {
@@ -1817,24 +1785,22 @@
                     if(isAdminMode) { reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken }; }
                     
                     const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    const result = await res.json();
+                    clearTimeout(timeoutId); const result = await res.json();
                     
                     const mEl = document.getElementById('confirmModal'); if(mEl) mEl.classList.add('hidden'); 
                     
-                    if(result.success) {
-                        cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName);
-                        currentViewedIndexInDashboard = null;
-                        if(cachedProfiles.length === 0) showMainForm(); else renderDashboardUi(cachedProfiles);
-                    } else showMsgModal("خطأ", result.message);
-                } catch(e) { 
-                    const mEl = document.getElementById('confirmModal'); if(mEl) mEl.classList.add('hidden'); 
-                    if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
-                    else showMsgModal("خطأ", "خطأ بالاتصال"); 
-                } finally { clearTimeout(timeoutId); }
+                    if(result.success) { cachedProfiles = cachedProfiles.filter(p => p.rowIndex !== rIndex || p.sheetName !== sName); currentViewedIndexInDashboard = null; if(cachedProfiles.length === 0) showMainForm(); else renderDashboardUi(cachedProfiles); } 
+                    else showMsgModal("خطأ", result.message);
+                } catch(e) { const mEl = document.getElementById('confirmModal'); if(mEl) mEl.classList.add('hidden'); if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً."); else showMsgModal("خطأ", "خطأ بالاتصال"); } 
+                finally { clearTimeout(timeoutId); }
             });
         }
 
+// 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥 القسم 30: جافاسكريبت - دوال تجهيز البيانات وإرسالها للاعتماد 🟥🟥🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 
         function handleProfileAction(rowIndex, sheetName, btnEl, actionType) {
             const cachedProfile = cachedProfiles.find(p => p.rowIndex === rowIndex && p.sheetName === sheetName);
             if (cachedProfile && cachedProfile.fullDetails) { populateMainFormFromData(cachedProfile.fullDetails, rowIndex, sheetName, actionType); } 
@@ -1848,12 +1814,8 @@
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getProfileDetails", phone: verifiedFullPhone, rowIndex: rowIndex, sheetName: sheetName }), signal: controller.signal });
                 clearTimeout(timeoutId); const result = await res.json();
                 if(result.success && result.data) populateMainFormFromData(result.data, rowIndex, sheetName, actionType);
-            } catch(e) { 
-                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
-                else showMsgModal("خطأ", "حدث خطأ أثناء جلب البيانات."); 
-            } finally {
-                btnEl.innerHTML = originalText; btnEl.disabled = false;
-            }
+            } catch(e) { if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً."); else showMsgModal("خطأ", "حدث خطأ أثناء جلب البيانات."); } 
+            finally { btnEl.innerHTML = originalText; btnEl.disabled = false; }
         }
 
         function populateMainFormFromData(data, rowIndex, sheetName, actionType) {
@@ -1863,37 +1825,19 @@
             const mForm = document.getElementById('mainFormSection'); if(mForm) mForm.classList.remove('hidden'); 
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
-            const btnSubmit = document.getElementById('reviewSubmitBtn');
-            const titleEl = document.getElementById('mainFormTitle');
+            const btnSubmit = document.getElementById('reviewSubmitBtn'); const titleEl = document.getElementById('mainFormTitle');
 
-            if (actionType === 'edit') {
-                if(btnSubmit) btnSubmit.innerHTML = `<span>تحديث الطلب</span>`;
-                if(titleEl) titleEl.innerText = "تعديل بيانات الملف";
-                document.title = "تعديل بيانات الملف";
-            } else {
-                if(btnSubmit) btnSubmit.innerHTML = `<span>اعتماد الطلب</span>`;
-                if(titleEl) titleEl.innerText = "تسجيل طلب زواج";
-                document.title = "منصة الزواج - تسجيل / دخول";
-            }
+            if (actionType === 'edit') { if(btnSubmit) btnSubmit.innerHTML = `<span>تحديث الطلب</span>`; if(titleEl) titleEl.innerText = "تعديل بيانات الملف"; document.title = "تعديل بيانات الملف"; } 
+            else { if(btnSubmit) btnSubmit.innerHTML = `<span>اعتماد الطلب</span>`; if(titleEl) titleEl.innerText = "تسجيل طلب زواج"; document.title = "منصة الزواج - تسجيل / دخول"; }
 
             for(let i=2; i<=5; i++) { const c = document.getElementById(`step-${i}-card`); if(c) c.classList.remove('locked-step', 'opacity-50'); }
             populateSharedDropdowns(); buildDobDropdowns(); 
             
             const fpd = document.getElementById('finalPhoneDisplay'); if(fpd) fpd.value = verifiedFullPhone;
-
             let currentRel = data.relation || getRelation(rowIndex) || '';
             
-            if (actionType === 'copy') { 
-                setVal('firstName', ''); 
-                setVal('relation', ''); 
-                updateRelationOptions(null);
-                showMsgModal("تنبيه", "تأكد من تغيير (الاسم الأول) للطلب الجديد."); 
-            } 
-            else { 
-                setVal('firstName', data.name || ''); 
-                setVal('relation', currentRel); 
-                updateRelationOptions(currentRel);
-            }
+            if (actionType === 'copy') { setVal('firstName', ''); setVal('relation', ''); updateRelationOptions(null); showMsgModal("تنبيه", "تأكد من تغيير (الاسم الأول) للطلب الجديد."); } 
+            else { setVal('firstName', data.name || ''); setVal('relation', currentRel); updateRelationOptions(currentRel); }
             
             if(data.familyName) setVal('familyName', data.familyName); checkRad('gender', data.gender === 'أنثى' ? 'أنثى' : 'ذكر');
             
@@ -1909,14 +1853,8 @@
                 
                 let originRoots = data.roots || '';
                 let insideOpt = document.querySelector('#originInside option[value="'+originRoots+'"]');
-                if(insideOpt) { 
-                    checkRad('originLocation', 'من داخل المملكة'); 
-                    setTimeout(() => { setVal('originInside', originRoots); }, 200); 
-                } else if (originRoots) { 
-                    checkRad('originLocation', 'من خارج المملكة'); 
-                    setTimeout(() => { setVal('originOutside', originRoots); }, 200); 
-                }
-
+                if(insideOpt) { checkRad('originLocation', 'من داخل المملكة'); setTimeout(() => { setVal('originInside', originRoots); }, 200); } 
+                else if (originRoots) { checkRad('originLocation', 'من خارج المملكة'); setTimeout(() => { setVal('originOutside', originRoots); }, 200); }
                 if(data.howHeard) setVal('howHeard', data.howHeard);
             }, 200);
 
@@ -1926,34 +1864,19 @@
                 if(data.childrenStatus) { setTimeout(() => setVal('custodyStatus', data.childrenStatus), 50); }
                 
                 if (data.birthDate) {
-                    let birthStr = String(data.birthDate).trim(); 
-                    let nums = birthStr.match(/\d+/g);
+                    let birthStr = String(data.birthDate).trim(); let nums = birthStr.match(/\d+/g);
                     if (nums) {
-                        let y, m, d;
-                        const yearIndex = nums.findIndex(n => n.length === 4);
+                        let y, m, d; const yearIndex = nums.findIndex(n => n.length === 4);
                         if (yearIndex !== -1) {
-                            y = nums[yearIndex];
-                            let otherNums = nums.filter((_, idx) => idx !== yearIndex);
-                            if (otherNums.length >= 2) {
-                                if (yearIndex === 0) { d = otherNums[1]; m = otherNums[0]; }
-                                else { d = otherNums[0]; m = otherNums[1]; }
-                            }
-                        } else if (nums.length === 1 && nums[0].length === 4) {
-                            y = nums[0]; 
-                        } else if (nums.length >= 3) {
-                            y = nums[2]; m = nums[1]; d = nums[0];
-                        }
+                            y = nums[yearIndex]; let otherNums = nums.filter((_, idx) => idx !== yearIndex);
+                            if (otherNums.length >= 2) { if (yearIndex === 0) { d = otherNums[1]; m = otherNums[0]; } else { d = otherNums[0]; m = otherNums[1]; } }
+                        } else if (nums.length === 1 && nums[0].length === 4) { y = nums[0]; } else if (nums.length >= 3) { y = nums[2]; m = nums[1]; d = nums[0]; }
                         
                         if (y) {
                             let parsedYear = parseInt(y); let ageIfHijri = 1447 - parsedYear; let ageIfGreg = 2026 - parsedYear; let chosenCalType = 'hijri'; 
                             if ((ageIfHijri < 15 || ageIfHijri > 100) && (ageIfGreg >= 15 && ageIfGreg <= 100)) chosenCalType = 'greg';
                             checkRad('calType', chosenCalType); 
-                            setTimeout(() => { 
-                                setVal('dobYear', y); 
-                                if(m) setVal('dobMonth', parseInt(m).toString()); 
-                                if(d) setVal('dobDay', parseInt(d).toString()); 
-                                calculateEstimatedAge(); 
-                            }, 200);
+                            setTimeout(() => { setVal('dobYear', y); if(m) setVal('dobMonth', parseInt(m).toString()); if(d) setVal('dobDay', parseInt(d).toString()); calculateEstimatedAge(); }, 200);
                         }
                     }
                 }
@@ -1962,24 +1885,17 @@
             setTimeout(() => {
                 setVal('education', data.education || '');
                 let js = document.getElementById('jobStatus');
-                if(js) {
-                    let jobExists = Array.from(js.options).some(o => o.value === data.job);
-                    if(jobExists) setVal('jobStatus', data.job); else if(data.job) { setVal('jobStatus', 'أخرى'); setVal('customJob', data.job); }
-                }
+                if(js) { let jobExists = Array.from(js.options).some(o => o.value === data.job); if(jobExists) setVal('jobStatus', data.job); else if(data.job) { setVal('jobStatus', 'أخرى'); setVal('customJob', data.job); } }
 
                 if(data.gender !== 'أنثى') {
                     if(data.monthlyIncome) {
                         let inc = data.monthlyIncome;
-                        if(inc.includes('مرتفع') && inc.includes('30')) inc = "دخل عالي (30,000 ريال فأكثر)";
-                        else if(inc.includes('ضعيف') || (inc.includes('أقل') && inc.includes('5'))) inc = "دخل ضعيف ( أقل من 5,000 ريال)";
+                        if(inc.includes('مرتفع') && inc.includes('30')) inc = "دخل عالي (30,000 ريال فأكثر)"; else if(inc.includes('ضعيف') || (inc.includes('أقل') && inc.includes('5'))) inc = "دخل ضعيف ( أقل من 5,000 ريال)";
                         setVal('monthlyIncome', inc);
                     }
                     if(data.specialConditions) { const conds = data.specialConditions.split('،'); conds.forEach(c => { const cb = document.querySelector(`input[name="menSpecOpts"][value="${c.trim()}"]`); if(cb) cb.checked = true; }); }
                 } else {
-                    if(data.acceptMarried) {
-                        let acc = data.acceptMarried;
-                        if(acc.includes('نعم')) setVal('acceptMarried', 'نعم'); else if(acc.includes('لا')) setVal('acceptMarried', 'لا'); else if(acc.includes('ممكن')) setVal('acceptMarried', 'ممكن');
-                    }
+                    if(data.acceptMarried) { let acc = data.acceptMarried; if(acc.includes('نعم')) setVal('acceptMarried', 'نعم'); else if(acc.includes('لا')) setVal('acceptMarried', 'لا'); else if(acc.includes('ممكن')) setVal('acceptMarried', 'ممكن'); }
                     if(data.specialConditions) { const conds = data.specialConditions.split('،'); conds.forEach(c => { const cb = document.querySelector(`input[name="womenAltMarriage"][value="${c.trim()}"]`); if(cb) cb.checked = true; }); }
                 }
 
@@ -1994,8 +1910,7 @@
                 document.querySelectorAll('input[name="partnerTags"]').forEach(cb => { if (savedPartner.includes(cb.value)) { cb.checked = true; cleanPartner = cleanPartner.replace(cb.value, '').replace(' | ', '').replace('، ', '').trim(); } });
                 setVal('partnerSpecs', cleanPartner);
                 
-                updateCharCount('additionalInfo', 'addInfoCounter');
-                updateCharCount('partnerSpecs', 'partnerCounter');
+                updateCharCount('additionalInfo', 'addInfoCounter'); updateCharCount('partnerSpecs', 'partnerCounter');
 
                 openSpecificStep(1);
             }, 600);
@@ -2020,195 +1935,21 @@
             }, 800);
         }
 
-       // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        // 🟥🟥🟥 ======== بداية القسم (11 - 1) ======== 🟥🟥🟥
-        // 🟥🟥🟥 [ منطق تغيير الجنس والأصول القبلية ] 🟥🟥🟥
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        function handleGenderChange() {
-            const gm = document.getElementById('gender_male'); if(gm) isMale = gm.checked; 
-            renderSmartTags();
-            const group = document.getElementById('tribalStatusGroup');
-            if(group) group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
-            
-            const nc = document.getElementById('namesContainer'); if(nc) nc.classList.add('hidden'); 
-            
-            const mmSec = document.getElementById('menMarriageSection'); const wmSec = document.getElementById('womenMarriageSection');
-            const fpSec = document.getElementById('femalePhysicalSpecs'); const incDiv = document.getElementById('incomeDiv'); const mInc = document.getElementById('monthlyIncome');
-
-            if(isMale) {
-                if(mmSec) mmSec.classList.remove('hidden'); if(wmSec) wmSec.classList.add('hidden');
-                if(fpSec) fpSec.classList.add('hidden'); if(incDiv) incDiv.classList.remove('hidden'); if(mInc) mInc.required = true;
-            } else {
-                if(wmSec) wmSec.classList.remove('hidden'); if(mmSec) mmSec.classList.add('hidden');
-                if(fpSec) fpSec.classList.remove('hidden'); if(incDiv) incDiv.classList.add('hidden'); if(mInc) mInc.required = false;
-            }
-            
-            const ccd = document.getElementById('childrenCountDiv'); if(ccd) ccd.classList.add('hidden'); 
-            const cd = document.getElementById('custodyDiv'); if(cd) cd.classList.add('hidden'); 
-            const cc = document.getElementById('childrenCount'); if(cc) cc.value = ""; 
-
-            const nats = isMale ? (dynamicDropdowns?.maleNationalities || fallbackDropdowns.maleNationalities) : (dynamicDropdowns?.femaleNationalities || fallbackDropdowns.femaleNationalities);
-            const jobs = isMale ? (dynamicDropdowns?.maleJobs || fallbackDropdowns.maleJobs) : (dynamicDropdowns?.femaleJobs || fallbackDropdowns.femaleJobs);
-            const mars = isMale ? (dynamicDropdowns?.maleMarital || fallbackDropdowns.maleMarital) : (dynamicDropdowns?.femaleMarital || fallbackDropdowns.femaleMarital);
-            const mTypes = isMale ? (dynamicDropdowns?.maleMarriageType || fallbackDropdowns.maleMarriageType) : (dynamicDropdowns?.femaleMarriageType || fallbackDropdowns.femaleMarriageType);
-            
-            let rawSkins = isMale ? (dynamicDropdowns?.maleSkinColors || fallbackDropdowns.maleSkinColors) : (dynamicDropdowns?.femaleSkinColors || fallbackDropdowns.femaleSkinColors);
-            const skins = rawSkins.map(s => s.replace('أسمر برونزي', 'برونزي').replace('سمراء برونزي', 'برونزية'));
-
-            let natOptions = '<option value="" disabled selected>-- اختر الجنسية --</option>'; if(nats) nats.forEach(nat => { let cleanVal = cleanArabicText(nat); natOptions += `<option value="${cleanVal}">${getFlagForText(cleanVal)} ${cleanVal}</option>`; });
-            const natEl = document.getElementById('nationality'); if(natEl) { natEl.innerHTML = natOptions; natEl.classList.add('emoji-font'); }
-
-            let jobOptions = '<option value="" disabled selected>-- اختر الوظيفة --</option>'; 
-            if(jobs) {
-                const uniqueJobs = jobs.filter(j => j !== "أخرى" && !j.includes("+ أخرى"));
-                uniqueJobs.forEach(job => jobOptions += `<option value="${job}">${job}</option>`);
-                jobOptions += `<option value="أخرى" class="font-bold text-indigo-600">+ أخرى (اكتب يدوياً)</option>`;
-            }
-            const js = document.getElementById('jobStatus'); if(js) js.innerHTML = jobOptions; 
-            
-            const jobWrapper = document.getElementById('jobStatus_other_wrapper'); 
-            if(jobWrapper) jobWrapper.classList.remove('show');
-            const cj = document.getElementById('customJob'); 
-            if(cj) { cj.classList.remove('conditional-required', 'error-field', 'hidden'); cj.value = ''; }
-
-            let marOptions = '<option value="" disabled selected>-- حدد الحالة --</option>'; if(mars) mars.forEach(m => marOptions += `<option value="${m}">${m}</option>`);
-            const ms = document.getElementById('maritalStatus'); if(ms) ms.innerHTML = marOptions;
-
-            let marrOptions = '<option value="" disabled selected>-- اختر النوع --</option>'; if(mTypes) mTypes.forEach(m => marrOptions += `<option value="${m}">${m}</option>`);
-            const mmType = document.getElementById('menMarriageType'); const wmType = document.getElementById('womenMarriageType');
-            if(isMale && mmType) mmType.innerHTML = marrOptions; else if(wmType) wmType.innerHTML = marrOptions;
-
-            const skinHexCodes = ["#fefaf5", "#faead6", "#e1c699", "#c29062", "#8c5a35", "#54331c", "#2c1b12"]; 
-            const textColors = ["#1e293b", "#1e293b", "#1e293b", "#ffffff", "#ffffff", "#ffffff", "#ffffff"]; 
-            let skinOptions = '';
-            
-            if(skins) {
-                skins.forEach((skin, index) => { 
-                    const hex = skinHexCodes[index] || "#cbd5e1"; 
-                    const textColor = textColors[index] || "#1e293b"; 
-                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-lg whitespace-nowrap text-[10px] font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
-                });
-                const scg = document.getElementById('skinColorGroup'); if(scg) scg.innerHTML = skinOptions;
-            }
-            generateTerms(); saveDraft();
-        }
-
-        function handleTribalChange() {
-            const ty = document.getElementById('tribal_yes'); const isQabili = ty ? ty.checked : false;
-            const nc = document.getElementById('namesContainer'); if(nc) nc.classList.remove('hidden'); 
-            const td = document.getElementById('tribeNameDiv'); if(td) td.classList.toggle('hidden', !isQabili); 
-            const fd = document.getElementById('familyNameDiv'); if(fd) fd.classList.remove('hidden');
-            
-            const lbl = document.getElementById('familyLabel'); 
-            const inp = document.getElementById('familyName');
-            const tribeInp = document.getElementById('tribeName');
-            
-            const privacyHint = '<span class="text-emerald-600 font-normal text-[9px] mr-1">(لا يظهر في العام - للوسيط)</span>';
-            
-            if(isQabili) { 
-                if(lbl) lbl.innerHTML = `اسم العائلة <span class="text-gray-400 font-normal">(اختياري)</span> ${privacyHint}`; 
-                if(inp) inp.required = false; 
-                if(tribeInp) tribeInp.required = true; 
-            } else { 
-                if(lbl) lbl.innerHTML = `اسم العائلة <span class="text-red-500">*</span> ${privacyHint}`; 
-                if(inp) inp.required = true; 
-                if(tribeInp) tribeInp.required = false; 
-            }
-            saveDraft();
-        }
-
-
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        // 🟥🟥🟥 ======== بداية القسم (11 - 2) ======== 🟥🟥🟥
-        // 🟥🟥🟥 [ منطق الحالة الاجتماعية وحضانة الأبناء ] 🟥🟥🟥
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        function handleMaritalStatusChange() {
-            const ms = document.getElementById('maritalStatus'); const s = ms ? ms.value : ''; 
-            const div = document.getElementById('childrenCountDiv'); const cd = document.getElementById('custodyDiv'); const cc = document.getElementById('childrenCount');
-            if(s === "أعزب" || s === "بكر") { if(div) div.classList.add('hidden'); if(cd) cd.classList.add('hidden'); if(cc) cc.value = ""; } else { if(div) div.classList.remove('hidden'); handleChildrenChange(); }
-            saveDraft();
-        }
-
-        function handleChildrenChange() {
-            const ms = document.getElementById('maritalStatus'); const s = ms ? ms.value : ''; 
-            const cc = document.getElementById('childrenCount'); const count = cc ? (parseInt(cc.value) || 0) : 0;
-            const div = document.getElementById('custodyDiv'); const sel = document.getElementById('custodyStatus');
-            if(count > 0 && (s.includes('مطلق') || s.includes('أرمل'))) {
-                if(div) div.classList.remove('hidden'); 
-                if(sel) {
-                    sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
-                    if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
-                }
-            } else { if(div) div.classList.add('hidden'); }
-            saveDraft();
-        }
-
-
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        // 🟥🟥🟥 ======== بداية القسم (11 - 3) ======== 🟥🟥🟥
-        // 🟥🟥🟥 [ منطق الإقامة والأصول ونوع الزواج ] 🟥🟥🟥
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        function handleResidenceChange() { 
-            const rKsa = document.getElementById('res_ksa'); const isKsa = rKsa ? rKsa.checked : false; 
-            const kcDiv = document.getElementById('ksaCitiesDiv'); if(kcDiv) kcDiv.classList.toggle('hidden', !isKsa); 
-            const wcDiv = document.getElementById('worldCountriesDiv'); if(wcDiv) wcDiv.classList.toggle('hidden', isKsa); 
-            saveDraft(); 
-        }
-
-        function toggleOriginDetails() { 
-            const oIn = document.getElementById('origin_in'); const isInside = oIn ? oIn.checked : false; 
-            const oiD = document.getElementById('originInsideDetails'); if(oiD) oiD.classList.toggle('hidden', !isInside); 
-            const ooD = document.getElementById('originOutsideDetails'); if(ooD) ooD.classList.toggle('hidden', isInside); 
-            saveDraft(); 
-        }
-
-        function handleMenMarriageTypeChange() { 
-            const msw = document.getElementById('menSpecialSpecsWrapper'); const mmt = document.getElementById('menMarriageType');
-            if(msw && mmt) msw.classList.toggle('hidden', mmt.value !== "زواج باشتراطات خاصة"); 
-            generateTerms(); saveDraft(); 
-        }
-
-        function handleWomenMarriageTypeChange() { 
-            const wsw = document.getElementById('womenSpecialSpecsWrapper'); const wmt = document.getElementById('womenMarriageType');
-            if(wsw && wmt) wsw.classList.toggle('hidden', wmt.value !== "زواج بظروف خاصة"); 
-            saveDraft(); 
-        }
-
-
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        // 🟥🟥🟥 ======== بداية القسم (11 - 4) ======== 🟥🟥🟥
-        // 🟥🟥🟥 [ دوال إدارة النموذج، التنقل، والتحقق النهائي ] 🟥🟥🟥
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
         function updateRelationOptions(currentEditRelation = null) {
-            const relSelect = document.getElementById('relation');
-            if (!relSelect) return;
-
-            const restricted = ["أنا", "أبي", "أمي"];
-            let usedRelations = [];
+            const relSelect = document.getElementById('relation'); if (!relSelect) return;
+            const restricted = ["أنا", "أبي", "أمي"]; let usedRelations = [];
 
             if (cachedProfiles && cachedProfiles.length > 0) {
-                cachedProfiles.forEach(p => {
-                    let rel = p.relation || getRelation(p.rowIndex) || "";
-                    if (restricted.includes(rel.trim())) {
-                        usedRelations.push(rel.trim());
-                    }
-                });
+                cachedProfiles.forEach(p => { let rel = p.relation || getRelation(p.rowIndex) || ""; if (restricted.includes(rel.trim())) { usedRelations.push(rel.trim()); } });
             }
 
             Array.from(relSelect.options).forEach(opt => {
-                if (opt.text.includes("(مسجل مسبقاً)")) {
-                    opt.text = opt.text.replace(" (مسجل مسبقاً)", "");
-                }
-                opt.disabled = false;
-                opt.classList.remove('text-gray-400', 'bg-gray-100');
+                if (opt.text.includes("(مسجل مسبقاً)")) { opt.text = opt.text.replace(" (مسجل مسبقاً)", ""); }
+                opt.disabled = false; opt.classList.remove('text-gray-400', 'bg-gray-100');
             });
 
             Array.from(relSelect.options).forEach(opt => {
-                if (usedRelations.includes(opt.value) && opt.value !== currentEditRelation) {
-                    opt.disabled = true;
-                    opt.text = opt.text + " (مسجل مسبقاً)";
-                    opt.classList.add('text-gray-400', 'bg-gray-100');
-                }
+                if (usedRelations.includes(opt.value) && opt.value !== currentEditRelation) { opt.disabled = true; opt.text = opt.text + " (مسجل مسبقاً)"; opt.classList.add('text-gray-400', 'bg-gray-100'); }
             });
         }
 
@@ -2221,8 +1962,7 @@
             const addInfoCount = document.getElementById('addInfoCounter'); if(addInfoCount) { addInfoCount.innerText = "120"; addInfoCount.className = "text-blue-600 font-bold transition-colors"; }
             const partCount = document.getElementById('partnerCounter'); if(partCount) { partCount.innerText = "120"; partCount.className = "text-indigo-600 font-bold transition-colors"; }
             
-            buildDobDropdowns();
-            updateRelationOptions(null);
+            buildDobDropdowns(); updateRelationOptions(null);
 
             for(let i=1; i<=5; i++) {
                 let b = document.getElementById(`step-${i}-badge`); if(b) { b.className = "w-6 h-6 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold text-xs transition-colors"; b.innerHTML = i; }
@@ -2231,188 +1971,11 @@
             const btnSubmit = document.getElementById('reviewSubmitBtn'); if(btnSubmit) btnSubmit.innerHTML = `<span>اعتماد الطلب</span>`;
             
             const titleEl = document.getElementById('mainFormTitle');
-            if (editInfoState) {
-                if(titleEl) titleEl.innerText = "تعديل بيانات الملف";
-                document.title = "تعديل بيانات الملف";
-            } else {
-                if(titleEl) titleEl.innerText = "تسجيل طلب زواج";
-                document.title = "منصة الزواج - تسجيل / دخول";
-            }
+            if (editInfoState) { if(titleEl) titleEl.innerText = "تعديل بيانات الملف"; document.title = "تعديل بيانات الملف"; } 
+            else { if(titleEl) titleEl.innerText = "تسجيل طلب زواج"; document.title = "منصة الزواج - تسجيل / دخول"; }
 
             openSpecificStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); checkAndRestoreDraft();
         }
-
-        function validateStep(stepNum) {
-            const stepContent = document.getElementById(`step-${stepNum}-content`); 
-            if(!stepContent) return { isValid: true };
-            
-            let isValid = true;
-            
-            const requiredElements = Array.from(stepContent.querySelectorAll('[required], .conditional-required')).filter(el => !el.closest('.hidden') && el.offsetParent !== null);
-            stepContent.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
-
-            const radioGroups = new Set();
-            requiredElements.forEach(el => {
-                if(el.type === 'radio') {
-                    radioGroups.add(el.name);
-                } else if(el.value.trim() === '') {
-                    isValid = false;
-                    el.classList.add('error-field');
-                    el.classList.add('animate-bounce'); setTimeout(() => el.classList.remove('animate-bounce'), 500);
-                }
-            });
-
-            radioGroups.forEach(name => {
-                if(!document.querySelector(`input[name="${name}"]:checked`)) {
-                    isValid = false;
-                    const groupContainer = document.getElementById(name + 'GroupWrapper');
-                    if(groupContainer) groupContainer.classList.add('error-field');
-                }
-            });
-
-            return { isValid };
-        }
-
-        function toggleAccordion(targetStep) {
-            for(let i = 1; i < targetStep; i++) {
-                const validation = validateStep(i);
-                if(!validation.isValid) { 
-                    markStepAsError(i); 
-                    openSpecificStep(i); 
-                    return; 
-                } else {
-                    let badge = document.getElementById(`step-${i}-badge`); 
-                    if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
-                }
-            }
-            openSpecificStep(targetStep);
-        }
-
-        function openSpecificStep(stepNumber) {
-            for(let i=1; i<=5; i++) { 
-                const ct = document.getElementById(`step-${i}-content`); if(ct) ct.classList.remove('open'); 
-                const ic = document.getElementById(`step-${i}-icon`); if(ic) { const sv = ic.querySelector('svg'); if(sv) sv.classList.remove('rotate-180'); }
-            }
-            const tgtCt = document.getElementById(`step-${stepNumber}-content`); if(tgtCt) tgtCt.classList.add('open'); 
-            const tgtIc = document.getElementById(`step-${stepNumber}-icon`); if(tgtIc) { const svg = tgtIc.querySelector('svg'); if(svg) svg.classList.add('rotate-180'); }
-        }
-
-        function markStepAsError(stepNum) { 
-            let badge = document.getElementById(`step-${stepNum}-badge`); 
-            if(badge) { badge.className = "w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs animate-pulse"; badge.innerHTML = "!"; } 
-        }
-
-        function nextStep(currentStep) {
-            const validation = validateStep(currentStep);
-            if(validation.isValid) {
-                let badge = document.getElementById(`step-${currentStep}-badge`); 
-                if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
-                
-                if(currentStep < 5) { 
-                    const nextCard = document.getElementById(`step-${currentStep + 1}-card`); 
-                    if(nextCard) { 
-                        nextCard.classList.remove('locked-step', 'opacity-50'); 
-                        openSpecificStep(currentStep + 1); 
-                        setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); 
-                    } 
-                }
-            } else { 
-                markStepAsError(currentStep); 
-                const stepContent = document.getElementById(`step-${currentStep}-content`);
-                let errDiv = stepContent.querySelector('.step-error-msg');
-                if(!errDiv) {
-                    errDiv = document.createElement('div');
-                    errDiv.className = 'step-error-msg text-[10px] text-red-500 font-bold mt-2 text-center animate-pulse';
-                    stepContent.querySelector('.accordion-inner').appendChild(errDiv);
-                }
-                errDiv.innerText = "يرجى تعبئة جميع الحقول المحددة باللون الأحمر للمتابعة.";
-                setTimeout(() => { if(errDiv) errDiv.remove(); }, 3000);
-            }
-        }
-
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        // 🟥🟥🟥 ======== بداية القسم (12) ======== 🟥🟥🟥
-        // 🟥🟥🟥 [ حفظ البيانات، الاعتماد النهائي، وتحديث الذاكرة ] 🟥🟥🟥
-        // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-        function generateTerms() {
-            if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
-            if(!container) return;
-            if(isMale) { 
-                const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false; 
-                container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px]">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; 
-            } else { 
-                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; 
-            }
-        }
-
-        function getCombinedAddInfo() {
-            const mySelectedTags = Array.from(document.querySelectorAll('input[name="myInfoTags"]:checked')).map(cb => cb.value).join('، ');
-            const ai = document.getElementById('additionalInfo'); const baseAddInfo = ai ? ai.value.trim() : ''; 
-            return [mySelectedTags, baseAddInfo].filter(Boolean).join(' | ');
-        }
-
-        function getCombinedPartnerSpecs() {
-            const partnerSelectedTags = Array.from(document.querySelectorAll('input[name="partnerTags"]:checked')).map(cb => cb.value).join('، ');
-            const ps = document.getElementById('partnerSpecs'); const basePartnerSpecs = ps ? ps.value.trim() : ''; 
-            return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
-        }
-
-        function renderSmartTags() {
-            if (isMale === null) return;
-            const nEl = document.getElementById('nationality');
-            const nat = nEl ? (nEl.value || "") : "";
-            const isSaudi = nat.includes("سعودي") || nat.includes("السعودية") || nat.includes("خليجي") || nat.includes("إمارات") || nat.includes("كويت") || nat.includes("قطر") || nat.includes("بحرين") || nat.includes("عمان");
-            
-            let myTags = []; let partnerTags = [];
-            
-            const customNiqabSVG = `<svg class="w-3.5 h-3.5 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
-            const hijabIcon = `🧕`;
-
-            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
-            else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
-            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
-            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
-
-            const drawTag = (tag, isMyTag) => {
-                let iconStr = ''; let cleanTag = tag;
-                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
-                return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2 py-1 bg-white text-gray-700 text-[9px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
-            };
-
-            const myTagsC = document.getElementById('myTagsContainer'); if(myTagsC) myTagsC.innerHTML = myTags.map(tag => drawTag(tag, true)).join('');
-            const ptTagsC = document.getElementById('partnerTagsContainer'); if(ptTagsC) ptTagsC.innerHTML = partnerTags.map(tag => drawTag(tag, false)).join('');
-        }
-
-        function openTermsModal() {
-            const sve = document.getElementById('smartValidationError'); if(sve) sve.classList.add('hidden'); 
-            let firstInvalidStep = null;
-            for(let i=1; i<=5; i++) { 
-                const validation = validateStep(i); 
-                if(!validation.isValid) { 
-                    markStepAsError(i); 
-                    if(!firstInvalidStep) { firstInvalidStep = i; } 
-                } else { 
-                    let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } 
-                } 
-            }
-
-            if(firstInvalidStep) {
-                const errBox = document.getElementById('smartValidationError');
-                if(errBox) {
-                    errBox.innerText = `يرجى إكمال الحقول الإجبارية في الخطوة ${firstInvalidStep}.`;
-                    errBox.classList.remove('hidden'); 
-                }
-                openSpecificStep(firstInvalidStep); 
-                const cd = document.getElementById(`step-${firstInvalidStep}-card`); if(cd) cd.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
-            }
-            const hw = document.getElementById('howHeard');
-            if(hw && !hw.value) { hw.classList.add('error-field'); showMsgModal("تنبيه", "يرجى اختيار إجابة سؤال الإحصاء."); return; }
-            generateTerms(); 
-            const me = document.getElementById('modalError'); if(me) me.classList.add('hidden'); 
-            const tm = document.getElementById('termsModal'); if(tm) tm.classList.remove('hidden');
-        }
-
-        function closeTermsModal() { const tm = document.getElementById('termsModal'); if(tm) tm.classList.add('hidden'); }
 
         async function submitForm(btn) {
             if (btn.disabled) return; 
@@ -2425,8 +1988,7 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`; 
             
-            btn.disabled = true;
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed');
 
             try {
                 const getV = (id) => { const e = document.getElementById(id); return e ? e.value : ''; };
@@ -2443,14 +2005,10 @@
                     const hl = document.getElementById('hairLength'); const ht = document.getElementById('hairTexture'); const bs = document.getElementById('bodyShape');
                     const hLen = hl ? hl.value : ''; const hTex = ht ? ht.value : ''; const bShape = bs ? bs.value : '';
                     let pSpecs = []; if (hLen || hTex) pSpecs.push(`الشعر: ${hLen || ''} ${hTex ? '('+hTex+')' : ''}`.trim()); if (bShape) pSpecs.push(`الجسم: ${bShape}`);
-                    if (pSpecs.length > 0) { 
-                        finalAdditionalInfo = finalAdditionalInfo.length > 0 ? `[الشكل: ${pSpecs.join(' | ')}] - ` + finalAdditionalInfo : `[الشكل: ${pSpecs.join(' | ')}]`;
-                    }
+                    if (pSpecs.length > 0) { finalAdditionalInfo = finalAdditionalInfo.length > 0 ? `[الشكل: ${pSpecs.join(' | ')}] - ` + finalAdditionalInfo : `[الشكل: ${pSpecs.join(' | ')}]`; }
                 }
 
-                const fpd = document.getElementById('finalPhoneDisplay');
-                const submittedPhone = isAdminMode && fpd ? fpd.value.trim() : verifiedFullPhone;
-
+                const fpd = document.getElementById('finalPhoneDisplay'); const submittedPhone = isAdminMode && fpd ? fpd.value.trim() : verifiedFullPhone;
                 const rKsa = document.getElementById('res_ksa'); const isKsa = rKsa ? rKsa.checked : false;
                 const resVal = isKsa ? getV('ksaCity') : (getV('worldCountry') + " " + getV('worldCity'));
                 const oIn = document.getElementById('origin_in'); const isOIn = oIn ? oIn.checked : false;
@@ -2461,82 +2019,43 @@
                     birthDate: `${getV('dobDay')}/${getV('dobMonth')}/${getV('dobYear')}|${getC('calType') === 'hijri' ? 'هجري' : 'ميلادي'}`,
                     gender: isMale ? "ذكر" : "أنثى", 
                     age: getV('age') || (document.getElementById('calculatedAgeVal') ? document.getElementById('calculatedAgeVal').innerText.replace(" سنة", "") : ""),
-                    nationality: getV('nationality'), originType: getC('tribalStatus'),
-                    roots: rootsVal,
-                    tribeName: getV('tribeName'), residence: resVal,
+                    nationality: getV('nationality'), originType: getC('tribalStatus'), roots: rootsVal, tribeName: getV('tribeName'), residence: resVal,
                     maritalStatus: getV('maritalStatus'), childrenCount: getV('childrenCount') || "0", childrenStatus: getV('custodyStatus'),
                     education: getV('education'), job: finalJob, height: getV('height'), weight: getV('weight'),
-                    skinColor: getC('skinColor') || "غير محدد", 
-                    marriageType: isMale ? getV('menMarriageType') : getV('womenMarriageType'),
+                    skinColor: getC('skinColor') || "غير محدد", marriageType: isMale ? getV('menMarriageType') : getV('womenMarriageType'),
                     specialConditions: isMale ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، '),
-                    acceptMarried: !isMale ? getV('acceptMarried') : "", 
-                    monthlyIncome: isMale ? getV('monthlyIncome') : "",
+                    acceptMarried: !isMale ? getV('acceptMarried') : "", monthlyIncome: isMale ? getV('monthlyIncome') : "",
                     fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? "1000 مقدم + 3000 توفيق" : "200 بحث + 3000 توفيق") : "2000 توفيق",
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
                     howHeard: getV('howHeard'), agreedToTerms: "نعم موافق", autoBio: "#طلب_زواج_جديد" 
                 };
 
                 const reqBody = { action: editInfoState ? "updateRegistration" : "saveRegistration", data: payloadData };
-                if(editInfoState) {
-                    reqBody.editInfo = editInfoState;
-                    if(isAdminMode) {
-                        reqBody.editInfo.isAdminBypass = true;
-                        reqBody.editInfo.adminToken = adminToken;
-                    }
-                } else if (isAdminMode) {
-                    reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken };
-                }
+                if(editInfoState) { reqBody.editInfo = editInfoState; if(isAdminMode) { reqBody.editInfo.isAdminBypass = true; reqBody.editInfo.adminToken = adminToken; } } 
+                else if (isAdminMode) { reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken }; }
 
-                const controller = new AbortController(); 
-                const timeoutId = setTimeout(() => controller.abort(), 20000); 
+                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000); 
 
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(reqBody), signal: controller.signal });
-                clearTimeout(timeoutId); 
-                
-                const responseText = await res.text();
-                const result = JSON.parse(responseText);
+                clearTimeout(timeoutId); const responseText = await res.text(); const result = JSON.parse(responseText);
 
                 if(result.success) {
-                    closeTermsModal(); 
-                    const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
+                    closeTermsModal(); const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
                     const fa = document.getElementById('finalActionModal'); if(fa) fa.classList.remove('hidden'); 
-                    
-                    registeredUserData = result.data || {};
-                    hasClickedWaToApprove = false;
-
-                    // --- بداية التعديل: تعيين الفرد الجديد كحساب نشط ليظهر فوراً ---
-                    if (result.refId && !isAdminMode) {
-                        localStorage.setItem('active_profile_uid', String(result.refId));
-                        localStorage.setItem('active_profile_refid', String(result.refId));
-                    }
-                    // --- نهاية التعديل ---
-
-                    cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                    registeredUserData = result.data || {}; hasClickedWaToApprove = false; cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
                     if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
-                } else {
-                    showMsgModal("ملاحظة من الخادم", result.message);
-                }
+                } else { showMsgModal("ملاحظة من الخادم", result.message); }
             } catch(e) { 
-                if(e.name === 'AbortError') {
-                    showMsgModal("تنبيه أمان (ضعف الشبكة) ⚠️", "شبكة الإنترنت لديك ضعيفة جداً. يرجى إغلاق هذه النافذة والتحقق من (لوحة العائلة) بعد قليل للتأكد.");
-                } else { 
-                    showMsgModal("خطأ تقني", "حدث خطأ أثناء الاتصال أو معالجة البيانات، يرجى المحاولة مرة أخرى."); 
-                    console.error("Submit Error:", e);
-                }
-            } finally {
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
-                btn.classList.remove('opacity-75', 'cursor-not-allowed');
-            }
+                if(e.name === 'AbortError') { showMsgModal("تنبيه أمان (ضعف الشبكة) ⚠️", "شبكة الإنترنت لديك ضعيفة جداً. يرجى إغلاق هذه النافذة والتحقق من (لوحة العائلة) بعد قليل للتأكد."); } 
+                else { showMsgModal("خطأ تقني", "حدث خطأ أثناء الاتصال أو معالجة البيانات، يرجى المحاولة مرة أخرى."); console.error("Submit Error:", e); }
+            } finally { btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); }
         }
 
         async function executeFinalWhatsAppSync() {
             const resData = registeredUserData;
             if (resData && (resData.shortBio || resData.autoBio)) {
                 const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 ${resData.unifiedName || '---'}`;
-                const encodedMessage = encodeURIComponent(adminMessage);
-                const brokerPhone = "966590779236"; 
-                window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedMessage}`, '_blank');
+                const encodedMessage = encodeURIComponent(adminMessage); const brokerPhone = "966590779236"; window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedMessage}`, '_blank');
             }
             
             hasClickedWaToApprove = true;
@@ -2544,10 +2063,7 @@
             const rf = document.getElementById('registrationForm'); if(rf) rf.reset();
             
             await loadDashboard(); 
-            
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({ action: 'authSuccess' }, '*');
-            }
+            if (window.parent && window.parent !== window) { window.parent.postMessage({ action: 'authSuccess' }, '*'); }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
