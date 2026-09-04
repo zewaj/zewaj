@@ -80,14 +80,15 @@
 
             <!-- أزرار الفلترة (أيقونات فقط) -->
             <div class="flex items-center gap-1 shrink-0">
-                <button onclick="setFilter('all')" id="filter-all" class="filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0" title="عرض كل الطلبات">
+                <!-- تم تغيير "الكل" إلى "الطلبات النشطة" كافتراضي -->
+                <button onclick="setFilter('active')" id="filter-active" class="filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0 relative" title="الطلبات النشطة (يخفي المغلقة)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    <span id="badgeUnread" class="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
                 </button>
                 <button onclick="setFilter('action')" id="filter-action" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="تتطلب تدخلي فوراً">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                     <span id="badgeAction" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
                 </button>
-                <!-- الزر الجديد: طابور الانتظار -->
                 <button onclick="setFilter('queue')" id="filter-queue" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="قائمة الانتظار">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </button>
@@ -100,7 +101,6 @@
                 </button>
             </div>
         </div>
-
 
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 4: شريط البحث وأزرار التحديث والقفل 🔴🔴🔴 -->
@@ -223,62 +223,41 @@
         </div>
     </div>
 
-    <!-- نافذة إدارة طابور الانتظار -->
-    <div id="queueManagementModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4 fade-in">
-        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-purple-600 px-4 py-3 flex items-center justify-between shrink-0">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">⚙️ إدارة طابور الانتظار</h3>
-                <button onclick="closeQueueModal()" class="text-white/70 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="p-3 bg-purple-50 border-b border-purple-100 shrink-0 text-[11px] text-purple-800 font-medium">
-                اسحب بالأسهم لترتيب الأولوية. يمكنك إزالة المتقدمين المرفوضين لاسترجاع نقاطهم.
-            </div>
-            <div class="p-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar bg-slate-50 flex-grow" id="queueListContainer">
-                <!-- سيتم حقن الطابور هنا برمجياً -->
-            </div>
-            <div class="bg-white px-4 py-3 flex justify-between gap-3 border-t border-slate-200 shrink-0">
-                <button type="button" onclick="closeQueueModal()" class="flex-1 py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors">إغلاق</button>
-                <button type="button" id="btnSaveQueueOrder" onclick="saveQueueOrder()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">حفظ الترتيب</button>
-            </div>
-        </div>
-    </div>
-
     <!-- نافذة إنهاء المحادثة المخصصة (الجديدة) -->
-    <div id="closeChatModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4 fade-in">
+    <div id="closeChatModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
-            <div class="bg-rose-600 px-4 py-3 flex items-center justify-between shrink-0">
-                <h3 class="text-base font-bold text-white flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg> إنهاء المحادثة نهائياً</h3>
-                <button onclick="resolveCloseChat(null)" class="text-white/70 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+            <div class="bg-rose-600 px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    إنهاء المحادثة نهائياً
+                </h3>
             </div>
-            <div class="p-4 bg-rose-50 border-b border-rose-100 shrink-0 flex gap-3 items-start">
-                <p class="text-xs text-rose-800 font-bold leading-relaxed">
+            <div class="p-4 sm:p-5 flex flex-col gap-3">
+                <div class="bg-amber-50 text-amber-800 p-3 rounded-xl text-xs font-bold border border-amber-200 shadow-sm leading-relaxed text-center">
                     ⚠️ تنبيه هام: اختيار (الزواج) أو (حذف الملف) سيقوم تلقائياً بإلغاء جميع المنتظرين في الطابور لهذا الشخص وإرجاع نقاطهم فوراً.
-                </p>
-            </div>
-            <div class="p-5 flex flex-col gap-3 bg-slate-50 flex-grow">
-                <label class="block text-sm font-extrabold text-slate-700 mb-1">يرجى تحديد سبب الإلغاء بدقة:</label>
+                </div>
                 
-                <button onclick="resolveCloseChat('مرفوض - تم الاعتذار')" class="w-full text-right px-4 py-3 bg-white border border-amber-300 hover:bg-amber-50 rounded-xl transition-all shadow-sm group">
-                    <div class="font-bold text-amber-700 text-sm group-hover:text-amber-800">1. اعتذار لعدم التوافق ❌</div>
-                    <div class="text-[10px] text-slate-500 mt-1">يُغلق هذا الطلب فقط، ويمرر الدور للشخص التالي في طابور الانتظار (إن وجد).</div>
+                <p class="text-sm font-extrabold text-slate-800 mt-2 text-center">يرجى تحديد سبب الإلغاء بدقة:</p>
+                <input type="hidden" id="closeChatReqId">
+
+                <!-- الخيارات الثلاثة -->
+                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'اعتذار لعدم التوافق')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-amber-200 bg-white hover:bg-amber-50 transition-all text-amber-700 shadow-sm gap-1.5 group">
+                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">1. اعتذار لعدم التوافق ❌</span>
+                    <span class="text-[10px] text-slate-500 font-bold">يُغلق هذا الطلب فقط ويمرر الدور للشخص التالي في طابور الانتظار (إن وجد).</span>
                 </button>
 
-                <button onclick="resolveCloseChat('تم الزواج')" class="w-full text-right px-4 py-3 bg-white border border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all shadow-sm group">
-                    <div class="font-bold text-emerald-700 text-sm group-hover:text-emerald-800">2. تم الزواج بفضل الله 💍</div>
-                    <div class="text-[10px] text-slate-500 mt-1">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</div>
+                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'تم الزواج')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-emerald-200 bg-white hover:bg-emerald-50 transition-all text-emerald-700 shadow-sm gap-1.5 group">
+                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">2. تم الزواج بفضل الله 💍</span>
+                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</span>
                 </button>
 
-                <button onclick="resolveCloseChat('محذوف')" class="w-full text-right px-4 py-3 bg-white border border-rose-300 hover:bg-rose-50 rounded-xl transition-all shadow-sm group">
-                    <div class="font-bold text-rose-700 text-sm group-hover:text-rose-800">3. حذف الملف نهائياً 🗑️</div>
-                    <div class="text-[10px] text-slate-500 mt-1">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</div>
+                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'حذف الملف')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-rose-200 bg-white hover:bg-rose-50 transition-all text-rose-700 shadow-sm gap-1.5 group">
+                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">3. حذف الملف نهائياً 🗑️</span>
+                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</span>
                 </button>
             </div>
-            <div class="bg-white px-4 py-3 flex justify-between gap-3 border-t border-slate-200 shrink-0">
-                <button type="button" onclick="resolveCloseChat(null)" class="w-full py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors">إلغاء التراجع</button>
+            <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
+                <button type="button" onclick="document.getElementById('closeChatModal').classList.add('hidden')" class="w-full py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors shadow-sm bg-white">إلغاء التراجع</button>
             </div>
         </div>
     </div>
@@ -311,9 +290,12 @@
         let isProcessingAction = false; 
         const FETCH_TIMEOUT_MS = 60000; 
         
-        let currentFilterType = 'all';
+        let currentFilterType = 'active'; // التغيير: الفلتر الافتراضي أصبح النشطة
         let scrollPositions = {}; 
         let selectedReqId = null;
+
+        // التغيير: إضافة كاش للاحتفاظ بوقت آخر قراءة لكل طلب
+        let readRequestsCache = JSON.parse(localStorage.getItem('adminReadCache')) || {};
 
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 11: دوال تسجيل الدخول والخروج 🔴🔴🔴 -->
@@ -742,9 +724,18 @@
 <!-- 🔴🔴🔴 القسم 16: دوال الفلترة وإحصائيات الأزرار 🔴🔴🔴 -->
 <!-- ======================================================== -->
         function updateDashboardStats() {
-            let pending = 0, actionNeeded = 0;
+            let pending = 0, actionNeeded = 0, unreadCount = 0;
             allRequests.forEach(r => {
                 const s = r.status || '';
+                
+                // حساب الغير مقروء (إذا لم يكن في الكاش أو كان التحديث أحدث من وقت القراءة)
+                let lastActionTs = getTimestamp(r.lastActionDate || r.date);
+                if (!s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق')) {
+                    if (!readRequestsCache[r.reqId] || lastActionTs > readRequestsCache[r.reqId]) {
+                        unreadCount++;
+                    }
+                }
+
                 if (r.finalApprovalGiven) {
                     actionNeeded++;
                 } else if (r.hasRequestedContact) {
@@ -757,6 +748,7 @@
             
             const badgeAction = document.getElementById('badgeAction');
             const badgeWaiting = document.getElementById('badgeWaiting');
+            const badgeUnread = document.getElementById('badgeUnread');
             
             if (badgeAction) {
                 badgeAction.innerText = actionNeeded;
@@ -767,6 +759,11 @@
                 badgeWaiting.innerText = pending;
                 if(pending > 0) badgeWaiting.classList.remove('hidden');
                 else badgeWaiting.classList.add('hidden');
+            }
+            if (badgeUnread) {
+                badgeUnread.innerText = unreadCount;
+                if(unreadCount > 0) badgeUnread.classList.remove('hidden');
+                else badgeUnread.classList.add('hidden');
             }
         }
 
@@ -783,7 +780,19 @@
         }
 
         function applyFilters() { renderTable(); }
-        function openRequest(reqId) { selectedReqId = reqId; renderTable(); }
+        
+        // التغيير: دالة فتح الطلب تسجل وقت القراءة فوراً وتخفيه
+        function openRequest(reqId, timestampStr) { 
+            selectedReqId = reqId; 
+            
+            if (timestampStr) {
+                readRequestsCache[reqId] = timestampStr;
+                localStorage.setItem('adminReadCache', JSON.stringify(readRequestsCache));
+            }
+            
+            renderTable(); 
+        }
+        
         function closeRequest() { selectedReqId = null; renderTable(); }
 
 <!-- ======================================================== -->
@@ -799,11 +808,12 @@
                 const s = req.status || 'قيد الانتظار';
                 let matchesStatus = false;
                 
-                if (currentFilterType === 'all') matchesStatus = true;
+                // الفلتر النشط الافتراضي يستبعد الملفات المغلقة تماماً
+                if (currentFilterType === 'active') matchesStatus = !(s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق'));
                 else if (currentFilterType === 'action') matchesStatus = req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد');
                 else if (currentFilterType === 'waiting') matchesStatus = (!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده');
                 else if (currentFilterType === 'queue') matchesStatus = s.includes('قائمة الانتظار');
-                else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى');
+                else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق');
 
                 if (!matchesStatus) return false;
                 if (searchTerm === '') return true;
@@ -812,14 +822,43 @@
                 return searchString.includes(searchTerm);
             });
 
-            filteredRequests.sort((a, b) => {
-                if (a.finalApprovalGiven && !b.finalApprovalGiven) return -1;
-                if (!a.finalApprovalGiven && b.finalApprovalGiven) return 1;
+            // --- خوارزمية "الطابور الذكي للوسيط" الجديدة ---
+            const getPriority = (req) => {
+                if (req.finalApprovalGiven) return 1; // 🚨 طارئ جداً
 
+                const s = req.status || '';
+                const lastActionTs = getTimestamp(req.lastActionDate || req.date);
+                const isUnread = !s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق') &&
+                                 (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
+
+                if (isUnread) return 2; // 🔵 غير مقروء (أولوية قصوى بعد الطوارئ)
+                if (s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('اعتماد')) return 3; // 🟡 يتطلب تدخلي
+
+                return 4; // ⚪ بانتظار العملاء (تهبط للأسفل)
+            };
+
+            filteredRequests.sort((a, b) => {
+                const priorityA = getPriority(a);
+                const priorityB = getPriority(b);
+
+                // 1. الفرز الأساسي حسب الطبقات (1 ثم 2 ثم 3 ثم 4)
+                if (priorityA !== priorityB) {
+                    return priorityA - priorityB;
+                }
+
+                // 2. الفرز الثانوي (التاريخ) داخل نفس الطبقة
                 const dateA = getTimestamp(a.lastActionDate || a.date);
                 const dateB = getTimestamp(b.lastActionDate || b.date);
-                return dateB - dateA;
+
+                if (priorityA <= 3) {
+                    // للطلبات التي تحتاج شغل (1, 2, 3): الأقدم أولاً لكي لا نتأخر عليهم
+                    return dateA - dateB;
+                } else {
+                    // للطلبات التي تنتظر العملاء (4): الأحدث أولاً، لكي ترى من أنهيت عمله للتو في أعلى هذا القسم
+                    return dateB - dateA;
+                }
             });
+            // --- نهاية خوارزمية الفرز ---
             
             if (filteredRequests.length === 0) {
                 container.innerHTML = `<div class="w-full text-center py-12 text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm mt-4">لا توجد طلبات تطابق الفلتر الحالي.</div>`;
@@ -848,22 +887,29 @@
                     statusBadge = `<span class="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 whitespace-nowrap">انتظار العملاء</span>`;
                 } else if (s.includes('مقبول')) {
                     statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً</span>`;
-                } else if (s.includes('مرفوض') || s.includes('ملغى')) {
+                } else if (s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) {
                     statusBadge = `<span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-200 shrink-0 whitespace-nowrap">مغلق</span>`;
                 }
 
                 let timeElapsed = getTimeElapsedArabic(req.lastActionDate || req.date);
                 let timeBadge = `<span class="time-badge text-slate-400 text-[9px] font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsed}</span>`;
-                if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || req.finalApprovalGiven) timeBadge = '';
+                if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق') || req.finalApprovalGiven) timeBadge = '';
 
                 let isSelected = req.reqId === selectedReqId;
                 let cardClass = isSelected ? 'bg-indigo-50 border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm';
                 let flashClass = req.finalApprovalGiven && !isSelected ? 'highlight-flash' : '';
 
+                let lastActionTs = getTimestamp(req.lastActionDate || req.date);
+                let isUnread = !s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق') && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
+                
+                let unreadDot = isUnread ? `<span class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm z-10 animate-pulse" title="يوجد تحديث غير مقروء"></span>` : '';
+                let textWeight = isUnread ? 'font-black text-slate-900' : 'font-bold text-slate-700';
+
                 html += `
-                <div id="card-${req.reqId}" onclick="openRequest('${req.reqId}')" class="cursor-pointer border rounded-2xl p-3 transition-all ${cardClass} ${flashClass}">
+                <div id="card-${req.reqId}" onclick="openRequest('${req.reqId}', ${lastActionTs})" class="cursor-pointer border rounded-2xl p-3 transition-all relative ${cardClass} ${flashClass}">
+                    ${unreadDot}
                     <div class="flex justify-between items-start mb-2 gap-2">
-                        <span class="text-[10px] font-extrabold text-slate-700 bg-slate-200/80 px-1.5 py-0.5 rounded border border-slate-300 shadow-sm shrink-0">#${req.reqId}</span>
+                        <span class="text-[10px] ${textWeight} bg-slate-200/80 px-1.5 py-0.5 rounded border border-slate-300 shadow-sm shrink-0">#${req.reqId}</span>
                         <div class="flex flex-col items-end gap-1 text-left w-full overflow-hidden">
                             ${statusBadge}
                             ${timeBadge}
@@ -901,18 +947,17 @@
                     else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('مقبول')) statusBadgeFull = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">${s}</span>`;
-                    else if (s.includes('مرفوض') || s.includes('ملغى')) statusBadgeFull = `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-200 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) statusBadgeFull = `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-200 shrink-0 whitespace-nowrap">${s}</span>`;
 
                     let timeElapsedFull = getTimeElapsedArabic(req.lastActionDate || req.date);
                     let timeBadgeFull = `<span class="time-badge bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-bold px-1.5 py-1 rounded-md flex items-center gap-1 shadow-sm shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}" title="وقت الانتظار"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsedFull}</span>`;
-                    if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || req.finalApprovalGiven) timeBadgeFull = '';
+                    if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق') || req.finalApprovalGiven) timeBadgeFull = '';
 
                     let reqStatusBadge = getProfileBadge(req.requesterProfileStatus);
                     let targetStatusBadge = getProfileBadge(req.targetProfileStatus);
                     let chatThread = parseUnifiedChat(req.message);
                     
                     let actionButtonHTML = '';
-                    
                     let queueButton = '';
                     if (s.includes('قائمة الانتظار')) {
                         let targetIdProxy = req.targetRefId || req.targetPhone;
@@ -923,13 +968,13 @@
                         actionButtonHTML = `
                         ${queueButton}
                         <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
-                            ℹ️ إشعار آلي: قام النظام بإرسال رسالة التبشير وتفاصيل السداد (حسب التسعيرة) للرجل. بانتظار إرفاق الوصل.
+                            ℹ️ إشعار آلي: قام النظام بإرسال رسالة التبشير وتفاصيل السداد للرجل. بانتظار إرفاق الوصل.
                         </div>
-                        <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full px-4 py-3 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md">
+                        <button onclick="executeAdminAction('${req.reqId}', 'closeChatSuccess')" class="w-full px-4 py-3 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 
                             إغلاق وأرشفة الطلب (تم التواصل والدفع)
                         </button>`;
-                    } else if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى')) {
+                    } else if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-400 font-bold p-2">هذا الطلب مغلق أو منتهي</div>`;
                     } else if (s.includes('اعتماد') || s.includes('يوجد رد') || s === 'قيد الانتظار') {
                         let chunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
@@ -947,7 +992,7 @@
                             <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
                             <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
                         </div>
-                        <button onclick="executeAdminAction('${req.reqId}', 'closeChat')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
+                        <button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
                     }
 
                     html += `
@@ -1157,7 +1202,12 @@
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 20: تنفيذ إجراءات الإدارة الإضافية والحفظ 🔴🔴🔴 -->
 <!-- ======================================================== -->
-        async function executeAdminAction(reqId, actionType) {
+        function openCloseChatModal(reqId) {
+            document.getElementById('closeChatReqId').value = reqId;
+            document.getElementById('closeChatModal').classList.remove('hidden');
+        }
+
+        async function executeAdminAction(reqId, actionType, chosenReason = null) {
             if(isProcessingAction) return;
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
@@ -1182,18 +1232,26 @@
                 prefixTag = "[من الطرف الأول] [تعديل الإدارة]: "; 
                 waPhone = String(req.targetPhone).replace(/[^0-9]/g, '');
                 waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.requesterData || 'غير متوفرة'}`;
+            } else if (actionType === 'closeChatSuccess') {
+                // زر الأرشفة الأخضر (بعد التبشير والدفع)
+                let confirmClose = await showMsgModal("تأكيد الأرشفة", "هل أنت متأكد من أرشفة هذا الطلب (تم التواصل والدفع)؟", "confirm");
+                if (!confirmClose) return;
+                adminMessage = "[مغلق] تم إنهاء المحادثة وإتمام الإجراءات بنجاح.";
+                newStatus = "مكتمل";
+                prefixTag = "[من الإدارة]: ";
             } else if(actionType === 'closeChat') {
-                // فتح نافذة الإغلاق المخصصة بدلاً من رسالة التأكيد البسيطة
-                let chosenStatus = await openCloseChatModal();
-                if(!chosenStatus) return; // تم إلغاء الإجراء من قبل المدير
-
-                let reasonText = "";
-                if (chosenStatus === "مرفوض - تم الاعتذار") reasonText = "لعدم التوافق";
-                else if (chosenStatus === "تم الزواج") reasonText = "بسبب إتمام الزواج بفضل الله";
-                else if (chosenStatus === "محذوف") reasonText = "بسبب حذف الملف نهائياً";
-
-                adminMessage = `[إغلاق/اعتذار من قبل الإدارة] تم إنهاء المحادثة وإغلاق الطلب ${reasonText}.`;
-                newStatus = chosenStatus; 
+                // نافذة الأسباب المخصصة
+                if (chosenReason === 'اعتذار لعدم التوافق') {
+                    adminMessage = "[إغلاق/اعتذار من قبل الإدارة] تم إنهاء المحادثة لعدم التوافق. سيتم تمرير الدور للشخص التالي.";
+                    newStatus = "مرفوض - تم الاعتذار";
+                } else if (chosenReason === 'تم الزواج') {
+                    adminMessage = "[مغلق] تم إنهاء المحادثة وإغلاق الطلب بسبب إتمام الزواج بفضل الله.";
+                    newStatus = "مغلق - تم الزواج";
+                } else if (chosenReason === 'حذف الملف') {
+                    adminMessage = "[مغلق] تم إنهاء المحادثة وإلغاء الطلب بناءً على رغبة العميل بحذف الملف نهائياً.";
+                    newStatus = "مغلق - ملغى (حذف الملف نهائياً)"; // الكلمة السحرية "ملغى" ترجع النقاط
+                }
+                document.getElementById('closeChatModal').classList.add('hidden');
                 prefixTag = "[من الإدارة]: ";
             }
 
@@ -1207,7 +1265,7 @@
             
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
 
-            if (actionType !== 'closeChat' && waPhone) {
+            if (actionType !== 'closeChat' && actionType !== 'closeChatSuccess' && waPhone) {
                 try {
                     let waFullMsg = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\nرسالة إدارية ${waIntro}\n\n* الرسالة:\n"${adminMessage}"\n\n* يرجى الدخول للمنصة للرد عبر الرابط التالي:\nhttps://zewaj.github.io/zewaj/\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
                     let waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(waFullMsg)}`;
@@ -1295,127 +1353,6 @@
             } finally {
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; cancelBtn.disabled = false;
-            }
-        }
-
-        let currentQueueList = [];
-
-        function openQueueModal(targetRefIdOrPhone) {
-            currentQueueList = allRequests.filter(r => 
-                (r.status || '').includes('قائمة الانتظار') && 
-                (r.targetRefId === targetRefIdOrPhone || r.targetPhone === targetRefIdOrPhone)
-            );
-            
-            renderQueueList();
-            document.getElementById('queueManagementModal').classList.remove('hidden');
-        }
-
-        function closeQueueModal() {
-            document.getElementById('queueManagementModal').classList.add('hidden');
-        }
-
-        function renderQueueList() {
-            const container = document.getElementById('queueListContainer');
-            if (currentQueueList.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 text-sm py-6 font-bold">الطابور فارغ حالياً.</p>';
-                return;
-            }
-
-            let html = '';
-            currentQueueList.forEach((req, index) => {
-                let isFirst = index === 0;
-                let isLast = index === currentQueueList.length - 1;
-                
-                html += `
-                <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm gap-2 transition-all hover:border-purple-300">
-                    <div class="flex flex-col gap-1 w-full overflow-hidden">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold shrink-0">#${req.reqId}</span>
-                            ${isFirst ? '<span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">الأول بالطابور</span>' : ''}
-                        </div>
-                        <span class="text-xs font-bold text-slate-800 truncate" title="${req.requesterData}">${req.requesterData || '-'}</span>
-                    </div>
-                    
-                    <div class="flex flex-col gap-1 shrink-0">
-                        <button onclick="moveQueueItem(${index}, -1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}" ${isFirst ? 'disabled' : ''} title="رفع لأعلى">⬆️</button>
-                        <button onclick="moveQueueItem(${index}, 1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : ''}" ${isLast ? 'disabled' : ''} title="إنزال لأسفل">⬇️</button>
-                    </div>
-
-                    <div class="w-px h-10 bg-slate-200 shrink-0 mx-1"></div>
-                    
-                    <button onclick="removeQueueItem('${req.reqId}')" class="shrink-0 p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition-colors" title="إزالة من الطابور واسترجاع النقاط">
-                        ❌
-                    </button>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function moveQueueItem(index, direction) {
-            if (index + direction < 0 || index + direction >= currentQueueList.length) return;
-            const temp = currentQueueList[index];
-            currentQueueList[index] = currentQueueList[index + direction];
-            currentQueueList[index + direction] = temp;
-            renderQueueList(); 
-        }
-
-        async function removeQueueItem(reqId) {
-            let confirmRemove = await showMsgModal("تأكيد الإزالة", "هل أنت متأكد من إلغاء هذا الطلب وإزالته من طابور الانتظار (واسترجاع نقاطه)؟", "confirm");
-            if (!confirmRemove) return;
-
-            document.getElementById('refreshIcon').classList.add('sync-spin');
-            
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminRemoveFromQueue', adminToken: state.adminToken, reqId: reqId })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    currentQueueList = currentQueueList.filter(r => r.reqId !== reqId);
-                    renderQueueList();
-                    sessionStorage.removeItem('admin_requests_cache');
-                    fetchData(true);
-                } else {
-                    showMsgModal("تنبيه", result.message || "فشل إزالة الطلب من السيرفر.");
-                }
-            } catch (e) {
-                showMsgModal("خطأ", "فشل الاتصال بالسيرفر. يرجى المحاولة لاحقاً.");
-            } finally {
-                document.getElementById('refreshIcon').classList.remove('sync-spin');
-            }
-        }
-
-        async function saveQueueOrder() {
-            if (currentQueueList.length === 0) return;
-            
-            const btn = document.getElementById('btnSaveQueueOrder');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = "جاري الحفظ...";
-            btn.disabled = true;
-
-            const orderedReqIds = currentQueueList.map(r => r.reqId);
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminReorderQueue', adminToken: state.adminToken, orderedReqIds: orderedReqIds })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    closeQueueModal();
-                    sessionStorage.removeItem('admin_requests_cache');
-                    await fetchData(true); 
-                } else {
-                    showMsgModal("تنبيه", result.message || "فشل حفظ الترتيب الجديد.");
-                }
-            } catch (e) {
-                showMsgModal("خطأ", "تأخرت استجابة السيرفر.");
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
             }
         }
     </script>
