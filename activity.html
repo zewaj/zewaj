@@ -929,7 +929,13 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+        // قفل برمجي صارم لمنع الإرسال المزدوج
+        window.isSubmittingAction = false;
+
         async function submitReply() {
+            // إذا كان القفل مفعلاً (عملية جارية)، تجاهل أي نقرة إضافية فوراً
+            if (window.isSubmittingAction) return;
+            
             const msg = document.getElementById('replyMessage').value.trim();
             if (!phoneParam || !currentReplyReqId) return;
             
@@ -937,22 +943,27 @@
             
             if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
 
+            // التحقق من الرصيد
             let requiredPoints = 0;
-            if (currentReplyType === 'تمديد المحادثة') {
-                let req = window.myReqsDataStore[currentReplyReqId] || window.myIncomingReqsDataStore[currentReplyReqId];
-                let targetInfo = req ? (req.unifiedName || req.targetData || req.targetSummary || '') : '';
-                let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config')) || {}; } catch(e){}
-                const EXT_COST_REG = config.EXTEND_COST_REGULAR !== undefined ? config.EXTEND_COST_REGULAR : 2;
-                const EXT_COST_SPEC = config.EXTEND_COST_SPECIAL_WOMEN !== undefined ? config.EXTEND_COST_SPECIAL_WOMEN : 10;
-                requiredPoints = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
+            if (currentReplyType === 'طلب تواصل مباشر') {
+                requiredPoints = 3;
             } else if (document.getElementById('quotaWarning').innerHTML.includes('انتهى')) {
                 requiredPoints = 1; 
             }
             
-            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) { showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); return; }
+            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) { 
+                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); 
+                return; 
+            }
 
-            const btn = document.getElementById('replySubmitBtn'); const ogHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = spinnerSvg + '<span>جاري الإرسال...</span>'; btn.classList.add('opacity-75', 'cursor-not-allowed');
+            // تفعيل القفل البرمجي وقفل الواجهة
+            window.isSubmittingAction = true;
+            const btn = document.getElementById('replySubmitBtn'); 
+            const ogHtml = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerHTML = spinnerSvg + '<span>جاري الإرسال...</span>'; 
+            // إضافة pointer-events-none تمنع المتصفح من رصد أي نقرة على الزر
+            btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
             
             window.highlightedReqId = currentReplyReqId; 
             let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
@@ -965,7 +976,7 @@
                         action: 'requestDirectContact',
                         phone: phoneParam,
                         reqId: currentReplyReqId,
-                        requesterRefId: refIdParam // مطلوب هنا
+                        requesterRefId: refIdParam 
                     };
                 } else {
                     let finalReplyType = currentReplyType;
@@ -976,7 +987,8 @@
                     payloadObj = {
                         action: 'replyToRequest',
                         phone: phoneParam,
-                        reqId: currentReplyReqId, // السيرفر يطلب reqId فقط هنا
+                        reqId: currentReplyReqId, 
+                        requesterRefId: refIdParam, // تم إعادته للهوية الكاملة
                         replyType: finalReplyType,
                         replyMessage: msg
                     };
@@ -992,12 +1004,12 @@
                 try { 
                     result = JSON.parse(resText); 
                 } catch(e) {
-                    showMsgModal("انهيار في السيرفر (Backend Error)", "لم يستطع السيرفر قراءة الطلب. الرد:\n" + resText.substring(0, 150));
+                    showMsgModal("خطأ من السيرفر", "السيرفر واجه مشكلة ولم يُرجع رداً مفهوماً.\n\nالرد:\n" + resText.substring(0, 150));
                     return;
                 }
                 
                 if (result.success === false || result.success === undefined) {
-                    let errMsg = result.error || result.message || "السيرفر رفض العملية بدون توضيح السبب!";
+                    let errMsg = result.error || result.message || result.details || "رفض السيرفر تنفيذ العملية. (أبلغ مبرمج السيرفر بمراجعة الكود)";
                     showMsgModal("مرفوض من السيرفر", errMsg);
                     return; 
                 }
@@ -1015,16 +1027,24 @@
             } catch (e) { 
                 showMsgModal("خطأ بالاتصال", "تعذر الإرسال. تأكد من الإنترنت أو حاول مجدداً."); 
             } finally { 
-                btn.innerHTML = ogHtml; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); 
+                // فك القفل وإعادة الزر لحالته الطبيعية
+                btn.innerHTML = ogHtml; 
+                btn.disabled = false; 
+                btn.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none'); 
+                window.isSubmittingAction = false;
             }
         }
 
         async function submitEdit() {
+            if (window.isSubmittingAction) return;
+
             const msg = document.getElementById('replyMessage').value.trim(); if (!phoneParam || !currentReplyReqId) return;
             if (msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
             
+            window.isSubmittingAction = true;
             const btn = document.getElementById('replySubmitBtn'); const ogHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = spinnerSvg + '<span>جاري التعديل...</span>'; btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btn.disabled = true; btn.innerHTML = spinnerSvg + '<span>جاري التعديل...</span>'; 
+            btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
             
             window.highlightedReqId = currentReplyReqId; 
             
@@ -1033,6 +1053,7 @@
                     action: 'editPendingReply', 
                     phone: phoneParam, 
                     reqId: currentReplyReqId, 
+                    requesterRefId: refIdParam,
                     newMsg: msg 
                 };
 
@@ -1046,13 +1067,13 @@
                 try { 
                     result = JSON.parse(resText); 
                 } catch(e) {
-                    showMsgModal("انهيار في السيرفر (Backend Error)", "السيرفر واجه خطأ داخلي. الرد:\n" + resText.substring(0, 150));
+                    showMsgModal("خطأ من السيرفر", "السيرفر واجه مشكلة ولم يُرجع رداً مفهوماً.\n\nالرد:\n" + resText.substring(0, 150));
                     return;
                 }
                 
                 if (result.success === false || result.success === undefined) {
-                    let errMsg = result.error || result.message || "فشل التعديل لأسباب غير معروفة من السيرفر.";
-                    showMsgModal("خطأ من السيرفر", errMsg);
+                    let errMsg = result.error || result.message || result.details || "فشل التعديل لأسباب غير معروفة من السيرفر.";
+                    showMsgModal("مرفوض من السيرفر", errMsg);
                     return;
                 }
 
@@ -1064,19 +1085,22 @@
             } catch (e) { 
                 showMsgModal("خطأ بالاتصال", "تعذر التعديل. تأكد من اتصالك بالإنترنت."); 
             } finally { 
-                btn.innerHTML = ogHtml; btn.disabled = false; btn.classList.remove('opacity-75'); 
+                btn.innerHTML = ogHtml; 
+                btn.disabled = false; 
+                btn.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none'); 
+                window.isSubmittingAction = false;
             }
         }
 
         async function removeFavorite(event, refId) {
             event.stopPropagation(); if (!phoneParam || !refIdParam) return;
-            const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50');
+            const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50', 'pointer-events-none');
             try {
                 await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) });
                 fetchData(true).finally(() => {
                     if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
                 });
-            } catch(e) { if(card) card.classList.remove('opacity-50'); showMsgModal("خطأ", "تعذر الحذف."); }
+            } catch(e) { if(card) card.classList.remove('opacity-50', 'pointer-events-none'); showMsgModal("خطأ", "تعذر الحذف."); }
         }
 
         window.cancelQueuedReq = async function(reqId) {
@@ -1090,6 +1114,9 @@
             document.getElementById('confirmActionModal').classList.remove('hidden');
 
             window.executeConfirmAction = async function() {
+                if (window.isSubmittingAction) return;
+                window.isSubmittingAction = true;
+                
                 closeConfirmModal();
                 showToast("جاري إلغاء الطلب واسترجاع النقاط...");
                 try {
@@ -1107,6 +1134,8 @@
                     }
                 } catch (e) {
                     showMsgModal("خطأ اتصال", "فشل الاتصال بالسيرفر. تأكد من الإنترنت.");
+                } finally {
+                    window.isSubmittingAction = false;
                 }
             };
         };
