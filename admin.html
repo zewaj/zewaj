@@ -1,5 +1,5 @@
 <!-- ======================================================== -->
-<!-- 🔴🔴🔴 القسم 1: إعدادات الصفحة  وخطوط التصميم 🔴🔴🔴 -->
+<!-- 🔴🔴🔴 القسم 1: إعدادات الصفحة وخطوط التصميم 🔴🔴🔴 -->
 <!-- ======================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -58,73 +58,71 @@
 
 
 <!-- ======================================================== -->
-<!-- 🔴🔴🔴 القسم 3: الشريط العلوي (الإحصائيات والفلاتر) 🔴🔴🔴 -->
+<!-- 🔴🔴🔴 القسم 3: الشريط العلوي (الإحصائيات ومركز البيانات) 🔴🔴🔴 -->
 <!-- ======================================================== -->
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 mb-3 shrink-0 flex items-center justify-between gap-2 z-40 relative">
-        <div class="flex items-center gap-2 sm:gap-4 overflow-x-auto hide-scroll">
-            
-            <!-- يمين: الانتقال لمركز البيانات -->
+    <div class="flex flex-col gap-2 mb-3 shrink-0 z-40 relative">
+        <!-- السطر الأول: مركز البيانات وأدوات البحث -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 flex items-center justify-between gap-2">
             <button onclick="window.location.href='admin_search.html'" class="flex items-center gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-2 rounded-xl transition-all shadow-md shadow-indigo-200 active:scale-95 cursor-pointer">
                 <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
                 <span class="font-black text-xs sm:text-sm leading-tight pt-0.5">مركز البيانات</span>
             </button>
             
-            <!-- عناصر مخفية للحفاظ على استقرار الجافاسكريبت -->
             <div class="hidden">
                 <span id="statWomen"></span>
                 <span id="statMen"></span>
                 <span id="autoRefreshDot"></span>
             </div>
 
-            <div class="w-px h-5 bg-slate-200 shrink-0 mx-1 hidden sm:block"></div>
-
-            <!-- أزرار الفلترة (أيقونات فقط) -->
-            <div class="flex items-center gap-1 shrink-0">
-                <!-- تم تغيير "الكل" إلى "الطلبات النشطة" كافتراضي -->
-                <button onclick="setFilter('active')" id="filter-active" class="filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0 relative" title="الطلبات النشطة (يخفي المغلقة)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                    <span id="badgeUnread" class="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 4: شريط البحث وأزرار التحديث والقفل 🔴🔴🔴 -->
+<!-- ======================================================== -->
+            <div class="flex items-center gap-1.5 shrink-0 pr-1 border-r border-slate-200">
+                <div class="relative flex items-center group shrink-0 ml-1">
+                    <input type="text" id="searchInput" onkeyup="applyFilters()" 
+                        class="transition-all duration-300 outline-none border rounded-xl bg-slate-50 text-[11px] sm:text-xs z-10
+                               w-10 h-9 sm:w-[150px] sm:focus:w-[200px] sm:h-9 
+                               pl-3 pr-8 sm:px-3 sm:pr-8
+                               text-transparent placeholder-transparent border-transparent cursor-pointer 
+                               focus:w-[150px] focus:cursor-text focus:text-slate-700 focus:placeholder-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-inner
+                               sm:cursor-text sm:text-slate-700 sm:placeholder-slate-400 sm:border-slate-300 sm:bg-slate-50 sm:shadow-inner" 
+                        placeholder="بحث ملف، جوال...">
+                    <div class="absolute right-0 pr-2 pointer-events-none text-slate-400 z-20 group-focus-within:text-indigo-500 transition-colors">
+                        <svg class="w-4 h-4 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                </div>
+                <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-colors border border-slate-200" title="تحديث البيانات">
+                    <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
-                <button onclick="setFilter('action')" id="filter-action" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="تتطلب تدخلي فوراً">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                    <span id="badgeAction" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
-                </button>
-                <button onclick="setFilter('queue')" id="filter-queue" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="قائمة الانتظار">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                </button>
-                <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="بانتظار ردود العملاء">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span id="badgeWaiting" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
-                </button>
-                <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-2 rounded-xl transition-colors border border-rose-200" title="قفل / تسجيل خروج">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 </button>
             </div>
         </div>
 
-<!-- ======================================================== -->
-<!-- 🔴🔴🔴 القسم 4: شريط البحث وأزرار التحديث والقفل 🔴🔴🔴 -->
-<!-- ======================================================== -->
-        <div class="flex items-center gap-1.5 shrink-0 pl-1">
-            <div class="relative flex items-center group shrink-0">
-                <input type="text" id="searchInput" onkeyup="applyFilters()" 
-                    class="transition-all duration-300 outline-none border rounded-xl bg-slate-50 text-[11px] sm:text-xs z-10
-                           w-8 h-8 sm:w-[150px] sm:focus:w-[200px] sm:h-9 
-                           pl-3 pr-8 sm:px-3 sm:pr-8
-                           text-transparent placeholder-transparent border-transparent cursor-pointer 
-                           focus:w-[150px] focus:cursor-text focus:text-slate-700 focus:placeholder-slate-400 focus:border-slate-300 focus:bg-white focus:shadow-inner
-                           sm:cursor-text sm:text-slate-700 sm:placeholder-slate-400 sm:border-slate-300 sm:bg-slate-50 sm:shadow-inner" 
-                    placeholder="بحث ملف، جوال...">
-                <div class="absolute right-0 pr-2 pointer-events-none text-slate-400 z-20 group-focus-within:text-indigo-500 transition-colors">
-                    <svg class="w-4 h-4 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                </div>
-            </div>
-            <div class="w-px h-5 bg-slate-200 shrink-0 mx-0.5"></div>
-            <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded-xl transition-colors border border-slate-200" title="تحديث البيانات">
-                <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <!-- السطر الثاني: الفلاتر الستة (يأخذ سطر كامل بالجوال) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 flex items-center justify-center sm:justify-start gap-2 overflow-x-auto hide-scroll w-full">
+            <button onclick="setFilter('active')" id="filter-active" class="filter-btn p-2.5 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0 relative" title="الطلبات النشطة (يخفي المغلقة)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                <span id="badgeUnread" class="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
             </button>
-            <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-xl transition-colors border border-rose-200" title="قفل / تسجيل خروج">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <button onclick="setFilter('action')" id="filter-action" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="تتطلب تدخلي فوراً">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <span id="badgeAction" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+            </button>
+            <button onclick="setFilter('queue')" id="filter-queue" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="قائمة الانتظار">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            </button>
+            <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="بانتظار ردود العملاء">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span id="badgeWaiting" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+            </button>
+            <!-- الفلتر الجديد: طلبات التواصل -->
+            <button onclick="setFilter('contact')" id="filter-contact" class="filter-btn p-2.5 rounded-xl transition-all bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100 shrink-0 relative" title="تم تسليم الأرقام / طلبات تواصل">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            </button>
+            <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
             </button>
         </div>
     </div>
@@ -748,7 +746,6 @@
             allRequests.forEach(r => {
                 const s = r.status || '';
                 
-                // حساب الغير مقروء (إذا لم يكن في الكاش أو كان التحديث أحدث من وقت القراءة)
                 let lastActionTs = getTimestamp(r.lastActionDate || r.date);
                 if (!s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق')) {
                     if (!readRequestsCache[r.reqId] || lastActionTs > readRequestsCache[r.reqId]) {
@@ -790,18 +787,21 @@
         function setFilter(type) {
             currentFilterType = type;
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.className = "filter-btn p-2 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative";
+                btn.className = "filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative";
             });
             const activeBtn = document.getElementById(`filter-${type}`);
             if (activeBtn) {
-                activeBtn.className = `filter-btn p-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm border-transparent shrink-0 relative`;
+                if(type === 'contact') {
+                    activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-emerald-600 text-white shadow-sm border-transparent shrink-0 relative`;
+                } else {
+                    activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-indigo-600 text-white shadow-sm border-transparent shrink-0 relative`;
+                }
             }
             applyFilters();
         }
 
         function applyFilters() { renderTable(); }
         
-        // التغيير: دالة فتح الطلب تسجل وقت القراءة فوراً وتخفيه
         function openRequest(reqId, timestampStr) { 
             selectedReqId = reqId; 
             
@@ -825,14 +825,17 @@
             const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
 
             let filteredRequests = allRequests.filter(req => {
+                // الحل العبقري: إذا كان الطلب مفتوحاً أمامك، تجاهل الفلتر وأبقه معروضاً حتى لو تغيرت حالته
+                if (req.reqId === selectedReqId) return true;
+
                 const s = req.status || 'قيد الانتظار';
                 let matchesStatus = false;
                 
-                // الفلتر النشط الافتراضي يستبعد الملفات المغلقة تماماً
                 if (currentFilterType === 'active') matchesStatus = !(s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق'));
                 else if (currentFilterType === 'action') matchesStatus = req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد');
                 else if (currentFilterType === 'waiting') matchesStatus = (!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده');
                 else if (currentFilterType === 'queue') matchesStatus = s.includes('قائمة الانتظار');
+                else if (currentFilterType === 'contact') matchesStatus = req.hasRequestedContact; // الفلتر الجديد (الطلبات التي تم فيها دفع/تواصل)
                 else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق');
 
                 if (!matchesStatus) return false;
@@ -842,43 +845,37 @@
                 return searchString.includes(searchTerm);
             });
 
-            // --- خوارزمية "الطابور الذكي للوسيط" الجديدة ---
             const getPriority = (req) => {
-                if (req.finalApprovalGiven) return 1; // 🚨 طارئ جداً
+                if (req.finalApprovalGiven) return 1; 
 
                 const s = req.status || '';
                 const lastActionTs = getTimestamp(req.lastActionDate || req.date);
                 const isUnread = !s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق') &&
                                  (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
 
-                if (isUnread) return 2; // 🔵 غير مقروء (أولوية قصوى بعد الطوارئ)
-                if (s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('اعتماد')) return 3; // 🟡 يتطلب تدخلي
+                if (isUnread) return 2; 
+                if (s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('اعتماد')) return 3; 
 
-                return 4; // ⚪ بانتظار العملاء (تهبط للأسفل)
+                return 4; 
             };
 
             filteredRequests.sort((a, b) => {
                 const priorityA = getPriority(a);
                 const priorityB = getPriority(b);
 
-                // 1. الفرز الأساسي حسب الطبقات (1 ثم 2 ثم 3 ثم 4)
                 if (priorityA !== priorityB) {
                     return priorityA - priorityB;
                 }
 
-                // 2. الفرز الثانوي (التاريخ) داخل نفس الطبقة
                 const dateA = getTimestamp(a.lastActionDate || a.date);
                 const dateB = getTimestamp(b.lastActionDate || b.date);
 
                 if (priorityA <= 3) {
-                    // للطلبات التي تحتاج شغل (1, 2, 3): الأقدم أولاً لكي لا نتأخر عليهم
                     return dateA - dateB;
                 } else {
-                    // للطلبات التي تنتظر العملاء (4): الأحدث أولاً، لكي ترى من أنهيت عمله للتو في أعلى هذا القسم
                     return dateB - dateA;
                 }
             });
-            // --- نهاية خوارزمية الفرز ---
             
             if (filteredRequests.length === 0) {
                 container.innerHTML = `<div class="w-full text-center py-12 text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300 shadow-sm mt-4">لا توجد طلبات تطابق الفلتر الحالي.</div>`;
