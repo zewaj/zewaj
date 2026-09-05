@@ -481,12 +481,21 @@
             </div>`;
         }
 
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 19 ]: رسم قوائم المفضلات والطلبات الصادرة ---------- ✂️ -->
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 19 ]: رسم قوائم المفضلات والطلبات الصادرة ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
         window.myFavsDataStore = {};
         window.myReqsDataStore = {};
         window.myIncomingReqsDataStore = {};
+
+        // دالة مساعدة لجلب حالة ملف العميل بأمان
+        function getMyProfileStatus() {
+            try {
+                let rawUser = localStorage.getItem('currentUser');
+                let currentUserData = (rawUser && rawUser !== 'undefined') ? JSON.parse(rawUser) : {};
+                return localStorage.getItem('profileStatus') || currentUserData.status || currentUserData.profileStatus || 'نشط';
+            } catch (e) { return 'نشط'; }
+        }
 
         function renderMyFavorites(favs) {
             const container = document.getElementById('favoritesList');
@@ -535,6 +544,10 @@
             const EXT_COST_REG = config.EXTEND_COST_REGULAR !== undefined ? config.EXTEND_COST_REGULAR : 2;
             const EXT_COST_SPEC = config.EXTEND_COST_SPECIAL_WOMEN !== undefined ? config.EXTEND_COST_SPECIAL_WOMEN : 10;
 
+            const myProfileStatus = getMyProfileStatus();
+            const isBannedFromChat = (myProfileStatus === 'محذوف' || myProfileStatus === 'تم الزواج');
+            const isNewOrWaiting = (myProfileStatus === 'جديد' || myProfileStatus === 'انتظار');
+
             reqs.forEach(req => {
                 let statusText = req.status || 'جاري المعالجة';
                 let uiStatusText = statusText.replace('الطرف الأول', 'ردك').replace('الطرف الثاني', 'الطرف الآخر');
@@ -545,7 +558,6 @@
                 let isRejected = statusText.includes('رفض') || statusText.includes('مرفوض') || statusText.includes('ملغى');
                 let isPendingAdmin = statusText.includes('اعتماد');
                 
-                // التعرف الذكي على قائمة الانتظار
                 let isQueued = statusText.includes('قائمة الانتظار'); 
 
                 if(!isAccepted && !isRejected && !isQueued) {
@@ -553,7 +565,6 @@
                     if(statusText.includes('ردك')) hasRedBadge = true;
                 }
 
-                // تمييز قائمة الانتظار بلون بنفسجي خاص
                 let statusColor = isAccepted ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 
                                  (isRejected ? 'text-rose-600 bg-rose-50 border-rose-200' : 
                                  (isQueued ? 'text-purple-600 bg-purple-50 border-purple-200' : 
@@ -566,13 +577,11 @@
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
-                // منع التعديل للرسالة الأولى تماماً
                 let isFirstMessage = (totalMessages === 1);
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
                 
-                // متغير للتعرف على رسائل التواصل المباشر لمنع تعديلها
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
 
                 let isRealLastFromOther = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
@@ -588,7 +597,6 @@
                 let actionAreaHtml = '';
                 
                 if (isQueued) {
-                    // قائمة الانتظار: لا تظهر أزرار التعديل أو المراسلة العادية، بل زر إلغاء فقط
                     actionAreaHtml = `<div class="bg-purple-50 p-2.5 border-t border-purple-100 flex flex-col gap-1.5 rounded-b-2xl">
                         <div class="text-center pb-1.5"><p class="text-[10px] text-purple-700 font-bold">⏳ الطلب في قائمة الانتظار.. بانتظار توفر شاغر.</p></div>
                         <button type="button" onclick="event.stopPropagation(); window.cancelQueuedReq('${req.reqId}')" class="w-full py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-bold shadow-sm transition-colors">❌ إلغاء الانتظار واسترجاع النقاط</button>
@@ -631,6 +639,17 @@
                         </div>`;
                     }
                 }
+
+                // 🛡️ --- تطبيق قيود الصلاحيات الصارمة (الاستبدال في حال وجود حظر) --- 🛡️
+                const isClosedStatus = isQueued || req.finalApprovalGiven || isRejected || isAccepted;
+                if (!isClosedStatus) {
+                    if (isBannedFromChat) {
+                        actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`;
+                    } else if (isNewOrWaiting) {
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ بانتظار تفعيل ملفك لتتمكن من المراسلة.</p></div>`;
+                    }
+                }
+
                 html += buildRequestCardHTML(req, targetInfo, isTargetFemale, req.date||'', statusColor, uiStatusText, actionAreaHtml, chatHtml);
             });
             container.innerHTML = html + '</div>';
@@ -643,8 +662,7 @@
             let inBadge = 0;
             window.latestIncomingTime = 0;
 
-            // 🛡️ --- جدار العزل الذكي للخصوصية التامة (Filter) --- 🛡️
-            // لن يتم رسم أي طلب يحتوي على كلمة "قائمة الانتظار" لكي لا تتشتت المرأة
+            // جدار العزل لطلبات الانتظار
             let visibleReqs = reqs ? reqs.filter(r => !(r.status || '').includes('قائمة الانتظار')) : [];
 
             if(!visibleReqs || visibleReqs.length === 0) {
@@ -661,6 +679,10 @@
             
             let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config')) || {}; } catch(e){}
             const MAX_INITIAL = config.MAX_INITIAL_MESSAGES !== undefined ? config.MAX_INITIAL_MESSAGES : 10;
+
+            const myProfileStatus = getMyProfileStatus();
+            const isBannedFromChat = (myProfileStatus === 'محذوف' || myProfileStatus === 'تم الزواج');
+            const isNewOrWaiting = (myProfileStatus === 'جديد' || myProfileStatus === 'انتظار');
 
             visibleReqs.forEach(req => {
                 let otherPartyId = req.requesterRefId || req.reqId || req.senderRefId;
@@ -686,7 +708,6 @@
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
-                // رسائل التواصل المباشر لمنع تعديلها وتفعيل الأزرار للمرأة
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
@@ -725,7 +746,6 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        // أزرار المرأة: زر الموافقة الوامض، مع إبقاء زر الرد
                         let femaleApprovalBtn = (!currentUserIsMale && isDirectReq) ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة نهائية', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة نهائية (+1 نقطة)</button>` : '';
                         
                         let maleContactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
@@ -741,6 +761,17 @@
                         </div>`;
                     }
                 }
+
+                // 🛡️ --- تطبيق قيود الصلاحيات الصارمة (الاستبدال في حال وجود حظر) --- 🛡️
+                const isClosedStatus = req.finalApprovalGiven || isRejected || isAccepted;
+                if (!isClosedStatus) {
+                    if (isBannedFromChat) {
+                        actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`;
+                    } else if (isNewOrWaiting) {
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ لا يمكنك التفاعل مع الطلبات حتى يتم تفعيل ملفك.</p></div>`;
+                    }
+                }
+
                 html += buildRequestCardHTML(req, senderInfo, isSenderFemale, req.date||'', statusColor, uiStatusText, actionAreaHtml, chatHtml);
             });
             container.innerHTML = html + '</div>';
@@ -756,13 +787,11 @@
                 b.classList.add('hidden');
             }
 
-            // إبلاغ الصفحة الرئيسية (المدير) مع التحقق من وجود أي تنبيه أحمر نشط في كلا التبويبين
             if (window.self !== window.top) {
-                // الكود الذكي: يتحقق إذا كان هناك أي عنصر ينبض بالأحمر في الشاشة حالياً
                 const anyRedActive = document.querySelector('.bg-rose-500.animate-pulse') !== null;
                 window.parent.postMessage({ 
                     action: 'updateMainNavbarBadge', 
-                    hasUnread: anyRedActive || hasRed // يُرسل true إذا كان التبويب الحالي أو الآخر أحمر
+                    hasUnread: anyRedActive || hasRed 
                 }, '*');
             }
         }
@@ -926,219 +955,133 @@
             }
         }
 
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits) ---------- ✂️ -->
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-        // قفل برمجي صارم لمنع الإرسال المزدوج
-        window.isSubmittingAction = false;
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 23 ]: أدوات الإرسال للسيرفر (الرد، التعديل، والانسحاب) مع نظام القفل ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 
-        async function submitReply() {
-            // إذا كان القفل مفعلاً (عملية جارية)، تجاهل أي نقرة إضافية فوراً
-            if (window.isSubmittingAction) return;
-            
-            const msg = document.getElementById('replyMessage').value.trim();
-            if (!phoneParam || !currentReplyReqId) return;
-            
-            let isAutoMsg = currentReplyType === 'موافقة مبدئية' || currentReplyType === 'موافقة نهائية' || currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType.includes('إنهاء') || currentReplyType === 'تمديد المحادثة';
-            
-            if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
+window.isSubmittingAction = false;
 
-            // التحقق من الرصيد
-            let requiredPoints = 0;
-            if (currentReplyType === 'طلب تواصل مباشر') {
-                requiredPoints = 3;
-            } else if (document.getElementById('quotaWarning').innerHTML.includes('انتهى')) {
-                requiredPoints = 1; 
-            }
-            
-            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) { 
-                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); 
-                return; 
-            }
+async function submitReply() {
+    if (window.isSubmittingAction) return; 
+    
+    const replyText = document.getElementById('replyText').value.trim();
+    if (!replyText) { alert("الرجاء كتابة رسالة."); return; }
 
-            // تفعيل القفل البرمجي وقفل الواجهة
-            window.isSubmittingAction = true;
-            const btn = document.getElementById('replySubmitBtn'); 
-            const ogHtml = btn.innerHTML;
-            btn.disabled = true; 
-            btn.innerHTML = spinnerSvg + '<span>جاري الإرسال...</span>'; 
-            // إضافة pointer-events-none تمنع المتصفح من رصد أي نقرة على الزر
-            btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
-            
-            window.highlightedReqId = currentReplyReqId; 
-            let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
-            
-            try {
-                let payloadObj = {};
-                
-                if (isDirectContactAction) {
-                    payloadObj = {
-                        action: 'requestDirectContact',
-                        phone: phoneParam,
-                        reqId: currentReplyReqId,
-                        requesterRefId: refIdParam 
-                    };
-                } else {
-                    let finalReplyType = currentReplyType;
-                    if (currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء')) {
-                        finalReplyType = 'اعتذار';
-                    }
-                    
-                    payloadObj = {
-                        action: 'replyToRequest',
-                        phone: phoneParam,
-                        reqId: currentReplyReqId, 
-                        requesterRefId: refIdParam, // تم إعادته للهوية الكاملة
-                        replyType: finalReplyType,
-                        replyMessage: msg
-                    };
-                }
-
-                const resText = await fetchWithRetry(SCRIPT_URL, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                    body: JSON.stringify(payloadObj) 
-                });
-                
-                let result = {};
-                try { 
-                    result = JSON.parse(resText); 
-                } catch(e) {
-                    showMsgModal("خطأ من السيرفر", "السيرفر واجه مشكلة ولم يُرجع رداً مفهوماً.\n\nالرد:\n" + resText.substring(0, 150));
-                    return;
-                }
-                
-                if (result.success === false || result.success === undefined) {
-                    let errMsg = result.error || result.message || result.details || "رفض السيرفر تنفيذ العملية. (أبلغ مبرمج السيرفر بمراجعة الكود)";
-                    showMsgModal("مرفوض من السيرفر", errMsg);
-                    return; 
-                }
-
-                closeReplyModal();
-                
-                if (isDirectContactAction) {
-                    let successMsg = result.message || result.details || "تم إرسال طلب التواصل المباشر بنجاح وبانتظار رد الطرف الآخر.";
-                    showMsgModal("تم الإرسال بنجاح", successMsg);
-                }
-                
-                fetchData(true).finally(() => {
-                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
-                });
-            } catch (e) { 
-                showMsgModal("خطأ بالاتصال", "تعذر الإرسال. تأكد من الإنترنت أو حاول مجدداً."); 
-            } finally { 
-                // فك القفل وإعادة الزر لحالته الطبيعية
-                btn.innerHTML = ogHtml; 
-                btn.disabled = false; 
-                btn.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none'); 
-                window.isSubmittingAction = false;
-            }
-        }
-
-        async function submitEdit() {
-            if (window.isSubmittingAction) return;
-
-            const msg = document.getElementById('replyMessage').value.trim(); if (!phoneParam || !currentReplyReqId) return;
-            if (msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
-            
-            window.isSubmittingAction = true;
-            const btn = document.getElementById('replySubmitBtn'); const ogHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = spinnerSvg + '<span>جاري التعديل...</span>'; 
-            btn.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
-            
-            window.highlightedReqId = currentReplyReqId; 
-            
-            try {
-                const payloadObj = { 
-                    action: 'editPendingReply', 
-                    phone: phoneParam, 
-                    reqId: currentReplyReqId, 
-                    requesterRefId: refIdParam,
-                    newMsg: msg 
-                };
-
-                const resText = await fetchWithRetry(SCRIPT_URL, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                    body: JSON.stringify(payloadObj) 
-                });
-
-                let result = {};
-                try { 
-                    result = JSON.parse(resText); 
-                } catch(e) {
-                    showMsgModal("خطأ من السيرفر", "السيرفر واجه مشكلة ولم يُرجع رداً مفهوماً.\n\nالرد:\n" + resText.substring(0, 150));
-                    return;
-                }
-                
-                if (result.success === false || result.success === undefined) {
-                    let errMsg = result.error || result.message || result.details || "فشل التعديل لأسباب غير معروفة من السيرفر.";
-                    showMsgModal("مرفوض من السيرفر", errMsg);
-                    return;
-                }
-
-                closeReplyModal(); 
-                
-                fetchData(true).finally(() => {
-                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
-                });
-            } catch (e) { 
-                showMsgModal("خطأ بالاتصال", "تعذر التعديل. تأكد من اتصالك بالإنترنت."); 
-            } finally { 
-                btn.innerHTML = ogHtml; 
-                btn.disabled = false; 
-                btn.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none'); 
-                window.isSubmittingAction = false;
-            }
-        }
-
-        async function removeFavorite(event, refId) {
-            event.stopPropagation(); if (!phoneParam || !refIdParam) return;
-            const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50', 'pointer-events-none');
-            try {
-                await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) });
-                fetchData(true).finally(() => {
-                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
-                });
-            } catch(e) { if(card) card.classList.remove('opacity-50', 'pointer-events-none'); showMsgModal("خطأ", "تعذر الحذف."); }
-        }
-
-        window.cancelQueuedReq = async function(reqId) {
-            if (!phoneParam) return;
-            const textEl = document.getElementById('confirmActionText');
-            textEl.innerHTML = `تأكيد الإلغاء<br><br><strong class="text-rose-600 block bg-rose-50 border border-rose-200 p-2 rounded-lg mt-2">هل أنت متأكد من رغبتك في الانسحاب من قائمة الانتظار واسترجاع النقاط؟</strong>`;
-            
-            const modalBox = document.getElementById('confirmActionBox');
-            let safeY = Math.max(20, windowLastInteractionY - 150);
-            modalBox.style.marginTop = safeY + 'px';
-            document.getElementById('confirmActionModal').classList.remove('hidden');
-
-            window.executeConfirmAction = async function() {
-                if (window.isSubmittingAction) return;
-                window.isSubmittingAction = true;
-                
-                closeConfirmModal();
-                showToast("جاري إلغاء الطلب واسترجاع النقاط...");
-                try {
-                    const resText = await fetchWithRetry(SCRIPT_URL, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                        body: JSON.stringify({ action: "cancelQueue", phone: phoneParam, reqId: reqId }) 
-                    });
-                    const result = JSON.parse(resText);
-                    if(result.success) {
-                        showMsgModal("تم الإلغاء", result.message || "تم خروجك من قائمة الانتظار واسترجاع نقاطك بنجاح.");
-                        manualRefresh();
-                    } else {
-                        showMsgModal("فشل الإلغاء", result.error || "تعذر إلغاء الطلب من السيرفر.");
-                    }
-                } catch (e) {
-                    showMsgModal("خطأ اتصال", "فشل الاتصال بالسيرفر. تأكد من الإنترنت.");
-                } finally {
-                    window.isSubmittingAction = false;
-                }
-            };
+    window.isSubmittingAction = true;
+    
+    try {
+        const payload = {
+            action: currentReplyType === 'طلب تواصل مباشر' ? 'requestDirectContact' : 'replyToRequest',
+            phone: phoneParam,
+            reqId: currentReplyReqId,
+            requesterRefId: requesterRefIdParam,
+            replyType: currentReplyType === 'طلب تواصل مباشر' ? 'طلب تواصل مباشر' : (currentReplyType === 'مقبول' ? 'مقبول' : 'اعتذار'),
+            replyMessage: replyText
         };
+
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await res.json();
+        
+        if (!result.success) {
+            let backendMsg = result.message || result.error || 'تم رفض العملية من قبل السيرفر.';
+            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
+            return;
+        }
+
+        if (currentReplyType === 'طلب تواصل مباشر' && result.feeMessage) {
+            alert('✅ نجاح:\n\n' + result.feeMessage);
+        }
+
+        closeReplyModal();
+        await manualRefresh();
+        
+    } catch (err) {
+        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
+    } finally {
+        window.isSubmittingAction = false; 
+    }
+}
+
+async function submitEdit() {
+    if (window.isSubmittingAction) return;
+    
+    const newText = document.getElementById('editText').value.trim();
+    if (!newText) { alert("لا يمكن ترك الرسالة فارغة."); return; }
+
+    window.isSubmittingAction = true;
+
+    try {
+        const payload = {
+            action: 'editMessage',
+            phone: phoneParam,
+            reqId: currentEditReqId,
+            requesterRefId: requesterRefIdParam,
+            newMessage: newText
+        };
+
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await res.json();
+        
+        if (!result.success) {
+            let backendMsg = result.message || result.error || 'تم رفض التعديل من قبل السيرفر.';
+            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
+            return;
+        }
+
+        closeEditModal();
+        await manualRefresh();
+        
+    } catch (err) {
+        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
+    } finally {
+        window.isSubmittingAction = false;
+    }
+}
+
+async function cancelQueuedReq(reqId) {
+    if (window.isSubmittingAction) return;
+
+    if (!confirm('هل أنت متأكد من رغبتك في إلغاء الانتظار واسترجاع النقاط؟')) return;
+
+    window.isSubmittingAction = true;
+
+    try {
+        const payload = {
+            action: 'cancelQueue',
+            phone: phoneParam,
+            reqId: reqId
+        };
+
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        
+        const result = await res.json();
+        
+        if (!result.success) {
+            let backendMsg = result.message || result.error || 'فشل السيرفر في إلغاء الطلب.';
+            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
+            return;
+        }
+
+        alert('✅ ' + (result.message || 'تم الإلغاء واسترجاع النقاط بنجاح.'));
+        await manualRefresh();
+        
+    } catch (err) {
+        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
+    } finally {
+        window.isSubmittingAction = false;
+    }
+}
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 24 ]: المزامنة وجلب البيانات (Caching & Fetching) ---------- ✂️ -->
