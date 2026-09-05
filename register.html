@@ -710,198 +710,383 @@
         let cachedProfiles = [];
         let registeredUserData = {};
 
-// 
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // 🟥🟥🟥🟥🟥 القسم 26: جافاسكريبت - دوال الواجهة وشريط التقدم الذكي 🟥🟥🟥🟥🟥
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-// 
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('registrationForm');
-            if(form) {
-                form.addEventListener('input', handleFormInteraction);
-                form.addEventListener('change', handleFormInteraction);
-                
-                document.querySelectorAll('.api-dynamic-select').forEach(select => {
-                    select.addEventListener('change', handleDynamicOther);
-                });
-            }
-            setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('registrationForm');
+    if(form) {
+        form.addEventListener('input', handleFormInteraction);
+        form.addEventListener('change', handleFormInteraction);
+        
+        document.querySelectorAll('.api-dynamic-select').forEach(select => {
+            select.addEventListener('change', handleDynamicOther);
         });
+    }
+    setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
+});
 
-        function handleFormInteraction(e) {
-            if(e.target.hasAttribute('required') || e.target.classList.contains('conditional-required')) {
-                validateSingleField(e.target);
-            }
-            updateSmartProgressBar();
-            if(typeof saveDraft === 'function') saveDraft();
+// --- دوال النبذة التلقائية ---
+function toggleBio(event) {
+    if(event) event.stopPropagation();
+    const bioDiv = document.getElementById('bioContentDiv');
+    const bioIcon = document.getElementById('bioIcon');
+    if (bioDiv) {
+        bioDiv.classList.toggle('hidden');
+        if (bioIcon) bioIcon.classList.toggle('rotate-180');
+    }
+}
+
+function closeBioSmoothly() {
+    const bioDiv = document.getElementById('bioContentDiv');
+    const bioIcon = document.getElementById('bioIcon');
+    if (bioDiv && !bioDiv.classList.contains('hidden')) {
+        bioDiv.classList.add('hidden');
+        if(bioIcon) bioIcon.classList.remove('rotate-180');
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const bioDiv = document.getElementById('bioContentDiv');
+    const toggleBtn = document.getElementById('bioContentDiv')?.previousElementSibling; 
+    if (bioDiv && !bioDiv.classList.contains('hidden')) {
+        if (!bioDiv.contains(event.target) && (!toggleBtn || !toggleBtn.contains(event.target))) {
+            closeBioSmoothly();
         }
+    }
+});
 
-        function updateCharCount(inputId, counterId) {
-            const input = document.getElementById(inputId); const counter = document.getElementById(counterId);
-            if (!input || !counter) return;
-            const maxLength = parseInt(input.getAttribute('maxlength')) || 120;
-            const remaining = maxLength - input.value.length;
-            counter.innerText = remaining;
-            if (remaining <= 15) { counter.className = "text-red-500 font-bold animate-pulse"; } 
-            else { counter.className = inputId === 'additionalInfo' ? "text-blue-600 font-bold transition-colors" : "text-indigo-600 font-bold transition-colors"; }
+// --- دوال المساعدة للواجهة وإدخال البيانات (Helpers) ---
+function setVal(id, val) { 
+    const el = document.getElementById(id); 
+    if(el) { 
+        if (el.tagName === 'SELECT' && val) {
+            let optExists = Array.from(el.options).some(opt => opt.value === val || opt.text.trim() === val.trim());
+            if(!optExists) { const newOpt = new Option(val + ' (مُدخل)', val); el.add(newOpt); }
         }
+        el.value = val; el.dispatchEvent(new Event('change')); clearLiveError(el);
+    } 
+}
 
-        function validateSingleField(field) {
-            if(field.type === 'radio' || field.type === 'checkbox') {
-                const group = document.getElementById(field.name + 'GroupWrapper');
-                if(group && document.querySelector(`input[name="${field.name}"]:checked`)) group.classList.remove('error-field');
-            } else {
-                if(field.value.trim() !== '') { field.classList.remove('error-field'); field.classList.add('success-field'); } 
-                else { field.classList.remove('success-field'); }
-            }
+function checkRad(name, val) { 
+    let el = document.querySelector(`input[name="${name}"][value="${val}"]`); 
+    if(el) { 
+        el.checked = true; 
+        el.dispatchEvent(new Event('change')); 
+        if(name === 'skinColor') { 
+            const sc = document.getElementById('skinColorGroup'); 
+            if(sc) sc.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); 
+        } 
+    } 
+}
+
+function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-red-500', 'bg-red-50'); }
+
+function clearLiveErrorGroup(wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+    if(wrapper) {
+        const inputs = wrapper.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        inputs.forEach(inp => { 
+            const label = wrapper.querySelector(`label[for="${inp.id}"]`); 
+            if(label) label.classList.remove('border-red-500', 'bg-red-50'); 
+        });
+    }
+}
+
+function clearAllValidationErrors() {
+    document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
+    const skinGroup = document.getElementById('skinColorGroup');
+    if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
+    ['originLocationGroupWrapper', 'residenceLocGroupWrapper', 'genderGroupWrapper'].forEach(clearLiveErrorGroup);
+    for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
+}
+
+function updateCharCount(inputId, counterId) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    if (!input || !counter) return;
+
+    const maxLength = parseInt(input.getAttribute('maxlength')) || 120;
+    const currentLength = input.value.length;
+    const remaining = maxLength - currentLength;
+
+    counter.innerText = remaining;
+
+    if (remaining <= 15) {
+        counter.className = "text-red-500 font-bold animate-pulse";
+    } else {
+        if(inputId === 'additionalInfo') {
+            counter.className = "text-blue-600 font-bold transition-colors";
+        } else {
+            counter.className = "text-indigo-600 font-bold transition-colors";
         }
+    }
+}
 
-        function updateSmartProgressBar() {
-            const form = document.getElementById('registrationForm'); if(!form) return;
-            const requiredElements = Array.from(form.querySelectorAll('[required], .conditional-required')).filter(el => el.offsetParent !== null && !el.closest('.hidden'));
-            const uniqueRadioGroups = new Set(); let totalRequired = 0; let filledRequired = 0;
+function getCombinedAddInfo() {
+    const mySelectedTags = Array.from(document.querySelectorAll('input[name="myInfoTags"]:checked')).map(cb => cb.value).join('، ');
+    const ai = document.getElementById('additionalInfo'); const baseAddInfo = ai ? ai.value.trim() : ''; 
+    return [mySelectedTags, baseAddInfo].filter(Boolean).join(' | ');
+}
 
-            requiredElements.forEach(el => {
-                if (el.type === 'radio') {
-                    if (!uniqueRadioGroups.has(el.name)) {
-                        uniqueRadioGroups.add(el.name); totalRequired++;
-                        if (document.querySelector(`input[name="${el.name}"]:checked`)) filledRequired++;
-                    }
-                } else { totalRequired++; if (el.value.trim() !== '') filledRequired++; }
-            });
+function getCombinedPartnerSpecs() {
+    const partnerSelectedTags = Array.from(document.querySelectorAll('input[name="partnerTags"]:checked')).map(cb => cb.value).join('، ');
+    const ps = document.getElementById('partnerSpecs'); const basePartnerSpecs = ps ? ps.value.trim() : ''; 
+    return [partnerSelectedTags, basePartnerSpecs].filter(Boolean).join(' | ');
+}
 
-            const percentage = totalRequired === 0 ? 0 : Math.round((filledRequired / totalRequired) * 100);
-            const pb = document.getElementById('progressBar'); const pt = document.getElementById('progressText');
-            if (pb) pb.style.width = `${percentage}%`; if (pt) pt.innerText = `نسبة الإنجاز: ${percentage}%`;
-            
-            if(percentage === 100 && pb) { pb.classList.replace('from-emerald-400', 'from-green-500'); pb.classList.replace('to-emerald-600', 'to-green-600'); } 
-            else if (pb) { pb.classList.replace('from-green-500', 'from-emerald-400'); pb.classList.replace('to-green-600', 'to-emerald-600'); }
-        }
+// --- دوال الحفظ التلقائي واستعادة المسودة ---
+function saveDraft() {
+    if (!verifiedFullPhone || isAdminMode) return;
+    
+    const fnEl = document.getElementById('firstName'); const rEl = document.getElementById('relation'); const nEl = document.getElementById('nationality');
+    const ksEl = document.getElementById('ksaCity'); const wcEl = document.getElementById('worldCountry'); const msEl = document.getElementById('maritalStatus');
+    const hEl = document.getElementById('height'); const wtEl = document.getElementById('weight'); const edEl = document.getElementById('education'); const jbEl = document.getElementById('jobStatus');
+    
+    const draftData = {
+        firstName: fnEl ? fnEl.value : '', relation: rEl ? rEl.value : '', gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: nEl ? nEl.value : '',
+        residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: ksEl ? ksEl.value : '', worldCountry: wcEl ? wcEl.value : '',
+        maritalStatus: msEl ? msEl.value : '', height: hEl ? hEl.value : '', weight: wtEl ? wtEl.value : '', education: edEl ? edEl.value : '', jobStatus: jbEl ? jbEl.value : ''
+    };
+    localStorage.setItem(`draft_${verifiedFullPhone}`, JSON.stringify(draftData));
+    const indicator = document.getElementById('draftIndicator'); if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
+}
 
-        function validateStep(stepNum) {
-            const stepContent = document.getElementById(`step-${stepNum}-content`); if(!stepContent) return { isValid: true };
-            let isValid = true; 
-            const requiredElements = Array.from(stepContent.querySelectorAll('[required], .conditional-required')).filter(el => !el.closest('.hidden') && el.offsetParent !== null);
-            stepContent.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
-
-            const radioGroups = new Set();
-            requiredElements.forEach(el => {
-                if(el.type === 'radio') { radioGroups.add(el.name); } 
-                else if(el.value.trim() === '') { isValid = false; el.classList.add('error-field', 'animate-bounce'); setTimeout(() => el.classList.remove('animate-bounce'), 500); }
-            });
-
-            radioGroups.forEach(name => {
-                if(!document.querySelector(`input[name="${name}"]:checked`)) { isValid = false; const groupContainer = document.getElementById(name + 'GroupWrapper'); if(groupContainer) groupContainer.classList.add('error-field'); }
-            });
-            return { isValid };
-        }
-
-        function toggleAccordion(targetStep) {
-            for(let i = 1; i < targetStep; i++) {
-                const validation = validateStep(i);
-                if(!validation.isValid) { markStepAsError(i); openSpecificStep(i); return; } 
-                else { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
-            }
-            openSpecificStep(targetStep);
-        }
-
-        function openSpecificStep(stepNumber) {
-            for(let i=1; i<=5; i++) { 
-                const ct = document.getElementById(`step-${i}-content`); if(ct) ct.classList.remove('open'); 
-                const ic = document.getElementById(`step-${i}-icon`); if(ic) { const sv = ic.querySelector('svg'); if(sv) sv.classList.remove('rotate-180'); }
-            }
-            const tgtCt = document.getElementById(`step-${stepNumber}-content`); if(tgtCt) tgtCt.classList.add('open'); 
-            const tgtIc = document.getElementById(`step-${stepNumber}-icon`); if(tgtIc) { const svg = tgtIc.querySelector('svg'); if(svg) svg.classList.add('rotate-180'); }
-        }
-
-        function nextStep(currentStep) {
-            const validation = validateStep(currentStep);
-            if(validation.isValid) {
-                let badge = document.getElementById(`step-${currentStep}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
-                if(currentStep < 5) { const nextCard = document.getElementById(`step-${currentStep + 1}-card`); if(nextCard) { nextCard.classList.remove('locked-step', 'opacity-50'); openSpecificStep(currentStep + 1); setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); } }
-            } else { 
-                markStepAsError(currentStep); 
-                const stepContent = document.getElementById(`step-${currentStep}-content`); let errDiv = stepContent.querySelector('.step-error-msg');
-                if(!errDiv) { errDiv = document.createElement('div'); errDiv.className = 'step-error-msg text-[10px] text-red-500 font-bold mt-2 text-center animate-pulse'; stepContent.querySelector('.accordion-inner').appendChild(errDiv); }
-                errDiv.innerText = "يرجى تعبئة جميع الحقول المحددة باللون الأحمر للمتابعة."; setTimeout(() => { if(errDiv) errDiv.remove(); }, 3000);
-            }
-        }
-
-        function markStepAsError(stepNum) { let badge = document.getElementById(`step-${stepNum}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs animate-pulse"; badge.innerHTML = "!"; } }
-
-        function setVal(id, val) { 
-            const el = document.getElementById(id); 
-            if(el) { 
-                if (el.tagName === 'SELECT' && val) {
-                    let optExists = Array.from(el.options).some(opt => opt.value === val || opt.text.trim() === val.trim());
-                    if(!optExists) { el.add(new Option(val + ' (مُدخل)', val)); }
+function checkAndRestoreDraft() {
+    if (!verifiedFullPhone || isAdminMode) return; 
+    const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
+    if (draft) {
+        showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
+            try {
+                const data = JSON.parse(draft);
+                if(data.gender) {
+                    checkRad('gender', data.gender);
+                    setTimeout(() => {
+                        if(data.firstName) setVal('firstName', data.firstName); if(data.relation) setVal('relation', data.relation); if(data.nationality) setVal('nationality', data.nationality); if(data.residenceLoc) checkRad('residenceLoc', data.residenceLoc);
+                        if(data.ksaCity) setVal('ksaCity', data.ksaCity); if(data.worldCountry) setVal('worldCountry', data.worldCountry); if(data.maritalStatus) setVal('maritalStatus', data.maritalStatus);
+                        if(data.height) setVal('height', data.height); if(data.weight) setVal('weight', data.weight); if(data.education) setVal('education', data.education); if(data.jobStatus) setVal('jobStatus', data.jobStatus);
+                        showMsgModal("نجاح", "تمت استعادة البيانات المحفوظة.");
+                    }, 500);
                 }
-                el.value = val; el.dispatchEvent(new Event('change')); clearLiveError(el);
+            } catch(e) { console.error('Error parsing draft', e); }
+        }, () => { localStorage.removeItem(`draft_${verifiedFullPhone}`); });
+    }
+}
+
+// --- دوال التحقق والتفاعل مع الفورم ---
+function handleFormInteraction(e) {
+    if(e.target.hasAttribute('required') || e.target.classList.contains('conditional-required')) {
+        validateSingleField(e.target);
+    }
+    updateSmartProgressBar();
+    if(typeof saveDraft === 'function') saveDraft();
+}
+
+function validateSingleField(field) {
+    if(field.type === 'radio' || field.type === 'checkbox') {
+        const group = document.getElementById(field.name + 'GroupWrapper');
+        if(group) {
+            if(document.querySelector(`input[name="${field.name}"]:checked`)) {
+                group.classList.remove('error-field');
+            }
+        }
+    } else {
+        if(field.value.trim() !== '') {
+            field.classList.remove('error-field');
+            field.classList.add('success-field');
+        } else {
+            field.classList.remove('success-field');
+        }
+    }
+}
+
+function updateSmartProgressBar() {
+    const form = document.getElementById('registrationForm');
+    if(!form) return;
+
+    const requiredElements = Array.from(form.querySelectorAll('[required], .conditional-required')).filter(el => {
+        return el.offsetParent !== null && !el.closest('.hidden');
+    });
+
+    const uniqueRadioGroups = new Set();
+    let totalRequired = 0;
+    let filledRequired = 0;
+
+    requiredElements.forEach(el => {
+        if (el.type === 'radio') {
+            if (!uniqueRadioGroups.has(el.name)) {
+                uniqueRadioGroups.add(el.name);
+                totalRequired++;
+                if (document.querySelector(`input[name="${el.name}"]:checked`)) filledRequired++;
+            }
+        } else {
+            totalRequired++;
+            if (el.value && el.value.trim() !== '') filledRequired++;
+        }
+    });
+
+    const percentage = totalRequired === 0 ? 0 : Math.round((filledRequired / totalRequired) * 100);
+    const pb = document.getElementById('progressBar'); 
+    const pt = document.getElementById('progressText');
+    
+    if (pb) pb.style.width = `${percentage}%`;
+    if (pt) pt.innerText = `نسبة الإنجاز: ${percentage}%`;
+    
+    if(percentage === 100 && pb) {
+        pb.classList.remove('from-emerald-400', 'to-emerald-600');
+        pb.classList.add('from-green-500', 'to-green-600');
+    } else if (pb) {
+        pb.classList.add('from-emerald-400', 'to-emerald-600');
+        pb.classList.remove('from-green-500', 'to-green-600');
+    }
+}
+
+function validateStep(stepNum) {
+    const stepContent = document.getElementById(`step-${stepNum}-content`); 
+    if(!stepContent) return { isValid: true };
+    
+    let isValid = true;
+    
+    const requiredElements = Array.from(stepContent.querySelectorAll('[required], .conditional-required')).filter(el => !el.closest('.hidden'));
+    stepContent.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field'));
+
+    const radioGroups = new Set();
+    requiredElements.forEach(el => {
+        if(el.type === 'radio') {
+            radioGroups.add(el.name);
+        } else if(!el.value || el.value.trim() === '') {
+            isValid = false;
+            el.classList.add('error-field');
+            el.classList.add('animate-bounce'); 
+            setTimeout(() => el.classList.remove('animate-bounce'), 500);
+        }
+    });
+
+    radioGroups.forEach(name => {
+        if(!document.querySelector(`input[name="${name}"]:checked`)) {
+            isValid = false;
+            const groupContainer = document.getElementById(name + 'GroupWrapper');
+            if(groupContainer) groupContainer.classList.add('error-field');
+        }
+    });
+
+    return { isValid };
+}
+
+function toggleAccordion(targetStep) {
+    for(let i = 1; i < targetStep; i++) {
+        const validation = validateStep(i);
+        if(!validation.isValid) { 
+            markStepAsError(i); 
+            openSpecificStep(i); 
+            showMsgModal("تنبيه", `يرجى إكمال البيانات الإلزامية في الخطوة ${i} أولاً.`);
+            return; 
+        } else {
+            let badge = document.getElementById(`step-${i}-badge`); 
+            if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
+        }
+    }
+    openSpecificStep(targetStep);
+}
+
+function openSpecificStep(stepNumber) {
+    for(let i=1; i<=5; i++) { 
+        const ct = document.getElementById(`step-${i}-content`); if(ct) ct.classList.remove('open'); 
+        const ic = document.getElementById(`step-${i}-icon`); if(ic) { const sv = ic.querySelector('svg'); if(sv) sv.classList.remove('rotate-180'); }
+    }
+    const tgtCt = document.getElementById(`step-${stepNumber}-content`); if(tgtCt) tgtCt.classList.add('open'); 
+    const tgtIc = document.getElementById(`step-${stepNumber}-icon`); if(tgtIc) { const svg = tgtIc.querySelector('svg'); if(svg) svg.classList.add('rotate-180'); }
+}
+
+function markStepAsError(stepNum) { 
+    let badge = document.getElementById(`step-${stepNum}-badge`); 
+    if(badge) { badge.className = "w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs animate-pulse"; badge.innerHTML = "!"; } 
+}
+
+function nextStep(currentStep) {
+    const validation = validateStep(currentStep);
+    if(validation.isValid) {
+        let badge = document.getElementById(`step-${currentStep}-badge`); 
+        if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; }
+        
+        if(currentStep < 5) { 
+            const nextCard = document.getElementById(`step-${currentStep + 1}-card`); 
+            if(nextCard) { 
+                nextCard.classList.remove('locked-step', 'opacity-50'); 
+                openSpecificStep(currentStep + 1); 
+                setTimeout(() => { nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); 
             } 
         }
+    } else { 
+        markStepAsError(currentStep); 
+        const stepContent = document.getElementById(`step-${currentStep}-content`);
+        let errDiv = stepContent.querySelector('.step-error-msg');
+        if(!errDiv) {
+            errDiv = document.createElement('div');
+            errDiv.className = 'step-error-msg text-[10px] text-red-500 font-bold mt-2 text-center animate-pulse';
+            stepContent.querySelector('.accordion-inner').appendChild(errDiv);
+        }
+        errDiv.innerText = "يرجى تعبئة جميع الحقول المحددة باللون الأحمر للمتابعة.";
+        setTimeout(() => { if(errDiv) errDiv.remove(); }, 3000);
+    }
+}
+
+function openTermsModal() {
+    try {
+        const sve = document.getElementById('smartValidationError'); if(sve) sve.classList.add('hidden'); 
+        let firstInvalidStep = null;
         
-        function checkRad(name, val) { 
-            let el = document.querySelector(`input[name="${name}"][value="${val}"]`); 
-            if(el) { el.checked = true; el.dispatchEvent(new Event('change')); if(name === 'skinColor') { const sc = document.getElementById('skinColorGroup'); if(sc) sc.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50'); } } 
+        for(let i=1; i<=5; i++) { 
+            const validation = validateStep(i); 
+            if(!validation.isValid) { 
+                markStepAsError(i); 
+                if(!firstInvalidStep) { firstInvalidStep = i; } 
+            } else { 
+                let badge = document.getElementById(`step-${i}-badge`); 
+                if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } 
+            } 
         }
 
-        function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-red-500', 'bg-red-50'); }
-        
-        function clearLiveErrorGroup(wrapperId) {
-            const wrapper = document.getElementById(wrapperId);
-            if(wrapper) { wrapper.querySelectorAll('input[type="radio"]').forEach(inp => { const label = wrapper.querySelector(`label[for="${inp.id}"]`); if(label) label.classList.remove('border-red-500', 'bg-red-50'); }); }
-        }
-
-        function clearAllValidationErrors() {
-            document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
-            const skinGroup = document.getElementById('skinColorGroup'); if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
-            ['originLocationGroupWrapper', 'residenceLocGroupWrapper'].forEach(clearLiveErrorGroup);
-            for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
-        }
-
-        function toggleBio(event) {
-            if(event) event.stopPropagation();
-            const bioDiv = document.getElementById('bioContentDiv'); const bioIcon = document.getElementById('bioIcon');
-            if (bioDiv) { bioDiv.classList.toggle('hidden'); if (bioIcon) bioIcon.classList.toggle('rotate-180'); }
-        }
-
-        function closeBioSmoothly() {
-            const bioDiv = document.getElementById('bioContentDiv'); const bioIcon = document.getElementById('bioIcon');
-            if (bioDiv && !bioDiv.classList.contains('hidden')) { bioDiv.classList.add('hidden'); if(bioIcon) bioIcon.classList.remove('rotate-180'); }
-        }
-
-        function saveDraft() {
-            if (!verifiedFullPhone || isAdminMode) return;
-            const fnEl = document.getElementById('firstName'); const rEl = document.getElementById('relation'); const nEl = document.getElementById('nationality');
-            const ksEl = document.getElementById('ksaCity'); const wcEl = document.getElementById('worldCountry'); const msEl = document.getElementById('maritalStatus');
-            const hEl = document.getElementById('height'); const wtEl = document.getElementById('weight'); const edEl = document.getElementById('education'); const jbEl = document.getElementById('jobStatus');
-            
-            const draftData = {
-                firstName: fnEl ? fnEl.value : '', relation: rEl ? rEl.value : '', gender: document.querySelector('input[name="gender"]:checked')?.value, nationality: nEl ? nEl.value : '',
-                residenceLoc: document.querySelector('input[name="residenceLoc"]:checked')?.value, ksaCity: ksEl ? ksEl.value : '', worldCountry: wcEl ? wcEl.value : '',
-                maritalStatus: msEl ? msEl.value : '', height: hEl ? hEl.value : '', weight: wtEl ? wtEl.value : '', education: edEl ? edEl.value : '', jobStatus: jbEl ? jbEl.value : ''
-            };
-            localStorage.setItem(`draft_${verifiedFullPhone}`, JSON.stringify(draftData));
-            const indicator = document.getElementById('draftIndicator'); if (indicator) { indicator.classList.remove('hidden'); setTimeout(() => indicator.classList.add('hidden'), 2000); }
-        }
-
-        function checkAndRestoreDraft() {
-            if (!verifiedFullPhone || isAdminMode) return; const draft = localStorage.getItem(`draft_${verifiedFullPhone}`);
-            if (draft) {
-                showConfirmModal("يوجد طلب غير مكتمل محفوظ مسبقاً. هل تريد استعادته لتكملة البيانات؟", () => {
-                    const data = JSON.parse(draft);
-                    if(data.gender) {
-                        checkRad('gender', data.gender);
-                        setTimeout(() => {
-                            if(data.firstName) setVal('firstName', data.firstName); if(data.relation) setVal('relation', data.relation); if(data.nationality) setVal('nationality', data.nationality); if(data.residenceLoc) checkRad('residenceLoc', data.residenceLoc);
-                            if(data.ksaCity) setVal('ksaCity', data.ksaCity); if(data.worldCountry) setVal('worldCountry', data.worldCountry); if(data.maritalStatus) setVal('maritalStatus', data.maritalStatus);
-                            if(data.height) setVal('height', data.height); if(data.weight) setVal('weight', data.weight); if(data.education) setVal('education', data.education); if(data.jobStatus) setVal('jobStatus', data.jobStatus);
-                            showMsgModal("نجاح", "تمت استعادة البيانات المحفوظة.");
-                        }, 500);
-                    }
-                }, () => { localStorage.removeItem(`draft_${verifiedFullPhone}`); });
+        if(firstInvalidStep) {
+            const errBox = document.getElementById('smartValidationError');
+            if(errBox) {
+                errBox.innerText = `يرجى إكمال الحقول الإجبارية في الخطوة ${firstInvalidStep}.`;
+                errBox.classList.remove('hidden'); 
             }
+            openSpecificStep(firstInvalidStep); 
+            const cd = document.getElementById(`step-${firstInvalidStep}-card`); 
+            if(cd) cd.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+            return;
         }
+        
+        const hw = document.getElementById('howHeard');
+        if(hw && !hw.value) { 
+            hw.classList.add('error-field'); 
+            showMsgModal("تنبيه", "يرجى اختيار إجابة سؤال الإحصاء (كيف وصلت لصفحتنا)."); 
+            return; 
+        }
+        
+        if(typeof generateTerms === 'function') generateTerms(); 
+        
+        const me = document.getElementById('modalError'); if(me) me.classList.add('hidden'); 
+        
+        const tm = document.getElementById('termsModal'); 
+        if(tm) {
+            tm.classList.remove('hidden');
+        } else {
+            showMsgModal("خطأ فني", "عفواً، قسم الشروط مفقود في الصفحة.");
+        }
+    } catch (e) {
+        console.error("Error opening modal: ", e);
+        showMsgModal("خطأ غير متوقع", "حدث خطأ أثناء معالجة الطلب، يرجى تحديث الصفحة والمحاولة مجدداً.");
+    }
+}
+
+function closeTermsModal() { 
+    const tm = document.getElementById('termsModal'); 
+    if(tm) tm.classList.add('hidden'); 
+}
 
 // 
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
