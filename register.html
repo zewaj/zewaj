@@ -228,7 +228,7 @@
                         </div>
 
                         <div class="flex gap-1.5">
-                            <button onclick="handleHeroAction('edit')" class="w-1/2 flex flex-row items-center justify-center gap-1 p-1.5 text-amber-600 bg-white hover:bg-amber-50 rounded-lg border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 font-bold text-[11px]">
+                            <button onclick="handleHeroAction('edit', this)" class="w-1/2 flex flex-row items-center justify-center gap-1 p-1.5 text-amber-600 bg-white hover:bg-amber-50 rounded-lg border border-gray-200 shadow-sm transition-all focus:ring-2 focus:ring-amber-200 font-bold text-[11px]">
                                 <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 <span>تعديل</span>
                             </button>
@@ -330,8 +330,8 @@
                         <div>
                             <label class="block text-[11px] font-semibold text-gray-700 mb-1">تحديد الجنس <span class="text-red-500">*</span></label>
                             <div class="group-pill shadow-sm" id="genderGroupWrapper">
-                                <div><input type="radio" name="gender" id="gender_male" value="ذكر" onchange="handleGenderChange()"><label for="gender_male">ذكر</label></div>
-                                <div><input type="radio" name="gender" id="gender_female" value="أنثى" onchange="handleGenderChange()"><label for="gender_female">أنثى</label></div>
+                                <div><input type="radio" name="gender" id="gender_male" value="ذكر" required onchange="handleGenderChange()"><label for="gender_male">ذكر</label></div>
+                                <div><input type="radio" name="gender" id="gender_female" value="أنثى" required onchange="handleGenderChange()"><label for="gender_female">أنثى</label></div>
                             </div>
                         </div>
                         <div class="pt-1 flex justify-end">
@@ -365,7 +365,7 @@
 
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2.5">
                             <label class="block text-[11px] font-semibold text-gray-700 mb-1">الانتماء القبلي <span class="text-red-500">*</span></label>
-                            <div class="group-pill shadow-sm" id="tribalStatusGroup"></div>
+                            <div class="group-pill shadow-sm" id="tribalStatusGroupWrapper"></div>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 hidden fade-in" id="namesContainer">
                                 <div id="tribeNameDiv" class="hidden"><label class="block text-[11px] font-semibold text-gray-700 mb-1">اسم القبيلة <span class="text-red-500">*</span></label><input type="text" id="tribeName" class="w-full p-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-xs" placeholder="اكتب اسم القبيلة..."></div>
@@ -381,8 +381,8 @@
                         <div>
                             <label class="block text-[11px] font-semibold text-gray-700 mb-1">أين تقع أصول العائلة أو القبيلة؟ <span class="text-red-500">*</span></label>
                             <div class="group-pill shadow-sm mb-2.5" id="originLocationGroupWrapper">
-                                <div><input type="radio" name="originLocation" id="origin_in" value="من داخل المملكة" onchange="toggleOriginDetails();"><label for="origin_in">من داخل المملكة</label></div>
-                                <div><input type="radio" name="originLocation" id="origin_out" value="من خارج المملكة" onchange="toggleOriginDetails();"><label for="origin_out">من خارج المملكة</label></div>
+                                <div><input type="radio" name="originLocation" id="origin_in" value="من داخل المملكة" required onchange="toggleOriginDetails();"><label for="origin_in">من داخل المملكة</label></div>
+                                <div><input type="radio" name="originLocation" id="origin_out" value="من خارج المملكة" required onchange="toggleOriginDetails();"><label for="origin_out">من خارج المملكة</label></div>
                             </div>
                             <div id="originInsideDetails" class="hidden fade-in"><select id="originInside" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl outline-none bg-white focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- حدد منطقة الأصول داخل المملكة --</option></select></div>
                             <div id="originOutsideDetails" class="hidden fade-in">
@@ -394,8 +394,8 @@
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
                             <label class="block text-[11px] font-semibold text-gray-700 mb-1.5">مكان الإقامة الحالية <span class="text-red-500">*</span></label>
                             <div class="group-pill shadow-sm mb-2.5" id="residenceLocGroupWrapper">
-                                <div><input type="radio" name="residenceLoc" id="res_ksa" value="داخل السعودية" onchange="handleResidenceChange(); renderSmartTags();"><label for="res_ksa">داخل السعودية</label></div>
-                                <div><input type="radio" name="residenceLoc" id="res_out" value="خارج السعودية" onchange="handleResidenceChange(); renderSmartTags();"><label for="res_out">خارج السعودية</label></div>
+                                <div><input type="radio" name="residenceLoc" id="res_ksa" value="داخل السعودية" required onchange="handleResidenceChange(); renderSmartTags();"><label for="res_ksa">داخل السعودية</label></div>
+                                <div><input type="radio" name="residenceLoc" id="res_out" value="خارج السعودية" required onchange="handleResidenceChange(); renderSmartTags();"><label for="res_out">خارج السعودية</label></div>
                             </div>
                             <div id="ksaCitiesDiv" class="hidden fade-in"><select id="ksaCity" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-xs"></select></div>
                             <div id="worldCountriesDiv" class="hidden fade-in grid grid-cols-1 gap-2"><select id="worldCountry" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"></select><input type="text" id="worldCity" class="w-full p-2.5 border border-gray-300 rounded-xl outline-none text-xs" placeholder="اسم المدينة أو المحافظة بالخارج (اختياري)..."></div>
@@ -421,7 +421,7 @@
                             <div><label class="block text-[11px] font-semibold text-gray-700 mb-1">الحالة الاجتماعية <span class="text-red-500">*</span></label><select id="maritalStatus" required onchange="handleMaritalStatusChange();" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select></div>
                             <div id="childrenCountDiv" class="hidden fade-in"><label class="block text-[11px] font-semibold text-gray-700 mb-1">عدد الأبناء (فارغ إن لم يوجد)</label><input type="text" id="childrenCount" oninput="sanitizeAndConvertDigits(this)" class="w-full p-2.5 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 text-xs" placeholder="اكتب العدد رقمياً..."></div>
                         </div>
-                        <div id="custodyDiv" class="hidden fade-in bg-blue-50 p-3 rounded-xl border border-blue-100"><label class="block text-[11px] font-semibold text-blue-900 mb-1">حالة حضانة الأبناء <span class="text-red-500">*</span></label><select id="custodyStatus" class="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 text-xs"></select></div>
+                        <div id="custodyDiv" class="hidden fade-in bg-blue-50 p-3 rounded-xl border border-blue-100"><label class="block text-[11px] font-semibold text-blue-900 mb-1">حالة حضانة الأبناء <span class="text-red-500">*</span></label><select id="custodyStatus" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 text-xs"></select></div>
                         <div id="menMarriageSection" class="hidden space-y-3 bg-gray-50 p-3 rounded-xl border border-gray-200 fade-in">
                             <label class="block text-[11px] font-semibold text-gray-700 mb-0.5">نوع الزواج المرغوب <span class="text-red-500">*</span></label><select id="menMarriageType" onchange="handleMenMarriageTypeChange();" class="conditional-required w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 text-xs"><option value="" disabled selected>-- حدد الجنس أولاً --</option></select>
                             <div id="menSpecialSpecsWrapper" class="hidden border-t border-gray-300 pt-2 space-y-1.5"><p class="text-[9px] font-bold text-gray-600 mb-1">حدد الاشتراطات الخاصة (سرية):</p><div class="grid grid-cols-1 md:grid-cols-2 gap-1.5"><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="مسيار" class="w-3.5 h-3.5 text-emerald-600"> مسيار وبدون توفير سكن</label><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="غير معلن مؤقتاً" class="w-3.5 h-3.5 text-emerald-600"> غير معلن لفترة ثم يعلن</label><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="فارق عمر كبير" class="w-3.5 h-3.5 text-emerald-600"> فارق العمر يتجاوز 12 سنة</label><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="غير سعودي و سعودية" class="w-3.5 h-3.5 text-emerald-600"> غير سعودي بسعودية</label><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="زواج مختلط القبيلة" class="w-3.5 h-3.5 text-emerald-600"> غير قبيلي بقبيلية / مختلط</label><label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border border-gray-200 cursor-pointer text-[10px] font-medium"><input type="checkbox" name="menSpecOpts" value="قبول ظروف صحية خاصة" class="w-3.5 h-3.5 text-emerald-600"> قبول ظروف خاصة أو إعاقة</label></div></div>
@@ -452,8 +452,8 @@
                         <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2.5">
                             <label class="block text-[11px] font-semibold text-gray-700">تاريخ الميلاد <span class="text-red-500">*</span></label>
                             <div class="flex items-center gap-4 text-xs font-bold mb-1">
-                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="hijri" checked onchange="handleCalendarSwitch()" class="accent-emerald-600"> هجري</label>
-                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="greg" onchange="handleCalendarSwitch()" class="accent-emerald-600"> ميلادي</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="hijri" checked required onchange="handleCalendarSwitch()" class="accent-emerald-600"> هجري</label>
+                                <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="calType" value="greg" required onchange="handleCalendarSwitch()" class="accent-emerald-600"> ميلادي</label>
                             </div>
                             <div class="grid grid-cols-3 gap-2">
                                 <div><select id="dobDay" required onchange="calculateEstimatedAge();" class="w-full p-2 border border-gray-300 rounded-lg bg-white outline-none text-xs"></select></div>
@@ -786,6 +786,7 @@ function clearLiveError(el) { if(el) el.classList.remove('error-field', 'border-
 function clearLiveErrorGroup(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
     if(wrapper) {
+        wrapper.classList.remove('error-field');
         const inputs = wrapper.querySelectorAll('input[type="radio"], input[type="checkbox"]');
         inputs.forEach(inp => { 
             const label = wrapper.querySelector(`label[for="${inp.id}"]`); 
@@ -797,8 +798,8 @@ function clearLiveErrorGroup(wrapperId) {
 function clearAllValidationErrors() {
     document.querySelectorAll('.error-field').forEach(el => el.classList.remove('error-field', 'border-red-500', 'bg-red-50'));
     const skinGroup = document.getElementById('skinColorGroup');
-    if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
-    ['originLocationGroupWrapper', 'residenceLocGroupWrapper', 'genderGroupWrapper'].forEach(clearLiveErrorGroup);
+    if(skinGroup) skinGroup.classList.remove('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50', 'error-field');
+    ['originLocationGroupWrapper', 'residenceLocGroupWrapper', 'genderGroupWrapper', 'tribalStatusGroupWrapper'].forEach(clearLiveErrorGroup);
     for(let i=1; i<=5; i++) { let badge = document.getElementById(`step-${i}-badge`); if(badge) { badge.className = "w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs"; badge.innerHTML = "✓"; } }
 }
 
@@ -885,7 +886,7 @@ function handleFormInteraction(e) {
 
 function validateSingleField(field) {
     if(field.type === 'radio' || field.type === 'checkbox') {
-        const group = document.getElementById(field.name + 'GroupWrapper');
+        const group = document.getElementById(field.name + 'GroupWrapper') || document.getElementById(field.name + 'Group');
         if(group) {
             if(document.querySelector(`input[name="${field.name}"]:checked`)) {
                 group.classList.remove('error-field');
@@ -966,8 +967,15 @@ function validateStep(stepNum) {
     radioGroups.forEach(name => {
         if(!document.querySelector(`input[name="${name}"]:checked`)) {
             isValid = false;
-            const groupContainer = document.getElementById(name + 'GroupWrapper');
-            if(groupContainer) groupContainer.classList.add('error-field');
+            let groupContainer = document.getElementById(name + 'GroupWrapper');
+            if(!groupContainer) groupContainer = document.getElementById(name + 'Group'); // Fallback
+            
+            if(groupContainer) {
+                groupContainer.classList.add('error-field');
+                if (name === 'skinColor') {
+                    groupContainer.classList.add('p-2', 'border', 'border-red-400', 'rounded-xl', 'bg-red-50');
+                }
+            }
         }
     });
 
@@ -1387,8 +1395,8 @@ function closeTermsModal() {
         function handleGenderChange(isSilentSync = false) {
             const gm = document.getElementById('gender_male'); if(gm) isMale = gm.checked; 
             renderSmartTags();
-            const group = document.getElementById('tribalStatusGroup');
-            if(group) group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
+            const group = document.getElementById('tribalStatusGroupWrapper');
+            if(group) group.innerHTML = `<div class="flex-1 border-l border-gray-200"><input type="radio" name="tribalStatus" id="tribal_no" value="${isMale?'غير قبيلي':'غير قبيلية'}" required onchange="handleTribalChange()"><label for="tribal_no">${isMale?'غير قبيلي':'غير قبيلية'}</label></div><div class="flex-1"><input type="radio" name="tribalStatus" id="tribal_yes" value="${isMale?'قبيلي':'قبيلية'}" required onchange="handleTribalChange()"><label for="tribal_yes">${isMale?'قبيلي':'قبيلية'}</label></div>`;
             
             if (!isSilentSync) { const nc = document.getElementById('namesContainer'); if(nc) nc.classList.add('hidden'); }
             
@@ -1435,7 +1443,7 @@ function closeTermsModal() {
             if(skins) {
                 skins.forEach((skin, index) => { 
                     const hex = skinHexCodes[index] || "#cbd5e1"; const textColor = textColors[index] || "#1e293b"; 
-                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}"><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-lg whitespace-nowrap text-[10px] font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
+                    skinOptions += `<div><input type="radio" name="skinColor" id="skin_${index}" value="${skin}" required><label for="skin_${index}" class="inline-block text-center py-1.5 px-3 rounded-lg whitespace-nowrap text-[10px] font-bold cursor-pointer transition-all border-2 border-transparent shadow-sm hover:opacity-90" style="background-color: ${hex}; color: ${textColor};">${skin}</label></div>`; 
                 });
                 const scg = document.getElementById('skinColorGroup'); if(scg) scg.innerHTML = skinOptions;
             }
@@ -1889,12 +1897,12 @@ function closeTermsModal() {
             });
         }
 
-        function handleHeroAction(actionType) {
+        function handleHeroAction(actionType, btnEl) {
             if(!currentViewData) return;
             closeBioSmoothly(); 
             const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
-            const fakeBtn = document.createElement('button'); fakeBtn.innerHTML = "...";
-            handleProfileAction(rIndex, sName, fakeBtn, actionType);
+            const targetBtn = btnEl || document.createElement('button');
+            handleProfileAction(rIndex, sName, targetBtn, actionType);
         }
 
         function openShareCopyModal(action) {
