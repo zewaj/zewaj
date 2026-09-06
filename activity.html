@@ -991,133 +991,199 @@
             }
         }
 
-// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-// ✂️ ---------- [ القسم رقم 23 ]: أدوات الإرسال للسيرفر (الرد، التعديل، والانسحاب) مع نظام القفل ---------- ✂️
-// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-
-window.isSubmittingAction = false;
-
-async function submitReply() {
-    if (window.isSubmittingAction) return; 
-    
-    const replyText = document.getElementById('replyText').value.trim();
-    if (!replyText) { alert("الرجاء كتابة رسالة."); return; }
-
-    window.isSubmittingAction = true;
-    
-    try {
-        const payload = {
-            action: currentReplyType === 'طلب تواصل مباشر' ? 'requestDirectContact' : 'replyToRequest',
-            phone: phoneParam,
-            reqId: currentReplyReqId,
-            requesterRefId: requesterRefIdParam,
-            replyType: currentReplyType === 'طلب تواصل مباشر' ? 'طلب تواصل مباشر' : (currentReplyType === 'مقبول' ? 'مقبول' : 'اعتذار'),
-            replyMessage: replyText
-        };
-
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await res.json();
-        
-        if (!result.success) {
-            let backendMsg = result.message || result.error || 'تم رفض العملية من قبل السيرفر.';
-            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
-            return;
-        }
-
-        if (currentReplyType === 'طلب تواصل مباشر' && result.feeMessage) {
-            alert('✅ نجاح:\n\n' + result.feeMessage);
-        }
-
-        closeReplyModal();
-        await manualRefresh();
-        
-    } catch (err) {
-        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
-    } finally {
-        window.isSubmittingAction = false; 
-    }
-}
-
-async function submitEdit() {
-    if (window.isSubmittingAction) return;
-    
-    const newText = document.getElementById('editText').value.trim();
-    if (!newText) { alert("لا يمكن ترك الرسالة فارغة."); return; }
-
-    window.isSubmittingAction = true;
-
-    try {
-        const payload = {
-            action: 'editMessage',
-            phone: phoneParam,
-            reqId: currentEditReqId,
-            requesterRefId: requesterRefIdParam,
-            newMessage: newText
-        };
-
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await res.json();
-        
-        if (!result.success) {
-            let backendMsg = result.message || result.error || 'تم رفض التعديل من قبل السيرفر.';
-            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
-            return;
-        }
-
-        closeEditModal();
-        await manualRefresh();
-        
-    } catch (err) {
-        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
-    } finally {
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits) ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
         window.isSubmittingAction = false;
-    }
-}
 
-async function cancelQueuedReq(reqId) {
-    if (window.isSubmittingAction) return;
+        async function submitReply() {
+            if (window.isSubmittingAction) return;
+            
+            const msgInput = document.getElementById('replyMessage');
+            if (!msgInput) return;
+            const msg = msgInput.value.trim();
+            
+            if (!phoneParam || !currentReplyReqId) return;
+            
+            let isAutoMsg = currentReplyType === 'موافقة مبدئية' || currentReplyType === 'موافقة نهائية' || currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType.includes('إنهاء') || currentReplyType === 'تمديد المحادثة';
+            
+            if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
 
-    if (!confirm('هل أنت متأكد من رغبتك في إلغاء الانتظار واسترجاع النقاط؟')) return;
+            // التحقق من الرصيد
+            let requiredPoints = 0;
+            if (currentReplyType === 'طلب تواصل مباشر') {
+                requiredPoints = 3;
+            } else if (document.getElementById('quotaWarning') && document.getElementById('quotaWarning').innerHTML.includes('انتهى')) {
+                requiredPoints = 1; 
+            }
+            
+            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) { 
+                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); 
+                return; 
+            }
 
-    window.isSubmittingAction = true;
+            // 1. تجهيز حزمة البيانات
+            let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
+            let payloadObj = {};
+            
+            if (isDirectContactAction) {
+                payloadObj = { action: 'requestDirectContact', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam };
+            } else {
+                let finalReplyType = currentReplyType;
+                if (currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء')) { finalReplyType = 'اعتذار'; }
+                payloadObj = { action: 'replyToRequest', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam, replyType: finalReplyType, replyMessage: msg };
+            }
 
-    try {
-        const payload = {
-            action: 'cancelQueue',
-            phone: phoneParam,
-            reqId: reqId
-        };
+            // 2. تجميد البطاقة المعنية وإغلاق النافذة فوراً (Optimistic UI)
+            window.isSubmittingAction = true;
+            let targetReqId = currentReplyReqId;
+            const targetCard = document.getElementById('card-' + targetReqId);
+            
+            closeReplyModal();
+            
+            if (targetCard) {
+                targetCard.style.opacity = '0.5';
+                targetCard.style.pointerEvents = 'none';
+            }
+            showToast("⏳ جاري تنفيذ الإجراء في الخلفية...");
 
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
-        const result = await res.json();
-        
-        if (!result.success) {
-            let backendMsg = result.message || result.error || 'فشل السيرفر في إلغاء الطلب.';
-            alert('⚠️ تنبيه من النظام:\n\n' + backendMsg);
-            return;
+            // فك القفل العام فوراً ليتمكن من التفاعل مع المحادثات الأخرى
+            window.isSubmittingAction = false;
+
+            // 3. الإرسال في الخلفية (باستخدام fetch عادي بدون إعادة محاولة لتجنب التكرار)
+            try {
+                const res = await fetch(SCRIPT_URL, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                    body: JSON.stringify(payloadObj) 
+                });
+                
+                const resText = await res.text();
+                let result = {};
+                try { result = JSON.parse(resText); } catch(e) {
+                    if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                    showMsgModal("خطأ من السيرفر", "استجابة غير مفهومة من السيرفر."); return;
+                }
+                
+                if (result.success === false || result.success === undefined) {
+                    if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                    let errMsg = result.error || result.message || result.details || "رفض السيرفر تنفيذ العملية.";
+                    showMsgModal("تنبيه من السيرفر", errMsg);
+                    return; 
+                }
+
+                if (isDirectContactAction) { showToast("✅ " + (result.message || result.details || "تم إرسال طلب التواصل بنجاح.")); } 
+                else { showToast("✅ تم الإرسال بنجاح."); }
+                
+                fetchData(true).finally(() => {
+                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+                });
+            } catch (e) { 
+                if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                showToast("⚠️ تعذر الإرسال بسبب ضعف الاتصال. حاول مجدداً."); 
+            }
         }
 
-        alert('✅ ' + (result.message || 'تم الإلغاء واسترجاع النقاط بنجاح.'));
-        await manualRefresh();
-        
-    } catch (err) {
-        alert("حدث خطأ في الاتصال، يرجى المحاولة لاحقاً.");
-    } finally {
-        window.isSubmittingAction = false;
-    }
-}
+        async function submitEdit() {
+            if (window.isSubmittingAction) return;
+
+            const msgInput = document.getElementById('replyMessage');
+            if (!msgInput) return;
+            const msg = msgInput.value.trim();
+            
+            if (!phoneParam || !currentReplyReqId) return;
+            if (msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
+            
+            window.isSubmittingAction = true;
+            let targetReqId = currentReplyReqId;
+            const targetCard = document.getElementById('card-' + targetReqId);
+            
+            closeReplyModal();
+            
+            if (targetCard) { targetCard.style.opacity = '0.5'; targetCard.style.pointerEvents = 'none'; }
+            showToast("⏳ جاري تعديل الرسالة في الخلفية...");
+            
+            window.isSubmittingAction = false;
+            
+            try {
+                const payloadObj = { action: 'editPendingReply', phone: phoneParam, reqId: targetReqId, requesterRefId: refIdParam, newMsg: msg };
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payloadObj) });
+                
+                const resText = await res.text();
+                let result = {};
+                try { result = JSON.parse(resText); } catch(e) {
+                    if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                    showMsgModal("خطأ من السيرفر", "استجابة غير مفهومة من السيرفر."); return;
+                }
+                
+                if (result.success === false || result.success === undefined) {
+                    if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                    let errMsg = result.error || result.message || result.details || "فشل التعديل لأسباب غير معروفة من السيرفر.";
+                    showMsgModal("تنبيه من السيرفر", errMsg); return;
+                }
+
+                showToast("✅ تم التعديل بنجاح.");
+                fetchData(true).finally(() => {
+                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+                });
+            } catch (e) { 
+                if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                showToast("⚠️ تعذر التعديل بسبب ضعف الاتصال."); 
+            }
+        }
+
+        async function removeFavorite(event, refId) {
+            event.stopPropagation(); if (!phoneParam || !refIdParam) return;
+            const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50', 'pointer-events-none');
+            try {
+                await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) });
+                fetchData(true).finally(() => {
+                    if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+                });
+            } catch(e) { if(card) card.classList.remove('opacity-50', 'pointer-events-none'); showMsgModal("خطأ", "تعذر الحذف."); }
+        }
+
+        window.cancelQueuedReq = async function(reqId) {
+            if (!phoneParam) return;
+            const textEl = document.getElementById('confirmActionText');
+            textEl.innerHTML = `تأكيد الإلغاء<br><br><strong class="text-rose-600 block bg-rose-50 border border-rose-200 p-2 rounded-lg mt-2">هل أنت متأكد من رغبتك في الانسحاب من قائمة الانتظار واسترجاع النقاط؟</strong>`;
+            
+            const modalBox = document.getElementById('confirmActionBox');
+            let safeY = Math.max(20, windowLastInteractionY - 150);
+            modalBox.style.marginTop = safeY + 'px';
+            document.getElementById('confirmActionModal').classList.remove('hidden');
+
+            window.executeConfirmAction = async function() {
+                if (window.isSubmittingAction) return;
+                window.isSubmittingAction = true;
+                
+                const targetCard = document.getElementById('card-' + reqId);
+                closeConfirmModal();
+                
+                if (targetCard) { targetCard.style.opacity = '0.5'; targetCard.style.pointerEvents = 'none'; }
+                showToast("⏳ جاري إلغاء الطلب واسترجاع النقاط...");
+                
+                window.isSubmittingAction = false;
+
+                try {
+                    const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "cancelQueue", phone: phoneParam, reqId: reqId }) });
+                    const result = await res.json();
+                    
+                    if(result.success) {
+                        showToast("✅ " + (result.message || "تم خروجك من قائمة الانتظار بنجاح."));
+                        fetchData(true).finally(() => {
+                            if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+                        });
+                    } else {
+                        if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                        showMsgModal("فشل الإلغاء", result.error || "تعذر إلغاء الطلب من السيرفر.");
+                    }
+                } catch (e) {
+                    if (targetCard) { targetCard.style.opacity = '1'; targetCard.style.pointerEvents = 'auto'; }
+                    showToast("⚠️ فشل الاتصال بالسيرفر. تأكد من الإنترنت.");
+                }
+            };
+        };
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 24 ]: المزامنة وجلب البيانات (Caching & Fetching) ---------- ✂️ -->
