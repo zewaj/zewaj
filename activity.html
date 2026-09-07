@@ -20,8 +20,8 @@
             try { let pd = window.parent.document; } catch(e) { isGeminiCanvas = true; }
         }
         
-        // إخفاء الشريط الأسود وتبويبات (مفضلاتي/طلباتي) عندما تكون الصفحة داخل الاندكس
-        if ((window.self !== window.top && !isGeminiCanvas) || initialParams.get('embedded') === 'true' || initialParams.has('autoPhone') || initialParams.has('phone')) {
+        // إخفاء الشريط الأسود وتبويبات (مفضلاتي/طلباتي) عندما تكون الصفحة داخل الاندكس أو عبر رابط سحري (Token)
+        if ((window.self !== window.top && !isGeminiCanvas) || initialParams.get('embedded') === 'true' || initialParams.has('autoPhone') || initialParams.has('phone') || initialParams.has('token')) {
             document.documentElement.classList.add('in-iframe');
             document.write('<style>#fallbackLogin { display: none !important; visibility: hidden !important; } #innerTabsContainer { display: none !important; } html, body { background-color: transparent !important; }</style>');
         }
