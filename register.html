@@ -1621,7 +1621,7 @@ function closeTermsModal() {
                 showMainForm();
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (action === 'edit') {
-                if (currentViewData) { handleHeroAction('edit'); }
+                if (currentViewData) { handleHeroAction('edit', document.querySelector('button[onclick*="edit"]')); }
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -1715,7 +1715,21 @@ function closeTermsModal() {
         }
 
         function renderDashboardUi(profiles, overrideSelectUid = null, isSilentSync = false) {
-            if(!profiles || profiles.length === 0) { if(!isSilentSync) showMainForm(); return; }
+            // 🟢 فلترة تأكيدية لتجنب ظهور الملفات المحذوفة أو التي تم زواجها
+            let activeProfiles = profiles.filter(p => {
+                let s = p.profileStatus || (p.fullDetails && p.fullDetails.profileStatus) || "";
+                return !s.includes("محذوف") && !s.includes("تم الزواج");
+            });
+
+            if(!activeProfiles || activeProfiles.length === 0) {
+                 if(!isSilentSync) {
+                     localStorage.removeItem(`user_profiles_cache_${verifiedFullPhone}`);
+                     showMainForm();
+                 }
+                 return;
+            }
+            
+            profiles = activeProfiles;
 
             let serverMain = profiles.find(p => p.isMain === true || p.isMain === "نعم" || p.isMain === "رئيسي");
             if(serverMain && !isAdminMode) { localStorage.setItem(`mainProfileUid_${verifiedFullPhone}`, getProfileUid(serverMain)); }
@@ -1732,18 +1746,20 @@ function closeTermsModal() {
             
             currentViewedIndexInDashboard = activeProfile.rowIndex; currentViewData = activeProfile; 
             
+            let statusStr = activeProfile.profileStatus || (activeProfile.fullDetails && activeProfile.fullDetails.profileStatus) || "";
+            let isUnderReview = statusStr.includes("مراجعة") || statusStr.includes("انتظار") || statusStr.includes("جديد");
+
             if(!isAdminMode) {
                 localStorage.setItem('active_profile_uid', activeUid); localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
                 localStorage.setItem('active_profile_index', activeProfile.rowIndex); localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
                 localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
+                // 🟢 حفظ الحالة في الذاكرة لتتمكن الصفحة الرئيسية من قراءتها
+                localStorage.setItem('active_profile_status', statusStr);
             }
             
             let safeName = activeProfile.name ? activeProfile.name.split(' ')[0] : 'مستخدم';
             const isMainProfile = activeUid === mainUid;
             const savedRel = activeProfile.relation || getRelation(activeProfile.rowIndex); const relText = savedRel ? savedRel : "غير محدد";
-            
-            let statusStr = activeProfile.profileStatus || (activeProfile.fullDetails && activeProfile.fullDetails.profileStatus) || "";
-            let isUnderReview = statusStr.includes("مراجعة") || statusStr.includes("انتظار") || statusStr.includes("جديد");
 
             const nEl = document.getElementById('headerAccountName'); if(nEl) nEl.innerText = safeName;
             const rEl = document.getElementById('headerAccountRefId'); if(rEl) rEl.innerText = `#${activeProfile.refId || activeProfile.rowIndex}`;
@@ -1901,8 +1917,7 @@ function closeTermsModal() {
             if(!currentViewData) return;
             closeBioSmoothly(); 
             const rIndex = currentViewData.rowIndex; const sName = currentViewData.sheetName;
-            const targetBtn = btnEl || document.createElement('button');
-            handleProfileAction(rIndex, sName, targetBtn, actionType);
+            handleProfileAction(rIndex, sName, btnEl, actionType);
         }
 
         function openShareCopyModal(action) {
@@ -2001,7 +2016,7 @@ function closeTermsModal() {
         }
 
         async function fetchProfileActionFromServer(rowIndex, sheetName, btnEl, actionType) {
-            const originalText = btnEl.innerHTML; btnEl.innerHTML = "..."; btnEl.disabled = true;
+            const originalText = btnEl.innerHTML; btnEl.innerHTML = `<svg class="animate-spin h-4 w-4 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`; btnEl.disabled = true;
             const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 35000);
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getProfileDetails", phone: verifiedFullPhone, rowIndex: rowIndex, sheetName: sheetName }), signal: controller.signal });
