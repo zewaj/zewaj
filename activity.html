@@ -20,10 +20,13 @@
             try { let pd = window.parent.document; } catch(e) { isGeminiCanvas = true; }
         }
         
-        // إخفاء الشريط الأسود وتبويبات (مفضلاتي/طلباتي) عندما تكون الصفحة داخل الاندكس أو عبر رابط سحري (Token)
-        if ((window.self !== window.top && !isGeminiCanvas) || initialParams.get('embedded') === 'true' || initialParams.has('autoPhone') || initialParams.has('phone') || initialParams.has('token')) {
+        // التحقق مما إذا كان العميل قد دخل عبر رابط سحري سابقاً أو حالياً
+        const isClientMode = initialParams.has('token') || localStorage.getItem('is_client_mode') === 'true';
+        
+        // 🚨 إغلاق الثغرة: إخفاء الشريط يعتمد فقط على embedded أو وضع العميل
+        if ((window.self !== window.top && !isGeminiCanvas) || initialParams.get('embedded') === 'true' || isClientMode) {
             document.documentElement.classList.add('in-iframe');
-            document.write('<style>#fallbackLogin { display: none !important; visibility: hidden !important; } #innerTabsContainer { display: none !important; } html, body { background-color: transparent !important; }</style>');
+            document.write('<style>#fallbackLogin { display: none !important; visibility: hidden !important; } #innerTabsContainer { display: none !important; } #dashboardContent { padding-top: 15px !important; } html, body { background-color: transparent !important; }</style>');
         }
     </script>
 
@@ -1261,7 +1264,7 @@
         }
 
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-// ✂️ ---------- [ القسم رقم 25 ]: أحداث البدء والاستماع (Initialization & Magic Links) ---------- ✂️
+// ✂️ ---------- [ القسم رقم 25 ]: أحداث البدء (إغلاق ثغرة IDOR والمصادقة بالـ Token) ---------- ✂️
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1270,102 +1273,75 @@
             setupHeightObserver(); 
             renderQuickAccessButtons();
 
-            // 🌟 مسار الدخول السريع عبر الرابط السحري (Magic Link)
+            // إخفاء قسري للشريط الأسود وتعديل المسافات إذا كان العميل يستخدم الرابط السحري
+            if (magicToken || localStorage.getItem('is_client_mode') === 'true') {
+                const fb = document.getElementById('fallbackLogin'); if (fb) fb.style.display = 'none';
+                const tb = document.getElementById('innerTabsContainer'); if (tb) tb.style.display = 'none';
+                const content = document.getElementById('dashboardContent'); if (content) content.style.paddingTop = '15px';
+            }
+
+            // 🌟 مسار الدخول السريع عبر الرابط السحري (المصادقة الشرعية الوحيدة من الرابط)
             if (magicToken) {
-                showSkeletonLoader(); // عرض واجهة التحميل لإشعار العميل بالعملية
-                
+                showSkeletonLoader();
                 try {
                     const resText = await fetchWithRetry(SCRIPT_URL, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                        body: JSON.stringify({ action: "verifyToken", token: magicToken }) 
+                        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "verifyToken", token: magicToken }) 
                     });
-                    
                     const result = JSON.parse(resText);
                     
                     if (result.success) {
-                        // 1. تهيئة البيانات وضمان تنسيق رقم الجوال
                         let cleanPhone = result.phone;
-                        if (!cleanPhone.startsWith('+')) cleanPhone = '+' + cleanPhone; // إضافة + إذا كانت مفقودة
+                        if (!cleanPhone.startsWith('+')) cleanPhone = '+' + cleanPhone;
                         
-                        phoneParam = cleanPhone;
-                        refIdParam = result.refId;
-                        tabParam = 'requests';
+                        phoneParam = cleanPhone; refIdParam = result.refId; tabParam = 'requests';
                         
-                        // 2. حفظ بيانات الجلسة في المتصفح
+                        // تفعيل "وضع العميل" لإخفاء الشريط الأسود دائماً لهذا الجهاز
+                        localStorage.setItem('is_client_mode', 'true');
                         localStorage.setItem('verified_user_phone', phoneParam);
                         localStorage.setItem('active_profile_refid', refIdParam);
-                        if (result.name) {
-                            localStorage.setItem('currentUser', JSON.stringify({ name: result.name, gender: result.gender || '' }));
-                        }
+                        if (result.name) { localStorage.setItem('currentUser', JSON.stringify({ name: result.name, gender: result.gender || '' })); }
 
-                        // 3. مسح الـ Token من الرابط بذكاء (لأسباب أمنية ولجمالية الـ UX)
+                        // مسح الـ Token من الرابط لأسباب أمنية
                         const newUrl = window.location.pathname + "?tab=requests";
                         window.history.replaceState({}, document.title, newUrl);
 
-                        // 4. توجيه العميل وجلب بياناته
-                        switchTab('requests');
-                        fetchData(false);
-                        
+                        switchTab('requests'); fetchData(false);
                     } else {
-                        // الرمز خاطئ أو منتهي الصلاحية
-                        showErrorState(result.message || "الرابط غير صالح أو منتهي الصلاحية.");
-                        showMsgModal("فشل الدخول", result.message || "الرابط السحري غير صالح أو منتهي الصلاحية.");
+                        showErrorState(result.message || "الرابط السحري غير صالح أو منتهي الصلاحية.");
+                        showMsgModal("فشل الدخول", result.message || "لا يمكن المصادقة باستخدام هذا الرابط.");
                     }
-                } catch (e) {
-                    showErrorState("حدث خطأ أثناء التحقق من الرابط السحري. تأكد من اتصالك بالإنترنت.");
-                    showMsgModal("خطأ اتصال", "فشل التحقق من الرابط. يرجى المحاولة لاحقاً.");
-                }
+                } catch (e) { showErrorState("حدث خطأ أثناء التحقق من الرابط السحري."); }
             } 
-            // 👤 المسار الطبيعي (الدخول المعتاد من الموقع أو لوحة الاختبار)
+            // 👤 المسار الطبيعي (الاعتماد حصرياً على الـ LocalStorage)
             else {
-                phoneParam = urlParams.get('autoPhone') || urlParams.get('phone') || localStorage.getItem('verified_user_phone') || "";
-                refIdParam = urlParams.get('autoRefId') || urlParams.get('refId') || localStorage.getItem('active_profile_refid') || "";
+                // 🚨 إغلاق ثغرة IDOR: مسح استدعاء الجوال من الرابط كلياً
+                phoneParam = localStorage.getItem('verified_user_phone') || "";
+                refIdParam = localStorage.getItem('active_profile_refid') || "";
                 tabParam = urlParams.get('tab') || 'requests'; window.userStatusParam = urlParams.get('status') || '';
                 
-                if (phoneParam) { let cp = phoneParam.replace('+966', ''); document.getElementById('fbPhone').value = cp.startsWith('0') ? cp.substring(1) : cp; }
-                if (refIdParam) { document.getElementById('fbRefId').value = refIdParam; }
+                if (phoneParam) { let cp = phoneParam.replace('+966', ''); const fbP = document.getElementById('fbPhone'); if(fbP) fbP.value = cp.startsWith('0') ? cp.substring(1) : cp; }
+                if (refIdParam) { const fbR = document.getElementById('fbRefId'); if(fbR) fbR.value = refIdParam; }
 
-                if (!phoneParam || !refIdParam) {
-                    switchTab('requests'); 
-                } else { 
+                if (!phoneParam || !refIdParam) { switchTab('requests'); } 
+                else { 
                     switchTab(tabParam);
                     let cacheStr = localStorage.getItem('master_activity_cache');
-                    if (!cacheStr) {
-                        showSkeletonLoader();
-                        fetchData(false); 
-                    } else {
-                        loadFromCentralCache(false);
-                        if (window.self === window.top) fetchData(true);
-                    }
+                    if (!cacheStr) { showSkeletonLoader(); fetchData(false); } 
+                    else { loadFromCentralCache(false); if (window.self === window.top) fetchData(true); }
                 }
             }
             
-            // مستمعات الأحداث (Listeners)
             window.addEventListener('message', function(event) {
                 if (event.data) {
                     if (event.data.action === 'favoriteSuccess') { window.lastFetchTime = 0; if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); else fetchData(true); } 
                     else if (event.data.action === 'reRenderFromCache') { loadFromCentralCache(true, event.data.data); }
-                    else if (event.data.action === 'forceCacheBypass') {
-                        localStorage.removeItem('master_activity_cache');
-                        showSkeletonLoader();
-                        fetchData(false);
-                    }
+                    else if (event.data.action === 'forceCacheBypass') { localStorage.removeItem('master_activity_cache'); showSkeletonLoader(); fetchData(false); }
                 }
             });
 
-            window.addEventListener('storage', function(e) {
-                if (e.key === 'master_activity_cache') {
-                    loadFromCentralCache(true);
-                }
-            });
+            window.addEventListener('storage', function(e) { if (e.key === 'master_activity_cache') { loadFromCentralCache(true); } });
             
-            // التحديث الذكي النبضي (Smart Polling)
-            setInterval(() => {
-                if (!isFetching && document.visibilityState === 'visible' && phoneParam && refIdParam) {
-                     fetchData(true);
-                }
-            }, 250000); 
+            setInterval(() => { if (!isFetching && document.visibilityState === 'visible' && phoneParam && refIdParam) { fetchData(true); } }, 250000); 
         };
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
