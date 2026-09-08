@@ -582,8 +582,12 @@
                     }
                 }
             } catch (e) {
-                if (e.name === 'AbortError' && !silent) {
-                    await showMsgModal("تنبيه", 'تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.');
+                if (!silent) {
+                    if (e.name === 'AbortError') {
+                        await showMsgModal("تنبيه", 'تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.');
+                    } else {
+                        await showMsgModal("خطأ في الاتصال", 'حدث خطأ غير متوقع: ' + e.message);
+                    }
                 }
             } finally {
                 isFetchingData = false;
@@ -1148,6 +1152,9 @@
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
 
+            // فتح نافذة فارغة فوراً للتحايل على الـ Pop-up Blocker قبل الفيتش
+            let waWin = window.open('', '_blank');
+
             const btn = document.getElementById('btnExecuteForward');
             const cancelBtn = document.getElementById('btnCancelForward');
             const originalBtnHtml = btn.innerHTML;
@@ -1176,19 +1183,6 @@
             let completeNewThread = oldChunks.join("\n\n---\n\n");
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
 
-            try {
-                let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
-                
-                let waMessage = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\n`;
-                waMessage += `يوجد رسالة/تحديث بخصوص طلب التوفيق رقم (${req.reqId})\n\n`;
-                waMessage += `* نبذة عن الطرف الآخر:\n${senderDataInfo || 'بيانات غير متوفرة'}\n\n`;
-                waMessage += `* الرسالة:\n"${newText}"\n\n`;
-                waMessage += `* يرجى الدخول للمنصة للرد عبر الرابط التالي:\nhttps://zewaj.github.io/zewaj/\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
-                
-                let waLink = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
-                window.open(waLink, '_blank');
-            } catch(waErr) { console.warn("حظر فتح الواتساب."); }
-
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -1202,14 +1196,32 @@
                 const result = await res.json();
                 
                 if(result.success) {
+                    let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
+                    
+                    // استخراج الرابط السحري من الباك إند
+                    let magicLink = direction === 'toTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                    // استخدام رقم الجوال في الرابط كخط دفاع احتياطي (Fallback)
+                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+                    
+                    let waMessage = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\n`;
+                    waMessage += `يوجد رسالة/تحديث بخصوص طلب التوفيق رقم (${req.reqId})\n\n`;
+                    waMessage += `* نبذة عن الطرف الآخر:\n${senderDataInfo || 'بيانات غير متوفرة'}\n\n`;
+                    waMessage += `* الرسالة:\n"${newText}"\n\n`;
+                    waMessage += `* يرجى الدخول للمنصة للرد عبر الرابط السري والآمن التالي:\n${magicLink}\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
+                    
+                    // توجيه النافذة المفتوحة للواتساب
+                    if (waWin) waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
+
                     closeForwardModal();
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
                     await fetchData(true, reqId); 
                 } else {
+                    if (waWin) waWin.close(); // إغلاق النافذة في حالة الفشل
                     await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
+                if (waWin) waWin.close(); // إغلاق النافذة في حالة الفشل
                 if (e.name === 'AbortError') await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
             } finally {
                 btn.innerHTML = originalBtnHtml;
@@ -1272,6 +1284,11 @@
                 prefixTag = "[من الإدارة]: ";
             }
 
+            let waWin = null;
+            if (actionType !== 'closeChat' && actionType !== 'closeChatSuccess' && waPhone) {
+                waWin = window.open('', '_blank');
+            }
+
             isProcessingAction = true;
             document.getElementById('refreshIcon').classList.add('sync-spin');
             
@@ -1281,14 +1298,6 @@
             let completeNewThread = oldChunks.join("\n\n---\n\n");
             
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
-
-            if (actionType !== 'closeChat' && actionType !== 'closeChatSuccess' && waPhone) {
-                try {
-                    let waFullMsg = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\nرسالة إدارية ${waIntro}\n\n* الرسالة:\n"${adminMessage}"\n\n* يرجى الدخول للمنصة للرد عبر الرابط التالي:\nhttps://zewaj.github.io/zewaj/\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
-                    let waLink = `https://wa.me/${waPhone}?text=${encodeURIComponent(waFullMsg)}`;
-                    window.open(waLink, '_blank');
-                } catch(e) {}
-            }
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -1303,14 +1312,28 @@
                 const result = await res.json();
                 
                 if(result.success) {
+                    if (waWin) {
+                        let magicLink = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                        if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${waPhone}`;
+
+                        let waFullMsg = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\nرسالة إدارية ${waIntro}\n\n* الرسالة:\n"${adminMessage}"\n\n* يرجى الدخول للمنصة للرد عبر الرابط السري والآمن التالي:\n${magicLink}\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
+                        waWin.location.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(waFullMsg)}`;
+                    }
+
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
                     await fetchData(true, reqId);
                 } else {
+                    if (waWin) waWin.close(); 
                     await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
+                if (waWin) waWin.close();
+                if (e.name === 'AbortError') {
+                    await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
+                } else {
+                    await showMsgModal("خطأ", "فشل تنفيذ الإجراء: " + e.message);
+                }
             } finally {
                 isProcessingAction = false;
                 document.getElementById('refreshIcon').classList.remove('sync-spin');
@@ -1366,134 +1389,14 @@
                     await fetchData(true, reqId);
                 } else await showMsgModal("تنبيه", result.message || "النظام مشغول.");
             } catch(e) {
-                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
+                if (e.name === 'AbortError') {
+                    await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
+                } else {
+                    await showMsgModal("خطأ", "حدث خطأ: " + e.message);
+                }
             } finally {
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; cancelBtn.disabled = false;
-            }
-        }
-
-        // ==========================================
-        // دوال إدارة طابور الانتظار 
-        // ==========================================
-        let currentQueueList = [];
-
-        function openQueueModal(targetRefIdOrPhone) {
-            currentQueueList = allRequests.filter(r => 
-                (r.status || '').includes('قائمة الانتظار') && 
-                (r.targetRefId === targetRefIdOrPhone || r.targetPhone === targetRefIdOrPhone)
-            );
-            
-            renderQueueList();
-            document.getElementById('queueManagementModal').classList.remove('hidden');
-        }
-
-        function closeQueueModal() {
-            document.getElementById('queueManagementModal').classList.add('hidden');
-        }
-
-        function renderQueueList() {
-            const container = document.getElementById('queueListContainer');
-            if (currentQueueList.length === 0) {
-                container.innerHTML = '<p class="text-center text-slate-400 text-sm py-6 font-bold">الطابور فارغ حالياً.</p>';
-                return;
-            }
-
-            let html = '';
-            currentQueueList.forEach((req, index) => {
-                let isFirst = index === 0;
-                let isLast = index === currentQueueList.length - 1;
-                
-                html += `
-                <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between shadow-sm gap-2 transition-all hover:border-purple-300">
-                    <div class="flex flex-col gap-1 w-full overflow-hidden">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold shrink-0">#${req.reqId}</span>
-                            ${isFirst ? '<span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">الأول بالطابور</span>' : ''}
-                        </div>
-                        <span class="text-xs font-bold text-slate-800 truncate" title="${req.requesterData}">${req.requesterData || '-'}</span>
-                    </div>
-                    
-                    <div class="flex flex-col gap-1 shrink-0">
-                        <button onclick="moveQueueItem(${index}, -1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : ''}" ${isFirst ? 'disabled' : ''} title="رفع لأعلى">⬆️</button>
-                        <button onclick="moveQueueItem(${index}, 1)" class="p-1 bg-slate-50 hover:bg-purple-100 text-slate-600 rounded-lg transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : ''}" ${isLast ? 'disabled' : ''} title="إنزال لأسفل">⬇️</button>
-                    </div>
-
-                    <div class="w-px h-10 bg-slate-200 shrink-0 mx-1"></div>
-                    
-                    <button onclick="removeQueueItem('${req.reqId}')" class="shrink-0 p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-100 transition-colors" title="إزالة من الطابور واسترجاع النقاط">
-                        ❌
-                    </button>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function moveQueueItem(index, direction) {
-            if (index + direction < 0 || index + direction >= currentQueueList.length) return;
-            const temp = currentQueueList[index];
-            currentQueueList[index] = currentQueueList[index + direction];
-            currentQueueList[index + direction] = temp;
-            renderQueueList(); 
-        }
-
-        async function removeQueueItem(reqId) {
-            let confirmRemove = await showMsgModal("تأكيد الإزالة", "هل أنت متأكد من إلغاء هذا الطلب وإزالته من طابور الانتظار (واسترجاع نقاطه)؟", "confirm");
-            if (!confirmRemove) return;
-
-            document.getElementById('refreshIcon').classList.add('sync-spin');
-            
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminRemoveFromQueue', adminToken: state.adminToken, reqId: reqId })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    currentQueueList = currentQueueList.filter(r => r.reqId !== reqId);
-                    renderQueueList();
-                    sessionStorage.removeItem('admin_requests_cache');
-                    fetchData(true);
-                } else {
-                    showMsgModal("تنبيه", result.message || "فشل إزالة الطلب من السيرفر.");
-                }
-            } catch (e) {
-                showMsgModal("خطأ", "فشل الاتصال بالسيرفر. يرجى المحاولة لاحقاً.");
-            } finally {
-                document.getElementById('refreshIcon').classList.remove('sync-spin');
-            }
-        }
-
-        async function saveQueueOrder() {
-            if (currentQueueList.length === 0) return;
-            
-            const btn = document.getElementById('btnSaveQueueOrder');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = "جاري الحفظ...";
-            btn.disabled = true;
-
-            const orderedReqIds = currentQueueList.map(r => r.reqId);
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminReorderQueue', adminToken: state.adminToken, orderedReqIds: orderedReqIds })
-                });
-                const result = await res.json();
-                
-                if (result.success) {
-                    closeQueueModal();
-                    sessionStorage.removeItem('admin_requests_cache');
-                    await fetchData(true); 
-                } else {
-                    showMsgModal("تنبيه", result.message || "فشل حفظ الترتيب الجديد.");
-                }
-            } catch (e) {
-                showMsgModal("خطأ", "تأخرت استجابة السيرفر.");
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
             }
         }
 
