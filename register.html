@@ -296,7 +296,7 @@
             <h1 id="mainFormTitle" class="text-xl font-bold text-gray-900 mb-1">تسجيل طلب زواج</h1>
             <p class="text-gray-500 text-[10px] hidden sm:block">يرجى تعبئة البيانات بدقة لتسهيل عملية التوفيق</p>
             <div class="flex items-center justify-center gap-3 mt-1.5">
-                <button onclick="loadDashboard()" class="text-indigo-600 text-[11px] font-bold hover:underline">العودة للوحة العائلة</button>
+                <button onclick="cancelAndReturnToDashboard()" class="text-indigo-600 text-[11px] font-bold hover:underline">العودة للوحة العائلة</button>
             </div>
         </div>
 
@@ -1467,7 +1467,7 @@ function closeTermsModal() {
             if(mSel) months.forEach((m, idx) => { mSel.innerHTML += `<option value="${idx + 1}">${m}</option>`; });
             
             const currentYear = (calType === 'hijri') ? 1447 : 2026;
-            if(ySel) for(let y = currentYear - 18; y >= currentYear - 70; y--) { ySel.innerHTML += `<option value="${y}">${y}</option>`; }
+            if(ySel) for(let y = currentYear - 15; y >= currentYear - 90; y--) { ySel.innerHTML += `<option value="${y}">${y}</option>`; }
             
             const ageDisplayBox = document.getElementById('ageDisplayBox'); if(ageDisplayBox) ageDisplayBox.classList.add('hidden');
         }
@@ -1571,11 +1571,19 @@ function closeTermsModal() {
         function generateTerms() {
             if(isMale === null) return; const container = document.getElementById('dynamicTermsContainer');
             if(!container) return;
+
+            let pointsNote = "";
+            if (cachedProfiles && cachedProfiles.length > 0) {
+                pointsNote = `<div class="bg-blue-50 border border-blue-200 p-2.5 rounded-xl mt-2 text-blue-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">ℹ️ ملاحظة: إضافة أفراد الأسرة لا تشمل النقاط المجانية، وتتطلب شحن الرصيد عبر الإدارة للتواصل.</p></div>`;
+            } else {
+                pointsNote = `<div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl mt-2 text-emerald-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">🎁 احصل على نقاط ترحيبية مجانية (لأول ملف يتم تسجيله في حسابك).</p></div>`;
+            }
+
             if(isMale) { 
                 const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false; 
-                container.innerHTML = isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px]">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`; 
+                container.innerHTML = (isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px]">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`) + pointsNote; 
             } else { 
-                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>`; 
+                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>` + pointsNote; 
             }
         }
 
@@ -1624,6 +1632,23 @@ function closeTermsModal() {
                 if (currentViewData) { handleHeroAction('edit', document.querySelector('button[onclick*="edit"]')); }
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
+        }
+
+        // 🟢 الدالة الجديدة للعودة السريعة للوحة العائلة
+        function cancelAndReturnToDashboard() {
+            // تصفير حالة التعديل لتجنب تداخل البيانات مستقبلاً
+            editInfoState = null; 
+            
+            // إخفاء نموذج التسجيل فوراً
+            const mForm = document.getElementById('mainFormSection'); 
+            if(mForm) mForm.classList.add('hidden');
+            
+            // إظهار لوحة العائلة فوراً
+            const dDash = document.getElementById('dashboardSection'); 
+            if(dDash) dDash.classList.remove('hidden');
+            
+            // التمرير لأعلى الصفحة بسلاسة
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function loadDashboard(retryCount = 0) {
@@ -2252,6 +2277,7 @@ function closeTermsModal() {
                     const fa = document.getElementById('finalActionModal'); if(fa) fa.classList.remove('hidden'); 
                     registeredUserData = result.data || {}; hasClickedWaToApprove = false; cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
                     if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
+                    if(result.refId && !isAdminMode) localStorage.setItem('active_profile_uid', String(result.refId)); // 🟢 هذا هو السطر الجديد
                 } else { showMsgModal("ملاحظة من الخادم", result.message); }
             } catch(e) { 
                 if(e.name === 'AbortError') { showMsgModal("تنبيه أمان (ضعف الشبكة) ⚠️", "شبكة الإنترنت لديك ضعيفة جداً. يرجى إغلاق هذه النافذة والتحقق من (لوحة العائلة) بعد قليل للتأكد."); } 
