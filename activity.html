@@ -1023,27 +1023,38 @@
         }
 
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
-// ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits) ---------- ✂️
+// ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits & Optimistic UI) ---------- ✂️
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+
         // ⚡️ نظام الواجهة المتفائلة: إدارة الطابور المحلي المعزول
         window.savePendingActions = function(actions) {
             let p = typeof phoneParam !== 'undefined' ? phoneParam : ''; let r = typeof refIdParam !== 'undefined' ? refIdParam : '';
             localStorage.setItem('pending_actions_' + p + '_' + r, JSON.stringify(actions));
         };
-        window.addPendingAction = function(action) { let acts = window.getPendingActions(); acts.push(action); window.savePendingActions(acts); };
+        window.addPendingAction = function(action) { 
+            let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
+            acts.push(action); window.savePendingActions(acts); 
+        };
         window.updatePendingActionState = function(id, newState, errMsg = '') {
-            let acts = window.getPendingActions(); let act = acts.find(a => a.id === id);
+            let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
+            let act = acts.find(a => a.id === id);
             if(act) { act.state = newState; act.error = errMsg; window.savePendingActions(acts); }
         };
-        window.removePendingAction = function(id) { let acts = window.getPendingActions(); window.savePendingActions(acts.filter(a => a.id !== id)); };
+        window.removePendingAction = function(id) { 
+            let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
+            window.savePendingActions(acts.filter(a => a.id !== id)); 
+        };
 
-        // المحرك الخفي: يرسل للسيرفر بصمت
+        // المحرك الخفي: يرسل للسيرفر بصمت ويتعامل مع ردود السيرفر الصارمة
         window.processPendingAction = async function(actionId) {
-            let acts = window.getPendingActions(); let act = acts.find(a => a.id === actionId);
+            let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
+            let act = acts.find(a => a.id === actionId);
             if(!act || act.state === 'failed') return;
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(act.payload) });
                 const resText = await res.text(); let result = JSON.parse(resText);
+                
+                // التقاط رفض السيرفر (مثل: الردود المتتالية)
                 if (result.success === false || result.success === undefined) throw new Error(result.error || result.message || "مرفوض من السيرفر");
                 
                 window.removePendingAction(actionId); // نجاح! احذفها من الطابور
@@ -1068,6 +1079,25 @@
             const msgInput = document.getElementById('replyMessage'); if (!msgInput) return;
             const msg = msgInput.value.trim();
             if (!phoneParam || !currentReplyReqId) return;
+
+            // 🛡️ جدار الحماية المحلي: منع الردود المتتالية (Double-texting) قبل وصولها للسيرفر
+            let req = window.myReqsDataStore[currentReplyReqId] || window.myIncomingReqsDataStore[currentReplyReqId];
+            if (req) {
+                let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
+                let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
+                let isIncomingCard = !!window.myIncomingReqsDataStore[currentReplyReqId];
+                
+                let isRealLastFromMe = isIncomingCard ? 
+                    (realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]')) : 
+                    (realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]'));
+
+                let isExceptionalType = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'موافقة نهائية';
+
+                if (isRealLastFromMe && !isExceptionalType) {
+                    showMsgModal("تنبيه من النظام", "لقد قمت بإرسال رسالة مسبقاً.\nيجب انتظار رد الطرف الآخر أو انتظار اعتماد الإدارة لرسالتك السابقة.");
+                    return;
+                }
+            }
             
             let isAutoMsg = currentReplyType === 'موافقة مبدئية' || currentReplyType === 'موافقة نهائية' || currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType.includes('إنهاء') || currentReplyType === 'تمديد المحادثة';
             if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
