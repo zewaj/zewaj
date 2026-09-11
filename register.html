@@ -133,18 +133,24 @@
 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 -->
             <div id="otpStep2" class="space-y-4 hidden fade-in">
-                <p class="text-xs text-gray-500 text-center font-bold">أدخل الرمز المكون من 4 أرقام</p>
+                <div class="flex justify-between items-center px-2">
+                    <p class="text-xs text-gray-500 font-bold">أدخل الرمز المكون من 4 أرقام</p>
+                    <button type="button" onclick="goBackToPhoneInput()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-black flex items-center gap-1 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        تعديل الجوال
+                    </button>
+                </div>
                 <div class="flex justify-center gap-3" dir="ltr">
                     <input type="tel" id="otp1" maxlength="1" class="w-12 h-14 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#25D366] outline-none otp-input bg-gray-50 focus:bg-white transition-colors" onkeyup="moveOtpFocus(this, 'otp2')" onkeydown="handleOtpBackspace(event, this, '')">
                     <input type="tel" id="otp2" maxlength="1" class="w-12 h-14 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#25D366] outline-none otp-input bg-gray-50 focus:bg-white transition-colors" onkeyup="moveOtpFocus(this, 'otp3')" onkeydown="handleOtpBackspace(event, this, 'otp1')">
                     <input type="tel" id="otp3" maxlength="1" class="w-12 h-14 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#25D366] outline-none otp-input bg-gray-50 focus:bg-white transition-colors" onkeyup="moveOtpFocus(this, 'otp4')" onkeydown="handleOtpBackspace(event, this, 'otp2')">
                     <input type="tel" id="otp4" maxlength="1" class="w-12 h-14 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#25D366] outline-none otp-input bg-gray-50 focus:bg-white transition-colors" onkeyup="moveOtpFocus(this, '')" onkeydown="handleOtpBackspace(event, this, 'otp3')">
                 </div>
-                <p id="otpCodeError" class="text-red-500 text-[10px] font-bold text-center hidden">الكود المدخل غير صحيح.</p>
+                <p id="otpCodeError" class="text-red-500 text-[10px] font-bold text-center hidden leading-relaxed"></p>
                 <button id="btnVerifyCode" type="button" onclick="verifyWhatsAppCode()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-sm transition-all active:scale-95 text-sm">الدخول للمنصة</button>
                 <div class="text-center text-[10px] text-gray-500 mt-2">
-                    لم يصلك الرمز؟ <span id="otpCountdown" class="font-bold text-[#25D366]">180</span> ثانية
-                    <button id="resendOtpBtn" type="button" onclick="sendWhatsAppCode()" class="block mx-auto mt-2 text-[#25D366] font-bold hover:underline hidden">إعادة إرسال الرمز</button>
+                    <span id="otpTimerContainer">لم يصلك الرمز؟ <span id="otpCountdown" class="font-bold text-[#25D366]">60</span> ثانية</span>
+                    <button id="resendOtpBtn" type="button" onclick="sendWhatsAppCode()" class="block mx-auto mt-2 text-[#25D366] font-bold hover:underline hidden">إعادة إرسال الرمز مرة أخرى</button>
                 </div>
             </div>
         </div>
@@ -1182,6 +1188,16 @@ function closeTermsModal() {
             setTimeout(() => { const sheet = document.getElementById('otpSheet'); if(sheet) sheet.classList.remove('translate-y-full'); }, 50);
         }
 
+        function goBackToPhoneInput() {
+            const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.remove('hidden');
+            const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.add('hidden');
+            const err = document.getElementById('otpCodeError'); if(err) err.classList.add('hidden');
+            ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
+            if(otpIntervalTimer) clearInterval(otpIntervalTimer);
+        }
+
+        let otpIntervalTimer = null;
+
         async function sendWhatsAppCode() {
             const phoneEl = document.getElementById('otpPhoneInput'); const codeEl = document.getElementById('otpCountryCode'); const errEl = document.getElementById('otpPhoneError');
             if(!phoneEl || !codeEl || !errEl) return;
@@ -1190,7 +1206,10 @@ function closeTermsModal() {
             if(!phone || phone.length < 6 || isNaN(phone)) { errEl.classList.remove('hidden'); return; }
             errEl.classList.add('hidden'); let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone; verifiedFullPhone = code + cleanPhone;
             
-            if (cleanPhone === '566956901') {
+            ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
+            const otpCodeError = document.getElementById('otpCodeError'); if(otpCodeError) otpCodeError.classList.add('hidden');
+            
+            if (cleanPhone === '500000000') {
                 const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
                 localStorage.setItem('verified_user_phone', verifiedFullPhone);
                 await loadDashboard();
@@ -1204,27 +1223,51 @@ function closeTermsModal() {
 
             const btn = document.getElementById('btnSendCode'); if(!btn) return;
             const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+            
+            // 🟢 تم ضبط وقت تحميل الواجهة إلى 40 ثانية بناءً على طلبك
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 40000);
 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
                 clearTimeout(timeoutId); const text = await res.text();
                 try {
                     const result = JSON.parse(text);
-                    if (result.success) { const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); startOtpCountdown(); } 
+                    if (result.success) { 
+                        const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); 
+                        const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); 
+                        startOtpCountdown(); 
+                        setTimeout(() => { const o1 = document.getElementById('otp1'); if(o1) o1.focus(); }, 100);
+                    } 
                     else showMsgModal("خطأ", result.message);
                 } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
             } catch (e) {
-                if(e.name === 'AbortError') showMsgModal("تنبيه", "تأخر استجابة السيرفر بسبب الزحام. يرجى التحقق من اتصالك والمحاولة مجدداً.");
+                if(e.name === 'AbortError') showMsgModal("تأخر استجابة السيرفر", "الشبكة مزدحمة جداً. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.");
                 else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت."); 
             } finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
         function startOtpCountdown() {
-            let timer = 180; const countEl = document.getElementById('otpCountdown'); const resendBtn = document.getElementById('resendOtpBtn'); 
-            if(!countEl || !resendBtn) return;
+            if(otpIntervalTimer) clearInterval(otpIntervalTimer);
+            // 🟢 تم ضبط العداد ليطابق وقت التحمل (40 ثانية) + 20 ثوانٍ إضافية = 60 ثانية
+            let timer = 60; 
+            const countEl = document.getElementById('otpCountdown'); 
+            const resendBtn = document.getElementById('resendOtpBtn'); 
+            const timerContainer = document.getElementById('otpTimerContainer');
+            if(!countEl || !resendBtn || !timerContainer) return;
+            
             resendBtn.classList.add('hidden');
-            const interval = setInterval(() => { timer--; countEl.innerText = timer; if(timer <= 0) { clearInterval(interval); resendBtn.classList.remove('hidden'); } }, 1000);
+            timerContainer.classList.remove('hidden');
+            countEl.innerText = timer;
+            
+            otpIntervalTimer = setInterval(() => { 
+                timer--; 
+                countEl.innerText = timer; 
+                if(timer <= 0) { 
+                    clearInterval(otpIntervalTimer); 
+                    timerContainer.classList.add('hidden');
+                    resendBtn.classList.remove('hidden'); 
+                } 
+            }, 1000);
         }
 
         function moveOtpFocus(curr, nextId) { if(curr.value.length >= 1 && nextId) { const nx = document.getElementById(nextId); if(nx) nx.focus(); } }
@@ -1235,11 +1278,14 @@ function closeTermsModal() {
             if(!o1 || !o2 || !o3 || !o4) return;
             const c = o1.value + o2.value + o3.value + o4.value;
             const err = document.getElementById('otpCodeError'); if(!err) return;
-            if(c.length !== 4) { err.innerText = "الرجاء إدخال الرمز كاملاً."; err.classList.remove('hidden'); return; }
+            
+            if(c.length !== 4) { err.innerText = "الرجاء إدخال الرمز المكون من 4 أرقام كاملاً."; err.classList.remove('hidden'); return; }
 
             const btn = document.getElementById('btnVerifyCode'); if(!btn) return;
             const originalText = btn.innerHTML; btn.innerHTML = "جاري التحقق..."; btn.disabled = true;
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+            
+            // 🟢 تم ضبط وقت تحميل الواجهة إلى 40 ثانية
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 40000);
 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "verifyOtp", phone: verifiedFullPhone, code: c }), signal: controller.signal });
@@ -1255,12 +1301,32 @@ function closeTermsModal() {
                         } else {
                             if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'profileSwitched' }, '*');
                         }
-                    } else { err.innerText = result.message || "الكود غير صحيح."; err.classList.remove('hidden'); }
-                } catch(e) { err.innerText="السيرفر يرسل بيانات خاطئة."; err.classList.remove('hidden'); }
+                    } else { 
+                        err.innerText = result.message || "الكود غير صحيح."; err.classList.remove('hidden'); 
+                        ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { document.getElementById(id).value = ''; });
+                        document.getElementById('otp1').focus();
+                    }
+                } catch(e) { 
+                    err.innerText="السيرفر يرسل بيانات غير متوقعة."; err.classList.remove('hidden'); 
+                }
             } catch(e) { 
-                if(e.name === 'AbortError') { err.innerText="تأخر استجابة السيرفر بسبب الزحام."; err.classList.remove('hidden'); }
-                else { err.innerText="حدث خطأ بالاتصال."; err.classList.remove('hidden'); }
-            } finally { btn.innerHTML = originalText; btn.disabled = false; }
+                if(e.name === 'AbortError') { 
+                    err.innerHTML="تأخر استجابة السيرفر بسبب الزحام القوي ⚠️<br><span class='text-gray-600 font-medium'>تم تفريغ الخانات، يرجى المحاولة مرة أخرى أو اطلب رمزاً جديداً.</span>"; 
+                } else { 
+                    err.innerText="حدث خطأ بالاتصال بالإنترنت."; 
+                }
+                err.classList.remove('hidden'); 
+                
+                ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { document.getElementById(id).value = ''; });
+                document.getElementById('otp1').focus();
+                
+                if(otpIntervalTimer) clearInterval(otpIntervalTimer);
+                document.getElementById('otpTimerContainer')?.classList.add('hidden');
+                document.getElementById('resendOtpBtn')?.classList.remove('hidden');
+
+            } finally { 
+                btn.innerHTML = originalText; btn.disabled = false; 
+            }
         }
 
 // 
