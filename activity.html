@@ -490,7 +490,6 @@
         window.myReqsDataStore = {};
         window.myIncomingReqsDataStore = {};
 
-        // دالة مساعدة لقراءة الطابور المحلي المعزول (لكل ملف على حدة)
         window.getPendingActions = function() {
             try { 
                 let p = typeof phoneParam !== 'undefined' ? phoneParam : '';
@@ -499,7 +498,6 @@
             } catch(e) { return []; }
         };
 
-        // دالة مساعدة لجلب حالة ملف العميل بأمان
         function getMyProfileStatus() {
             try {
                 let rawUser = localStorage.getItem('currentUser');
@@ -600,11 +598,16 @@
                 
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
+                
+                // 🛡️ تحديد الرسائل الموحدة لمنع التعديل عليها
                 let isFirstMessage = (totalMessages === 1);
+                let isInitialReply = (totalMessages === 2);
+                let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                let isUneditableAutoMsg = isFirstMessage || isInitialReply || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
-                let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                
                 let isRealLastFromOther = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 
                 let displayChunks = [...originalChunks];
@@ -616,7 +619,6 @@
                 
                 let currentUserIsMale = isTargetFemale; 
 
-                // ⚡️ نظام الواجهة المتفائلة: إضافة الرسائل المعلقة
                 let pendingForReq = window.getPendingActions().filter(a => a.reqId === req.reqId);
                 let isCurrentlySending = pendingForReq.some(a => a.state === 'sending');
 
@@ -645,7 +647,6 @@
 
                 let actionAreaHtml = '';
                 
-                // ⚡️ تجميد الأزرار للمحادثة النشطة فقط
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
                 } else {
@@ -660,10 +661,8 @@
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
                     } else if (isPendingAdmin) {
                         if (isRealLastFromMe) {
-                            if (isFirstMessage) {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ الطلب مُرسل.. بانتظار الاعتماد.</p></div></div>`;
-                            } else if (isDirectReq) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ طلب التواصل المباشر مُرسل.. بانتظار رد الطرف الآخر.</p></div></div>`;
+                            if (isUneditableAutoMsg) {
+                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
                             } else {
                                 actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                             }
@@ -672,10 +671,8 @@
                         }
                     } else {
                         if (isRealLastFromMe) {
-                            if (isFirstMessage) {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ الطلب مُرسل.. بانتظار رد الطرف الآخر.</p></div></div>`;
-                            } else if (isDirectReq) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ طلب التواصل المباشر مُرسل.. بانتظار رد الطرف الآخر.</p></div></div>`;
+                            if (isUneditableAutoMsg) { 
+                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                             } else {
                                 actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                             }
@@ -755,7 +752,12 @@
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
+                // 🛡️ تحديد الرسائل الموحدة لمنع التعديل عليها للوارد
+                let isFirstMessage = (totalMessages === 1);
+                let isInitialReply = (totalMessages === 2);
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                let isUneditableAutoMsg = isFirstMessage || isInitialReply || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('نعم مبدئيا');
+
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
                 let isRealLastFromOther = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
@@ -768,8 +770,7 @@
                 let isSenderFemale = senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة') || req.gender === 'أنثى';
                 
                 let currentUserIsMale = isSenderFemale; 
-
-                // ⚡️ نظام الواجهة المتفائلة: إضافة الرسائل المعلقة للوارد
+                
                 let pendingForReq = window.getPendingActions().filter(a => a.reqId === req.reqId);
                 let isCurrentlySending = pendingForReq.some(a => a.state === 'sending');
 
@@ -798,7 +799,6 @@
                 
                 let actionAreaHtml = '';
 
-                // ⚡️ تجميد الأزرار للمحادثة النشطة فقط
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
                 } else {
@@ -808,8 +808,8 @@
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
                     } else if (isPendingAdmin) {
                         if (isRealLastFromMe) {
-                            if (isDirectReq) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ طلب التواصل المباشر مُرسل.. بانتظار رد الطرف الآخر.</p></div></div>`;
+                            if (isUneditableAutoMsg) {
+                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
                             } else {
                                 actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                             }
@@ -818,8 +818,8 @@
                         }
                     } else {
                         if (isRealLastFromMe) {
-                            if (isDirectReq) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ طلب التواصل المباشر مُرسل.. بانتظار رد الطرف الآخر.</p></div></div>`;
+                            if (isUneditableAutoMsg) { 
+                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                             } else {
                                 actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                             }
@@ -831,7 +831,7 @@
                             actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
                                 <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطرف الأول', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>
                                 <div class="flex gap-1.5 w-full">
-                                    ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); showMsgModal('تنبيه', 'هذا الزر غير مفعل حالياً.\\n\\nسيتم تفعيله كـ (إقفال إيجابي) بمجرد أن يقوم الطرف الآخر بإرسال طلب تواصل مباشر رسمي لكِ.')" class="flex-1 py-2 px-1 bg-slate-50 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-bold shadow-sm cursor-not-allowed">👍 موافقة مبدئية</button>`}
+                                    ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); executeInitialApproval('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`}
                                     <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', '${rejectTxt}', false, event)" class="flex-1 py-2 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">${rejectTxt}</button>
                                 </div>
                             </div>`;
@@ -862,6 +862,94 @@
                 window.parent.postMessage({ action: 'updateMainNavbarBadge', hasUnread: anyRedActive || hasRed }, '*');
             }
         }
+
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ قسم رقم 20 النوافذ المنبثقة والتحكم بها (Modals) ] ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        function showMsgModal(title, msg) {
+            document.getElementById('msgModalTitle').innerText = title;
+            document.getElementById('msgModalBody').innerText = msg;
+            const m = document.getElementById('msgModal');
+            m.classList.remove('hidden');
+            m.style.marginTop = Math.max(20, windowLastInteractionY - 100) + 'px';
+        }
+
+        function closeMsgModal() { document.getElementById('msgModal').classList.add('hidden'); }
+
+        window.openReplyModal = function(reqId, type, renew, event) {
+            if(event) event.stopPropagation();
+            currentReplyReqId = reqId; currentReplyType = type;
+            document.getElementById('replyModalTitle').innerText = (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة نهائية' ? 'تأكيد الموافقة النهائية' : 'إرسال: ' + type));
+            
+            const msgInput = document.getElementById('replyMessage');
+            const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
+            
+            let radioContainer = document.getElementById('rejectionRadios');
+            if (!radioContainer) {
+                radioContainer = document.createElement('div');
+                radioContainer.id = 'rejectionRadios';
+                radioContainer.className = 'flex flex-col gap-2 mt-3';
+                msgInput.parentNode.insertBefore(radioContainer, msgInput);
+            }
+
+            if (type.includes('اعتذار') || type.includes('رفض')) {
+                msgInput.style.display = 'none';
+                radioContainer.style.display = 'flex';
+                radioContainer.innerHTML = `
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500" checked> <span class="text-xs text-slate-700 font-medium leading-snug">البيانات والمواصفات العامة غير متوافقة.</span></label>
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، لا أقبل بالتعدد (أبحث عن شخص غير متزوج)." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">لا أقبل بالتعدد (أبحث عن شخص غير متزوج).</span></label>
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، ظروفي لا تتناسب مع وجود أبناء من زواج سابق." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">ظروفي لا تتناسب مع وجود أبناء من زواج سابق.</span></label>
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، أبحث عن تكافؤ نسب معين." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">أبحث عن تكافؤ نسب معين.</span></label>
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، أبحث عن زواج تقليدي معلن فقط." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">أبحث عن زواج تقليدي معلن فقط.</span></label>
+                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، فارق العمر أو منطقة السكن غير مناسبة لي." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">فارق العمر أو منطقة السكن غير مناسبة لي.</span></label>
+                `;
+            } else {
+                msgInput.style.display = 'block';
+                radioContainer.style.display = 'none';
+                msgInput.value = '';
+            }
+            
+            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
+            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
+            document.getElementById('replyModal').classList.remove('hidden');
+            
+            // إعادة ربط زر الإرسال بالدالة الافتراضية
+            document.getElementById('replySubmitBtn').onclick = submitReply;
+        };
+
+        function closeReplyModal() { document.getElementById('replyModal').classList.add('hidden'); }
+
+        function promptDirectContact(reqId, targetMarriageType) {
+            currentReplyReqId = reqId; currentReplyType = 'طلب تواصل مباشر';
+            document.getElementById('replyModalTitle').innerText = 'طلب تواصل مباشر وتبادل الأرقام';
+            const msgInput = document.getElementById('replyMessage'); 
+            msgInput.value = 'أرغب بالتواصل المباشر وتبادل الأرقام.'; msgInput.style.display = 'none';
+            let radioContainer = document.getElementById('rejectionRadios'); if (radioContainer) radioContainer.style.display = 'none';
+            const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.remove('hidden');
+            
+            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
+            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
+            document.getElementById('replyModal').classList.remove('hidden');
+            document.getElementById('replySubmitBtn').onclick = submitReply;
+        }
+
+        function openEditModal(reqId, encodedMsg, event) {
+            if(event) event.stopPropagation();
+            currentReplyReqId = reqId; currentReplyType = 'تعديل رسالة';
+            document.getElementById('replyModalTitle').innerText = 'تعديل رسالتي (قيد المراجعة)';
+            const msgInput = document.getElementById('replyMessage');
+            msgInput.style.display = 'block'; msgInput.value = decodeURIComponent(encodedMsg);
+            let radioContainer = document.getElementById('rejectionRadios'); if (radioContainer) radioContainer.style.display = 'none';
+            const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
+            
+            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
+            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
+            document.getElementById('replyModal').classList.remove('hidden');
+            document.getElementById('replySubmitBtn').onclick = submitEdit;
+        }
+
+        function closeConfirmModal() { document.getElementById('confirmActionModal').classList.add('hidden'); }        
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 21 ]: دوال فتح النوافذ المنبثقة (Modals) ---------- ✂️ -->
@@ -1026,26 +1114,27 @@
 // ✂️ ---------- [ القسم رقم 23 ]: عمليات الإرسال والتعديل (Submits & Optimistic UI) ---------- ✂️
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 
-        // ⚡️ نظام الواجهة المتفائلة: إدارة الطابور المحلي المعزول
         window.savePendingActions = function(actions) {
             let p = typeof phoneParam !== 'undefined' ? phoneParam : ''; let r = typeof refIdParam !== 'undefined' ? refIdParam : '';
             localStorage.setItem('pending_actions_' + p + '_' + r, JSON.stringify(actions));
         };
+        
         window.addPendingAction = function(action) { 
             let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
             acts.push(action); window.savePendingActions(acts); 
         };
+        
         window.updatePendingActionState = function(id, newState, errMsg = '') {
             let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
             let act = acts.find(a => a.id === id);
             if(act) { act.state = newState; act.error = errMsg; window.savePendingActions(acts); }
         };
+        
         window.removePendingAction = function(id) { 
             let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
             window.savePendingActions(acts.filter(a => a.id !== id)); 
         };
 
-        // المحرك الخفي: يرسل للسيرفر بصمت ويتعامل مع ردود السيرفر الصارمة
         window.processPendingAction = async function(actionId) {
             let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
             let act = acts.find(a => a.id === actionId);
@@ -1054,33 +1143,48 @@
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(act.payload) });
                 const resText = await res.text(); let result = JSON.parse(resText);
                 
-                // التقاط رفض السيرفر (مثل: الردود المتتالية)
                 if (result.success === false || result.success === undefined) throw new Error(result.error || result.message || "مرفوض من السيرفر");
                 
-                window.removePendingAction(actionId); // نجاح! احذفها من الطابور
+                window.removePendingAction(actionId); 
                 fetchData(true).finally(() => { if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); });
             } catch(e) {
-                window.updatePendingActionState(actionId, 'failed', e.message); // فشل! حوّلها لعلامة ❗️
+                window.updatePendingActionState(actionId, 'failed', e.message); 
                 if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); 
             }
         };
 
-        // دالة استجابة للعميل عندما يضغط على زر إعادة المحاولة ❗️
         window.retryPendingAction = function(actionId) {
             window.updatePendingActionState(actionId, 'sending', '');
-            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); // إعادة رسم ⏳
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); 
             setTimeout(() => window.processPendingAction(actionId), 500);
         };
 
         window.isSubmittingAction = false;
 
+        // 🟢 الدالة الجديدة للموافقة المبدئية الآلية المباشرة
+        window.executeInitialApproval = function(reqId) {
+            if (window.isSubmittingAction || !phoneParam) return;
+            
+            let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            let payloadObj = { action: 'replyToRequest', phone: phoneParam, reqId: reqId, requesterRefId: refIdParam, replyType: "موافقة مبدئية", replyMessage: "", tempId: actionId };
+            
+            let pendingRecord = {
+                id: actionId, reqId: reqId, type: "موافقة مبدئية",
+                text: "نعم مبدئيا البيانات مناسبة لنا وعندنا استفسارات سوف نرسلها لك بعد أن ترسل لنا استفساراتك في البداية",
+                state: 'sending', payload: payloadObj, timestamp: Date.now()
+            };
+
+            window.addPendingAction(pendingRecord);
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+            setTimeout(scrollToBottomChats, 50);
+            showToast("⏳ جاري إرسال الموافقة المبدئية...");
+            window.processPendingAction(actionId);
+        };
+
         async function submitReply() {
             if (window.isSubmittingAction) return;
-            const msgInput = document.getElementById('replyMessage'); if (!msgInput) return;
-            const msg = msgInput.value.trim();
             if (!phoneParam || !currentReplyReqId) return;
 
-            // 🛡️ جدار الحماية المحلي: منع الردود المتتالية (Double-texting) قبل وصولها للسيرفر
             let req = window.myReqsDataStore[currentReplyReqId] || window.myIncomingReqsDataStore[currentReplyReqId];
             if (req) {
                 let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
@@ -1098,9 +1202,22 @@
                     return;
                 }
             }
-            
-            let isAutoMsg = currentReplyType === 'موافقة مبدئية' || currentReplyType === 'موافقة نهائية' || currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType.includes('إنهاء') || currentReplyType === 'تمديد المحادثة';
-            if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
+
+            let isRejection = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء');
+            let msg = '';
+
+            if (isRejection) {
+                const selectedRadio = document.querySelector('input[name="rejectReason"]:checked');
+                if (selectedRadio) msg = selectedRadio.value;
+                else { showToast("يرجى اختيار سبب الاعتذار."); return; }
+            } else {
+                const msgInput = document.getElementById('replyMessage');
+                if (!msgInput) return;
+                msg = msgInput.value.trim();
+                
+                let isAutoMsg = currentReplyType === 'موافقة نهائية' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة';
+                if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
+            }
 
             let requiredPoints = 0;
             if (currentReplyType === 'طلب تواصل مباشر') requiredPoints = 3;
@@ -1111,10 +1228,8 @@
             }
 
             let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
-            let finalReplyType = currentReplyType;
-            if (currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء')) { finalReplyType = 'اعتذار'; }
-
-            // 1. توليد معرف فريد وإنشاء الرسالة المؤقتة
+            let finalReplyType = isRejection ? 'اعتذار' : currentReplyType;
+            
             let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
             let payloadObj = isDirectContactAction 
                 ? { action: 'requestDirectContact', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam, tempId: actionId }
@@ -1126,16 +1241,12 @@
                 state: 'sending', payload: payloadObj, timestamp: Date.now()
             };
 
-            // 2. الحفظ في الطابور المحلي
             window.addPendingAction(pendingRecord);
-
-            // 3. تحديث الواجهة فوراً ليراها العميل وإغلاق النافذة
             closeReplyModal();
             if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
-            setTimeout(scrollToBottomChats, 50); // إجبار النزول لرؤية الرسالة الجديدة
+            setTimeout(scrollToBottomChats, 50); 
             showToast("⏳ جاري الإرسال...");
 
-            // 4. تسليم المهمة للمحرك الخفي
             window.processPendingAction(actionId);
         }
 
