@@ -599,15 +599,13 @@
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
-                // 🛡️ تحديد الرسائل الموحدة لمنع التعديل عليها
                 let isFirstMessage = (totalMessages === 1);
                 let isInitialReply = (totalMessages === 2);
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
-                let isUneditableAutoMsg = isFirstMessage || isInitialReply || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
+                let isUneditableAutoMsg = isFirstMessage || isInitialReply || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('نعم مبدئيا');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
-                
                 let isRealLastFromOther = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 
                 let displayChunks = [...originalChunks];
@@ -681,8 +679,11 @@
                             let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
                             let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
+                            // 🟢 التعديل: إخفاء زر الرد العادي إذا كانت الرسالة الأولى فقط
+                            let replyBtnHtml = !isFirstMessage ? (!isQuotaExhausted ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر</button>` : (currentUserIsMale ? extendBtn : `<div class="text-center text-[10px] text-rose-500 font-bold">بانتظار تمديد الطرف الآخر.</div>`)) : '';
+
                             actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
-                                ${!isQuotaExhausted ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر</button>` : (currentUserIsMale ? extendBtn : `<div class="text-center text-[10px] text-rose-500 font-bold">بانتظار تمديد الطرف الآخر.</div>`)}
+                                ${replyBtnHtml}
                                 <div class="flex gap-1.5 w-full">${contactBtn}<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'اعتذار بلطف', false, event)" class="flex-1 py-1.5 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">❌ إنهاء واعتذار</button></div>
                             </div>`;
                         }
@@ -752,7 +753,6 @@
                 let totalMessages = originalChunks.length;
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
-                // 🛡️ تحديد الرسائل الموحدة لمنع التعديل عليها للوارد
                 let isFirstMessage = (totalMessages === 1);
                 let isInitialReply = (totalMessages === 2);
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
@@ -828,8 +828,11 @@
                             let maleContactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
                             let rejectTxt = '❌ اعتذار بلطف';
 
+                            // 🟢 التعديل: إخفاء زر الرد العادي إذا كانت الرسالة الأولى فقط
+                            let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطرف الأول', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
+
                             actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
-                                <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطرف الأول', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>
+                                ${replyBtnHtml}
                                 <div class="flex gap-1.5 w-full">
                                     ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); executeInitialApproval('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`}
                                     <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', '${rejectTxt}', false, event)" class="flex-1 py-2 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">${rejectTxt}</button>
@@ -1406,6 +1409,30 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // ✂️ ---------- [ القسم رقم 25 ]: أحداث البدء (إغلاق ثغرة IDOR والمصادقة بالـ Token) ---------- ✂️
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        // 🟢 التعديل: دالة رسم شريط الترحيب للعميل
+        function renderClientBanner(name) {
+            if (document.getElementById('magicTokenBanner')) return;
+            const dashContent = document.getElementById('dashboardContent');
+            if (!dashContent) return;
+            
+            const homeUrl = window.location.pathname.replace('activity.html', 'index.html');
+            const bannerHtml = `
+                <div id="magicTokenBanner" class="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 px-4 py-3 flex items-center justify-between shadow-sm mb-4 mx-4 mt-2 rounded-2xl fade-in">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl drop-shadow-sm">✨</span>
+                        <div>
+                            <p class="text-[10px] text-teal-600 font-bold mb-0.5">مرحباً بك في مساحتك الآمنة</p>
+                            <p class="text-xs font-black text-teal-900 line-clamp-1">${name}</p>
+                        </div>
+                    </div>
+                    <a href="${homeUrl}" class="flex shrink-0 items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-teal-200 text-[10px] font-bold text-teal-700 hover:bg-teal-50 hover:scale-105 transition shadow-sm">
+                        <span>الرئيسية</span> <span class="text-sm">🏠</span>
+                    </a>
+                </div>
+            `;
+            dashContent.insertAdjacentHTML('afterbegin', bannerHtml);
+        }
+
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const magicToken = urlParams.get('token');
@@ -1417,7 +1444,7 @@
             if (magicToken || localStorage.getItem('is_client_mode') === 'true') {
                 const fb = document.getElementById('fallbackLogin'); if (fb) fb.style.display = 'none';
                 const tb = document.getElementById('innerTabsContainer'); if (tb) tb.style.display = 'none';
-                const content = document.getElementById('dashboardContent'); if (content) content.style.paddingTop = '15px';
+                const content = document.getElementById('dashboardContent'); if (content) content.style.paddingTop = '5px';
             }
 
             // 🌟 مسار الدخول السريع عبر الرابط السحري (المصادقة الشرعية الوحيدة من الرابط)
@@ -1435,11 +1462,16 @@
                         
                         phoneParam = cleanPhone; refIdParam = result.refId; tabParam = 'requests';
                         
-                        // تفعيل "وضع العميل" لإخفاء الشريط الأسود دائماً لهذا الجهاز
+                        // تفعيل "وضع العميل" وحفظ الاسم الموحد
+                        let dispName = result.unifiedName || result.name || ('ملف #' + result.refId);
                         localStorage.setItem('is_client_mode', 'true');
+                        localStorage.setItem('magic_session_name', dispName);
                         localStorage.setItem('verified_user_phone', phoneParam);
                         localStorage.setItem('active_profile_refid', refIdParam);
                         if (result.name) { localStorage.setItem('currentUser', JSON.stringify({ name: result.name, gender: result.gender || '' })); }
+
+                        // عرض شريط الترحيب
+                        renderClientBanner(dispName);
 
                         // مسح الـ Token من الرابط لأسباب أمنية
                         const newUrl = window.location.pathname + "?tab=requests";
@@ -1459,6 +1491,11 @@
                 refIdParam = localStorage.getItem('active_profile_refid') || "";
                 tabParam = urlParams.get('tab') || 'requests'; window.userStatusParam = urlParams.get('status') || '';
                 
+                if (localStorage.getItem('is_client_mode') === 'true') {
+                    let dispName = localStorage.getItem('magic_session_name') || 'عميلنا العزيز';
+                    renderClientBanner(dispName);
+                }
+
                 if (phoneParam) { let cp = phoneParam.replace('+966', ''); const fbP = document.getElementById('fbPhone'); if(fbP) fbP.value = cp.startsWith('0') ? cp.substring(1) : cp; }
                 if (refIdParam) { const fbR = document.getElementById('fbRefId'); if(fbR) fbR.value = refIdParam; }
 
