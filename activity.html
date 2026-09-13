@@ -547,10 +547,11 @@
             let hasRedBadge = false;
             let activeCount = 0;
             
-            // 🟢 إضافة "مكتمل" إلى قائمة الإغلاق لتفريغ العداد
             reqs.forEach(r => {
                 let st = r.status || '';
-                if (!st.includes('مغلق') && !st.includes('مرفوض') && !st.includes('رفض') && !st.includes('ملغى') && !st.includes('مكتمل')) { activeCount++; }
+                // 🟢 تفريغ مساحة الطلب فوراً إذا كان مغلقاً بأي شكل
+                let isMasterClosed = st.includes('مغلق') || st.includes('مرفوض') || st.includes('رفض') || st.includes('ملغى') || st.includes('مكتمل');
+                if (!isMasterClosed) { activeCount++; }
             });
 
             let quotaBannerHtml = '';
@@ -574,28 +575,29 @@
 
             reqs.forEach(req => {
                 let statusText = req.status || 'جاري المعالجة';
-                // 🟢 استبدال كلمة "موافقة نهائية" في الشارات
                 let uiStatusText = statusText.replace('الطرف الأول', 'ردك').replace('الطرف الثاني', 'الطرف الآخر').replace('موافقة نهائية', 'موافقة تبادل أرقام');
                 let targetInfo = req.unifiedName || req.targetData || req.targetSummary || (req.targetRefId ? 'ملف #' + req.targetRefId : 'طلب تواصل');
                 window.myReqsDataStore[req.targetRefId] = req; 
                 
+                // 🟢 القفل الشامل للواجهة (Master Lock)
+                let isMasterClosed = statusText.includes('مغلق') || statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى') || statusText.includes('مكتمل');
                 let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
-                let isRejected = statusText.includes('رفض') || statusText.includes('مرفوض') || statusText.includes('ملغى');
-                let isCompleted = statusText.includes('مكتمل');
                 let isPendingAdmin = statusText.includes('اعتماد');
                 let isQueued = statusText.includes('قائمة الانتظار'); 
 
-                if(!isAccepted && !isRejected && !isCompleted && !isQueued) {
+                if(!isMasterClosed && !isAccepted && !isQueued) {
                     outBadge++;
                     if(statusText.includes('ردك')) hasRedBadge = true;
                 }
 
-                let statusColor = isAccepted ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 
-                                 (isRejected ? 'text-rose-600 bg-rose-50 border-rose-200' : 
-                                 (isCompleted ? 'text-slate-600 bg-slate-50 border-slate-200' :
-                                 (isQueued ? 'text-purple-600 bg-purple-50 border-purple-200' : 
-                                 (statusText.includes('ردك') ? 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse' : 
-                                 'text-indigo-600 bg-indigo-50 border-indigo-200'))));
+                // تحديد ألوان البطاقة بناءً على حالة الإغلاق
+                let statusColor;
+                if (statusText.includes('موافقة تبادل') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
+                else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
+                else if (isQueued) statusColor = 'text-purple-600 bg-purple-50 border-purple-200';
+                else if (statusText.includes('ردك')) statusColor = 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse';
+                else statusColor = 'text-indigo-600 bg-indigo-50 border-indigo-200';
 
                 let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
                 let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
@@ -610,7 +612,6 @@
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
-                
                 let isRealLastFromOther = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 
                 let displayChunks = [...originalChunks];
@@ -650,52 +651,50 @@
 
                 let actionAreaHtml = '';
                 
+                // 🟢 آلية القفل الشامل للتحكم بالأزرار
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
-                } else {
-                    if (isQueued) {
-                        actionAreaHtml = `<div class="bg-purple-50 p-2.5 border-t border-purple-100 flex flex-col gap-1.5 rounded-b-2xl">
-                            <div class="text-center pb-1.5"><p class="text-[10px] text-purple-700 font-bold">⏳ الطلب في قائمة الانتظار.. بانتظار توفر شاغر.</p></div>
-                            <button type="button" onclick="event.stopPropagation(); window.cancelQueuedReq('${req.reqId}')" class="w-full py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-bold shadow-sm transition-colors">❌ إلغاء الانتظار واسترجاع النقاط</button>
-                        </div>`;
-                    } else if (req.finalApprovalGiven) {
-                        // 🟢 تغيير التهنئة
-                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تمت الموافقة على تبادل الأرقام بنجاح!</p></div>`;
-                    } else if (isRejected || isAccepted || isCompleted) {
+                } else if (isQueued) {
+                    actionAreaHtml = `<div class="bg-purple-50 p-2.5 border-t border-purple-100 flex flex-col gap-1.5 rounded-b-2xl">
+                        <div class="text-center pb-1.5"><p class="text-[10px] text-purple-700 font-bold">⏳ الطلب في قائمة الانتظار.. بانتظار توفر شاغر.</p></div>
+                        <button type="button" onclick="event.stopPropagation(); window.cancelQueuedReq('${req.reqId}')" class="w-full py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-bold shadow-sm transition-colors">❌ إلغاء الانتظار واسترجاع النقاط</button>
+                    </div>`;
+                } else if (isMasterClosed || isAccepted || req.finalApprovalGiven) {
+                    if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
+                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تم إغلاق المحادثة (تمت الموافقة بنجاح)!</p></div>`;
+                    } else {
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
-                    } else if (isPendingAdmin) {
-                        if (isRealLastFromMe) {
-                            if (isUneditableAutoMsg) {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
-                            } else {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
-                            }
+                    }
+                } else if (isPendingAdmin) {
+                    if (isRealLastFromMe) {
+                        if (isUneditableAutoMsg) {
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                         }
                     } else {
-                        if (isRealLastFromMe) {
-                            if (isUneditableAutoMsg) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
-                            } else {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
-                            }
-                        } else {
-                            let contactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
-                            let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
-                            let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
-
-                            actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
-                                ${!isQuotaExhausted ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر</button>` : (currentUserIsMale ? extendBtn : `<div class="text-center text-[10px] text-rose-500 font-bold">بانتظار تمديد الطرف الآخر.</div>`)}
-                                <div class="flex gap-1.5 w-full">${contactBtn}<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'اعتذار بلطف', false, event)" class="flex-1 py-1.5 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">❌ إنهاء واعتذار</button></div>
-                            </div>`;
-                        }
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
                     }
+                } else {
+                    if (isBannedFromChat) { 
+                        actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; 
+                    } else if (isNewOrWaiting) { 
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ بانتظار تفعيل ملفك لتتمكن من المراسلة.</p></div>`; 
+                    } else if (isRealLastFromMe) {
+                        if (isUneditableAutoMsg) { 
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
+                        } else {
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
+                        }
+                    } else {
+                        let contactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
+                        let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
+                        let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
-                    const isClosedStatus = isQueued || req.finalApprovalGiven || isRejected || isAccepted || isCompleted;
-                    if (!isClosedStatus) {
-                        if (isBannedFromChat) { actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; } 
-                        else if (isNewOrWaiting) { actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ بانتظار تفعيل ملفك لتتمكن من المراسلة.</p></div>`; }
+                        actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
+                            ${!isQuotaExhausted ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر</button>` : (currentUserIsMale ? extendBtn : `<div class="text-center text-[10px] text-rose-500 font-bold">بانتظار تمديد الطرف الآخر.</div>`)}
+                            <div class="flex gap-1.5 w-full">${contactBtn}<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'اعتذار بلطف', false, event)" class="flex-1 py-1.5 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">❌ إنهاء واعتذار</button></div>
+                        </div>`;
                     }
                 }
 
@@ -737,24 +736,25 @@
                 let senderInfo = req.unifiedName || req.requesterData || req.senderSummary || (otherPartyId ? 'ملف #' + otherPartyId : 'طلب تواصل');
                 window.myIncomingReqsDataStore[otherPartyId] = req; 
                 let statusText = req.status || 'جاري المعالجة';
-                // 🟢 استبدال كلمة "موافقة نهائية" في الشارات
                 let uiStatusText = statusText.replace('الطرف الثاني', 'ردك').replace('الطرف الأول', 'الطرف الآخر').replace('موافقة نهائية', 'موافقة تبادل أرقام');
                 
+                // 🟢 القفل الشامل للواجهة (Master Lock)
+                let isMasterClosed = statusText.includes('مغلق') || statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى') || statusText.includes('مكتمل');
                 let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
-                let isRejected = statusText.includes('رفض') || statusText.includes('مرفوض') || statusText.includes('ملغى');
-                let isCompleted = statusText.includes('مكتمل');
                 let isPendingAdmin = statusText.includes('اعتماد');
 
-                if(!isAccepted && !isRejected && !isCompleted) {
+                if(!isMasterClosed && !isAccepted) {
                     inBadge++;
                     if(statusText.includes('ردك')) hasRedBadge = true;
                 }
 
-                let statusColor = isAccepted ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 
-                                 (isRejected ? 'text-rose-600 bg-rose-50 border-rose-200' : 
-                                 (isCompleted ? 'text-slate-600 bg-slate-50 border-slate-200' :
-                                 (statusText.includes('ردك') ? 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse' : 
-                                 'text-indigo-600 bg-indigo-50 border-indigo-200')));
+                // تحديد ألوان البطاقة بناءً على حالة الإغلاق
+                let statusColor;
+                if (statusText.includes('موافقة تبادل') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
+                else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
+                else if (statusText.includes('ردك')) statusColor = 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse';
+                else statusColor = 'text-indigo-600 bg-indigo-50 border-indigo-200';
 
                 let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
                 let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
@@ -808,53 +808,50 @@
                 
                 let actionAreaHtml = '';
 
+                // 🟢 آلية القفل الشامل للتحكم بالأزرار
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
-                } else {
-                    if (req.finalApprovalGiven) {
-                        // 🟢 تغيير التهنئة
-                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تمت الموافقة على تبادل الأرقام بنجاح!</p></div>`;
-                    } else if (isRejected || isAccepted || isCompleted) {
+                } else if (isMasterClosed || isAccepted || req.finalApprovalGiven) {
+                    if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
+                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تم إغلاق المحادثة (تمت الموافقة بنجاح)!</p></div>`;
+                    } else {
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
-                    } else if (isPendingAdmin) {
-                        if (isRealLastFromMe) {
-                            if (isUneditableAutoMsg) {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
-                            } else {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
-                            }
+                    }
+                } else if (isPendingAdmin) {
+                    if (isRealLastFromMe) {
+                        if (isUneditableAutoMsg) {
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                         }
                     } else {
-                        if (isRealLastFromMe) {
-                            if (isUneditableAutoMsg) { 
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
-                            } else {
-                                actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
-                            }
-                        } else {
-                            // 🟢 تغيير اسم زر الموافقة في البطاقة
-                            let femaleApprovalBtn = (!currentUserIsMale && isDirectReq) ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>` : '';
-                            let maleContactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
-                            let rejectTxt = '❌ اعتذار بلطف';
-
-                            let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطرف الأول', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
-
-                            actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
-                                ${replyBtnHtml}
-                                <div class="flex gap-1.5 w-full">
-                                    ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); executeInitialApproval('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`}
-                                    <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', '${rejectTxt}', false, event)" class="flex-1 py-2 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">${rejectTxt}</button>
-                                </div>
-                            </div>`;
-                        }
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
                     }
+                } else {
+                    if (isBannedFromChat) { 
+                        actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; 
+                    } else if (isNewOrWaiting) { 
+                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ لا يمكنك التفاعل مع الطلبات حتى يتم تفعيل ملفك.</p></div>`; 
+                    } else if (isRealLastFromMe) {
+                        if (isUneditableAutoMsg) { 
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
+                        } else {
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
+                        }
+                    } else {
+                        let femaleApprovalBtn = (!currentUserIsMale && isDirectReq) ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>` : '';
+                        let maleContactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
+                        let rejectTxt = '❌ اعتذار بلطف';
 
-                    const isClosedStatus = req.finalApprovalGiven || isRejected || isAccepted || isCompleted;
-                    if (!isClosedStatus) {
-                        if (isBannedFromChat) { actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; } 
-                        else if (isNewOrWaiting) { actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ لا يمكنك التفاعل مع الطلبات حتى يتم تفعيل ملفك.</p></div>`; }
+                        let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطرف الأول', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
+
+                        actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
+                            ${replyBtnHtml}
+                            <div class="flex gap-1.5 w-full">
+                                ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); executeInitialApproval('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`}
+                                <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', '${rejectTxt}', false, event)" class="flex-1 py-2 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">${rejectTxt}</button>
+                            </div>
+                        </div>`;
                     }
                 }
 
