@@ -181,14 +181,23 @@
             <div class="p-4 flex flex-col gap-3">
                 <input type="hidden" id="currentReqId">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">الحالة الجديدة:</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">الحالة الجديدة أو الإجراء:</label>
                     <select id="newStatus" class="w-full p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50">
-                        <option value="قيد الانتظار">قيد الانتظار (جديد)</option>
-                        <option value="بانتظار الطرف الأول">بانتظار الطرف الأول</option>
-                        <option value="بانتظار الطرف الثاني">بانتظار الطرف الثاني</option>
-                        <option value="مقبول مبدئياً">مقبول مبدئياً ✅</option>
-                        <option value="مرفوض - تم الاعتذار">مرفوض - تم الاعتذار ❌</option>
-                        <option value="ملغى">ملغى 🚫</option>
+                        <optgroup label="تغيير صامت (بدون واتساب)">
+                            <option value="قيد الانتظار">قيد الانتظار (طلب جديد)</option>
+                            <option value="بانتظار الطرف الأول">بانتظار الطرف الأول</option>
+                            <option value="بانتظار الطرف الثاني">بانتظار الطرف الثاني</option>
+                        </optgroup>
+                        <optgroup label="تدخل بالنيابة (يرسل واتساب للعميل)">
+                            <option value="PROXY_INITIAL_ACCEPT">قبول مبدئياً ✅ (نيابة عن المطلوب)</option>
+                            <option value="PROXY_REQUEST_DIRECT">طلب تواصل مباشر 🧔🏻‍♂️ (نيابة عن الطالب)</option>
+                            <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (نيابة عن المطلوب)</option>
+                        </optgroup>
+                        <optgroup label="إغلاق الطلب (يُفرغ كوتا 3 طلبات)">
+                            <option value="مغلق - مكتمل (تم التواصل والدفع)">مكتمل (تم التواصل والدفع) 🤝</option>
+                            <option value="مغلق - مرفوض وتم الاعتذار">مرفوض - تم الاعتذار ❌</option>
+                            <option value="مغلق - ملغى">ملغى 🚫</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div>
@@ -198,7 +207,7 @@
             </div>
             <div class="bg-slate-50 px-4 py-3 flex justify-between gap-3 border-t">
                 <button type="button" onclick="closeModal()" id="btnCancelStatus" class="flex-1 py-2 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300">إلغاء</button>
-                <button type="button" id="btnSaveStatus" onclick="saveStatus()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2 rounded-xl">حفظ التغييرات</button>
+                <button type="button" id="btnSaveStatus" onclick="saveStatus()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2 rounded-xl">تنفيذ وحفظ</button>
             </div>
         </div>
     </div>
@@ -218,6 +227,34 @@
                 </div>
             </div>
             <div class="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-center gap-3" id="msgModalButtons"></div>
+        </div>
+    </div>
+
+    <!-- نافذة نجاح التوجيه للواتساب (التحديث الجديد للروابط العميقة) -->
+    <div id="waSuccessModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col border border-slate-200">
+            <div class="bg-emerald-600 px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    تم الحفظ بنجاح
+                </h3>
+                <button type="button" onclick="closeWaSuccessModal()" class="text-white/70 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-5 flex flex-col gap-4 text-center items-center">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center shadow-inner">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                </div>
+                <p class="text-sm text-slate-700 font-bold leading-relaxed">تم تحديث البيانات في السيرفر بنجاح.<br>الرجاء الضغط على الزر أدناه لفتح الواتساب وإرسال الإشعار للعميل بشكل آمن.</p>
+            </div>
+            <div class="bg-slate-50 px-4 py-4 border-t border-slate-200 flex flex-col gap-2">
+                <a id="waSuccessBtn" href="#" target="_blank" onclick="closeWaSuccessModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-base font-extrabold py-3.5 rounded-xl shadow-md transition-all flex justify-center items-center gap-2 active:scale-95">
+                    فتح تطبيق الواتساب
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+                <button type="button" onclick="closeWaSuccessModal()" class="w-full py-2.5 text-sm text-slate-500 font-bold hover:text-slate-700 transition-colors">إغلاق بدون إرسال الواتساب</button>
+            </div>
         </div>
     </div>
 
@@ -372,10 +409,11 @@
                 const forwardHidden = document.getElementById('forwardModal').classList.contains('hidden');
                 const statusHidden = document.getElementById('statusModal').classList.contains('hidden');
                 const msgHidden = document.getElementById('msgModal').classList.contains('hidden');
-                const queueHidden = document.getElementById('queueManagementModal').classList.contains('hidden');
+                const queueHidden = document.getElementById('queueManagementModal') ? document.getElementById('queueManagementModal').classList.contains('hidden') : true;
                 const closeChatHidden = document.getElementById('closeChatModal').classList.contains('hidden');
+                const waSuccessHidden = document.getElementById('waSuccessModal') ? document.getElementById('waSuccessModal').classList.contains('hidden') : true;
                 
-                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden && queueHidden && closeChatHidden) {
+                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden && queueHidden && closeChatHidden && waSuccessHidden) {
                     fetchData(true); 
                 }
             }, 60000);
@@ -997,23 +1035,38 @@
                         </button>`;
                     } else if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-400 font-bold p-2">هذا الطلب مغلق أو منتهي</div>`;
-                    } else if (s.includes('اعتماد') || s.includes('يوجد رد') || s === 'قيد الانتظار') {
+                    } else {
                         let chunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
                         let lastMsg = chunks.length > 0 ? chunks[chunks.length - 1] : "";
+                        let forwardButton = '';
+                        let manualButtons = '';
                         
-                        if (lastMsg.includes('[من المطلوب]') || lastMsg.includes('[من الطرف الثاني]')) {
-                            actionButtonHTML = `${queueButton}<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full px-4 py-3 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
-                        } else {
-                            actionButtonHTML = `${queueButton}<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full px-4 py-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
+                        let isQueue = s.includes('قائمة الانتظار');
+                        let isPendingAdmin = s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة');
+                        let isLastMsgFromTarget = lastMsg.includes('[من المطلوب]') || lastMsg.includes('[من الطرف الثاني]');
+                        let isLastMsgFromStudent = lastMsg.includes('[من الطالب]') || lastMsg.includes('[من الطرف الأول]');
+
+                        // 1. بناء زر التمرير (الأساسي)
+                        if (!isQueue) {
+                            if (isLastMsgFromTarget && !s.includes('بانتظار الطرف الأول')) {
+                                forwardButton = `<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full mb-3 px-4 py-3 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
+                            } else if (isLastMsgFromStudent && !s.includes('بانتظار الطرف الثاني')) {
+                                forwardButton = `<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full mb-3 px-4 py-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
+                            }
                         }
-                    } else {
-                        actionButtonHTML = `
-                        ${queueButton}
-                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full justify-between mb-3">
-                            <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
-                            <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
-                        </div>
-                        <button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
+                        
+                        // 2. بناء الأزرار اليدوية وإظهارها فقط إذا لم يكن هناك تمرير أو اعتماد إداري معلق
+                        if (!isPendingAdmin && forwardButton === '') {
+                            manualButtons = `
+                            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full justify-between mb-3 mt-3">
+                                <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
+                                <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
+                            </div>`;
+                        }
+                        
+                        actionButtonHTML = queueButton + forwardButton + manualButtons;
+                        
+                        actionButtonHTML += `<button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
                     }
 
                     html += `
@@ -1152,7 +1205,7 @@
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
 
-            // فتح نافذة فارغة فوراً للتحايل على الـ Pop-up Blocker قبل الفيتش
+            // فتح النافذة مبكراً لضمان عملها بدون حظر
             let waWin = window.open('', '_blank');
 
             const btn = document.getElementById('btnExecuteForward');
@@ -1163,7 +1216,6 @@
             cancelBtn.disabled = true;
 
             let newStatus = direction === 'toTarget' ? "بانتظار الطرف الثاني" : "بانتظار الطرف الأول";
-            let targetPhoneNum = String(direction === 'toTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
             
             let isEdited = (newText !== originalText);
             let oldChunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
@@ -1189,40 +1241,50 @@
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: direction }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
-                const result = await res.json();
+                const textRes = await res.text();
+                let result;
+                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
                 
                 if(result.success) {
-                    let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
-                    
-                    // استخراج الرابط السحري من الباك إند
-                    let magicLink = direction === 'toTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                    // استخدام رقم الجوال في الرابط كخط دفاع احتياطي (Fallback)
-                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-                    
-                    let waMessage = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\n`;
-                    waMessage += `يوجد رسالة/تحديث بخصوص طلب التوفيق رقم (${req.reqId})\n\n`;
-                    waMessage += `* نبذة عن الطرف الآخر:\n${senderDataInfo || 'بيانات غير متوفرة'}\n\n`;
-                    waMessage += `* الرسالة:\n"${newText}"\n\n`;
-                    waMessage += `* يرجى الدخول للمنصة للرد عبر الرابط السري والآمن التالي:\n${magicLink}\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
-                    
-                    // توجيه النافذة المفتوحة للواتساب
-                    if (waWin) waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
-
                     closeForwardModal();
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
+                    
+                    let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
+                    let targetPhoneNum = String(direction === 'toTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+                    let magicLinkToSend = direction === 'toTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                    
+                    if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+
+                    // صياغة الرسالة مع الأيقونات الجمالية
+                    let waMessage = `مرحباً بك من إدارة أبو العنود 🌹\n\n`;
+                    waMessage += `*الطرف الآخر 👤:* (${senderDataInfo || 'بيانات غير متوفرة'})\n*أرسل لك:*\n\n`;
+                    
+                    // خدعة برمجية لتكبير الخط: نضع النجمتين حول كل سطر على حدة لكي يقبله الواتساب
+                    let boldText = newText.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
+                    waMessage += `${boldText}\n\n`;
+                    
+                    waMessage += `_للرد عبر المنصة:_\n${magicLinkToSend}\n\n`;
+                    waMessage += `_أو يمكنك الرد مباشرة هنا في الواتساب._`;
+
+                    if(waWin) waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
+                    
                     await fetchData(true, reqId); 
                 } else {
-                    if (waWin) waWin.close(); // إغلاق النافذة في حالة الفشل
+                    if(waWin) waWin.close();
                     await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if (waWin) waWin.close(); // إغلاق النافذة في حالة الفشل
-                if (e.name === 'AbortError') await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
+                if(waWin) waWin.close();
+                if (e.name === 'AbortError') {
+                    await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
+                } else {
+                    await showMsgModal("خطأ في الاتصال", e.message);
+                }
             } finally {
                 btn.innerHTML = originalBtnHtml;
                 btn.disabled = false;
@@ -1245,34 +1307,31 @@
             
             let adminMessage = "";
             let newStatus = "";
-            let waPhone = "";
-            let waIntro = "";
             let prefixTag = "";
+            let customPhoneToShare = ""; // متغير جديد لحفظ رقم الجوال اليدوي
 
             if(actionType === 'msgStudent') {
                 adminMessage = await showMsgModal("رسالة للطرف الأول", "اكتب رسالتك للطرف الأول (ستُسجل باسم الطرف الثاني):", "prompt");
                 if(!adminMessage) return;
                 newStatus = "بانتظار الطرف الأول";
                 prefixTag = "[من الطرف الثاني] [تعديل الإدارة]: "; 
-                waPhone = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.targetData || 'غير متوفرة'}`;
             } else if(actionType === 'msgTarget') {
                 adminMessage = await showMsgModal("رسالة للطرف الثاني", "اكتب رسالتك للطرف الثاني (ستُسجل باسم الطرف الأول):", "prompt");
                 if(!adminMessage) return;
                 newStatus = "بانتظار الطرف الثاني";
                 prefixTag = "[من الطرف الأول] [تعديل الإدارة]: "; 
-                waPhone = String(req.targetPhone).replace(/[^0-9]/g, '');
-                waIntro = `بخصوص طلب التوفيق رقم (${req.reqId})\n\n* نبذة عن الطرف الآخر:\n${req.requesterData || 'غير متوفرة'}`;
             } else if (actionType === 'closeChatSuccess') {
-                let confirmClose = await showMsgModal("تأكيد الأرشفة", "هل أنت متأكد من أرشفة هذا الطلب (تم التواصل والدفع)؟", "confirm");
-                if (!confirmClose) return;
-                adminMessage = "[مغلق] تم إنهاء المحادثة وإتمام الإجراءات بنجاح.";
-                newStatus = "مكتمل";
+                // 🟢 التعديل الجذري: طلب الرقم يدوياً من الإدارة بدلاً من التأكيد فقط
+                customPhoneToShare = await showMsgModal("تسليم الأرقام", "تم استلام الرسوم. الرجاء إدخال رقم الجوال المعتمد (ولي الأمر أو المخطوبة) ليتم إرساله للرجل:", "prompt");
+                if (!customPhoneToShare || customPhoneToShare.trim() === "") return; // إلغاء إذا ترك الحقل فارغاً
+                
+                adminMessage = "[مغلق] تم استلام الرسوم، وتسليم الرقم المعتمد بنجاح. نتمنى لكم التوفيق.";
+                newStatus = "مغلق - مكتمل"; // حالة مبسطة لضمان الأرشفة الفورية
                 prefixTag = "[من الإدارة]: ";
             } else if(actionType === 'closeChat') {
                 if (chosenReason === 'اعتذار لعدم التوافق') {
                     adminMessage = "[إغلاق/اعتذار من قبل الإدارة] تم إنهاء المحادثة لعدم التوافق. سيتم تمرير الدور للشخص التالي.";
-                    newStatus = "مرفوض - تم الاعتذار";
+                    newStatus = "مغلق - مرفوض وتم الاعتذار";
                 } else if (chosenReason === 'تم الزواج') {
                     adminMessage = "[مغلق] تم إنهاء المحادثة وإغلاق الطلب بسبب إتمام الزواج بفضل الله.";
                     newStatus = "مغلق - تم الزواج";
@@ -1284,8 +1343,9 @@
                 prefixTag = "[من الإدارة]: ";
             }
 
+            // فتح النافذة مبكراً لرسائل الإدارة فقط لضمان عملها بدون حظر
             let waWin = null;
-            if (actionType !== 'closeChat' && actionType !== 'closeChatSuccess' && waPhone) {
+            if (actionType === 'msgStudent' || actionType === 'msgTarget' || actionType === 'closeChatSuccess') {
                 waWin = window.open('', '_blank');
             }
 
@@ -1305,34 +1365,62 @@
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: actionType }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
-                const result = await res.json();
+                const textRes = await res.text();
+                let result;
+                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
                 
                 if(result.success) {
-                    if (waWin) {
-                        let magicLink = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                        if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${waPhone}`;
-
-                        let waFullMsg = `مرحباً بك من إدارة منصة: أبوالعنود | وسيط زواج\nرسالة إدارية ${waIntro}\n\n* الرسالة:\n"${adminMessage}"\n\n* يرجى الدخول للمنصة للرد عبر الرابط السري والآمن التالي:\n${magicLink}\n\n(تفاعلك المباشر يرفع من موثوقية ملفك)، أو يمكنك كتابة ردك هنا وسيقوم الوسيط بنقله للطرف الآخر نيابة عنك.`;
-                        waWin.location.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(waFullMsg)}`;
-                    }
-
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
+                    
+                    if (waWin) {
+                        let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, ''); 
+                        
+                        if (actionType === 'closeChatSuccess') {
+                            // 🟢 رسالة رسمية نظيفة خالية من الإيموجي لضمان التشفير، واستخدام الرقم اليدوي
+                            let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
+                            waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n";
+                            waFullMsg += "يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):\n\n";
+                            waFullMsg += "رقم الجوال: " + customPhoneToShare.trim() + "\n\n";
+                            waFullMsg += "نسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
+                            
+                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
+                        } else {
+                            let waIntro = actionType === 'msgTarget' 
+                                ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` 
+                                : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
+                                
+                            targetPhoneNum = String(actionType === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+                            let magicLinkToSend = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                            
+                            if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+
+                            // 🟢 رسالة إدارية رسمية نظيفة
+                            let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
+                            waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n";
+                            waFullMsg += "\"" + adminMessage + "\"\n\n";
+                            waFullMsg += "للرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\n";
+                            waFullMsg += "أو يمكنك الرد مباشرة هنا في الواتساب.";
+
+                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
+                        }
+                    }
+
                     await fetchData(true, reqId);
                 } else {
-                    if (waWin) waWin.close(); 
+                    if(waWin) waWin.close();
                     await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if (waWin) waWin.close();
+                if(waWin) waWin.close();
                 if (e.name === 'AbortError') {
                     await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
                 } else {
-                    await showMsgModal("خطأ", "فشل تنفيذ الإجراء: " + e.message);
+                    await showMsgModal("خطأ", e.message);
                 }
             } finally {
                 isProcessingAction = false;
@@ -1380,7 +1468,9 @@
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
-                const result = await res.json();
+                const textRes = await res.text();
+                let result;
+                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
                 
                 if (result.success) {
                     closeModal();
@@ -1392,7 +1482,7 @@
                 if (e.name === 'AbortError') {
                     await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
                 } else {
-                    await showMsgModal("خطأ", "حدث خطأ: " + e.message);
+                    await showMsgModal("خطأ", e.message);
                 }
             } finally {
                 btn.innerHTML = originalHtml; 
