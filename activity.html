@@ -585,7 +585,6 @@
                 let isPendingAdmin = statusText.includes('اعتماد');
                 let isQueued = statusText.includes('قائمة الانتظار'); 
 
-                // 🟢 حساب الفارق الزمني لعزل الطلبات المنتهية منذ أكثر من 24 ساعة في الأرشيف
                 let actionTime = typeof safeGetTime === 'function' ? safeGetTime(req.lastActionDate || req.date) : new Date(req.lastActionDate || req.date).getTime();
                 let hoursDiff = (Date.now() - actionTime) / (1000 * 60 * 60);
                 let isArchived = isMasterClosed && (hoursDiff > 24);
@@ -887,16 +886,25 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        let femaleApprovalBtn = (!currentUserIsMale && isDirectReq) ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>` : '';
-                        let maleContactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
-                        let rejectTxt = '❌ اعتذار بلطف';
+                        // 🟢 منطق الأزرار المحدث للرسالة الأولى مقابل الرسائل اللاحقة
+                        let primaryBtnHtml = '';
+                        if (isFirstMessage) {
+                            primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة مبدئية', false, event)" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
+                        } else {
+                            if (currentUserIsMale) {
+                                primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>`;
+                            } else if (isDirectReq) {
+                                primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
+                            }
+                        }
 
+                        let rejectTxt = '❌ اعتذار بلطف';
                         let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطلب', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
 
                         actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
                             ${replyBtnHtml}
                             <div class="flex gap-1.5 w-full">
-                                ${femaleApprovalBtn || maleContactBtn || `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة مبدئية', false, event)" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`}
+                                ${primaryBtnHtml}
                                 <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', '${rejectTxt}', false, event)" class="flex-1 py-2 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">${rejectTxt}</button>
                             </div>
                         </div>`;
