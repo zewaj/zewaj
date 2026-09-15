@@ -609,8 +609,13 @@
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
                 let isFirstMessage = (totalMessages === 1);
-                let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
-                let isUneditableAutoMsg = isFirstMessage || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
+                
+                // 🟢 البحث عن الطلب في المحادثة بأكملها وليس الرسالة الأخيرة فقط
+                let hasDirectReqInThread = (req.message || "").includes('تواصل مباشر') || (req.message || "").includes('تبادل الأرقام');
+                let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                
+                // 🟢 قفل التعديل يقرأ فقط آخر رسالة لتجنب قفل الدردشات العادية
+                let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
@@ -679,9 +684,9 @@
                 } else if (isPendingAdmin) {
                     if (isRealLastFromMe) {
                         if (isUneditableAutoMsg) {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار اعتماد الإدارة.</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار اعتماد الإدارة.</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                         }
                     } else {
                         actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
@@ -698,7 +703,8 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        let contactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
+                        // 🟢 إخفاء زر "تواصل مباشر" إذا كان الرجل قد طلبه مسبقاً في أي نقطة من المحادثة
+                        let contactBtn = (currentUserIsMale && !hasDirectReqInThread) ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
                         let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
                         let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
@@ -802,8 +808,12 @@
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
                 let isFirstMessage = (totalMessages === 1);
-                let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
-                let isUneditableAutoMsg = isFirstMessage || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
+                
+                // 🟢 البحث عن الطلب في المحادثة بأكملها وليس الرسالة الأخيرة فقط
+                let hasDirectReqInThread = (req.message || "").includes('تواصل مباشر') || (req.message || "").includes('تبادل الأرقام');
+                let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                
+                let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
@@ -867,9 +877,9 @@
                 } else if (isPendingAdmin) {
                     if (isRealLastFromMe) {
                         if (isUneditableAutoMsg) {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار الاعتماد.</p></div></div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار اعتماد الإدارة.</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex gap-2 rounded-b-2xl">${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي (بانتظار الاعتماد)</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ رسالتك مُرسلة.. بانتظار اعتماد الإدارة.</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : `<div class="w-full text-center text-[10px] text-slate-500 font-bold">تم التدقيق ولا يمكن التعديل.</div>`}</div>`;
                         }
                     } else {
                         actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center flex items-center justify-center gap-2 rounded-b-2xl"><span class="text-amber-500 animate-pulse">⏳</span><p class="text-[10px] font-bold text-amber-700">الطرف الآخر أرسل رداً قيد المراجعة...</p></div>`;
@@ -886,14 +896,13 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        // 🟢 منطق الأزرار المحدث للرسالة الأولى مقابل الرسائل اللاحقة
                         let primaryBtnHtml = '';
                         if (isFirstMessage) {
                             primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة مبدئية', false, event)" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
                         } else {
-                            if (currentUserIsMale) {
+                            if (currentUserIsMale && !hasDirectReqInThread) {
                                 primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>`;
-                            } else if (isDirectReq) {
+                            } else if (!currentUserIsMale && hasDirectReqInThread) {
                                 primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
                             }
                         }
