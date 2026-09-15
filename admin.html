@@ -117,12 +117,16 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <span id="badgeWaiting" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
             </button>
-            <!-- الفلتر الجديد: طلبات التواصل -->
             <button onclick="setFilter('contact')" id="filter-contact" class="filter-btn p-2.5 rounded-xl transition-all bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100 shrink-0 relative" title="تم تسليم الأرقام / طلبات تواصل">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
             </button>
             <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+            </button>
+            <!-- 🟢 التعديل: زر فشل الإرسال الجديد -->
+            <button onclick="setFilter('failed')" id="filter-failed" class="filter-btn p-2.5 rounded-xl transition-all bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 shrink-0 relative hidden" title="عمليات معلقة فشل إرسالها">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span id="badgeFailed" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm">0</span>
             </button>
         </div>
     </div>
@@ -194,9 +198,13 @@
                             <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (نيابة عن المطلوب)</option>
                         </optgroup>
                         <optgroup label="إغلاق الطلب (يُفرغ كوتا 3 طلبات)">
-                            <option value="مغلق - مكتمل (تم التواصل والدفع)">مكتمل (تم التواصل والدفع) 🤝</option>
+                            <option value="مغلق - مكتمل (تم الدفع والتواصل)">مكتمل (تم الدفع والتواصل) 🤝</option>
                             <option value="مغلق - مرفوض وتم الاعتذار">مرفوض - تم الاعتذار ❌</option>
                             <option value="مغلق - ملغى">ملغى 🚫</option>
+                        </optgroup>
+                        <optgroup label="إغلاق الطلب (حالات الزواج)">
+                            <option value="مغلق - تم الزواج">تم الزواج 💍 (بدون رسوم)</option>
+                            <option value="مغلق - تم الزواج والدفع">تم الزواج والدفع 💍💰</option>
                         </optgroup>
                     </select>
                 </div>
@@ -345,12 +353,15 @@
         let isProcessingAction = false; 
         const FETCH_TIMEOUT_MS = 60000; 
         
-        let currentFilterType = 'active'; // التغيير: الفلتر الافتراضي أصبح النشطة
+        let currentFilterType = 'active'; 
         let scrollPositions = {}; 
         let selectedReqId = null;
 
-        // التغيير: إضافة كاش للاحتفاظ بوقت آخر قراءة لكل طلب
         let readRequestsCache = JSON.parse(localStorage.getItem('adminReadCache')) || {};
+        
+        // 🟢 التعديل الجذري: طابور العمليات الخلفية (Background Queue)
+        let pendingAdminActions = JSON.parse(localStorage.getItem('admin_pending_actions')) || [];
+        function savePendingActions() { localStorage.setItem('admin_pending_actions', JSON.stringify(pendingAdminActions)); }
 
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 11: دوال تسجيل الدخول والخروج 🔴🔴🔴 -->
@@ -409,11 +420,11 @@
                 const forwardHidden = document.getElementById('forwardModal').classList.contains('hidden');
                 const statusHidden = document.getElementById('statusModal').classList.contains('hidden');
                 const msgHidden = document.getElementById('msgModal').classList.contains('hidden');
-                const queueHidden = document.getElementById('queueManagementModal') ? document.getElementById('queueManagementModal').classList.contains('hidden') : true;
                 const closeChatHidden = document.getElementById('closeChatModal').classList.contains('hidden');
                 const waSuccessHidden = document.getElementById('waSuccessModal') ? document.getElementById('waSuccessModal').classList.contains('hidden') : true;
                 
-                if(!isFetchingData && !isProcessingAction && forwardHidden && statusHidden && msgHidden && queueHidden && closeChatHidden && waSuccessHidden) {
+                // 🟢 التعديل: لا نحدث إذا كان الطابور يعمل لكي لا تتضارب البيانات
+                if(!isFetchingData && !isProcessingAction && pendingAdminActions.length === 0 && forwardHidden && statusHidden && msgHidden && closeChatHidden && waSuccessHidden) {
                     fetchData(true); 
                 }
             }, 60000);
@@ -462,17 +473,9 @@
         }
 
         let closeChatResolve = null;
-        function openCloseChatModal() {
-            return new Promise((resolve) => {
-                closeChatResolve = resolve;
-                document.getElementById('closeChatModal').classList.remove('hidden');
-            });
-        }
-
-        function resolveCloseChat(status) {
-            document.getElementById('closeChatModal').classList.add('hidden');
-            if (closeChatResolve) closeChatResolve(status);
-            closeChatResolve = null;
+        function openCloseChatModal(reqId) {
+            document.getElementById('closeChatReqId').value = reqId;
+            document.getElementById('closeChatModal').classList.remove('hidden');
         }
 
         function initSplitter() {
@@ -558,6 +561,11 @@
             }
             initSplitter();
             startAutoRefresh();
+            
+            // 🟢 استئناف العمليات المعلقة عند تحميل الصفحة
+            if(pendingAdminActions.some(a => a.state === 'sending')) {
+                processAdminQueue();
+            }
         };
 
         async function fetchData(silent = false, highlightReqId = null) {
@@ -714,8 +722,9 @@
             return `<span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-gray-200">${s}</span>`;
         }
 
-        function parseUnifiedChat(unifiedMessage) {
-            if (!unifiedMessage || typeof unifiedMessage !== 'string') return '';
+        // 🟢 التعديل الجذري: دمج الرسائل المعلقة (Pending) وعرضها فوراً في المحادثة
+        function parseUnifiedChat(unifiedMessage, currentReqId) {
+            if (!unifiedMessage || typeof unifiedMessage !== 'string') unifiedMessage = '';
             
             const chunks = unifiedMessage.split('---').map(c => c.trim()).filter(c => c);
             let html = '<div class="flex flex-col gap-3 p-2 pb-6">';
@@ -776,6 +785,26 @@
                     </div>`;
                 }
             });
+            
+            // 🟢 إدراج الرسائل التي تُعالج في الخلفية (Optimistic UI)
+            if (currentReqId) {
+                let myPending = pendingAdminActions.filter(a => a.reqId === currentReqId);
+                myPending.forEach(p => {
+                    let isFailed = p.state === 'failed';
+                    let bgClass = isFailed ? 'bg-rose-50 border-rose-200' : 'bg-slate-100 border-dashed border-slate-300 opacity-80';
+                    let iconHTML = isFailed ? '❌ فشل الإرسال (اضغط لإعادة المحاولة)' : '<svg class="w-3 h-3 inline animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري الإرسال في الخلفية...';
+                    
+                    html += `
+                    <div class="self-center text-center max-w-[90%] my-1 fade-in">
+                        <div class="${bgClass} border rounded-xl px-3 py-2 text-xs text-slate-700 shadow-sm inline-block">
+                            <span class="font-bold block mb-1 ${isFailed ? 'text-rose-600' : 'text-slate-500'} text-[10px]">${iconHTML}</span>
+                            <span class="whitespace-pre-wrap">${p.text}</span>
+                            ${isFailed ? `<div class="mt-2 flex gap-2 justify-center border-t border-rose-200 pt-2"><button onclick="retryAdminAction('${p.id}')" class="text-blue-600 font-bold hover:underline">إعادة المحاولة</button><button onclick="cancelAdminAction('${p.id}')" class="text-rose-600 font-bold hover:underline">إلغاء الإجراء</button></div><div class="text-[9px] text-rose-500 mt-1">${p.errorMsg || ''}</div>` : ''}
+                        </div>
+                    </div>`;
+                });
+            }
+            
             html += '</div>';
             return html;
         }
@@ -785,17 +814,22 @@
 <!-- ======================================================== -->
         function updateDashboardStats() {
             let pending = 0, actionNeeded = 0, unreadCount = 0;
+            let failedCount = pendingAdminActions.filter(a => a.state === 'failed').length;
+
             allRequests.forEach(r => {
                 const s = r.status || '';
+                let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 
                 let lastActionTs = getTimestamp(r.lastActionDate || r.date);
-                if (!s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق')) {
+                if (!isClosed) {
                     if (!readRequestsCache[r.reqId] || lastActionTs > readRequestsCache[r.reqId]) {
                         unreadCount++;
                     }
                 }
 
-                if (r.finalApprovalGiven) {
+                if (isClosed) {
+                    // لا تفعل شيئاً
+                } else if (r.finalApprovalGiven) {
                     actionNeeded++;
                 } else if (r.hasRequestedContact) {
                     pending++;
@@ -808,6 +842,8 @@
             const badgeAction = document.getElementById('badgeAction');
             const badgeWaiting = document.getElementById('badgeWaiting');
             const badgeUnread = document.getElementById('badgeUnread');
+            const badgeFailed = document.getElementById('badgeFailed');
+            const filterFailed = document.getElementById('filter-failed');
             
             if (badgeAction) {
                 badgeAction.innerText = actionNeeded;
@@ -824,10 +860,23 @@
                 if(unreadCount > 0) badgeUnread.classList.remove('hidden');
                 else badgeUnread.classList.add('hidden');
             }
+            
+            // 🟢 إظهار زر فشل الإرسال إذا كان هناك عمليات فاشلة
+            if (filterFailed && badgeFailed) {
+                if (failedCount > 0) {
+                    filterFailed.classList.remove('hidden');
+                    badgeFailed.innerText = failedCount;
+                } else {
+                    filterFailed.classList.add('hidden');
+                    if (currentFilterType === 'failed') setFilter('active'); // العودة للرئيسية إذا فُتح ولم يعد هناك أخطاء
+                }
+            }
         }
 
         function setFilter(type) {
             currentFilterType = type;
+            selectedReqId = null; // 🟢 التعديل: إغلاق المحادثة اليسرى لتنظيف الشاشة عند تغيير التبويب
+            
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.className = "filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative";
             });
@@ -835,6 +884,8 @@
             if (activeBtn) {
                 if(type === 'contact') {
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-emerald-600 text-white shadow-sm border-transparent shrink-0 relative`;
+                } else if (type === 'failed') {
+                    activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-rose-600 text-white shadow-sm border-transparent shrink-0 relative`;
                 } else {
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-indigo-600 text-white shadow-sm border-transparent shrink-0 relative`;
                 }
@@ -867,18 +918,18 @@
             const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
 
             let filteredRequests = allRequests.filter(req => {
-                // الحل العبقري: إذا كان الطلب مفتوحاً أمامك، تجاهل الفلتر وأبقه معروضاً حتى لو تغيرت حالته
-                if (req.reqId === selectedReqId) return true;
-
                 const s = req.status || 'قيد الانتظار';
+                let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 let matchesStatus = false;
                 
-                if (currentFilterType === 'active') matchesStatus = !(s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق'));
-                else if (currentFilterType === 'action') matchesStatus = req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد');
-                else if (currentFilterType === 'waiting') matchesStatus = (!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده');
-                else if (currentFilterType === 'queue') matchesStatus = s.includes('قائمة الانتظار');
-                else if (currentFilterType === 'contact') matchesStatus = req.hasRequestedContact; // الفلتر الجديد (الطلبات التي تم فيها دفع/تواصل)
-                else if (currentFilterType === 'archived') matchesStatus = s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق');
+                if (currentFilterType === 'active') matchesStatus = !isClosed;
+                else if (currentFilterType === 'action') matchesStatus = !isClosed && (req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد'));
+                else if (currentFilterType === 'waiting') matchesStatus = !isClosed && ((!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
+                else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
+                else if (currentFilterType === 'contact') matchesStatus = !isClosed && req.hasRequestedContact;
+                else if (currentFilterType === 'archived') matchesStatus = isClosed; 
+                // 🟢 فلتر الفشل الجديد
+                else if (currentFilterType === 'failed') matchesStatus = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'failed');
 
                 if (!matchesStatus) return false;
                 if (searchTerm === '') return true;
@@ -888,12 +939,14 @@
             });
 
             const getPriority = (req) => {
+                const s = req.status || '';
+                let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
+                
+                if (isClosed) return 5; 
                 if (req.finalApprovalGiven) return 1; 
 
-                const s = req.status || '';
                 const lastActionTs = getTimestamp(req.lastActionDate || req.date);
-                const isUnread = !s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق') &&
-                                 (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
+                const isUnread = !isClosed && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
 
                 if (isUnread) return 2; 
                 if (s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('اعتماد')) return 3; 
@@ -912,11 +965,8 @@
                 const dateA = getTimestamp(a.lastActionDate || a.date);
                 const dateB = getTimestamp(b.lastActionDate || b.date);
 
-                if (priorityA <= 3) {
-                    return dateA - dateB;
-                } else {
-                    return dateB - dateA;
-                }
+                // دائماً رتب من الأحدث للأقدم داخل كل مستوى أولوية
+                return dateB - dateA;
             });
             
             if (filteredRequests.length === 0) {
@@ -928,13 +978,17 @@
             let html = `<div class="flex w-full h-full gap-1 sm:gap-2 overflow-hidden">`;
 
             let sidebarVisibility = selectedReqId ? 'hidden lg:flex' : 'flex';
-            html += `<div id="sidebarArea" class="w-full lg:w-[320px] xl:w-[350px] shrink-0 flex-col gap-2 overflow-y-auto custom-scrollbar pb-10 pr-1 ${sidebarVisibility}" style="width: var(--sidebar-width, 350px); min-width: 250px; max-width: 60vw;">`;
+            html += `<div id="sidebarArea" class="h-full w-full lg:w-[320px] xl:w-[350px] shrink-0 flex-col gap-2 overflow-y-auto custom-scrollbar pb-10 pr-1 ${sidebarVisibility}" style="width: var(--sidebar-width, 350px); min-width: 250px; max-width: 60vw;">`;
             
             filteredRequests.forEach((req) => {
                 const s = req.status || 'قيد الانتظار';
+                let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 let statusBadge = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-amber-200 shrink-0 whitespace-nowrap">جديد / انتظار</span>`;
                 
-                if (req.finalApprovalGiven) {
+                if (isClosed) {
+                    let archiveText = s.includes('مكتمل') ? "تمت الوساطة (مكتمل) 🤝" : (s.includes('تم الزواج') ? "تم الزواج 💍" : "مغلق / مؤرشف");
+                    statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
+                } else if (req.finalApprovalGiven) {
                     statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 تدخلي فوراً</span>`;
                 } else if (req.hasRequestedContact) {
                     statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">طلب تواصل</span>`;
@@ -942,27 +996,27 @@
                     statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
                 } else if (s.includes('قائمة الانتظار')) {
                     statusBadge = `<span class="bg-purple-100 text-purple-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-200 shrink-0 whitespace-nowrap">طابور الانتظار</span>`;
+                } else if (s.includes('مقبول مبدئياً')) {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً ✅</span>`;
                 } else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) {
                     statusBadge = `<span class="bg-slate-100 text-slate-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-200 shrink-0 whitespace-nowrap">انتظار العملاء</span>`;
-                } else if (s.includes('مقبول')) {
-                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً</span>`;
-                } else if (s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) {
-                    statusBadge = `<span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-200 shrink-0 whitespace-nowrap">مغلق</span>`;
                 }
 
                 let timeElapsed = getTimeElapsedArabic(req.lastActionDate || req.date);
                 let timeBadge = `<span class="time-badge text-slate-400 text-[9px] font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsed}</span>`;
-                if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق') || req.finalApprovalGiven) timeBadge = '';
+                if (isClosed || req.finalApprovalGiven) timeBadge = '';
 
                 let isSelected = req.reqId === selectedReqId;
                 let cardClass = isSelected ? 'bg-indigo-50 border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm';
-                let flashClass = req.finalApprovalGiven && !isSelected ? 'highlight-flash' : '';
+                let flashClass = req.finalApprovalGiven && !isSelected && !isClosed ? 'highlight-flash' : '';
 
                 let lastActionTs = getTimestamp(req.lastActionDate || req.date);
-                let isUnread = !s.includes('مرفوض') && !s.includes('ملغى') && !s.includes('مغلق') && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
+                let isUnread = !isClosed && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
                 
                 let unreadDot = isUnread ? `<span class="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm z-10 animate-pulse" title="يوجد تحديث غير مقروء"></span>` : '';
                 let textWeight = isUnread ? 'font-black text-slate-900' : 'font-bold text-slate-700';
+                
+                if(isClosed && !isSelected) cardClass += ' opacity-70 bg-slate-50 grayscale-[30%]';
 
                 html += `
                 <div id="card-${req.reqId}" onclick="openRequest('${req.reqId}', ${lastActionTs})" class="cursor-pointer border rounded-2xl p-3 transition-all relative ${cardClass} ${flashClass}">
@@ -994,27 +1048,32 @@
 <!-- 🔴🔴🔴 القسم 18: رسم تفاصيل الطلب (Detail View & Buttons) 🔴🔴🔴 -->
 <!-- ======================================================== -->
             let detailVisibility = selectedReqId ? 'flex' : 'hidden lg:flex';
-            html += `<div id="detailArea" class="flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm flex-col min-w-[280px] ${detailVisibility}">`;
+            html += `<div id="detailArea" class="h-full flex-1 bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm flex-col min-w-[280px] ${detailVisibility}">`;
 
             if (selectedReqId) {
-                const req = filteredRequests.find(r => r.reqId === selectedReqId);
+                const req = allRequests.find(r => r.reqId === selectedReqId);
                 if (req) {
                     const s = req.status || 'قيد الانتظار';
+                    let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
+                    
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
-                    if (req.finalApprovalGiven) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
+                    
+                    if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (req.finalApprovalGiven) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
                     else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
                     else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
-                    else if (s.includes('مقبول')) statusBadgeFull = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">${s}</span>`;
-                    else if (s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) statusBadgeFull = `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-200 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (s.includes('مقبول مبدئياً')) statusBadgeFull = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً ✅</span>`;
 
                     let timeElapsedFull = getTimeElapsedArabic(req.lastActionDate || req.date);
                     let timeBadgeFull = `<span class="time-badge bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-bold px-1.5 py-1 rounded-md flex items-center gap-1 shadow-sm shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}" title="وقت الانتظار"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsedFull}</span>`;
-                    if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق') || req.finalApprovalGiven) timeBadgeFull = '';
+                    if (isClosed || req.finalApprovalGiven) timeBadgeFull = '';
 
                     let reqStatusBadge = getProfileBadge(req.requesterProfileStatus);
                     let targetStatusBadge = getProfileBadge(req.targetProfileStatus);
-                    let chatThread = parseUnifiedChat(req.message);
+                    
+                    // 🟢 التعديل: إرسال الـ reqId ليتمكن الـ Chat Parser من دمج العمليات المعلقة
+                    let chatThread = parseUnifiedChat(req.message, req.reqId);
                     
                     let actionButtonHTML = '';
                     let queueButton = '';
@@ -1023,7 +1082,14 @@
                         queueButton = `<button onclick="openQueueModal('${targetIdProxy}')" class="w-full mb-3 px-4 py-2.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">⚙️ إدارة طابور الانتظار لهذا العميل</button>`;
                     }
 
-                    if (req.finalApprovalGiven) {
+                    // 🟢 التعديل: منع ظهور أي أزرار إذا كان هناك عملية قيد التنفيذ لهذا الطلب بالذات
+                    let isSendingNow = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'sending');
+
+                    if (isSendingNow) {
+                        actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</div>`;
+                    } else if (isClosed) {
+                        actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl">هذا الطلب مغلق ومؤرشف في سجلات المنصة 🗄️</div>`;
+                    } else if (req.finalApprovalGiven) {
                         actionButtonHTML = `
                         ${queueButton}
                         <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
@@ -1033,40 +1099,34 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 
                             إغلاق وأرشفة الطلب (تم التواصل والدفع)
                         </button>`;
-                    } else if (s.includes('مقبول') || s.includes('مرفوض') || s.includes('ملغى') || s.includes('مغلق')) {
-                        actionButtonHTML = `<div class="text-center text-xs text-slate-400 font-bold p-2">هذا الطلب مغلق أو منتهي</div>`;
                     } else {
                         let chunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
                         let lastMsg = chunks.length > 0 ? chunks[chunks.length - 1] : "";
                         let forwardButton = '';
-                        let manualButtons = '';
                         
                         let isQueue = s.includes('قائمة الانتظار');
                         let isPendingAdmin = s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة');
                         let isLastMsgFromTarget = lastMsg.includes('[من المطلوب]') || lastMsg.includes('[من الطرف الثاني]');
                         let isLastMsgFromStudent = lastMsg.includes('[من الطالب]') || lastMsg.includes('[من الطرف الأول]');
 
-                        // 1. بناء زر التمرير (الأساسي)
                         if (!isQueue) {
-                            if (isLastMsgFromTarget && !s.includes('بانتظار الطرف الأول')) {
+                            if (isLastMsgFromTarget && !s.includes('بانتظار الطرف الأول') && !s.includes('مقبول مبدئياً')) {
                                 forwardButton = `<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full mb-3 px-4 py-3 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
                             } else if (isLastMsgFromStudent && !s.includes('بانتظار الطرف الثاني')) {
                                 forwardButton = `<button onclick="openForwardModal('${req.reqId}', 'toTarget')" class="w-full mb-3 px-4 py-3 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تجهيز وإرسال العرض للطرف الثاني</button>`;
                             }
                         }
                         
-                        // 2. بناء الأزرار اليدوية وإظهارها فقط إذا لم يكن هناك تمرير أو اعتماد إداري معلق
+                        actionButtonHTML = queueButton + forwardButton;
+                        
                         if (!isPendingAdmin && forwardButton === '') {
-                            manualButtons = `
+                            actionButtonHTML += `
                             <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full justify-between mb-3 mt-3">
                                 <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
                                 <button onclick="executeAdminAction('${req.reqId}', 'msgStudent')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الأول (واتساب)</span></button>
-                            </div>`;
+                            </div>
+                            <button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
                         }
-                        
-                        actionButtonHTML = queueButton + forwardButton + manualButtons;
-                        
-                        actionButtonHTML += `<button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors flex justify-center items-center gap-1 shadow-sm"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg> <span class="truncate">إنهاء المحادثة نهائياً</span></button>`;
                     }
 
                     html += `
@@ -1195,6 +1255,18 @@
 
         function closeForwardModal() { document.getElementById('forwardModal').classList.add('hidden'); }
 
+        // نافذة نجاح إرسال الواتساب المتأخرة
+        function showWaSuccessModal(url, reqIdMsg) {
+            if(!url) return;
+            document.getElementById('waSuccessBtn').href = url;
+            let titleText = reqIdMsg ? `تم حفظ الطلب #${reqIdMsg}` : "تم الحفظ بنجاح";
+            document.querySelector('#waSuccessModal h3').innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${titleText}`;
+            document.getElementById('waSuccessModal').classList.remove('hidden');
+        }
+        function closeWaSuccessModal() {
+            document.getElementById('waSuccessModal').classList.add('hidden');
+        }
+
         async function executeForward() {
             const reqId = document.getElementById('forwardReqId').value;
             const direction = document.getElementById('forwardDirection').value;
@@ -1205,16 +1277,6 @@
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
 
-            // فتح النافذة مبكراً لضمان عملها بدون حظر
-            let waWin = window.open('', '_blank');
-
-            const btn = document.getElementById('btnExecuteForward');
-            const cancelBtn = document.getElementById('btnCancelForward');
-            const originalBtnHtml = btn.innerHTML;
-            btn.innerHTML = `جاري الإرسال...`;
-            btn.disabled = true;
-            cancelBtn.disabled = true;
-
             let newStatus = direction === 'toTarget' ? "بانتظار الطرف الثاني" : "بانتظار الطرف الأول";
             
             let isEdited = (newText !== originalText);
@@ -1222,74 +1284,32 @@
             oldChunks.pop(); 
             
             let senderRoleTag = direction === 'toTarget' ? '[من الطرف الأول]' : '[من الطرف الثاني]';
-            
-            let logTag = senderRoleTag;
-            if (isEdited) {
-                logTag += ' [تعديل الإدارة]:'; 
-            } else {
-                logTag += ':';
-            }
+            let logTag = senderRoleTag + (isEdited ? ' [تعديل الإدارة]:' : ':');
             
             let formattedNewMessage = logTag + " " + newText;
             oldChunks.push(formattedNewMessage);
             let completeNewThread = oldChunks.join("\n\n---\n\n");
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            let actionId = 'act_' + Date.now();
+            let payloadObj = { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: direction };
 
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: direction }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
-                if(result.success) {
-                    closeForwardModal();
-                    scrollPositions = {}; 
-                    sessionStorage.removeItem('admin_requests_cache');
-                    
-                    let senderDataInfo = direction === 'toTarget' ? req.requesterData : req.targetData;
-                    let targetPhoneNum = String(direction === 'toTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
-                    let magicLinkToSend = direction === 'toTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                    
-                    if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+            // 🟢 التعديل الجذري: الإدراج الفوري في الواجهة (Optimistic UI)
+            pendingAdminActions.push({
+                id: actionId,
+                reqId: reqId,
+                type: 'forward',
+                text: newText,
+                state: 'sending',
+                payload: payloadObj,
+                timestamp: Date.now()
+            });
 
-                    // صياغة الرسالة مع الأيقونات الجمالية
-                    let waMessage = `مرحباً بك من إدارة أبو العنود 🌹\n\n`;
-                    waMessage += `*الطرف الآخر 👤:* (${senderDataInfo || 'بيانات غير متوفرة'})\n*أرسل لك:*\n\n`;
-                    
-                    // خدعة برمجية لتكبير الخط: نضع النجمتين حول كل سطر على حدة لكي يقبله الواتساب
-                    let boldText = newText.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
-                    waMessage += `${boldText}\n\n`;
-                    
-                    waMessage += `_للرد عبر المنصة:_\n${magicLinkToSend}\n\n`;
-                    waMessage += `_أو يمكنك الرد مباشرة هنا في الواتساب._`;
-
-                    if(waWin) waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
-                    
-                    await fetchData(true, reqId); 
-                } else {
-                    if(waWin) waWin.close();
-                    await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
-                }
-            } catch(e) {
-                if(waWin) waWin.close();
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
-                } else {
-                    await showMsgModal("خطأ في الاتصال", e.message);
-                }
-            } finally {
-                btn.innerHTML = originalBtnHtml;
-                btn.disabled = false;
-                cancelBtn.disabled = false;
-            }
+            savePendingActions();
+            closeForwardModal();
+            scrollPositions = {};
+            renderTable(); // تحديث فوري للشاشة لتظهر الرسالة بعلامة ⏳
+            processAdminQueue(); // إطلاق السيرفر في الخلفية
         }
 
 <!-- ======================================================== -->
@@ -1308,7 +1328,7 @@
             let adminMessage = "";
             let newStatus = "";
             let prefixTag = "";
-            let customPhoneToShare = ""; // متغير جديد لحفظ رقم الجوال اليدوي
+            let customPhoneToShare = ""; 
 
             if(actionType === 'msgStudent') {
                 adminMessage = await showMsgModal("رسالة للطرف الأول", "اكتب رسالتك للطرف الأول (ستُسجل باسم الطرف الثاني):", "prompt");
@@ -1321,12 +1341,11 @@
                 newStatus = "بانتظار الطرف الثاني";
                 prefixTag = "[من الطرف الأول] [تعديل الإدارة]: "; 
             } else if (actionType === 'closeChatSuccess') {
-                // 🟢 التعديل الجذري: طلب الرقم يدوياً من الإدارة بدلاً من التأكيد فقط
                 customPhoneToShare = await showMsgModal("تسليم الأرقام", "تم استلام الرسوم. الرجاء إدخال رقم الجوال المعتمد (ولي الأمر أو المخطوبة) ليتم إرساله للرجل:", "prompt");
-                if (!customPhoneToShare || customPhoneToShare.trim() === "") return; // إلغاء إذا ترك الحقل فارغاً
+                if (!customPhoneToShare || customPhoneToShare.trim() === "") return; 
                 
                 adminMessage = "[مغلق] تم استلام الرسوم، وتسليم الرقم المعتمد بنجاح. نتمنى لكم التوفيق.";
-                newStatus = "مغلق - مكتمل"; // حالة مبسطة لضمان الأرشفة الفورية
+                newStatus = "مغلق - مكتمل (تم التواصل والدفع)"; 
                 prefixTag = "[من الإدارة]: ";
             } else if(actionType === 'closeChat') {
                 if (chosenReason === 'اعتذار لعدم التوافق') {
@@ -1343,89 +1362,37 @@
                 prefixTag = "[من الإدارة]: ";
             }
 
-            // فتح النافذة مبكراً لرسائل الإدارة فقط لضمان عملها بدون حظر
-            let waWin = null;
-            if (actionType === 'msgStudent' || actionType === 'msgTarget' || actionType === 'closeChatSuccess') {
-                waWin = window.open('', '_blank');
-            }
-
-            isProcessingAction = true;
-            document.getElementById('refreshIcon').classList.add('sync-spin');
-            
             let oldChunks = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
             let formattedNewMessage = prefixTag + adminMessage;
             oldChunks.push(formattedNewMessage);
             let completeNewThread = oldChunks.join("\n\n---\n\n");
             
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: actionType }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
-                if(result.success) {
-                    scrollPositions = {}; 
-                    sessionStorage.removeItem('admin_requests_cache');
-                    
-                    if (waWin) {
-                        let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, ''); 
-                        
-                        if (actionType === 'closeChatSuccess') {
-                            // 🟢 رسالة رسمية نظيفة خالية من الإيموجي لضمان التشفير، واستخدام الرقم اليدوي
-                            let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
-                            waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n";
-                            waFullMsg += "يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):\n\n";
-                            waFullMsg += "رقم الجوال: " + customPhoneToShare.trim() + "\n\n";
-                            waFullMsg += "نسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
-                            
-                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                        } else {
-                            let waIntro = actionType === 'msgTarget' 
-                                ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` 
-                                : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
-                                
-                            targetPhoneNum = String(actionType === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
-                            let magicLinkToSend = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                            
-                            if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-
-                            // 🟢 رسالة إدارية رسمية نظيفة
-                            let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
-                            waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n";
-                            waFullMsg += "\"" + adminMessage + "\"\n\n";
-                            waFullMsg += "للرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\n";
-                            waFullMsg += "أو يمكنك الرد مباشرة هنا في الواتساب.";
-
-                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                        }
-                    }
-
-                    await fetchData(true, reqId);
-                } else {
-                    if(waWin) waWin.close();
-                    await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
-                }
-            } catch(e) {
-                if(waWin) waWin.close();
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
-                } else {
-                    await showMsgModal("خطأ", e.message);
-                }
-            } finally {
-                isProcessingAction = false;
-                document.getElementById('refreshIcon').classList.remove('sync-spin');
+            
+            // 🟢 نقل بيانات الهاتف اليدوي لرسالة الواتساب عبر الـ Context (خدعة ذكية)
+            let finalActionContext = actionType;
+            if (actionType === 'closeChatSuccess' && customPhoneToShare) {
+                finalActionContext = 'closeChatSuccess|' + customPhoneToShare.trim();
             }
+
+            let actionId = 'act_' + Date.now();
+            let payloadObj = { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext };
+
+            // 🟢 التعديل الجذري: الإدراج الفوري في الواجهة (Optimistic UI)
+            pendingAdminActions.push({
+                id: actionId,
+                reqId: reqId,
+                type: actionType,
+                text: adminMessage,
+                state: 'sending',
+                payload: payloadObj,
+                timestamp: Date.now()
+            });
+
+            savePendingActions();
+            scrollPositions = {}; 
+            renderTable(); // تحديث فوري للشاشة لتظهر الرسالة بعلامة ⏳
+            processAdminQueue(); // إطلاق السيرفر في الخلفية
         }
 
         function openModal(reqId, currentStatus) {
@@ -1447,47 +1414,143 @@
 
         async function saveStatus() {
             const reqId = document.getElementById('currentReqId').value;
-            const newStatus = document.getElementById('newStatus').value;
-            const adminReply = document.getElementById('adminReply').value.trim();
+            const statusSelectVal = document.getElementById('newStatus').value;
+            let adminReply = document.getElementById('adminReply').value.trim();
             
             const btn = document.getElementById('btnSaveStatus');
             const cancelBtn = document.getElementById('btnCancelStatus');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = "جاري الحفظ..."; 
-            btn.disabled = true; cancelBtn.disabled = true;
+            
+            const req = allRequests.find(r => r.reqId === reqId);
+            if (!req) return;
+            let existingHistory = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
 
+            let actionContext = '';
+            let actualStatus = statusSelectVal;
             let payloadText = adminReply ? `[من الإدارة]: ${adminReply}` : "";
+            let displayMsg = adminReply || "تحديث حالة بدون رسالة";
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
-                if (result.success) {
-                    closeModal();
-                    scrollPositions = {};
-                    sessionStorage.removeItem('admin_requests_cache');
-                    await fetchData(true, reqId);
-                } else await showMsgModal("تنبيه", result.message || "النظام مشغول.");
-            } catch(e) {
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
-                } else {
-                    await showMsgModal("خطأ", e.message);
+            if (statusSelectVal.startsWith('PROXY_')) {
+                let proxyMsg = "";
+                if (statusSelectVal === 'PROXY_INITIAL_ACCEPT') {
+                    actionContext = 'proxyInitialAccept';
+                    actualStatus = 'بانتظار الطرف الأول';
+                    proxyMsg = "[من الطرف الثاني] [تدخل إداري]: نعم مبدئياً البيانات مناسبة لنا. تفضل باستفساراتك.";
+                    displayMsg = "قبول مبدئي (بالنيابة)";
+                } else if (statusSelectVal === 'PROXY_REQUEST_DIRECT') {
+                    actionContext = 'proxyRequestDirect';
+                    actualStatus = 'بانتظار الطرف الثاني';
+                    proxyMsg = "[من الطرف الأول] [تدخل إداري]: أرغب في التواصل المباشر وتبادل الأرقام.";
+                    displayMsg = "طلب تواصل (بالنيابة)";
+                } else if (statusSelectVal === 'PROXY_APPROVE_DIRECT') {
+                    actionContext = 'proxyApproveDirect';
+                    actualStatus = 'مغلق - موافقة نهائية بانتظار الإدارة';
+                    proxyMsg = "[من الطرف الثاني] [تدخل إداري]: نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
+                    displayMsg = "موافقة تبادل أرقام (بالنيابة)";
                 }
-            } finally {
-                btn.innerHTML = originalHtml; 
-                btn.disabled = false; cancelBtn.disabled = false;
+                existingHistory.push(proxyMsg);
+                payloadText = "OVERWRITE_FLAG|||" + existingHistory.join("\n\n---\n\n");
+            } else if (payloadText !== "") {
+                existingHistory.push(payloadText);
+                payloadText = "OVERWRITE_FLAG|||" + existingHistory.join("\n\n---\n\n");
             }
+
+            let actionId = 'act_' + Date.now();
+            let payloadObj = { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: actualStatus, adminReply: payloadText, actionContext: actionContext };
+
+            pendingAdminActions.push({
+                id: actionId,
+                reqId: reqId,
+                type: 'status_update',
+                text: displayMsg,
+                state: 'sending',
+                payload: payloadObj,
+                timestamp: Date.now()
+            });
+
+            savePendingActions();
+            closeModal();
+            scrollPositions = {};
+            renderTable(); 
+            processAdminQueue();
+        }
+
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 21: طابور العمليات الخلفية ومعالجة الأخطاء 🔴🔴🔴 -->
+<!-- ======================================================== -->
+        async function processAdminQueue() {
+            if(isProcessingAction) return;
+            let acts = pendingAdminActions.filter(a => a.state === 'sending');
+            if(acts.length === 0) {
+                updateDashboardStats(); // لتحديث شارة الفشل إذا لزم الأمر
+                return;
+            }
+
+            isProcessingAction = true;
+            document.getElementById('refreshIcon').classList.add('sync-spin');
+
+            for(let i=0; i<acts.length; i++) {
+                let act = acts[i];
+                try {
+                    const res = await fetch(SCRIPT_URL, {
+                        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(act.payload)
+                    });
+                    const textRes = await res.text();
+                    let result;
+                    try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة غير صالحة"); }
+
+                    if(result.success) {
+                        // نجاح الإرسال، إزالة من الطابور
+                        pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
+                        savePendingActions();
+
+                        // 🟢 إظهار الواتساب عبر النافذة المنبثقة الخضراء (تأجيل آمن)
+                        if(result.waUrl) {
+                            showWaSuccessModal(result.waUrl, act.reqId);
+                        }
+
+                    } else {
+                        // فشل منطقي من السيرفر
+                        let errAct = pendingAdminActions.find(a => a.id === act.id);
+                        if(errAct) {
+                            errAct.state = 'failed';
+                            errAct.errorMsg = result.message || "النظام مشغول";
+                        }
+                        savePendingActions();
+                    }
+                } catch (e) {
+                    // فشل في الاتصال
+                    let errAct = pendingAdminActions.find(a => a.id === act.id);
+                    if(errAct) {
+                        errAct.state = 'failed';
+                        errAct.errorMsg = "خطأ في الاتصال بالخادم";
+                    }
+                    savePendingActions();
+                }
+            }
+            
+            isProcessingAction = false;
+            document.getElementById('refreshIcon').classList.remove('sync-spin');
+            
+            // تحديث صامت للبيانات لسحب التحديثات الفعلية
+            await fetchData(true);
+        }
+
+        function retryAdminAction(actionId) {
+            let act = pendingAdminActions.find(a => a.id === actionId);
+            if(act) {
+                act.state = 'sending';
+                act.errorMsg = '';
+                savePendingActions();
+                renderTable();
+                processAdminQueue();
+            }
+        }
+
+        function cancelAdminAction(actionId) {
+            pendingAdminActions = pendingAdminActions.filter(a => a.id !== actionId);
+            savePendingActions();
+            renderTable();
         }
 
         // ==========================================
