@@ -198,13 +198,9 @@
                             <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (نيابة عن المطلوب)</option>
                         </optgroup>
                         <optgroup label="إغلاق الطلب (يُفرغ كوتا 3 طلبات)">
-                            <option value="مغلق - مكتمل (تم الدفع والتواصل)">مكتمل (تم الدفع والتواصل) 🤝</option>
+                            <option value="مغلق - مكتمل (تم التواصل والدفع)">مكتمل (تم التواصل والدفع) 🤝</option>
                             <option value="مغلق - مرفوض وتم الاعتذار">مرفوض - تم الاعتذار ❌</option>
                             <option value="مغلق - ملغى">ملغى 🚫</option>
-                        </optgroup>
-                        <optgroup label="إغلاق الطلب (حالات الزواج)">
-                            <option value="مغلق - تم الزواج">تم الزواج 💍 (بدون رسوم)</option>
-                            <option value="مغلق - تم الزواج والدفع">تم الزواج والدفع 💍💰</option>
                         </optgroup>
                     </select>
                 </div>
@@ -359,7 +355,6 @@
 
         let readRequestsCache = JSON.parse(localStorage.getItem('adminReadCache')) || {};
         
-        // 🟢 التعديل الجذري: طابور العمليات الخلفية (Background Queue)
         let pendingAdminActions = JSON.parse(localStorage.getItem('admin_pending_actions')) || [];
         function savePendingActions() { localStorage.setItem('admin_pending_actions', JSON.stringify(pendingAdminActions)); }
 
@@ -423,7 +418,6 @@
                 const closeChatHidden = document.getElementById('closeChatModal').classList.contains('hidden');
                 const waSuccessHidden = document.getElementById('waSuccessModal') ? document.getElementById('waSuccessModal').classList.contains('hidden') : true;
                 
-                // 🟢 التعديل: لا نحدث إذا كان الطابور يعمل لكي لا تتضارب البيانات
                 if(!isFetchingData && !isProcessingAction && pendingAdminActions.length === 0 && forwardHidden && statusHidden && msgHidden && closeChatHidden && waSuccessHidden) {
                     fetchData(true); 
                 }
@@ -562,7 +556,6 @@
             initSplitter();
             startAutoRefresh();
             
-            // 🟢 استئناف العمليات المعلقة عند تحميل الصفحة
             if(pendingAdminActions.some(a => a.state === 'sending')) {
                 processAdminQueue();
             }
@@ -722,7 +715,6 @@
             return `<span class="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[9px] font-bold shadow-sm border border-gray-200">${s}</span>`;
         }
 
-        // 🟢 التعديل الجذري: دمج الرسائل المعلقة (Pending) وعرضها فوراً في المحادثة
         function parseUnifiedChat(unifiedMessage, currentReqId) {
             if (!unifiedMessage || typeof unifiedMessage !== 'string') unifiedMessage = '';
             
@@ -786,7 +778,6 @@
                 }
             });
             
-            // 🟢 إدراج الرسائل التي تُعالج في الخلفية (Optimistic UI)
             if (currentReqId) {
                 let myPending = pendingAdminActions.filter(a => a.reqId === currentReqId);
                 myPending.forEach(p => {
@@ -829,7 +820,7 @@
 
                 if (isClosed) {
                     // لا تفعل شيئاً
-                } else if (r.finalApprovalGiven) {
+                } else if (r.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) {
                     actionNeeded++;
                 } else if (r.hasRequestedContact) {
                     pending++;
@@ -861,21 +852,20 @@
                 else badgeUnread.classList.add('hidden');
             }
             
-            // 🟢 إظهار زر فشل الإرسال إذا كان هناك عمليات فاشلة
             if (filterFailed && badgeFailed) {
                 if (failedCount > 0) {
                     filterFailed.classList.remove('hidden');
                     badgeFailed.innerText = failedCount;
                 } else {
                     filterFailed.classList.add('hidden');
-                    if (currentFilterType === 'failed') setFilter('active'); // العودة للرئيسية إذا فُتح ولم يعد هناك أخطاء
+                    if (currentFilterType === 'failed') setFilter('active'); 
                 }
             }
         }
 
         function setFilter(type) {
             currentFilterType = type;
-            selectedReqId = null; // 🟢 التعديل: إغلاق المحادثة اليسرى لتنظيف الشاشة عند تغيير التبويب
+            // 🟢 تبقى المحادثة اليسرى مفتوحة ولا تغلق عند التنقل
             
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.className = "filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative";
@@ -923,12 +913,11 @@
                 let matchesStatus = false;
                 
                 if (currentFilterType === 'active') matchesStatus = !isClosed;
-                else if (currentFilterType === 'action') matchesStatus = !isClosed && (req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد'));
+                else if (currentFilterType === 'action') matchesStatus = !isClosed && (req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة نهائية - بانتظار'));
                 else if (currentFilterType === 'waiting') matchesStatus = !isClosed && ((!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
-                else if (currentFilterType === 'contact') matchesStatus = !isClosed && req.hasRequestedContact;
+                else if (currentFilterType === 'contact') matchesStatus = !isClosed && (req.hasRequestedContact || s.includes('موافقة نهائية - بانتظار'));
                 else if (currentFilterType === 'archived') matchesStatus = isClosed; 
-                // 🟢 فلتر الفشل الجديد
                 else if (currentFilterType === 'failed') matchesStatus = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'failed');
 
                 if (!matchesStatus) return false;
@@ -943,7 +932,7 @@
                 let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 
                 if (isClosed) return 5; 
-                if (req.finalApprovalGiven) return 1; 
+                if (req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) return 1; 
 
                 const lastActionTs = getTimestamp(req.lastActionDate || req.date);
                 const isUnread = !isClosed && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
@@ -988,7 +977,7 @@
                 if (isClosed) {
                     let archiveText = s.includes('مكتمل') ? "تمت الوساطة (مكتمل) 🤝" : (s.includes('تم الزواج') ? "تم الزواج 💍" : "مغلق / مؤرشف");
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
-                } else if (req.finalApprovalGiven) {
+                } else if (req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) {
                     statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 تدخلي فوراً</span>`;
                 } else if (req.hasRequestedContact) {
                     statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">طلب تواصل</span>`;
@@ -1004,11 +993,11 @@
 
                 let timeElapsed = getTimeElapsedArabic(req.lastActionDate || req.date);
                 let timeBadge = `<span class="time-badge text-slate-400 text-[9px] font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsed}</span>`;
-                if (isClosed || req.finalApprovalGiven) timeBadge = '';
+                if (isClosed || req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) timeBadge = '';
 
                 let isSelected = req.reqId === selectedReqId;
                 let cardClass = isSelected ? 'bg-indigo-50 border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm';
-                let flashClass = req.finalApprovalGiven && !isSelected && !isClosed ? 'highlight-flash' : '';
+                let flashClass = (req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) && !isSelected && !isClosed ? 'highlight-flash' : '';
 
                 let lastActionTs = getTimestamp(req.lastActionDate || req.date);
                 let isUnread = !isClosed && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
@@ -1059,7 +1048,7 @@
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
                     
                     if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
-                    else if (req.finalApprovalGiven) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
+                    else if (req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 اكتملت الموافقة - مطلوب تدخلي فوراً</span>`;
                     else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
                     else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
@@ -1067,12 +1056,10 @@
 
                     let timeElapsedFull = getTimeElapsedArabic(req.lastActionDate || req.date);
                     let timeBadgeFull = `<span class="time-badge bg-rose-50 text-rose-600 border border-rose-100 text-[10px] font-bold px-1.5 py-1 rounded-md flex items-center gap-1 shadow-sm shrink-0 whitespace-nowrap" data-date="${req.lastActionDate || req.date}" title="وقت الانتظار"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${timeElapsedFull}</span>`;
-                    if (isClosed || req.finalApprovalGiven) timeBadgeFull = '';
+                    if (isClosed || req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) timeBadgeFull = '';
 
                     let reqStatusBadge = getProfileBadge(req.requesterProfileStatus);
                     let targetStatusBadge = getProfileBadge(req.targetProfileStatus);
-                    
-                    // 🟢 التعديل: إرسال الـ reqId ليتمكن الـ Chat Parser من دمج العمليات المعلقة
                     let chatThread = parseUnifiedChat(req.message, req.reqId);
                     
                     let actionButtonHTML = '';
@@ -1082,14 +1069,13 @@
                         queueButton = `<button onclick="openQueueModal('${targetIdProxy}')" class="w-full mb-3 px-4 py-2.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">⚙️ إدارة طابور الانتظار لهذا العميل</button>`;
                     }
 
-                    // 🟢 التعديل: منع ظهور أي أزرار إذا كان هناك عملية قيد التنفيذ لهذا الطلب بالذات
                     let isSendingNow = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'sending');
 
                     if (isSendingNow) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</div>`;
                     } else if (isClosed) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl">هذا الطلب مغلق ومؤرشف في سجلات المنصة 🗄️</div>`;
-                    } else if (req.finalApprovalGiven) {
+                    } else if (req.finalApprovalGiven || s.includes('موافقة نهائية - بانتظار')) {
                         actionButtonHTML = `
                         ${queueButton}
                         <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
@@ -1255,7 +1241,7 @@
 
         function closeForwardModal() { document.getElementById('forwardModal').classList.add('hidden'); }
 
-        // نافذة نجاح إرسال الواتساب المتأخرة
+        // نافذة نجاح إرسال الواتساب المتأخرة (النافذة الخضراء)
         function showWaSuccessModal(url, reqIdMsg) {
             if(!url) return;
             document.getElementById('waSuccessBtn').href = url;
@@ -1294,7 +1280,6 @@
             let actionId = 'act_' + Date.now();
             let payloadObj = { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: direction };
 
-            // 🟢 التعديل الجذري: الإدراج الفوري في الواجهة (Optimistic UI)
             pendingAdminActions.push({
                 id: actionId,
                 reqId: reqId,
@@ -1308,8 +1293,8 @@
             savePendingActions();
             closeForwardModal();
             scrollPositions = {};
-            renderTable(); // تحديث فوري للشاشة لتظهر الرسالة بعلامة ⏳
-            processAdminQueue(); // إطلاق السيرفر في الخلفية
+            renderTable(); 
+            processAdminQueue(); 
         }
 
 <!-- ======================================================== -->
@@ -1369,7 +1354,6 @@
             
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
             
-            // 🟢 نقل بيانات الهاتف اليدوي لرسالة الواتساب عبر الـ Context (خدعة ذكية)
             let finalActionContext = actionType;
             if (actionType === 'closeChatSuccess' && customPhoneToShare) {
                 finalActionContext = 'closeChatSuccess|' + customPhoneToShare.trim();
@@ -1378,7 +1362,6 @@
             let actionId = 'act_' + Date.now();
             let payloadObj = { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext };
 
-            // 🟢 التعديل الجذري: الإدراج الفوري في الواجهة (Optimistic UI)
             pendingAdminActions.push({
                 id: actionId,
                 reqId: reqId,
@@ -1391,8 +1374,8 @@
 
             savePendingActions();
             scrollPositions = {}; 
-            renderTable(); // تحديث فوري للشاشة لتظهر الرسالة بعلامة ⏳
-            processAdminQueue(); // إطلاق السيرفر في الخلفية
+            renderTable(); 
+            processAdminQueue(); 
         }
 
         function openModal(reqId, currentStatus) {
@@ -1417,9 +1400,6 @@
             const statusSelectVal = document.getElementById('newStatus').value;
             let adminReply = document.getElementById('adminReply').value.trim();
             
-            const btn = document.getElementById('btnSaveStatus');
-            const cancelBtn = document.getElementById('btnCancelStatus');
-            
             const req = allRequests.find(r => r.reqId === reqId);
             if (!req) return;
             let existingHistory = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
@@ -1443,7 +1423,7 @@
                     displayMsg = "طلب تواصل (بالنيابة)";
                 } else if (statusSelectVal === 'PROXY_APPROVE_DIRECT') {
                     actionContext = 'proxyApproveDirect';
-                    actualStatus = 'مغلق - موافقة نهائية بانتظار الإدارة';
+                    actualStatus = 'موافقة نهائية - بانتظار تدخل الإدارة';
                     proxyMsg = "[من الطرف الثاني] [تدخل إداري]: نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
                     displayMsg = "موافقة تبادل أرقام (بالنيابة)";
                 }
@@ -1481,7 +1461,7 @@
             if(isProcessingAction) return;
             let acts = pendingAdminActions.filter(a => a.state === 'sending');
             if(acts.length === 0) {
-                updateDashboardStats(); // لتحديث شارة الفشل إذا لزم الأمر
+                updateDashboardStats(); 
                 return;
             }
 
@@ -1500,57 +1480,86 @@
                     try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة غير صالحة"); }
 
                     if(result.success) {
-                        // نجاح الإرسال، إزالة من الطابور
                         pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
                         savePendingActions();
 
-                        // 🟢 إظهار الواتساب عبر النافذة المنبثقة الخضراء (تأجيل آمن)
-                        if(result.waUrl) {
+                        // 🟢 إظهار الواتساب عبر النافذة المنبثقة الخضراء
+                        // يتم فحص السياق هنا لتوليد الرابط محلياً إذا لم يعطنا السيرفر رابطاً جاهزاً
+                        if (result.waUrl) {
                             showWaSuccessModal(result.waUrl, act.reqId);
+                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || (act.payload.actionContext && act.payload.actionContext.startsWith('proxy'))) {
+                            
+                            const req = allRequests.find(r => r.reqId === act.reqId);
+                            if(req) {
+                                let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
+                                let targetPhoneNum = "";
+                                
+                                if (act.type === 'closeChatSuccess') {
+                                    let customPhoneToShare = act.payload.actionContext.split('|')[1] || "";
+                                    targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                    waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\nيسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):\n\nرقم الجوال: " + customPhoneToShare + "\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
+                                } 
+                                else if (act.type === 'msgTarget' || act.type === 'msgStudent') {
+                                    targetPhoneNum = String(act.type === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+                                    let magicLinkToSend = act.type === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                                    if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+                                    let waIntro = act.type === 'msgTarget' ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
+                                    waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"\n\nللرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\nأو يمكنك الرد مباشرة هنا في الواتساب.";
+                                }
+                                else if (act.payload.actionContext) {
+                                    // التدخلات بالنيابة
+                                    let ctx = act.payload.actionContext;
+                                    if (ctx === 'proxyInitialAccept') {
+                                        targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                        let magicLink = result.requesterMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+                                        waFullMsg += `الطرف الآخر: (${req.targetData || 'غير متوفرة'})\nوافق مبدئياً على بياناتك وينتظر استفساراتك.\n\nللرد عبر المنصة:\n${magicLink}\nأو يمكنك كتابة استفسارك هنا في الواتساب.`;
+                                    } else if (ctx === 'proxyRequestDirect') {
+                                        targetPhoneNum = String(req.targetPhone).replace(/[^0-9]/g, '');
+                                        let magicLink = result.targetMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+                                        waFullMsg += `الطرف الآخر: (${req.requesterData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"\n\nنحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات.\nللرد عبر المنصة:\n${magicLink}\nأو يمكنك الرد مباشرة هنا.`;
+                                    } else if (ctx === 'proxyApproveDirect') {
+                                        targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                        let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
+                                        let magicLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
+                                        waFullMsg += `نبشرك بأن الطرف الآخر: (${req.targetData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\nلإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:\n${magicLink}`;
+                                    }
+                                }
+                                
+                                if(targetPhoneNum) {
+                                    let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
+                                    showWaSuccessModal(craftedUrl, act.reqId);
+                                }
+                            }
                         }
 
                     } else {
-                        // فشل منطقي من السيرفر
                         let errAct = pendingAdminActions.find(a => a.id === act.id);
-                        if(errAct) {
-                            errAct.state = 'failed';
-                            errAct.errorMsg = result.message || "النظام مشغول";
-                        }
+                        if(errAct) { errAct.state = 'failed'; errAct.errorMsg = result.message || "النظام مشغول"; }
                         savePendingActions();
                     }
                 } catch (e) {
-                    // فشل في الاتصال
                     let errAct = pendingAdminActions.find(a => a.id === act.id);
-                    if(errAct) {
-                        errAct.state = 'failed';
-                        errAct.errorMsg = "خطأ في الاتصال بالخادم";
-                    }
+                    if(errAct) { errAct.state = 'failed'; errAct.errorMsg = "خطأ في الاتصال بالخادم"; }
                     savePendingActions();
                 }
             }
             
             isProcessingAction = false;
             document.getElementById('refreshIcon').classList.remove('sync-spin');
-            
-            // تحديث صامت للبيانات لسحب التحديثات الفعلية
             await fetchData(true);
         }
 
         function retryAdminAction(actionId) {
             let act = pendingAdminActions.find(a => a.id === actionId);
             if(act) {
-                act.state = 'sending';
-                act.errorMsg = '';
-                savePendingActions();
-                renderTable();
-                processAdminQueue();
+                act.state = 'sending'; act.errorMsg = '';
+                savePendingActions(); renderTable(); processAdminQueue();
             }
         }
 
         function cancelAdminAction(actionId) {
             pendingAdminActions = pendingAdminActions.filter(a => a.id !== actionId);
-            savePendingActions();
-            renderTable();
+            savePendingActions(); renderTable();
         }
 
         // ==========================================
