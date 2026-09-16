@@ -550,7 +550,9 @@
             reqs.forEach(r => {
                 let st = r.status || '';
                 let isMasterClosed = st.includes('مغلق') || st.includes('مرفوض') || st.includes('رفض') || st.includes('ملغى') || st.includes('مكتمل');
-                if (!isMasterClosed) { activeCount++; }
+                if (!isMasterClosed && !st.includes('موافقة تبادل') && !st.includes('موافقة نهائية')) { activeCount++; }
+                // الحالات الجديدة (بانتظار الدفع أو التعارف) ستحسب كنشطة تلقائياً لعدم احتوائها على مغلق
+                if (st.includes('بانتظار الدفع') || st.includes('مرحلة التعارف') || st.includes('تسليم الأرقام')) { activeCount++; }
             });
 
             let quotaBannerHtml = '';
@@ -584,18 +586,34 @@
                 let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
                 let isPendingAdmin = statusText.includes('اعتماد');
                 let isQueued = statusText.includes('قائمة الانتظار'); 
+                
+                // 🟢 اكتشاف حالات الدفع ومرحلة التعارف
+                let isWaitingPayment = statusText.includes('بانتظار الدفع');
+                let isAcquaintancePhase = statusText.includes('تسليم الأرقام') || statusText.includes('مرحلة التعارف');
+
+                let isTargetFemale = targetInfo.includes('مطلقة') || targetInfo.includes('بكر') || targetInfo.includes('أرملة') || req.gender === 'أنثى';
+                let currentUserIsMale = isTargetFemale; 
+
+                if (isWaitingPayment) {
+                    uiStatusText = currentUserIsMale ? 'بانتظار دفع الرسوم' : 'تمت الموافقة - بانتظار استكمال الإجراءات';
+                } else if (isAcquaintancePhase) {
+                    uiStatusText = 'تم تسليم الأرقام - في مرحلة التعارف';
+                }
 
                 let actionTime = typeof safeGetTime === 'function' ? safeGetTime(req.lastActionDate || req.date) : new Date(req.lastActionDate || req.date).getTime();
                 let hoursDiff = (Date.now() - actionTime) / (1000 * 60 * 60);
                 let isArchived = isMasterClosed && (hoursDiff > 24);
 
-                if(!isMasterClosed && !isAccepted && !isQueued) {
+                if(!isMasterClosed && !isAccepted && !isQueued && !isWaitingPayment && !isAcquaintancePhase && !statusText.includes('موافقة تبادل') && !statusText.includes('موافقة نهائية')) {
                     outBadge++;
                     if(statusText.includes('ردك')) hasRedBadge = true;
                 }
 
+                // 🟢 الألوان الجديدة للشارات
                 let statusColor;
-                if (statusText.includes('موافقة تبادل') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                if (isAcquaintancePhase) statusColor = 'text-purple-700 bg-purple-50 border-purple-200';
+                else if (isWaitingPayment) statusColor = currentUserIsMale ? 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                else if (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
                 else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
                 else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
                 else if (isQueued) statusColor = 'text-purple-600 bg-purple-50 border-purple-200';
@@ -609,13 +627,8 @@
                 let isQuotaExhausted = totalMessages >= MAX_INITIAL;
                 
                 let isFirstMessage = (totalMessages === 1);
-                
-                // 🟢 البحث عن الطلب في المحادثة بأكملها وليس الرسالة الأخيرة فقط
-                let hasDirectReqInThread = (req.message || "").includes('تواصل مباشر') || (req.message || "").includes('تبادل الأرقام');
-                let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
-                
-                // 🟢 قفل التعديل يقرأ فقط آخر رسالة لتجنب قفل الدردشات العادية
-                let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
+                let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
+                let isUneditableAutoMsg = isFirstMessage || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
@@ -626,9 +639,6 @@
                 
                 let chatHtml = parseChatThread(displayChunks, originalChunks, 'firstParty', isPendingAdmin);
                 let encodedLastMsg = encodeURIComponent(realLastChunk.replace(/\[.*?\]:?/g, '').trim());
-                let isTargetFemale = targetInfo.includes('مطلقة') || targetInfo.includes('بكر') || targetInfo.includes('أرملة') || req.gender === 'أنثى';
-                
-                let currentUserIsMale = isTargetFemale; 
 
                 let pendingForReq = window.getPendingActions().filter(a => a.reqId === req.reqId);
                 
@@ -668,8 +678,17 @@
 
                 let actionAreaHtml = '';
                 
+                // 🟢 منطقة الإجراءات الجديدة (التعارف وإنهاء التعارف)
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
+                } else if (isAcquaintancePhase) {
+                    actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
+                        <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
+                        <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="w-full py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                    </div>`;
+                } else if (isWaitingPayment) {
+                    let msg = currentUserIsMale ? "⏳ الطلب بانتظار إتمام إجراءات الدفع من قبلك لاستلام الرقم." : "⏳ تمت الموافقة، الطلب في عهدة الإدارة بانتظار استكمال الإجراءات.";
+                    actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">${msg}</p></div>`;
                 } else if (isQueued) {
                     actionAreaHtml = `<div class="bg-purple-50 p-2.5 border-t border-purple-100 flex flex-col gap-1.5 rounded-b-2xl">
                         <div class="text-center pb-1.5"><p class="text-[10px] text-purple-700 font-bold">⏳ الطلب في قائمة الانتظار.. بانتظار توفر شاغر.</p></div>
@@ -677,7 +696,7 @@
                     </div>`;
                 } else if (isMasterClosed || isAccepted || req.finalApprovalGiven) {
                     if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
-                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تم إغلاق المحادثة (تمت الموافقة بنجاح)!</p></div>`;
+                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
                     } else {
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
                     }
@@ -703,8 +722,7 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        // 🟢 إخفاء زر "تواصل مباشر" إذا كان الرجل قد طلبه مسبقاً في أي نقطة من المحادثة
-                        let contactBtn = (currentUserIsMale && !hasDirectReqInThread) ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
+                        let contactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
                         let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
                         let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
@@ -785,17 +803,32 @@
                 let isAccepted = statusText.includes('قبول') || statusText.includes('مقبول');
                 let isPendingAdmin = statusText.includes('اعتماد');
 
+                // 🟢 اكتشاف حالات الدفع ومرحلة التعارف للوارد
+                let isWaitingPayment = statusText.includes('بانتظار الدفع');
+                let isAcquaintancePhase = statusText.includes('تسليم الأرقام') || statusText.includes('مرحلة التعارف');
+
+                let isSenderFemale = senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة') || req.gender === 'أنثى';
+                let currentUserIsMale = isSenderFemale; 
+
+                if (isWaitingPayment) {
+                    uiStatusText = currentUserIsMale ? 'بانتظار دفع الرسوم' : 'تمت الموافقة - بانتظار استكمال الإجراءات';
+                } else if (isAcquaintancePhase) {
+                    uiStatusText = 'تم تسليم الأرقام - في مرحلة التعارف';
+                }
+
                 let actionTime = typeof safeGetTime === 'function' ? safeGetTime(req.lastActionDate || req.date) : new Date(req.lastActionDate || req.date).getTime();
                 let hoursDiff = (Date.now() - actionTime) / (1000 * 60 * 60);
                 let isArchived = isMasterClosed && (hoursDiff > 24);
 
-                if(!isMasterClosed && !isAccepted) {
+                if(!isMasterClosed && !isAccepted && !isWaitingPayment && !isAcquaintancePhase && !statusText.includes('موافقة تبادل') && !statusText.includes('موافقة نهائية')) {
                     inBadge++;
                     if(statusText.includes('ردك')) hasRedBadge = true;
                 }
 
                 let statusColor;
-                if (statusText.includes('موافقة تبادل') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                if (isAcquaintancePhase) statusColor = 'text-purple-700 bg-purple-50 border-purple-200';
+                else if (isWaitingPayment) statusColor = currentUserIsMale ? 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                else if (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
                 else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
                 else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
                 else if (statusText.includes('ردك')) statusColor = 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse';
@@ -809,7 +842,6 @@
                 
                 let isFirstMessage = (totalMessages === 1);
                 
-                // 🟢 البحث عن الطلب في المحادثة بأكملها وليس الرسالة الأخيرة فقط
                 let hasDirectReqInThread = (req.message || "").includes('تواصل مباشر') || (req.message || "").includes('تبادل الأرقام');
                 let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
                 
@@ -824,10 +856,7 @@
                 
                 let chatHtml = parseChatThread(displayChunks, originalChunks, 'secondParty', isPendingAdmin);
                 let encodedLastMsg = encodeURIComponent(realLastChunk.replace(/\[.*?\]:?/g, '').trim());
-                let isSenderFemale = senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة') || req.gender === 'أنثى';
-                
-                let currentUserIsMale = isSenderFemale; 
-                
+
                 let pendingForReq = window.getPendingActions().filter(a => a.reqId === req.reqId);
                 
                 let validPending = [];
@@ -866,14 +895,21 @@
                 
                 let actionAreaHtml = '';
 
+                // 🟢 منطقة الإجراءات للوارد (بانتظار الدفع وإنهاء التعارف)
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
-                } else if (isMasterClosed || isAccepted || req.finalApprovalGiven) {
-                    if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
-                        actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تم إغلاق المحادثة (تمت الموافقة بنجاح)!</p></div>`;
-                    } else {
-                        actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
-                    }
+                } else if (isAcquaintancePhase) {
+                    actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
+                        <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
+                        <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="w-full py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                    </div>`;
+                } else if (isWaitingPayment) {
+                    let msg = currentUserIsMale ? "⏳ الطلب بانتظار إتمام إجراءات الدفع من قبلك لاستلام الرقم." : "⏳ تمت الموافقة، الطلب في عهدة الإدارة بانتظار استكمال الإجراءات.";
+                    actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">${msg}</p></div>`;
+                } else if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
+                    actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
+                } else if (isMasterClosed || isAccepted) {
+                    actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
                 } else if (isPendingAdmin) {
                     if (isRealLastFromMe) {
                         if (isUneditableAutoMsg) {
@@ -980,8 +1016,7 @@
             if(event) event.stopPropagation();
             currentReplyReqId = reqId; currentReplyType = type;
             
-            // 🟢 إعداد العناوين المناسبة لكل حالة
-            document.getElementById('replyModalTitle').innerText = (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة تبادل أرقام' ? 'تأكيد موافقة تبادل الأرقام' : (type === 'موافقة مبدئية' ? 'موافقة مبدئية واستفسارات' : 'إرسال: ' + type)));
+            document.getElementById('replyModalTitle').innerText = (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة تبادل أرقام' ? 'تأكيد موافقة تبادل الأرقام' : (type === 'موافقة مبدئية' ? 'موافقة مبدئية واستفسارات' : (type === 'إنهاء التعارف' ? 'إنهاء مرحلة التعارف' : 'إرسال: ' + type))));
             
             const msgInput = document.getElementById('replyMessage');
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
@@ -1013,8 +1048,14 @@
                 msgInput.readOnly = true;
                 msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
                 if (radioContainer) radioContainer.style.display = 'none';
+            } else if (type === 'إنهاء التعارف') {
+                // 🟢 نافذة إنهاء التعارف (عدم التوفيق)
+                msgInput.style.display = 'block';
+                msgInput.value = "تم إنهاء مرحلة التعارف لعدم التوفيق، ونتمنى للطرفين خيراً.";
+                msgInput.readOnly = true;
+                msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
+                if (radioContainer) radioContainer.style.display = 'none';
             } else if (type === 'موافقة مبدئية') {
-                // 🟢 فتح صندوق النص للعميل مع نص مبدئي جاهز
                 msgInput.style.display = 'block';
                 msgInput.value = "نعم مبدئياً البيانات مناسبة لنا، ولدينا الاستفسارات التالية:\n\n";
                 msgInput.readOnly = false;
@@ -1297,7 +1338,7 @@
                     (realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]')) : 
                     (realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]'));
 
-                // لا نقوم بتقييد "الموافقة المبدئية" هنا لأنها تعتبر أول رسالة للعميل
+                // 🟢 تضمين "إنهاء التعارف" في الاستثناءات
                 let isExceptionalType = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'موافقة تبادل أرقام';
 
                 if (isRealLastFromMe && !isExceptionalType) {
@@ -1306,7 +1347,7 @@
                 }
             }
 
-            let isRejection = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء');
+            let isRejection = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') && currentReplyType !== 'إنهاء التعارف';
             let msg = '';
 
             if (isRejection) {
@@ -1318,7 +1359,7 @@
                 if (!msgInput) return;
                 msg = msgInput.value.trim();
                 
-                let isAutoMsg = currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة';
+                let isAutoMsg = currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة' || currentReplyType === 'إنهاء التعارف';
                 if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
             }
 
@@ -1332,7 +1373,6 @@
 
             let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
             
-            // تحويل مسمى موافقة تبادل أرقام للنسخة الأصلية التي يفهمها السيرفر
             let finalReplyType = isRejection ? 'اعتذار' : (currentReplyType === 'موافقة تبادل أرقام' ? 'موافقة نهائية' : currentReplyType);
             
             let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
