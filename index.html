@@ -703,6 +703,25 @@
                 }
             }
             
+            // الصفحات الفرعية (البحث/الذكي) تطلب من القشرة إظهار نافذة "تسجيل الدخول مطلوب"
+            if (data.action === 'requireLogin') {
+                openLoginModal();
+            }
+
+            // activity.html تطلب مزامنة شاملة بعد أي تعديل (رد، مفضلة، تحديث يدوي)
+            if (data.action === 'forceGlobalSync') {
+                const phone = localStorage.getItem('verified_user_phone');
+                if (phone) { fetchGlobalWalletBalance(phone, true); }
+            }
+
+            // activity.html تبلغ بعدم وجود رسائل تتطلب رداً: نخفي الشارات فقط (الأعداد تأتي من المزامنة)
+            if (data.action === 'updateMainNavbarBadge' && data.hasUnread === false) {
+                const heroBadge = document.getElementById('heroRequestsBadge');
+                const bottomDot = document.getElementById('requestsNotificationDot');
+                if (heroBadge) heroBadge.classList.add('hidden');
+                if (bottomDot) { bottomDot.classList.add('hidden'); bottomDot.classList.remove('flex'); }
+            }
+
             if (data.action === 'navigate' && data.url) {
                 if (typeof loadIframe === 'function') {
                     loadIframe(data.url);
@@ -1281,11 +1300,23 @@
             }
         }
         
+        let loginModalHideTimer;
+        function openLoginModal() {
+            const m = document.getElementById('loginRequiredModal');
+            if(m) {
+                // إلغاء أي إخفاء معلق من closeLoginModal (تستدعيها loadIframe قبل فتح هذه النافذة)
+                clearTimeout(loginModalHideTimer);
+                m.classList.remove('hidden');
+                setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
+            }
+        }
+
         function closeLoginModal() {
             const m = document.getElementById('loginRequiredModal');
             if(m) {
                 m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
-                setTimeout(() => m.classList.add('hidden'), 300);
+                clearTimeout(loginModalHideTimer);
+                loginModalHideTimer = setTimeout(() => m.classList.add('hidden'), 300);
             }
         }
         
