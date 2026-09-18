@@ -1,5 +1,5 @@
 <!-- ======================================================== -->
-<!-- 🔴🔴🔴 القسم 1: إعدادات الصفحة وخطوط التصميم 🔴🔴🔴 -->
+<!-- 🔴🔴🔴 القسم 1: إعدادات  الصفحة وخطوط التصميم 🔴🔴🔴 -->
 <!-- ======================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -1282,6 +1282,18 @@
 
         function closeForwardModal() { document.getElementById('forwardModal').classList.add('hidden'); }
 
+        // 🟢 استعادة الدوال المفقودة الخاصة بالنافذة الخضراء للواتساب 🟢
+        function showWaSuccessModal(url, reqIdMsg) {
+            if(!url) return;
+            document.getElementById('waSuccessBtn').href = url;
+            let titleText = reqIdMsg ? `تم حفظ الطلب #${reqIdMsg}` : "تم الحفظ بنجاح";
+            document.querySelector('#waSuccessModal h3').innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ${titleText}`;
+            document.getElementById('waSuccessModal').classList.remove('hidden');
+        }
+        function closeWaSuccessModal() {
+            document.getElementById('waSuccessModal').classList.add('hidden');
+        }
+
         async function executeForward() {
             const reqId = document.getElementById('forwardReqId').value;
             const direction = document.getElementById('forwardDirection').value;
@@ -1291,8 +1303,6 @@
             if(!reqId || !newText) return; 
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
-
-            // تم إزالة الشاشة البيضاء (window.open) من هنا
 
             const btn = document.getElementById('btnExecuteForward');
             const cancelBtn = document.getElementById('btnCancelForward');
@@ -1347,7 +1357,7 @@
                     waMessage += `_للرد عبر المنصة:_\n${magicLinkToSend}\n\n`;
                     waMessage += `_أو يمكنك الرد مباشرة هنا في الواتساب._`;
 
-                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
+                    // استدعاء النافذة الخضراء بنجاح الآن
                     let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
                     showWaSuccessModal(craftedUrl, reqId);
                     
