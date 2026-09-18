@@ -1727,7 +1727,7 @@
 
                         if (result.waUrl) {
                             showWaSuccessModal(result.waUrl, act.reqId);
-                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || (act.payload.actionContext && act.payload.actionContext.startsWith('proxy'))) {
+                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || act.type === 'closeChat' || act.type === 'status_update' || (act.payload.actionContext && act.payload.actionContext.startsWith('proxy'))) {
                             
                             const req = allRequests.find(r => r.reqId === act.reqId);
                             if(req) {
@@ -1745,6 +1745,10 @@
                                     if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
                                     let waIntro = act.type === 'msgTarget' ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
                                     waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"\n\nللرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\nأو يمكنك الرد مباشرة هنا في الواتساب.";
+                                }
+                                else if (act.type === 'closeChat' || act.type === 'status_update') {
+                                    targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                    waFullMsg += "بخصوص طلب التوفيق رقم: (" + req.reqId + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
                                 }
                                 else if (act.payload.actionContext) {
                                     let ctxParts = act.payload.actionContext.split('|');
@@ -1778,6 +1782,18 @@
                         savePendingActions();
                     }
                 } catch (e) {
+                    // 🟢 تحقق: هل وصلت العملية فعلاً للسيرفر رغم انقطاع الاتصال؟
+                    try {
+                        await fetchData(true);
+                        let verifyReq = allRequests.find(r => r.reqId === act.reqId);
+                        let landedOnServer = !!(verifyReq && verifyReq.message && act.text && verifyReq.message.indexOf(act.text) !== -1);
+                        if (landedOnServer) {
+                            pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
+                            savePendingActions();
+                            continue;
+                        }
+                    } catch (verifyErr) { /* تجاهل خطأ التحقق نفسه، نكمل لتعليم الفشل أدناه */ }
+
                     let errAct = pendingAdminActions.find(a => a.id === act.id);
                     if(errAct) { errAct.state = 'failed'; errAct.errorMsg = "خطأ في الاتصال بالخادم"; }
                     savePendingActions();
