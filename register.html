@@ -1145,7 +1145,7 @@ function closeTermsModal() {
             }
         };
 
-        function exitAdminMode() { window.location.href = 'admin.html'; }
+        function exitAdminMode() { window.location.href = 'sry/00/admin.html'; }
 
         function showMsgModal(title, text) { 
             const tEl = document.getElementById('msgModalTitle'); const xEl = document.getElementById('msgModalText'); const mEl = document.getElementById('msgModal');
@@ -1225,7 +1225,7 @@ function closeTermsModal() {
             const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
             
             // 🟢 تم ضبط وقت تحميل الواجهة إلى 40 ثانية بناءً على طلبك
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 40000);
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 60000);
 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
@@ -1241,8 +1241,17 @@ function closeTermsModal() {
                     else showMsgModal("خطأ", result.message);
                 } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
             } catch (e) {
-                if(e.name === 'AbortError') showMsgModal("تأخر استجابة السيرفر", "الشبكة مزدحمة جداً. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.");
-                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت."); 
+                // 🟢 الرمز غالباً يكون قد أُرسل فعلاً رغم تأخر رد السيرفر، فننقل المستخدم
+                // لشاشة إدخال الرمز بدل دفعه للضغط على "إرسال" مراراً (وهو سبب تراكم
+                // صفوف "معلق" في شيت التحقق).
+                if(e.name === 'AbortError') {
+                    const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden');
+                    const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden');
+                    startOtpCountdown();
+                    setTimeout(() => { const o1 = document.getElementById('otp1'); if(o1) o1.focus(); }, 100);
+                    showMsgModal("تأخر رد السيرفر", "غالباً وصلك الرمز على الواتساب رغم التأخير. تحقق من رسائلك وأدخل الرمز، وإن لم يصلك خلال دقيقة اضغط (إعادة إرسال).");
+                }
+                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت.");
             } finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
@@ -2276,8 +2285,30 @@ function closeTermsModal() {
             openSpecificStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); checkAndRestoreDraft();
         }
 
+        // حدود الأرقام لكل خانة كتابة (نفس قواعد الخادم DIGIT_LIMITS في code_artifact.js — عدّل الاثنين معاً)
+        const DIGIT_LIMITS = [
+            { key: 'name', label: 'الاسم الأول', max: 2, maxText: 'رقمين' },
+            { key: 'familyName', label: 'اسم العائلة', max: 0 },
+            { key: 'tribeName', label: 'اسم القبيلة', max: 0 },
+            { key: 'nationality', label: 'الجنسية', max: 0 },
+            { key: 'residence', label: 'مدينة الإقامة', max: 0 },
+            { key: 'job', label: 'الوظيفة', max: 0 },
+            { key: 'additionalInfo', label: 'معلومات إضافية', max: 3, maxText: 'ثلاثة أرقام' },
+            { key: 'partnerSpecs', label: 'شروط الشريك', max: 3, maxText: 'ثلاثة أرقام' }
+        ];
+        function validateDigitLimits(payload) {
+            for (const rule of DIGIT_LIMITS) {
+                const digits = String(payload[rule.key] || '').match(/[0-9٠-٩۰-۹]/g);
+                if (digits && digits.length > rule.max) {
+                    if (rule.max === 0) return `خانة (${rule.label}) لا تقبل أرقاماً. يرجى كتابتها بالحروف فقط.`;
+                    return `خانة (${rule.label}) لا تقبل أكثر من ${rule.maxText}. يرجى حذف الزائد منها (ولا يُسمح بكتابة أرقام التواصل).`;
+                }
+            }
+            return '';
+        }
+
         async function submitForm(btn) {
-            if (btn.disabled) return; 
+            if (btn.disabled) return;
 
             const ag = document.getElementById('agreeTerms'); const agree = ag ? ag.checked : false; 
             const mError = document.getElementById('modalError');
@@ -2328,6 +2359,11 @@ function closeTermsModal() {
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
                     howHeard: getV('howHeard'), agreedToTerms: "نعم موافق", autoBio: "#طلب_زواج_جديد" 
                 };
+
+                if (!isAdminMode) {
+                    const digitError = validateDigitLimits(payloadData);
+                    if (digitError) { closeTermsModal(); showMsgModal("تنبيه قبل الحفظ", digitError); return; }
+                }
 
                 const reqBody = { action: editInfoState ? "updateRegistration" : "saveRegistration", data: payloadData };
                 if(editInfoState) { reqBody.editInfo = editInfoState; if(isAdminMode) { reqBody.editInfo.isAdminBypass = true; reqBody.editInfo.adminToken = adminToken; } } 
