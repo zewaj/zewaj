@@ -197,9 +197,8 @@
                             <option value="تم الدفع وتسليم الأرقام - في مرحلة التعارف">تم الدفع وتسليم الأرقام - في مرحلة التعارف 💬</option>
                         </optgroup>
                         <optgroup label="تدخل بالنيابة (يرسل واتساب للعميل)">
-                            <option value="PROXY_INITIAL_ACCEPT">قبول مبدئياً ✅ (نيابة عن المطلوب)</option>
-                            <option value="PROXY_REQUEST_DIRECT">طلب تواصل مباشر 🧔🏻‍♂️ (نيابة عن الطالب)</option>
-                            <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (نيابة عن المطلوب)</option>
+                            <option value="PROXY_REQUEST_DIRECT">طلب تواصل 🧔🏻‍♂️ (يُرسل من الرجل للمرأة آلياً)</option>
+                            <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (تُرسل من المرأة للرجل آلياً)</option>
                         </optgroup>
                         <optgroup label="إغلاق نهائي للطلب (يُحرر الكوتا)">
                             <option value="مغلق - تم الزواج">مغلق - تم الزواج 💍</option>
@@ -267,6 +266,7 @@
         </div>
     </div>
 
+    <!-- نافذة إغلاق المحادثة (النسخة الديناميكية) -->
     <div id="closeChatModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[220] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-rose-600 px-4 py-3 flex items-center justify-between">
@@ -276,27 +276,9 @@
                 </h3>
             </div>
             <div class="p-4 sm:p-5 flex flex-col gap-3">
-                <div class="bg-amber-50 text-amber-800 p-3 rounded-xl text-xs font-bold border border-amber-200 shadow-sm leading-relaxed text-center">
-                    ⚠️ تنبيه هام: اختيار (الزواج) أو (حذف الملف) سيقوم تلقائياً بإلغاء جميع المنتظرين في الطابور لهذا الشخص وإرجاع نقاطهم فوراً.
-                </div>
-                
-                <p class="text-sm font-extrabold text-slate-800 mt-2 text-center">يرجى تحديد سبب الإلغاء بدقة:</p>
                 <input type="hidden" id="closeChatReqId">
-
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'اعتذار لعدم التوافق')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-amber-200 bg-white hover:bg-amber-50 transition-all text-amber-700 shadow-sm gap-1.5 group">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">1. اعتذار لعدم التوافق ❌</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق هذا الطلب فقط ويمرر الدور للشخص التالي في طابور الانتظار (إن وجد).</span>
-                </button>
-
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'تم الزواج')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-emerald-200 bg-white hover:bg-emerald-50 transition-all text-emerald-700 shadow-sm gap-1.5 group">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">2. تم الزواج بفضل الله 💍</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</span>
-                </button>
-
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'حذف الملف')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-rose-200 bg-white hover:bg-rose-50 transition-all text-rose-700 shadow-sm gap-1.5 group">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">3. حذف الملف نهائياً 🗑️</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة ويعيد النقاط للمنتظرين.</span>
-                </button>
+                <!-- 🟢 الحاوية الأساسية الديناميكية للأزرار -->
+                <div id="closeChatOptionsContainer" class="w-full flex flex-col gap-2"></div>
             </div>
             <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
                 <button type="button" onclick="document.getElementById('closeChatModal').classList.add('hidden')" class="w-full py-2.5 text-sm text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300 transition-colors shadow-sm bg-white">إلغاء التراجع</button>
@@ -304,7 +286,7 @@
         </div>
     </div>
 
-    <!-- نافذة عرض بطاقة العميل (Iframe Modal) الجديدة -->
+    <!-- نافذة عرض بطاقة العميل (Iframe Modal) -->
     <div id="quickProfileModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-2 sm:p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[90vh] sm:h-[85vh]">
             <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between shrink-0 shadow-md z-30">
@@ -1064,14 +1046,13 @@
                     if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) targetApproved = true;
                     if (!targetApproved && req.message) {
                         const chunks = req.message.split('---').map(c => c.trim()).filter(Boolean);
-                        if (chunks.length > 0 && chunks[chunks.length - 1].includes('نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام')) {
+                        if (chunks.length > 0 && chunks[chunks.length - 1].includes('أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام')) {
                             targetApproved = true;
                         }
                     }
 
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
                     
-                    // 🟢 الشارات الكبيرة داخل تفاصيل الطلب
                     if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('يوجد نزاع')) statusBadgeFull = `<span class="bg-rose-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-700 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخل الإدارة</span>`;
                     else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">⚠️ معلق - بانتظار التأكيد للإغلاق</span>`;
@@ -1104,9 +1085,8 @@
                     } else if (isClosed) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl">هذا الطلب مغلق ومؤرشف في سجلات المنصة 🗄️</div>`;
                     } else if (s.includes('بانتظار تأكيد') || s.includes('يوجد نزاع')) {
-                        // 🟢 إظهار لوحة الطوارئ والإغلاق الإداري المباشر لحسم النزاعات والحالات المعلقة
                         let alertText = s.includes('يوجد نزاع') 
-                            ? "🚨 حالة نزاع: الأطراف غير متفقين على نتيجة التعارف. يرجى التقصي عبر الواتساب (عبر الأيقونة بجوار جوالاتهم بالاعلى) ثم فرض الإغلاق الإداري المناسب لحسم النزاع وتحرير الكوتا."
+                            ? "🚨 حالة نزاع: الأطراف غير متفقين على نتيجة التعارف. يرجى التقصي عبر الواتساب ثم فرض الإغلاق الإداري لحسم النزاع وتحرير الكوتا."
                             : "⚠️ تنبيه إداري: هذا الطلب معلق لأن أحد الأطراف طلب الإغلاق والآخر لم يؤكد. يرجى التواصل معهم ثم فرض الإغلاق الإداري المناسب.";
                         
                         actionButtonHTML = `
@@ -1135,7 +1115,7 @@
                         actionButtonHTML = `
                         ${queueButton}
                         <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
-                            ℹ️ إشعار آلي: الطرف الثاني وافق على تبادل الأرقام. بانتظار استلام الرسوم من الطرف الأول.
+                            ℹ️ إشعار آلي: المرأة وافقت على تبادل الأرقام. بانتظار استلام الرسوم من الرجل.
                         </div>
                         <button onclick="executeAdminAction('${req.reqId}', 'closeChatSuccess')" class="w-full px-4 py-3 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 
@@ -1151,7 +1131,12 @@
                         let isLastMsgFromTarget = lastMsg.includes('[من المطلوب]') || lastMsg.includes('[من الطرف الثاني]');
                         let isLastMsgFromStudent = lastMsg.includes('[من الطالب]') || lastMsg.includes('[من الطرف الأول]');
 
-                        if (!isQueue) {
+                        // 🟢 التعديل: إخفاء أزرار "التنقيح" إذا كانت الرسالة آلية
+                        let isAutoSystemMsg = lastMsg.includes('طلب تواصل مباشر وتبادل أرقام') || lastMsg.includes('أوافق على التواصل المباشر مع الطرف الثاني') || lastMsg.includes('طلب تواصل');
+
+                        if (!isQueue && isAutoSystemMsg && !req.finalApprovalGiven && !s.includes('بانتظار الدفع')) {
+                            forwardButton = `<div class="bg-indigo-50 text-indigo-700 p-2 text-xs font-bold text-center rounded-xl mb-3 border border-indigo-200 shadow-sm">ℹ️ هذا إجراء آلي تم إرساله للطرف الآخر، بانتظار رده.</div>`;
+                        } else if (!isQueue && !isAutoSystemMsg) {
                             if (isLastMsgFromTarget && !s.includes('بانتظار الطرف الأول') && !s.includes('مقبول مبدئياً')) {
                                 forwardButton = `<button onclick="openForwardModal('${req.reqId}', 'toStudent')" class="w-full mb-3 px-4 py-3 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm truncate">تنقيح وتمرير للطرف الأول</button>`;
                             } else if (isLastMsgFromStudent && !s.includes('بانتظار الطرف الثاني')) {
@@ -1161,7 +1146,7 @@
                         
                         actionButtonHTML = queueButton + forwardButton;
                         
-                        if (!isPendingAdmin && forwardButton === '') {
+                        if (!isPendingAdmin && !forwardButton.includes('<button')) {
                             actionButtonHTML += `
                             <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full justify-between mb-3 mt-3">
                                 <button onclick="executeAdminAction('${req.reqId}', 'msgTarget')" class="flex-1 min-w-[100px] py-2.5 px-1 text-[10px] md:text-[11px] font-bold rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors flex justify-center items-center shadow-sm whitespace-nowrap"><span class="truncate">رسالة للطرف الثاني (واتساب)</span></button>
@@ -1307,7 +1292,7 @@
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
 
-            let waWin = window.open('', '_blank');
+            // تم إزالة الشاشة البيضاء (window.open) من هنا
 
             const btn = document.getElementById('btnExecuteForward');
             const cancelBtn = document.getElementById('btnCancelForward');
@@ -1362,15 +1347,15 @@
                     waMessage += `_للرد عبر المنصة:_\n${magicLinkToSend}\n\n`;
                     waMessage += `_أو يمكنك الرد مباشرة هنا في الواتساب._`;
 
-                    if(waWin) waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
+                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
+                    let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
+                    showWaSuccessModal(craftedUrl, reqId);
                     
                     await fetchData(true, reqId); 
                 } else {
-                    if(waWin) waWin.close();
                     await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if(waWin) waWin.close();
                 if (e.name === 'AbortError') {
                     await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
                 } else {
@@ -1390,7 +1375,6 @@
             document.getElementById('closeChatReqId').value = reqId;
             const req = allRequests.find(r => r.reqId === reqId);
             
-            // إظهار خيار إنهاء التعارف فقط إذا كان في مرحلة التعارف
             let isAcquaintancePhase = req && req.status && req.status.includes('مرحلة التعارف');
             
             let closeOptionsHtml = `
@@ -1501,7 +1485,7 @@
                 return;
             }
 
-            let waWin = window.open('', '_blank');
+            // تم إزالة الشاشة البيضاء (window.open) من هنا
             isProcessingAction = true;
             document.getElementById('refreshIcon').classList.add('sync-spin');
 
@@ -1523,32 +1507,36 @@
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
                     
-                    if (waWin) {
-                        let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, ''); 
-                        if (actionType === 'closeChatSuccess') {
-                            let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\nتم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
-                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                        } else {
-                            let waIntro = actionType === 'msgTarget' 
-                                ? `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.requesterData || 'غير متوفرة'}` 
-                                : `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.targetData || 'غير متوفرة'}`;
-                            targetPhoneNum = String(actionType === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
-                            let magicLinkToSend = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                            if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+                    let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, ''); 
+                    let craftedUrl = ""; // رابط الواتساب النهائي
+                    
+                    if (actionType === 'closeChatSuccess') {
+                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\nتم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
+                        craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
+                    } else {
+                        let waIntro = actionType === 'msgTarget' 
+                            ? `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.requesterData || 'غير متوفرة'}` 
+                            : `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.targetData || 'غير متوفرة'}`;
+                        targetPhoneNum = String(actionType === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+                        let magicLinkToSend = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
+                        if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
 
-                            let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waIntro}\n\n*رسالة إدارية موجهة لك ✉️:*\n\n`;
-                            let boldAdminMessage = adminMessage.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
-                            waFullMsg += `${boldAdminMessage}\n\n_للرد عبر المنصة:_\n${magicLinkToSend}\n\n_أو يمكنك الرد مباشرة هنا في الواتساب._`;
-                            waWin.location.href = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                        }
+                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waIntro}\n\n*رسالة إدارية موجهة لك ✉️:*\n\n`;
+                        let boldAdminMessage = adminMessage.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
+                        waFullMsg += `${boldAdminMessage}\n\n_للرد عبر المنصة:_\n${magicLinkToSend}\n\n_أو يمكنك الرد مباشرة هنا في الواتساب._`;
+                        craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
                     }
+                    
+                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
+                    if(craftedUrl) {
+                        showWaSuccessModal(craftedUrl, reqId);
+                    }
+
                     await fetchData(true, reqId);
                 } else {
-                    if(waWin) waWin.close();
                     await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if(waWin) waWin.close();
                 if (e.name === 'AbortError') {
                     await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
                 } else {
@@ -1592,18 +1580,29 @@
 
             let isProxyAction = statusSelectVal.startsWith('PROXY_');
 
+            let manIsParty1 = true;
+            let rData = req.requesterData || '';
+            let tData = req.targetData || '';
+            if (rData.match(/(مطلقة|أرملة|بكر|عزباء|متزوجة|امرأة|بنت)/) || tData.match(/(مطلق|أرمل|أعزب|متزوج|رجل|ولد)/)) {
+                manIsParty1 = false;
+            }
+
             if (isProxyAction) {
                 let proxyMsg = "";
-                if (statusSelectVal === 'PROXY_INITIAL_ACCEPT') {
-                    actionContext = 'proxyInitialAccept'; actualStatus = 'بانتظار الطرف الأول';
-                    proxyMsg = "[من الطرف الثاني] [تدخل إداري]: نعم مبدئياً البيانات مناسبة لنا. تفضل باستفساراتك.";
-                } else if (statusSelectVal === 'PROXY_REQUEST_DIRECT') {
-                    actionContext = 'proxyRequestDirect'; actualStatus = 'بانتظار الطرف الثاني';
-                    proxyMsg = "[من الطرف الأول] [تدخل إداري]: أرغب في التواصل المباشر وتبادل الأرقام عبر الإدارة.";
+                if (statusSelectVal === 'PROXY_REQUEST_DIRECT') {
+                    let actingFor = manIsParty1 ? '1' : '2';
+                    actionContext = 'proxyRequestDirect|' + actingFor;
+                    actualStatus = manIsParty1 ? 'بانتظار الطرف الثاني' : 'بانتظار الطرف الأول';
+                    let prefix = manIsParty1 ? '[من الطرف الأول]' : '[من الطرف الثاني]';
+                    proxyMsg = prefix + " [تدخل إداري]: طلب تواصل مباشر وتبادل أرقام.";
                 } else if (statusSelectVal === 'PROXY_APPROVE_DIRECT') {
-                    actionContext = 'proxyApproveDirect'; actualStatus = 'موافقة تبادل أرقام - بانتظار الدفع';
-                    proxyMsg = "[من الطرف الثاني] [تدخل إداري]: نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
+                    let actingFor = manIsParty1 ? '2' : '1';
+                    actionContext = 'proxyApproveDirect|' + actingFor;
+                    actualStatus = 'موافقة تبادل أرقام - بانتظار الدفع';
+                    let prefix = manIsParty1 ? '[من الطرف الثاني]' : '[من الطرف الأول]';
+                    proxyMsg = prefix + " [تدخل إداري]: نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
                 }
+                
                 existingHistory.push(proxyMsg);
                 payloadText = "OVERWRITE_FLAG|||" + existingHistory.join("\n\n---\n\n");
             } else if (payloadText !== "") {
@@ -1624,12 +1623,13 @@
                 return;
             }
 
+            // تم إزالة الشاشة البيضاء (window.open) من هنا
+
             const btn = document.getElementById('btnSaveStatus');
             const cancelBtn = document.getElementById('btnCancelStatus');
             const originalHtml = btn.innerHTML;
             btn.innerHTML = "جاري الحفظ..."; btn.disabled = true; cancelBtn.disabled = true;
 
-            let waWin = window.open('', '_blank');
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -1647,33 +1647,34 @@
                 if (result.success) {
                     closeModal(); scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
                     
-                    if (waWin) {
-                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n`;
-                        let phoneToSend = "";
-                        
-                        if (statusSelectVal === 'PROXY_INITIAL_ACCEPT') {
-                            phoneToSend = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                            let magicLink = result.requesterMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${phoneToSend}`;
-                            waFullMsg += `الطرف الآخر 👤: (${req.targetData || 'غير متوفرة'})\nوافق مبدئياً على بياناتك وينتظر استفساراتك.\n\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك كتابة استفسارك هنا في الواتساب._`;
-                        } else if (statusSelectVal === 'PROXY_REQUEST_DIRECT') {
-                            phoneToSend = String(req.targetPhone).replace(/[^0-9]/g, '');
-                            let magicLink = result.targetMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${phoneToSend}`;
-                            waFullMsg += `الطرف الآخر 👤: (${req.requesterData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
-                        } else if (statusSelectVal === 'PROXY_APPROVE_DIRECT') {
-                            phoneToSend = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                            let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
-                            let magicLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
-                            waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${req.targetData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${magicLink}`;
-                        }
-                        waWin.location.href = `https://wa.me/${phoneToSend}?text=${encodeURIComponent(waFullMsg)}`;
+                    let ctxParts = actionContext.split('|');
+                    let ctxType = ctxParts[0];
+                    let actingFor = ctxParts[1]; 
+                    
+                    let phoneToSend = actingFor === '1' ? String(req.targetPhone).replace(/[^0-9]/g, '') : String(req.requesterPhone).replace(/[^0-9]/g, '');
+                    let senderData = actingFor === '1' ? req.requesterData : req.targetData;
+                    let magicLink = actingFor === '1' ? result.targetMagicLink : result.requesterMagicLink;
+                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${phoneToSend}`;
+
+                    let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n`;
+                    
+                    if (ctxType === 'proxyRequestDirect') {
+                        waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
+                    } else if (ctxType === 'proxyApproveDirect') {
+                        let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
+                        let adminLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
+                        waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
                     }
+                    
+                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
+                    let craftedUrl = `https://wa.me/${phoneToSend}?text=${encodeURIComponent(waFullMsg)}`;
+                    showWaSuccessModal(craftedUrl, reqId);
+                    
                     await fetchData(true, reqId);
                 } else {
-                    if(waWin) waWin.close();
                     await showMsgModal("تنبيه", result.message || "النظام مشغول.");
                 }
             } catch(e) {
-                if(waWin) waWin.close();
                 if (e.name === 'AbortError') {
                     await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
                 } else {
@@ -1683,50 +1684,6 @@
                 btn.innerHTML = originalHtml; 
                 btn.disabled = false; cancelBtn.disabled = false;
             }
-        }
-
-        function openCloseChatModal(reqId) {
-            document.getElementById('closeChatReqId').value = reqId;
-            const req = allRequests.find(r => r.reqId === reqId);
-            
-            let isAcquaintancePhase = req && req.status && req.status.includes('مرحلة التعارف');
-            
-            let closeOptionsHtml = `
-                <div class="bg-amber-50 text-amber-800 p-3 rounded-xl text-xs font-bold border border-amber-200 shadow-sm leading-relaxed text-center mb-2">
-                    ⚠️ تنبيه هام: اختيار (الزواج) أو (حذف الملف) سيقوم تلقائياً بإلغاء جميع المنتظرين في الطابور لهذا الشخص وإرجاع نقاطهم فوراً.
-                </div>
-                <p class="text-sm font-extrabold text-slate-800 text-center mb-2">يرجى تحديد سبب الإلغاء بدقة:</p>
-            `;
-            
-            if (isAcquaintancePhase) {
-                closeOptionsHtml += `
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'إنهاء التعارف لعدم التوفيق')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-rose-300 bg-white hover:bg-rose-50 transition-all text-rose-700 shadow-sm gap-1.5 group mb-2">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">❌ إنهاء التعارف (عدم التوفيق)</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُنهي مرحلة التعارف الحالية ويحرر كوتا الطرفين للبحث عن غيرهم.</span>
-                </button>
-                `;
-            } else {
-                closeOptionsHtml += `
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'اعتذار لعدم التوافق')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-amber-200 bg-white hover:bg-amber-50 transition-all text-amber-700 shadow-sm gap-1.5 group mb-2">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">1. اعتذار لعدم التوافق ❌</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق هذا الطلب ويحرر الكوتا، ويمرر الدور للشخص التالي.</span>
-                </button>
-                `;
-            }
-
-            closeOptionsHtml += `
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'تم الزواج')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-emerald-200 bg-white hover:bg-emerald-50 transition-all text-emerald-700 shadow-sm gap-1.5 group mb-2">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">2. تم الزواج بفضل الله 💍</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة.</span>
-                </button>
-                <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'حذف الملف')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-rose-200 bg-white hover:bg-rose-50 transition-all text-rose-700 shadow-sm gap-1.5 group">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">3. حذف الملف نهائياً 🗑️</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة.</span>
-                </button>
-            `;
-
-            document.getElementById('closeChatOptionsContainer').innerHTML = closeOptionsHtml;
-            document.getElementById('closeChatModal').classList.remove('hidden');
         }
 
 <!-- ======================================================== -->
@@ -1780,20 +1737,21 @@
                                     waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"\n\nللرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\nأو يمكنك الرد مباشرة هنا في الواتساب.";
                                 }
                                 else if (act.payload.actionContext) {
-                                    let ctx = act.payload.actionContext;
-                                    if (ctx === 'proxyInitialAccept') {
-                                        targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                                        let magicLink = result.requesterMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-                                        waFullMsg += `الطرف الآخر: (${req.targetData || 'غير متوفرة'})\nوافق مبدئياً على بياناتك وينتظر استفساراتك.\n\nللرد عبر المنصة:\n${magicLink}\nأو يمكنك كتابة استفسارك هنا في الواتساب.`;
-                                    } else if (ctx === 'proxyRequestDirect') {
-                                        targetPhoneNum = String(req.targetPhone).replace(/[^0-9]/g, '');
-                                        let magicLink = result.targetMagicLink || `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-                                        waFullMsg += `الطرف الآخر: (${req.requesterData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"\n\nنحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات.\nللرد عبر المنصة:\n${magicLink}\nأو يمكنك الرد مباشرة هنا.`;
-                                    } else if (ctx === 'proxyApproveDirect') {
-                                        targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                    let ctxParts = act.payload.actionContext.split('|');
+                                    let ctxType = ctxParts[0];
+                                    let actingFor = ctxParts[1]; 
+                                    
+                                    targetPhoneNum = actingFor === '1' ? String(req.targetPhone).replace(/[^0-9]/g, '') : String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                    let senderData = actingFor === '1' ? req.requesterData : req.targetData;
+                                    let magicLink = actingFor === '1' ? result.targetMagicLink : result.requesterMagicLink;
+                                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
+
+                                    if (ctxType === 'proxyRequestDirect') {
+                                        waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
+                                    } else if (ctxType === 'proxyApproveDirect') {
                                         let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
-                                        let magicLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
-                                        waFullMsg += `نبشرك بأن الطرف الآخر: (${req.targetData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\nلإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:\n${magicLink}`;
+                                        let adminLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
+                                        waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
                                     }
                                 }
                                 
