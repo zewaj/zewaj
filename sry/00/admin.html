@@ -1,3 +1,4 @@
+
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 1: إعدادات  الصفحة وخطوط التصميم 🔴🔴🔴 -->
 <!-- ======================================================== -->
@@ -966,12 +967,12 @@
                 
                 // 🟢 الفحص للنزاعات والحالات المعلقة
                 if (isClosed) {
-                    let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : "مغلق / مؤرشف";
+                    let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : "مغلق / مؤرشف");
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
                 } else if (s.includes('يوجد نزاع')) {
                     statusBadge = `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-700 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخلاً</span>`;
                 } else if (s.includes('بانتظار تأكيد')) {
-                    statusBadge = `<span class="bg-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-orange-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">⚠️ معلق - بانتظار التأكيد</span>`;
+                    statusBadge = `<span class="bg-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-orange-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ بانتظار تأكيد عدم التوفيق' : '⚠️ بانتظار تأكيد الزواج'}</span>`;
                 } else if (s.includes('مرحلة التعارف')) {
                     statusBadge = `<span class="bg-sky-100 text-sky-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف</span>`;
                 } else if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) {
@@ -1055,7 +1056,7 @@
                     
                     if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('يوجد نزاع')) statusBadgeFull = `<span class="bg-rose-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-700 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخل الإدارة</span>`;
-                    else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">⚠️ معلق - بانتظار التأكيد للإغلاق</span>`;
+                    else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ أحد الطرفين أبلغ بعدم التوفيق - بانتظار تأكيد الآخر' : '⚠️ أحد الطرفين أبلغ بالزواج - بانتظار تأكيد الآخر'}</span>`;
                     else if (s.includes('مرحلة التعارف')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف الخارجي</span>`;
                     else if (targetApproved) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 موافقة تبادل أرقام - بانتظار استلام الرسوم</span>`;
                     else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
@@ -1087,7 +1088,7 @@
                     } else if (s.includes('بانتظار تأكيد') || s.includes('يوجد نزاع')) {
                         let alertText = s.includes('يوجد نزاع') 
                             ? "🚨 حالة نزاع: الأطراف غير متفقين على نتيجة التعارف. يرجى التقصي عبر الواتساب ثم فرض الإغلاق الإداري لحسم النزاع وتحرير الكوتا."
-                            : "⚠️ تنبيه إداري: هذا الطلب معلق لأن أحد الأطراف طلب الإغلاق والآخر لم يؤكد. يرجى التواصل معهم ثم فرض الإغلاق الإداري المناسب.";
+                            : "⚠️ تنبيه إداري: أحد الطرفين أبلغ بـ" + (s.includes('للإنهاء') ? "عدم التوفيق" : "إتمام الزواج") + " والطرف الآخر لم يؤكد بعد (وصله إشعار واتساب تلقائي). عند تأكيده يُغلق الطلب تلقائياً، وإن تأخر يمكنك التواصل معهم ثم فرض الإغلاق الإداري.";
                         
                         actionButtonHTML = `
                         <div class="bg-rose-50 text-rose-800 p-3 text-xs font-bold text-center rounded-xl mb-3 border border-rose-200 shadow-sm leading-relaxed">
@@ -1725,8 +1726,13 @@
                         pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
                         savePendingActions();
 
+                        // 🟢 الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة،
+                        // إلا إن كتب الأدمن رداً خاصاً في نافذة الحالة فيبقى الإرسال اليدوي لأنه يحمل نصه.
+                        let serverAlreadyNotified = result.autoNotified && (act.type === 'closeChat' || (act.type === 'status_update' && act.text === 'تحديث حالة'));
                         if (result.waUrl) {
                             showWaSuccessModal(result.waUrl, act.reqId);
+                        } else if (serverAlreadyNotified) {
+                            // لا شيء: الإشعار التلقائي وصل
                         } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || act.type === 'closeChat' || act.type === 'status_update' || (act.payload.actionContext && act.payload.actionContext.startsWith('proxy'))) {
                             
                             const req = allRequests.find(r => r.reqId === act.reqId);
