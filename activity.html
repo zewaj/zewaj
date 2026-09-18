@@ -1,3 +1,4 @@
+
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 1 ]: إعدادات الصفحة والـ Head ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -396,6 +397,56 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 18 ]: معالجة نصوص المحادثة وبناء البطاقات ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+        // 🟢 بلاغات نتيجة التعارف (عدم التوفيق / الزواج): الطرف الآخر يرى أزرار التأكيد، وصاحب البلاغ يرى حالة الانتظار.
+        // تُرجع null إن لم يكن الطلب في إحدى الحالات المعلّقة، وإلا {html, uiStatus, color}.
+        function buildOutcomeUI(reqId, statusText, originalChunks, isIncomingCard) {
+            const pendingEnd = statusText.includes('بانتظار تأكيد الطرف الآخر للإنهاء');
+            const pendingMarriage = statusText.includes('بانتظار تأكيد الطرف الآخر للزواج');
+            const dispute = statusText.includes('نزاع');
+            if (!pendingEnd && !pendingMarriage && !dispute) return null;
+
+            if (dispute) {
+                return {
+                    uiStatus: 'قيد تحقيق الإدارة (اختلاف حول النتيجة)',
+                    color: 'text-rose-600 bg-rose-50 border-rose-200',
+                    html: `<div class="bg-rose-50 p-3 border-t border-rose-200 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">⚖️ اختلف الطرفان حول نتيجة التعارف، والطلب قيد تحقيق الإدارة وسيتم التواصل معكم.</p></div>`
+                };
+            }
+
+            // صاحب البلاغ = صاحب آخر رسالة من طرف (تُتخطى رسائل الإدارة)
+            let iReported = false;
+            for (let i = originalChunks.length - 1; i >= 0; i--) {
+                const c = originalChunks[i];
+                if (c.includes('[تعديل الإدارة]') || c.includes('[من الإدارة')) continue;
+                const fromFirst = c.includes('[من الطرف الأول]') || c.includes('[من الطالب]');
+                const fromSecond = c.includes('[من الطرف الثاني]') || c.includes('[من المطلوب]');
+                if (fromFirst || fromSecond) { iReported = isIncomingCard ? fromSecond : fromFirst; break; }
+            }
+
+            const btn = (type, label, cls) => `<button type="button" onclick="event.stopPropagation(); openReplyModal('${reqId}', '${type}', false, event)" class="flex-1 py-2 px-1 ${cls} border rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">${label}</button>`;
+
+            if (iReported) {
+                return {
+                    uiStatus: pendingEnd ? 'بانتظار تأكيد الطرف الآخر لعدم التوفيق' : 'بانتظار تأكيد الطرف الآخر للزواج',
+                    color: 'text-amber-700 bg-amber-50 border-amber-200',
+                    html: `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⏳ أبلغتَ ${pendingEnd ? 'بعدم التوفيق' : 'بإتمام الزواج'}، وبانتظار تأكيد الطرف الآخر. يُغلق الطلب فور تأكيده.</p></div>`
+                };
+            }
+
+            return {
+                uiStatus: pendingEnd ? 'الطرف الآخر أبلغ بعدم التوفيق - بانتظار تأكيدك' : 'الطرف الآخر أبلغ بإتمام الزواج - بانتظار تأكيدك',
+                color: 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse',
+                html: `<div class="bg-amber-50 p-3 border-t border-amber-100 flex flex-col gap-2 rounded-b-2xl">
+                    <p class="text-[11px] text-amber-800 font-bold text-center">${pendingEnd ? '⚠️ الطرف الآخر أبلغ بأن التعارف انتهى لعدم التوفيق.' : '💍 الطرف الآخر أبلغ بأنه تم الزواج.'}</p>
+                    <div class="flex gap-1.5 w-full">
+                        ${pendingEnd
+                            ? btn('تأكيد الإنهاء', '✅ أؤكد عدم التوفيق', 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50') + btn('تم الزواج', '💍 بل تم الزواج', 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50')
+                            : btn('تأكيد الزواج', '✅ أؤكد تم الزواج', 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50') + btn('إنهاء التعارف', '❌ لم يتم الزواج', 'bg-white text-rose-600 border-rose-200 hover:bg-rose-50')}
+                    </div>
+                </div>`
+            };
+        }
+
         function parseChatThread(displayChunks, originalChunks, role, isPendingAdmin) {
             if (!displayChunks || displayChunks.length === 0) return '<p class="text-xs text-slate-400 font-bold text-center py-4">لا توجد محادثة.</p>';
             let html = '<div class="flex flex-col gap-1.5 w-full">';
@@ -679,12 +730,18 @@
                 let actionAreaHtml = '';
                 
                 // 🟢 منطقة الإجراءات الجديدة (التعارف وإنهاء التعارف)
+                const outcomeUI = buildOutcomeUI(req.reqId, statusText, originalChunks, false);
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
+                } else if (outcomeUI) {
+                    actionAreaHtml = outcomeUI.html;
                 } else if (isAcquaintancePhase) {
                     actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
                         <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
-                        <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="w-full py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                        <div class="flex gap-1.5 w-full">
+                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تم الزواج', false, event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
+                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="flex-1 py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                        </div>
                     </div>`;
                 } else if (isWaitingPayment) {
                     let msg = currentUserIsMale ? "⏳ الطلب بانتظار إتمام إجراءات الدفع من قبلك لاستلام الرقم." : "⏳ تمت الموافقة، الطلب في عهدة الإدارة بانتظار استكمال الإجراءات.";
@@ -733,6 +790,7 @@
                     }
                 }
 
+                if (outcomeUI) { statusColor = outcomeUI.color; uiStatusText = outcomeUI.uiStatus; }
                 let cardHtml = buildRequestCardHTML(req, targetInfo, isTargetFemale, req.date||'', statusColor, uiStatusText, actionAreaHtml, chatHtml);
                 
                 if (isArchived) {
@@ -896,12 +954,18 @@
                 let actionAreaHtml = '';
 
                 // 🟢 منطقة الإجراءات للوارد (بانتظار الدفع وإنهاء التعارف)
+                const outcomeUI = buildOutcomeUI(req.reqId, statusText, originalChunks, true);
                 if (isCurrentlySending) {
                     actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
+                } else if (outcomeUI) {
+                    actionAreaHtml = outcomeUI.html;
                 } else if (isAcquaintancePhase) {
                     actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
                         <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
-                        <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="w-full py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                        <div class="flex gap-1.5 w-full">
+                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تم الزواج', false, event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
+                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="flex-1 py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
+                        </div>
                     </div>`;
                 } else if (isWaitingPayment) {
                     let msg = currentUserIsMale ? "⏳ الطلب بانتظار إتمام إجراءات الدفع من قبلك لاستلام الرقم." : "⏳ تمت الموافقة، الطلب في عهدة الإدارة بانتظار استكمال الإجراءات.";
@@ -956,6 +1020,7 @@
                     }
                 }
 
+                if (outcomeUI) { statusColor = outcomeUI.color; uiStatusText = outcomeUI.uiStatus; }
                 let cardHtml = buildRequestCardHTML(req, senderInfo, isSenderFemale, req.date||'', statusColor, uiStatusText, actionAreaHtml, chatHtml);
                 
                 if (isArchived) {
@@ -1012,11 +1077,18 @@
 
         function closeMsgModal() { document.getElementById('msgModal').classList.add('hidden'); }
 
+        const OUTCOME_REPLIES = {
+            'تم الزواج': { title: 'إبلاغ عن إتمام الزواج', text: 'تم الاتفاق والزواج ولله الحمد.' },
+            'تأكيد الإنهاء': { title: 'تأكيد إنهاء التعارف', text: 'تم تأكيد إنهاء التعارف وإبراء الذمة.' },
+            'تأكيد الزواج': { title: 'تأكيد إتمام الزواج', text: 'تم تأكيد الزواج، نسأل الله التوفيق.' }
+        };
+
         window.openReplyModal = function(reqId, type, renew, event) {
             if(event) event.stopPropagation();
             currentReplyReqId = reqId; currentReplyType = type;
             
-            document.getElementById('replyModalTitle').innerText = (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة تبادل أرقام' ? 'تأكيد موافقة تبادل الأرقام' : (type === 'موافقة مبدئية' ? 'موافقة مبدئية واستفسارات' : (type === 'إنهاء التعارف' ? 'إنهاء مرحلة التعارف' : 'إرسال: ' + type))));
+            const outcomeReply = OUTCOME_REPLIES[type];
+            document.getElementById('replyModalTitle').innerText = outcomeReply ? outcomeReply.title : (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة تبادل أرقام' ? 'تأكيد موافقة تبادل الأرقام' : (type === 'موافقة مبدئية' ? 'موافقة مبدئية واستفسارات' : (type === 'إنهاء التعارف' ? 'إنهاء مرحلة التعارف' : 'إرسال: ' + type))));
             
             const msgInput = document.getElementById('replyMessage');
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
@@ -1045,6 +1117,13 @@
             } else if (type === 'موافقة تبادل أرقام') {
                 msgInput.style.display = 'block';
                 msgInput.value = "نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
+                msgInput.readOnly = true;
+                msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
+                if (radioContainer) radioContainer.style.display = 'none';
+            } else if (outcomeReply) {
+                // 🟢 نافذة الزواج / تأكيد الإنهاء / تأكيد الزواج (نصوص ثابتة تطابق ما يسجله الخادم)
+                msgInput.style.display = 'block';
+                msgInput.value = outcomeReply.text;
                 msgInput.readOnly = true;
                 msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
                 if (radioContainer) radioContainer.style.display = 'none';
@@ -1352,7 +1431,7 @@
                     (realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]'));
 
                 // 🟢 تضمين "إنهاء التعارف" في الاستثناءات
-                let isExceptionalType = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'موافقة تبادل أرقام';
+                let isExceptionalType = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'موافقة تبادل أرقام' || !!OUTCOME_REPLIES[currentReplyType];
 
                 if (isRealLastFromMe && !isExceptionalType) {
                     showMsgModal("تنبيه من النظام", "لقد قمت بإرسال رسالة مسبقاً.\nيجب انتظار رد الطرف الآخر أو انتظار اعتماد الإدارة لرسالتك السابقة.");
@@ -1360,7 +1439,7 @@
                 }
             }
 
-            let isRejection = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || currentReplyType.includes('إنهاء') && currentReplyType !== 'إنهاء التعارف';
+            let isRejection = currentReplyType.includes('اعتذار') || currentReplyType.includes('رفض') || (currentReplyType.includes('إنهاء') && currentReplyType !== 'إنهاء التعارف' && currentReplyType !== 'تأكيد الإنهاء');
             let msg = '';
 
             if (isRejection) {
@@ -1372,7 +1451,7 @@
                 if (!msgInput) return;
                 msg = msgInput.value.trim();
                 
-                let isAutoMsg = currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة' || currentReplyType === 'إنهاء التعارف';
+                let isAutoMsg = currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة' || currentReplyType === 'إنهاء التعارف' || !!OUTCOME_REPLIES[currentReplyType];
                 if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
             }
 
@@ -1667,6 +1746,7 @@
                 if (event.data) {
                     if (event.data.action === 'favoriteSuccess') { window.lastFetchTime = 0; if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); else fetchData(true); } 
                     else if (event.data.action === 'reRenderFromCache') { loadFromCentralCache(true, event.data.data); }
+                    else if (event.data.action === 'triggerActivityFetch') { fetchData(true); }
                     else if (event.data.action === 'forceCacheBypass') { localStorage.removeItem('master_activity_cache'); showSkeletonLoader(); fetchData(false); }
                 }
             });
