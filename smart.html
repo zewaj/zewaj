@@ -1183,7 +1183,9 @@
 /* 🟥🟥🟥 [ القسم رقم 21: الاستماع للتحديثات الصامتة من الاندكس (Silent Sync) ] 🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
         window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'updateAuthUI') silentlyUpdateButtons();
+            if (!event.data) return;
+            // القشرة ترسل reRenderFromCache بعد كل مزامنة (بعد تحديث cached_favorites و cached_requested_ids)
+            if (event.data.type === 'updateAuthUI' || event.data.action === 'reRenderFromCache') silentlyUpdateButtons();
         });
 
         function silentlyUpdateButtons() {
