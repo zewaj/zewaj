@@ -1,4 +1,3 @@
-
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 1: إعدادات  الصفحة وخطوط التصميم 🔴🔴🔴 -->
 <!-- ======================================================== -->
@@ -51,6 +50,19 @@
             border-width: 2px !important;
             border-color: #10b981 !important;
             background-color: #f0fdf4 !important;
+            transition: all 0.5s ease-in-out;
+        }
+        /* 🟢 وميض أزرق لطلب التواصل (قبل موافقة المرأة) */
+        @keyframes contactPulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); border-color: #3b82f6; }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); border-color: #60a5fa; }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); border-color: #e2e8f0; }
+        }
+        .highlight-flash-blue {
+            animation: contactPulse 2s ease-out 4;
+            border-width: 2px !important;
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
             transition: all 0.5s ease-in-out;
         }
     </style>
@@ -811,7 +823,9 @@
                 } else if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد')) {
                     actionNeeded++; // 🟢 التعديل: النزاعات والحالات المعلقة تزيد عداد الأكشن الإداري
                 } else if (r.hasRequestedContact) {
-                    pending++;
+                    // 🟢 "طلب تواصل" فئة مستقلة (وميض أزرق): لا تُحسب في "بانتظار العملاء" (للمراسلات العادية فقط) ولا في "تتطلب تدخل" (تبدأ بعد موافقة المرأة)
+                    // (إلا إن وصلت رسالة تنتظر اعتماد الإدارة فهذه تحتاج تدخلاً كأي رسالة)
+                    if (s.includes('يوجد رد') || s.includes('اعتماد')) actionNeeded++;
                 } else {
                     if (s === 'قيد الانتظار' || s.includes('بانتظار رده') || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب')) pending++;
                     if (s.includes('يوجد رد') || s.includes('اعتماد الإدارة') || s.includes('اعتماد')) actionNeeded++;
@@ -900,8 +914,8 @@
                 let matchesStatus = false;
                 
                 if (currentFilterType === 'active') matchesStatus = !isClosed && !s.includes('مرحلة التعارف');
-                else if (currentFilterType === 'action') matchesStatus = !isClosed && (req.finalApprovalGiven || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
-                else if (currentFilterType === 'waiting') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && ((!req.finalApprovalGiven && req.hasRequestedContact) || s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
+                else if (currentFilterType === 'action') matchesStatus = !isClosed && ((req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
+                else if (currentFilterType === 'waiting') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && !req.hasRequestedContact && (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
                 else if (currentFilterType === 'acquaintance') matchesStatus = s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد'); // 🟢 يظهر في قائمة التعارف والأكشن
                 else if (currentFilterType === 'contact') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && (req.hasRequestedContact || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع'));
@@ -924,7 +938,7 @@
                 if (isClosed) return 8; 
                 // 🟢 إعطاء أولوية قصوى للنزاعات والطلبات المعلقة
                 if (s.includes('يوجد نزاع') || s.includes('بانتظار تأكيد')) return 1; 
-                if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) return 2; 
+                if ((req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) return 2;
 
                 if (s.includes('مرحلة التعارف')) return 7;
 
@@ -978,7 +992,7 @@
                 } else if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) {
                     statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 تدخلي فوراً (بانتظار الدفع)</span>`;
                 } else if (req.hasRequestedContact) {
-                    statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shrink-0 whitespace-nowrap">طلب تواصل</span>`;
+                    statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 animate-pulse shrink-0 whitespace-nowrap">طلب تواصل</span>`;
                 } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
                     statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
                 } else if (s.includes('قائمة الانتظار')) {
@@ -995,7 +1009,7 @@
 
                 let isSelected = req.reqId === selectedReqId;
                 let cardClass = isSelected ? 'bg-indigo-50 border-indigo-400 shadow-md ring-1 ring-indigo-400' : 'bg-white border-slate-200 hover:bg-slate-50 shadow-sm';
-                let flashClass = (s.includes('نزاع') || s.includes('بانتظار تأكيد') || req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) && !isSelected && !isClosed ? 'highlight-flash' : '';
+                let flashClass = (s.includes('نزاع') || s.includes('بانتظار تأكيد') || (req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) && !isSelected && !isClosed ? 'highlight-flash' : ((req.hasRequestedContact && !s.includes('مرحلة التعارف') && !isSelected && !isClosed) ? 'highlight-flash-blue' : '');
 
                 let lastActionTs = getTimestamp(req.lastActionDate || req.date);
                 let isUnread = !isClosed && (!readRequestsCache[req.reqId] || lastActionTs > readRequestsCache[req.reqId]);
@@ -1059,7 +1073,7 @@
                     else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ أحد الطرفين أبلغ بعدم التوفيق - بانتظار تأكيد الآخر' : '⚠️ أحد الطرفين أبلغ بالزواج - بانتظار تأكيد الآخر'}</span>`;
                     else if (s.includes('مرحلة التعارف')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف الخارجي</span>`;
                     else if (targetApproved) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 موافقة تبادل أرقام - بانتظار استلام الرسوم</span>`;
-                    else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
+                    else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 animate-pulse shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
                     else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('مقبول مبدئياً')) statusBadgeFull = `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً ✅</span>`;
@@ -1728,7 +1742,9 @@
 
                         // 🟢 الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة،
                         // إلا إن كتب الأدمن رداً خاصاً في نافذة الحالة فيبقى الإرسال اليدوي لأنه يحمل نصه.
-                        let serverAlreadyNotified = result.autoNotified && (act.type === 'closeChat' || (act.type === 'status_update' && act.text === 'تحديث حالة'));
+                        // وتغيير الحالة بلا ردّ خاص ("تحديث حالة") لا نص فيه يستحق رسالة، فيبقى صامتاً كما تقول تسمية القائمة.
+                        let isPlainStatusUpdate = (act.type === 'status_update' && act.text === 'تحديث حالة');
+                        let serverAlreadyNotified = isPlainStatusUpdate || (result.autoNotified && act.type === 'closeChat');
                         if (result.waUrl) {
                             showWaSuccessModal(result.waUrl, act.reqId);
                         } else if (serverAlreadyNotified) {
@@ -1754,7 +1770,7 @@
                                 }
                                 else if (act.type === 'closeChat' || act.type === 'status_update') {
                                     targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                                    waFullMsg += "بخصوص طلب التوفيق رقم: (" + req.reqId + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
+                                    waFullMsg += "بخصوص طلبكم مع الطرف الآخر 👤: (" + (req.targetData || 'غير متوفرة') + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
                                 }
                                 else if (act.payload.actionContext) {
                                     let ctxParts = act.payload.actionContext.split('|');
