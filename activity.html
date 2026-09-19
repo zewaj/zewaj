@@ -1,4 +1,3 @@
-
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 1 ]: إعدادات الصفحة والـ Head ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -642,7 +641,8 @@
                 let isWaitingPayment = statusText.includes('بانتظار الدفع');
                 let isAcquaintancePhase = statusText.includes('تسليم الأرقام') || statusText.includes('مرحلة التعارف');
 
-                let isTargetFemale = targetInfo.includes('مطلقة') || targetInfo.includes('بكر') || targetInfo.includes('أرملة') || req.gender === 'أنثى';
+                // جنس الطرف الآخر يأتي من الخادم (targetGender)؛ والتخمين من نص الملف احتياطي فقط للبيانات المخزّنة قديماً
+                let isTargetFemale = req.targetGender ? (req.targetGender === 'أنثى') : (targetInfo.includes('مطلقة') || targetInfo.includes('بكر') || targetInfo.includes('أرملة') || req.gender === 'أنثى');
                 let currentUserIsMale = isTargetFemale; 
 
                 if (isWaitingPayment) {
@@ -779,7 +779,14 @@
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
                         }
                     } else {
-                        let contactBtn = currentUserIsMale ? `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>` : '';
+                        // 🟢 "تواصل مباشر" للرجل دائماً (ولا يتكرر بعد إرساله)، و"موافقة تبادل أرقام" للمرأة دائماً (ولا يظهر إلا بعد أن يطلب الرجل التواصل)
+                        let hasDirectReqInThread = hasDirectRequest(req, originalChunks);
+                        let contactBtn = '';
+                        if (currentUserIsMale) {
+                            if (!hasDirectReqInThread) contactBtn = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold shadow-sm">📞 تواصل مباشر</button>`;
+                        } else if (hasDirectReqInThread) {
+                            contactBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
+                        }
                         let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
                         let extendBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تمديد المحادثة', false, event)" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
@@ -865,7 +872,8 @@
                 let isWaitingPayment = statusText.includes('بانتظار الدفع');
                 let isAcquaintancePhase = statusText.includes('تسليم الأرقام') || statusText.includes('مرحلة التعارف');
 
-                let isSenderFemale = senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة') || req.gender === 'أنثى';
+                // جنس الطرف الآخر يأتي من الخادم (requesterGender)؛ والتخمين من نص الملف احتياطي فقط للبيانات المخزّنة قديماً
+                let isSenderFemale = req.requesterGender ? (req.requesterGender === 'أنثى') : (senderInfo.includes('مطلقة') || senderInfo.includes('بكر') || senderInfo.includes('أرملة') || req.gender === 'أنثى');
                 let currentUserIsMale = isSenderFemale; 
 
                 if (isWaitingPayment) {
@@ -900,7 +908,7 @@
                 
                 let isFirstMessage = (totalMessages === 1);
                 
-                let hasDirectReqInThread = (req.message || "").includes('تواصل مباشر') || (req.message || "").includes('تبادل الأرقام');
+                let hasDirectReqInThread = hasDirectRequest(req, originalChunks);
                 let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
                 
                 let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،');
@@ -1051,6 +1059,13 @@
             updateBadge('incomingBadge', inBadge, hasRedBadge);
         }
 
+        // 🟢 هل طلب الرجل التواصل المباشر في هذه المحادثة؟ يعتمد على علم الخادم (hasRequestedContact) ثم على نص الرسالة الثابت الذي يكتبه الخادم؛
+        // (لا نبحث عن كلمة "تواصل مباشر" وحدها كي لا تُفعّل الزر رسالةٌ عادية تحتويها)
+        function hasDirectRequest(req, chunks) {
+            if (req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE') return true;
+            return (chunks || []).some(c => c.includes('طلب تواصل مباشر وتبادل أرقام') || c.includes('طلب تواصل مباشر وتبادل الأرقام'));
+        }
+
         function updateBadge(id, count, hasRed) {
             const b = document.getElementById(id); if(!b) return;
             if(count > 0) {
@@ -1157,22 +1172,6 @@
 
         function closeReplyModal() { document.getElementById('replyModal').classList.add('hidden'); }
 
-        function promptDirectContact(reqId, targetMarriageType) {
-            currentReplyReqId = reqId; currentReplyType = 'طلب تواصل مباشر';
-            document.getElementById('replyModalTitle').innerText = 'طلب تواصل مباشر وتبادل الأرقام';
-            const msgInput = document.getElementById('replyMessage'); 
-            msgInput.value = 'أرغب بالتواصل المباشر وتبادل الأرقام.'; msgInput.style.display = 'none';
-            msgInput.readOnly = false;
-            msgInput.classList.remove('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
-            let radioContainer = document.getElementById('rejectionRadios'); if (radioContainer) radioContainer.style.display = 'none';
-            const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.remove('hidden');
-            
-            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
-            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
-            document.getElementById('replyModal').classList.remove('hidden');
-            document.getElementById('replySubmitBtn').onclick = submitReply;
-        }
-
         function openEditModal(reqId, encodedMsg, event) {
             if(event) event.stopPropagation();
             currentReplyReqId = reqId; currentReplyType = 'تعديل رسالة';
@@ -1196,19 +1195,22 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 21 ]: دوال فتح النوافذ المنبثقة (Modals) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+        // 🟢 زر "تواصل مباشر" للرجل فقط (مبادراً كان أو مستقبِلاً): تظهر نافذة الرسوم ثم يُرسل الطلب فوراً برسالة ثابتة، بلا أي مربع كتابة وبلا مرور على الإدارة.
         window.promptDirectContact = function(reqId, targetMarriageType) {
             if (window.userStatusParam && (window.userStatusParam.includes('مراجعة') || window.userStatusParam.includes('انتظار') || window.userStatusParam.includes('جديد'))) { showMsgModal('تنبيه', 'ملفك قيد المراجعة. لا يمكنك إرسال طلبات تواصل حالياً.'); return; }
-            window.tempDirectContactReqId = reqId;
-            
+            window.lastInteractedReqId = reqId;
+
             let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config')) || {}; } catch(e){}
             const FEE_NORMAL = config.DIRECT_CONTACT_FEE !== undefined ? config.DIRECT_CONTACT_FEE : 150;
             const FEE_SPECIAL_WOMAN = config.DIRECT_FEE_SPECIAL_WOMEN !== undefined ? config.DIRECT_FEE_SPECIAL_WOMEN : 250;
             const FEE_SPECIAL_MAN = config.DIRECT_FEE_MEN_SPECIAL !== undefined ? config.DIRECT_FEE_MEN_SPECIAL : 0;
+            // رسوم زواج الرجل (بعد الملكة) من الشيت: FEE_MEN_MATCH، وتنطبق على كل الرجال حتى أصحاب باقة الاشتراطات الخاصة
+            const FEE_MATCH_MAN = config.FEE_MEN_MATCH !== undefined ? config.FEE_MEN_MATCH : 3000;
 
             const myMType = localStorage.getItem('verified_user_mType') || '';
             const isMyTypeSpecial = myMType.includes('خاص') || myMType.includes('اشتراطات') || myMType.includes('مسيار');
             const isTargetSpecial = (targetMarriageType || '').includes('ظروف') || (targetMarriageType || '').includes('خاص');
-            
+
             let finalFee = FEE_NORMAL;
             if (isMyTypeSpecial) {
                 finalFee = FEE_SPECIAL_MAN;
@@ -1216,78 +1218,56 @@
                 finalFee = FEE_SPECIAL_WOMAN;
             }
 
+            const matchFeeHtml = Number(FEE_MATCH_MAN) > 0
+                ? `<p class="text-[10px] text-slate-500 font-medium mt-2 underline decoration-dotted underline-offset-4">وبعد الملكة (إتمام الزواج) تُستحق رسوم التوفيق: ${FEE_MATCH_MAN} ريال</p>`
+                : '';
+
             const textEl = document.getElementById('confirmActionText');
-            // التعديل: إبراز الرسوم لتكون واضحة وتنبض بالأحمر
+            // إبراز الرسوم لتكون واضحة وتنبض بالأحمر
             if (finalFee === 0) {
-                textEl.innerHTML = `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">هذا الإجراء مجاني تماماً ومشمول في باقتك (0 ريال).</strong>`;
+                textEl.innerHTML = `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">هذا الإجراء مجاني تماماً ومشمول في باقتك (0 ريال).</strong>${matchFeeHtml}`;
             } else {
-                textEl.innerHTML = `تأكيد الإجراء<br><br><div class="bg-rose-50 border border-rose-200 p-3 rounded-lg mt-2 shadow-sm animate-pulse"><p class="text-xs font-bold text-slate-700 mb-1">في حال موافقة الطرف الآخر، توجد رسوم إدارية قدرها:</p><strong class="text-rose-600 text-lg block">(${finalFee} ريال)</strong></div>`;
+                textEl.innerHTML = `تأكيد الإجراء<br><br><div class="bg-rose-50 border border-rose-200 p-3 rounded-lg mt-2 shadow-sm animate-pulse"><p class="text-xs font-bold text-slate-700 mb-1">في حال موافقة الطرف الآخر، توجد رسوم إدارية قدرها:</p><strong class="text-rose-600 text-lg block">(${finalFee} ريال)</strong>${matchFeeHtml}</div>`;
             }
-            
+
+            // "نعم، متأكد" تُرسل الطلب مباشرة (المعالج يُخزَّن هنا ولا يُستبدل بدالة عامة كي لا تتداخل مع نافذة إلغاء الانتظار)
+            window.pendingConfirmAction = function() { window.sendDirectContactRequest(reqId); };
+
             const modalBox = document.getElementById('confirmActionBox');
             let safeY = Math.max(20, windowLastInteractionY - 150);
             modalBox.style.marginTop = safeY + 'px';
             document.getElementById('confirmActionModal').classList.remove('hidden');
         };
 
-        function closeConfirmModal() { document.getElementById('confirmActionModal').classList.add('hidden'); }
-        function executeConfirmAction() { closeConfirmModal(); openReplyModal(window.tempDirectContactReqId, 'طلب تواصل مباشر', false); }
+        // 🟢 إرسال طلب التواصل المباشر فوراً (الرسالة ثابتة من الخادم، ولا تُخصم نقاط: الرسوم بالريال بعد موافقة المرأة)
+        window.sendDirectContactRequest = function(reqId) {
+            if (!phoneParam || !reqId) return;
+            if (window.getPendingActions().some(a => a.reqId === reqId && a.state === 'sending')) return;
+            window.lastInteractedReqId = reqId;
+
+            let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            let pendingRecord = {
+                id: actionId, reqId: reqId, type: 'طلب تواصل مباشر',
+                text: "طلب تواصل مباشر وتبادل أرقام.",
+                state: 'sending',
+                payload: { action: 'requestDirectContact', phone: phoneParam, reqId: reqId, requesterRefId: refIdParam, tempId: actionId },
+                timestamp: Date.now()
+            };
+
+            window.addPendingAction(pendingRecord);
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+            setTimeout(scrollToBottomChats, 50);
+            showToast("⏳ جاري الإرسال...");
+
+            window.processPendingAction(actionId);
+        };
+
+        function closeConfirmModal() { window.pendingConfirmAction = null; document.getElementById('confirmActionModal').classList.add('hidden'); }
+        // زر "نعم، متأكد": ينفّذ المعالج المخزَّن في pendingConfirmAction (تواصل مباشر أو إلغاء انتظار)
+        function executeConfirmAction() { const fn = window.pendingConfirmAction; closeConfirmModal(); if (typeof fn === 'function') fn(); }
 
         let currentReplyReqId = null; let currentReplyType = null;
         
-        function openReplyModal(reqId, type, showWarning = false, event = null) {
-            if (window.userStatusParam && (window.userStatusParam.includes('مراجعة') || window.userStatusParam.includes('انتظار') || window.userStatusParam.includes('جديد'))) { showMsgModal('تنبيه', 'عفواً، ملفك حالياً قيد المراجعة.'); return; }
-            window.lastInteractedReqId = reqId; 
-            
-            currentReplyReqId = reqId; currentReplyType = type;
-            let titleColor = "text-indigo-800"; let bgHeader = "bg-indigo-50 border-indigo-100"; let iconColor = "text-indigo-500"; let btnColor = "bg-indigo-600 hover:bg-indigo-700";
-            if(type.includes('موافقة') || type === 'طلب تواصل مباشر') { titleColor="text-emerald-800"; bgHeader="bg-emerald-50 border-emerald-100"; iconColor="text-emerald-500"; btnColor="bg-emerald-600 hover:bg-emerald-700"; }
-            if(type === 'إنهاء واعتذار' || type === 'اعتذار بلطف' || type === '❌ رفض/اعتذار') { titleColor="text-rose-800"; bgHeader="bg-rose-50 border-rose-100"; iconColor="text-rose-500"; btnColor="bg-rose-600 hover:bg-rose-700"; }
-            
-            document.getElementById('replyModalTitle').innerText = `إرسال: ${type}`;
-            document.getElementById('replyModalTitle').className = `text-lg font-bold mb-1 ${titleColor}`;
-            document.getElementById('replyModalHeaderBg').className = `absolute top-0 left-0 right-0 h-16 border-b -z-10 ${bgHeader}`;
-            document.getElementById('replyModalIconWrapper').className = `w-14 h-14 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-slate-100 relative mt-2 ${iconColor}`;
-            
-            const btn = document.getElementById('replySubmitBtn');
-            btn.className = `flex-1 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2 ${btnColor}`;
-            btn.innerHTML = "<span>تأكيد الإرسال</span>"; btn.replaceWith(btn.cloneNode(true)); document.getElementById('replySubmitBtn').addEventListener('click', submitReply);
-            
-            const msgInput = document.getElementById('replyMessage'); msgInput.readOnly = false; msgInput.value = ''; msgInput.placeholder = "اكتب رسالتك هنا (10 أحرف كحد أدنى)...";
-            msgInput.className = "w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm mb-4 text-right bg-slate-50";
-
-            if (type === 'طلب تواصل مباشر') { 
-                msgInput.value = "أرغب في طلب التواصل المباشر وتبادل الأرقام عبر الإدارة."; 
-                msgInput.readOnly = true; 
-                msgInput.className = "w-full p-3 border border-emerald-300 rounded-xl text-sm mb-4 text-center bg-emerald-50 text-emerald-700 font-bold resize-none cursor-not-allowed"; 
-            }
-            else if (type.includes('اعتذار') || type.includes('رفض') || type.includes('إنهاء')) { 
-                msgInput.value = "أعتذر، المواصفات غير مناسبة لي، وأتمنى لك التوفيق."; 
-                msgInput.readOnly = true; 
-                msgInput.className = "w-full p-3 border border-rose-300 rounded-xl text-sm mb-4 text-center bg-rose-50 text-rose-700 font-bold resize-none cursor-not-allowed"; 
-                document.getElementById('quotaWarning').innerHTML = '<p class="text-[10px] font-bold text-rose-700 leading-relaxed">تنبيه: سيتم إرسال هذا الاعتذار كإقفال نهائي للطلب. (يقوم النظام تلقائياً بحفظ الحقوق المالية وتعويض الطرف الآخر وفقاً لسياسة المنصة).</p>';
-                document.getElementById('quotaWarning').classList.remove('hidden');
-                document.getElementById('quotaWarning').className = "mb-4 text-center p-2 rounded-lg bg-rose-50 border border-rose-200 shadow-sm";
-            }
-            else if (type === 'موافقة نهائية') { 
-                msgInput.value = "أوافق على طلب التواصل المباشر، وسأقوم بمراسلة الإدارة لتزويدهم برقم الجوال."; 
-                msgInput.readOnly = true; 
-                msgInput.className = "w-full p-3 border border-emerald-300 rounded-xl text-sm mb-4 text-center bg-emerald-50 text-emerald-700 font-bold resize-none cursor-not-allowed";
-                document.getElementById('quotaWarning').innerHTML = '<p class="text-[10px] font-bold text-emerald-700 leading-relaxed">تنبيه: عند تأكيد الموافقة، يُرجى التواصل مع الإدارة عبر الواتساب لتزويدهم برقم الجوال المناسب.</p>';
-                document.getElementById('quotaWarning').classList.remove('hidden');
-                document.getElementById('quotaWarning').className = "mb-4 text-center p-2 rounded-lg bg-emerald-50 border border-emerald-200 shadow-sm";
-            }
-
-            if (type !== 'موافقة نهائية' && !type.includes('اعتذار') && !type.includes('رفض') && !type.includes('إنهاء')) {
-                document.getElementById('quotaWarning').classList.add('hidden');
-            }
-            
-            const modalBox = document.getElementById('replyModalBox');
-            let safeY = Math.max(20, windowLastInteractionY - 200);
-            modalBox.style.marginTop = safeY + 'px';
-            document.getElementById('replyModal').classList.remove('hidden');
-        }
-
         function openEditModal(reqId, encodedMsg, event = null) {
             if (window.userStatusParam && (window.userStatusParam.includes('مراجعة') || window.userStatusParam.includes('انتظار') || window.userStatusParam.includes('جديد'))) return;
             window.lastInteractedReqId = reqId; currentReplyReqId = reqId;
@@ -1455,26 +1435,27 @@
                 if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
             }
 
+            // (التواصل المباشر لم يعد يمر من هنا ولا يستهلك نقاطاً: انظر sendDirectContactRequest)
             let requiredPoints = 0;
-            if (currentReplyType === 'طلب تواصل مباشر') requiredPoints = 3;
-            else if (document.getElementById('quotaWarning') && document.getElementById('quotaWarning').innerHTML.includes('انتهى')) requiredPoints = 1; 
-            
-            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) { 
-                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); return; 
+            if (document.getElementById('quotaWarning') && document.getElementById('quotaWarning').innerHTML.includes('انتهى')) requiredPoints = 1;
+
+            if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) {
+                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); return;
             }
 
-            let isDirectContactAction = (currentReplyType === 'طلب تواصل مباشر');
-            
-            let finalReplyType = isRejection ? 'اعتذار' : (currentReplyType === 'موافقة تبادل أرقام' ? 'موافقة نهائية' : currentReplyType);
-            
+            // 🟢 موافقة المرأة على تبادل الأرقام تذهب لمسارها الخاص submitFinalApproval (فوري بلا اعتماد إداري + نقطة المكافأة)، وأي رد آخر يبقى replyToRequest
+            let isFinalApprovalAction = (currentReplyType === 'موافقة تبادل أرقام');
+
+            let finalReplyType = isRejection ? 'اعتذار' : currentReplyType;
+
             let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-            let payloadObj = isDirectContactAction 
-                ? { action: 'requestDirectContact', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam, tempId: actionId }
+            let payloadObj = isFinalApprovalAction
+                ? { action: 'submitFinalApproval', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam, tempId: actionId }
                 : { action: 'replyToRequest', phone: phoneParam, reqId: currentReplyReqId, requesterRefId: refIdParam, replyType: finalReplyType, replyMessage: msg, tempId: actionId };
 
             let pendingRecord = {
                 id: actionId, reqId: currentReplyReqId, type: currentReplyType,
-                text: isDirectContactAction ? "طلب تواصل مباشر وتبادل الأرقام..." : msg,
+                text: msg,
                 state: 'sending', payload: payloadObj, timestamp: Date.now()
             };
 
@@ -1531,10 +1512,9 @@
             modalBox.style.marginTop = safeY + 'px';
             document.getElementById('confirmActionModal').classList.remove('hidden');
 
-            window.executeConfirmAction = async function() {
+            window.pendingConfirmAction = async function() {
                 if (window.isSubmittingAction) return;
                 window.isSubmittingAction = true;
-                closeConfirmModal();
                 
                 let actionId = 'msg_' + Date.now();
                 let pendingRecord = {
