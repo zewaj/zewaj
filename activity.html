@@ -552,8 +552,20 @@
             try {
                 let rawUser = localStorage.getItem('currentUser');
                 let currentUserData = (rawUser && rawUser !== 'undefined') ? JSON.parse(rawUser) : {};
-                return localStorage.getItem('profileStatus') || currentUserData.status || currentUserData.profileStatus || 'نشط';
+                // active_profile_status يُحدَّث من الخادم مع كل مزامنة (الحالة الحيّة)
+                return localStorage.getItem('active_profile_status') || localStorage.getItem('profileStatus') || currentUserData.status || currentUserData.profileStatus || 'نشط';
             } catch (e) { return 'نشط'; }
+        }
+
+        // 🟢 إخراج بالقوة (ملف محذوف): داخل الـ iframe نطلبه من القشرة (index) لتمسح الجلسة؛ ومستقلةً (رابط سحري) نمسح التخزين ونعرض شاشة إيقاف.
+        function handleForceLogout(message) {
+            if (window.__forcedLogoutInProgress) return;
+            window.__forcedLogoutInProgress = true;
+            const msg = message || 'تم حذف ملفك من المنصة ولا يمكنك استخدامها. للاستفسار تواصل مع الإدارة.';
+            if (window.self !== window.top) { window.parent.postMessage({ action: 'forceLogout', message: msg }, '*'); return; }
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:Tajawal,sans-serif;direction:rtl"><div style="max-width:360px"><div style="font-size:42px;margin-bottom:12px">🔒</div><h2 style="font-weight:800;margin-bottom:8px">تم إيقاف الحساب</h2><p style="color:#64748b;line-height:1.8"></p></div></div>';
+            document.querySelector('p').innerText = msg;
         }
 
         function renderMyFavorites(favs) {
@@ -624,7 +636,7 @@
 
             const myProfileStatus = getMyProfileStatus();
             const isBannedFromChat = (myProfileStatus === 'محذوف' || myProfileStatus === 'تم الزواج');
-            const isNewOrWaiting = (myProfileStatus === 'جديد' || myProfileStatus === 'انتظار');
+            // 🟢 قيد المراجعة/جديد: لا يبدأ طلبات تواصل جديدة (الخادم والبحث يمنعانه) لكنه يكمل مراسلاته القديمة، فلا نوقف أزرار الرد هنا
 
             reqs.forEach(req => {
                 let statusText = req.status || 'جاري المعالجة';
@@ -770,8 +782,6 @@
                 } else {
                     if (isBannedFromChat) { 
                         actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; 
-                    } else if (isNewOrWaiting) { 
-                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ بانتظار تفعيل ملفك لتتمكن من المراسلة.</p></div>`; 
                     } else if (isRealLastFromMe) {
                         if (isUneditableAutoMsg) { 
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
@@ -855,7 +865,6 @@
 
             const myProfileStatus = getMyProfileStatus();
             const isBannedFromChat = (myProfileStatus === 'محذوف' || myProfileStatus === 'تم الزواج');
-            const isNewOrWaiting = (myProfileStatus === 'جديد' || myProfileStatus === 'انتظار');
 
             visibleReqs.forEach(req => {
                 let otherPartyId = req.requesterRefId || req.reqId || req.senderRefId;
@@ -995,8 +1004,6 @@
                 } else {
                     if (isBannedFromChat) { 
                         actionAreaHtml = `<div class="bg-rose-50 p-2.5 border-t border-rose-100 text-center rounded-b-2xl"><p class="text-[11px] text-rose-700 font-bold">🔒 تم إيقاف المراسلة لأن حالة ملفك الحالي: (${myProfileStatus})</p></div>`; 
-                    } else if (isNewOrWaiting) { 
-                        actionAreaHtml = `<div class="bg-amber-50 p-2.5 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">⚠️ لا يمكنك التفاعل مع الطلبات حتى يتم تفعيل ملفك.</p></div>`; 
                     } else if (isRealLastFromMe) {
                         if (isUneditableAutoMsg) { 
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
@@ -1197,7 +1204,7 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         // 🟢 زر "تواصل مباشر" للرجل فقط (مبادراً كان أو مستقبِلاً): تظهر نافذة الرسوم ثم يُرسل الطلب فوراً برسالة ثابتة، بلا أي مربع كتابة وبلا مرور على الإدارة.
         window.promptDirectContact = function(reqId, targetMarriageType) {
-            if (window.userStatusParam && (window.userStatusParam.includes('مراجعة') || window.userStatusParam.includes('انتظار') || window.userStatusParam.includes('جديد'))) { showMsgModal('تنبيه', 'ملفك قيد المراجعة. لا يمكنك إرسال طلبات تواصل حالياً.'); return; }
+            // (التواصل المباشر جزء من مراسلة قائمة أصلاً، فلا يُمنع صاحب "قيد المراجعة" منه؛ أما الطلبات الجديدة فمنعها في القشرة والخادم)
             window.lastInteractedReqId = reqId;
 
             let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config')) || {}; } catch(e){}
@@ -1207,16 +1214,15 @@
             // رسوم زواج الرجل (بعد الملكة) من الشيت: FEE_MEN_MATCH، وتنطبق على كل الرجال حتى أصحاب باقة الاشتراطات الخاصة
             const FEE_MATCH_MAN = config.FEE_MEN_MATCH !== undefined ? config.FEE_MEN_MATCH : 3000;
 
-            const myMType = localStorage.getItem('verified_user_mType') || '';
-            const isMyTypeSpecial = myMType.includes('خاص') || myMType.includes('اشتراطات') || myMType.includes('مسيار');
+            // الرسم الفعلي من استحقاقات الرجل (باقاته) لا من نوع زواجه المسجَّل: تواصل مجاني ← 0، باقة الاشتراطات الخاصة ← رسمها الخفيض، غيره ← بحسب المرأة
+            const freeExternalLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
+            const hasSpecialPackage = localStorage.getItem('cached_special_package') === '1';
             const isTargetSpecial = (targetMarriageType || '').includes('ظروف') || (targetMarriageType || '').includes('خاص');
 
-            let finalFee = FEE_NORMAL;
-            if (isMyTypeSpecial) {
-                finalFee = FEE_SPECIAL_MAN;
-            } else if (isTargetSpecial) {
-                finalFee = FEE_SPECIAL_WOMAN;
-            }
+            let finalFee = isTargetSpecial ? FEE_SPECIAL_WOMAN : FEE_NORMAL;
+            if (hasSpecialPackage) finalFee = FEE_SPECIAL_MAN;
+            const isFreeContact = freeExternalLeft > 0;
+            if (isFreeContact) finalFee = 0;
 
             const matchFeeHtml = Number(FEE_MATCH_MAN) > 0
                 ? `<p class="text-[10px] text-slate-500 font-medium mt-2 underline decoration-dotted underline-offset-4">وبعد الملكة (إتمام الزواج) تُستحق رسوم التوفيق: ${FEE_MATCH_MAN} ريال</p>`
@@ -1225,7 +1231,9 @@
             const textEl = document.getElementById('confirmActionText');
             // إبراز الرسوم لتكون واضحة وتنبض بالأحمر
             if (finalFee === 0) {
-                textEl.innerHTML = `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">هذا الإجراء مجاني تماماً ومشمول في باقتك (0 ريال).</strong>${matchFeeHtml}`;
+                textEl.innerHTML = isFreeContact
+                    ? `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">🎁 هذا التواصل مجاني من باقتك (0 ريال)، ويُخصم من تواصلاتك المجانية عند موافقة الطرف الآخر. المتبقي لديك: ${freeExternalLeft}</strong>${matchFeeHtml}`
+                    : `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">هذا الإجراء مجاني تماماً ومشمول في باقتك (0 ريال).</strong>${matchFeeHtml}`;
             } else {
                 textEl.innerHTML = `تأكيد الإجراء<br><br><div class="bg-rose-50 border border-rose-200 p-3 rounded-lg mt-2 shadow-sm animate-pulse"><p class="text-xs font-bold text-slate-700 mb-1">في حال موافقة الطرف الآخر، توجد رسوم إدارية قدرها:</p><strong class="text-rose-600 text-lg block">(${finalFee} ريال)</strong>${matchFeeHtml}</div>`;
             }
@@ -1269,7 +1277,6 @@
         let currentReplyReqId = null; let currentReplyType = null;
         
         function openEditModal(reqId, encodedMsg, event = null) {
-            if (window.userStatusParam && (window.userStatusParam.includes('مراجعة') || window.userStatusParam.includes('انتظار') || window.userStatusParam.includes('جديد'))) return;
             window.lastInteractedReqId = reqId; currentReplyReqId = reqId;
             document.getElementById('replyModalTitle').innerText = `✏️ تعديل رسالتك`; document.getElementById('replyModalTitle').className = `text-lg font-bold mb-1 text-amber-800`;
             document.getElementById('replyModalHeaderBg').className = `absolute top-0 left-0 right-0 h-16 border-b -z-10 bg-amber-50 border-amber-100`;
@@ -1364,7 +1371,10 @@
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(act.payload) });
                 const resText = await res.text(); let result = JSON.parse(resText);
-                
+
+                // 🟢 الملف المحذوف: لا يُعاد إرسال الإجراء ولا يُعلَّم "فشل"، بل يُخرَج العضو بالقوة
+                if (result && result.forceLogout) { window.removePendingAction(actionId); handleForceLogout(result.message); return; }
+
                 if (result.success === false || result.success === undefined) throw new Error(result.error || result.message || "مرفوض من السيرفر");
                 
                 window.removePendingAction(actionId); 
@@ -1545,6 +1555,9 @@
                     }
                     
                     window.userPointsBalance = result.walletBalance || result.balance || 0;
+                    // استحقاقات الباقات (تُقرأ في نافذة رسوم التواصل المباشر)
+                    if (result.freeExternalContacts !== undefined) localStorage.setItem('cached_free_external', result.freeExternalContacts || 0);
+                    if (result.hasSpecialPackage !== undefined) localStorage.setItem('cached_special_package', result.hasSpecialPackage ? '1' : '0');
                     const pointsDisplay = document.getElementById('userPointsDisplay');
                     if (pointsDisplay) {
                         pointsDisplay.innerText = window.userPointsBalance;
@@ -1595,7 +1608,9 @@
             try {
                 const textResult = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam }) });
                 const result = JSON.parse(textResult);
-                if (result.success) { 
+                if (result.forceLogout) { handleForceLogout(result.message); return; }
+                if (result.success) {
+                    if (result.profileStatus) localStorage.setItem('active_profile_status', result.profileStatus);
                     if (result.currentUserMarriageType !== undefined) {
                         localStorage.setItem('verified_user_mType', result.currentUserMarriageType);
                     }
