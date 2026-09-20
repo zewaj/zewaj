@@ -1,0 +1,277 @@
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 1 ]: إعدادات الصفحة والـ Head ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الباقات والاشتراك - منصة زواج</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 2 ]: التنسيقات العامة (CSS) ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn .3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    <script>
+        // داخل الـ iframe تكون الخلفية شفافة لتنسجم مع القشرة (index.html)
+        if (window.self !== window.top || new URLSearchParams(window.location.search).get('embedded') === 'true') {
+            document.write('<style>html, body { background-color: transparent !important; }</style>');
+        }
+    </script>
+</head>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 3 ]: هيكل الصفحة (HTML) ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<body class="text-slate-800 antialiased">
+    <div class="max-w-2xl mx-auto px-3 pt-4 pb-24">
+
+        <div class="text-center mb-4">
+            <h1 class="text-xl font-black text-slate-800">💎 الباقات والاشتراك</h1>
+            <p class="text-[11px] text-slate-500 font-bold mt-1">تُضاف نقاط الباقة فوق رصيدك الحالي ولا تستبدله.</p>
+        </div>
+
+        <div id="guestBox"></div>
+        <div id="statusBox"></div>
+        <div id="pendingBox"></div>
+        <div id="packagesList" class="flex flex-col gap-3"></div>
+        <div id="infoBox"></div>
+    </div>
+
+    <!-- نافذة التأكيد -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-5 fade-in">
+            <h3 id="confirmTitle" class="text-base font-black text-slate-800 text-center mb-2"></h3>
+            <p id="confirmText" class="text-xs text-slate-600 font-bold leading-relaxed text-center mb-4"></p>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeConfirm()" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">إلغاء</button>
+                <button type="button" id="confirmBtn" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md">نعم، اشترك</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة النجاح -->
+    <div id="doneModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-5 fade-in text-center">
+            <div class="text-4xl mb-2">✅</div>
+            <h3 class="text-base font-black text-slate-800 mb-2">تم تسجيل طلبك</h3>
+            <p id="doneText" class="text-xs text-slate-600 font-bold leading-relaxed mb-4"></p>
+            <a id="doneReceiptLink" href="#" target="_blank" rel="noopener" class="block w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md mb-2">أرسل الإيصال للوسيط عبر واتساب</a>
+            <button type="button" onclick="closeDone()" class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xl max-w-[90%] text-center"></div>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 4 ]: جافاسكريبت - الإعدادات والاتصال بالخادم ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        function safeStorage(key) { try { return localStorage.getItem(key) || ''; } catch (e) { return ''; } }
+        const phoneParam = (urlParams.get('phone') || safeStorage('verified_user_phone')).replace(/[^0-9]/g, '');
+        const refIdParam = (urlParams.get('refId') || safeStorage('active_profile_refid') || '').toString().trim();
+
+        // زائر غير مسجّل (أو لم يكمل ملفه): يتصفح الباقات فقط ويختار باقات الرجال أو النساء، والاشتراك يتطلب دخولاً
+        const isGuest = !phoneParam || !refIdParam || refIdParam === 'null';
+        let guestGender = '';
+
+        let pageData = null;
+        let selectedPackageId = null;
+        let isSubmitting = false;
+
+        function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        async function postJson(payload) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: controller.signal });
+                return JSON.parse(await res.text());
+            } finally { clearTimeout(timeoutId); }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3500);
+        }
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 5 ]: جافاسكريبت - رسم الصفحة ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        function receiptLink(name, price, reqId) {
+            const text = `السلام عليكم، تم السداد لـ ${name} (${price} ريال) - رقم الطلب ${reqId} - ملف #${refIdParam}. المرفق الإيصال.`;
+            return `https://wa.me/${(pageData && pageData.mediatorPhone) || '966590779236'}?text=${encodeURIComponent(text)}`;
+        }
+
+        // مدة الإعلان بصيغة عربية سليمة: شهر واحد، شهران، 3-10 أشهر، وما فوق شهراً
+        function monthsText(n) {
+            n = parseInt(n) || 0;
+            if (n === 1) return 'شهر واحد';
+            if (n === 2) return 'شهرين';
+            if (n >= 3 && n <= 10) return n + ' أشهر';
+            return n + ' شهراً';
+        }
+
+        function renderGuestBox() {
+            const box = document.getElementById('guestBox');
+            if (!isGuest) { box.innerHTML = ''; return; }
+            const btn = (g, label, icon) => `<button type="button" onclick="chooseGuestGender('${g}')" class="flex-1 py-3 rounded-xl font-black text-sm border-2 transition-all ${guestGender === g ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}">${icon} ${label}</button>`;
+            box.innerHTML = `
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 mb-3">
+                    <p class="text-[11px] font-black text-indigo-800 text-center mb-2">أنت تتصفح كزائر، اختر نوع الباقات التي تريد الاطلاع عليها</p>
+                    <div class="flex gap-2">${btn('ذكر', 'باقات الرجال', '👨')}${btn('أنثى', 'باقات النساء', '👩')}</div>
+                </div>`;
+        }
+
+        function chooseGuestGender(g) { guestGender = g; loadPage(); }
+
+        // الزائر يضغط "اشترك": نطلب منه الدخول أو التسجيل أولاً
+        function guestSubscribe() {
+            showToast('سجّل دخولك أو أنشئ حسابك مجاناً أولاً لتتمكن من الاشتراك.');
+            if (window.self !== window.top) window.parent.postMessage({ action: 'requireLogin' }, '*');
+            else setTimeout(() => { window.location.href = 'register.html'; }, 1200);
+        }
+
+        function renderStatus() {
+            if (pageData.guest) { document.getElementById('statusBox').innerHTML = ''; return; }
+            const w = pageData.wallet || {};
+            const isMale = pageData.gender === 'ذكر';
+            document.getElementById('statusBox').innerHTML = `
+                <div class="bg-white border border-indigo-100 rounded-2xl p-3 shadow-sm mb-3 flex items-center justify-around text-center">
+                    <div><p class="text-[10px] text-slate-400 font-bold">رصيدك الحالي</p><p class="text-lg font-black text-indigo-600">${esc(w.balance || 0)} 💎</p></div>
+                    ${isMale ? `<div class="border-r border-slate-100 pr-4"><p class="text-[10px] text-slate-400 font-bold">تواصلات خارج المنصة</p><p class="text-lg font-black text-emerald-600">${esc(w.freeExternal || 0)}</p></div>` : ''}
+                </div>`;
+        }
+
+        function renderPending() {
+            const list = pageData.pending || [];
+            const box = document.getElementById('pendingBox');
+            if (!list.length) { box.innerHTML = ''; return; }
+            box.innerHTML = list.map(p => `
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-3 shadow-sm">
+                    <p class="text-[11px] font-black text-amber-800 mb-1">⏳ لديك طلب بانتظار السداد: ${esc(p.packageName)} (${esc(p.price)} ريال) - ${esc(p.reqId)}</p>
+                    <p class="text-[10px] text-amber-700 font-bold mb-2">حوّل المبلغ حسب الحسابات التي وصلتك على الواتساب، ثم أرسل الإيصال.</p>
+                    <a href="${esc(receiptLink(p.packageName, p.price, p.reqId))}" target="_blank" rel="noopener" class="block text-center py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs">أرسل الإيصال للوسيط</a>
+                </div>`).join('');
+        }
+
+        function renderPackages() {
+            const pr = pageData.pricing || {};
+            const isMale = pageData.gender === 'ذكر';
+            const list = pageData.packages || [];
+            const box = document.getElementById('packagesList');
+            if (!list.length) { box.innerHTML = '<p class="text-center text-sm text-slate-400 font-bold py-10">لا توجد باقات متاحة لملفك حالياً.</p>'; return; }
+
+            box.innerHTML = list.map(p => {
+                const platformContacts = pr.contactCostRegular > 0 ? Math.floor(p.points / pr.contactCostRegular) : 0;
+                const specialContacts = pr.contactCostSpecialWomen > 0 ? Math.floor(p.points / pr.contactCostSpecialWomen) : 0;
+                let extLines = '';
+                if (isMale && p.external > 0) {
+                    const menSpecialFee = Number(pr.directFeeMenSpecial) || 0;
+                    const after = p.unlocksSpecial
+                        ? (menSpecialFee > 0 ? `${esc(menSpecialFee)} ريال للتواصل الواحد` : 'يبقى التواصل بلا رسوم')
+                        : `${esc(pr.directFee)} ريال مع امرأة (زواج معلن) · ${esc(pr.directFeeSpecialWomen)} ريال مع امرأة (ظروف خاصة)`;
+                    extLines = `
+                        <li class="flex items-start gap-2"><span>📞</span><span><b class="text-emerald-700">${esc(p.external)} تواصل خارج المنصة مجاناً</b><br><span class="text-[10px] text-slate-500">بعد انتهاء التواصلات المجانية: ${after}</span></span></li>`;
+                }
+                return `
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm fade-in">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <h2 class="text-base font-black text-slate-800">${esc(p.name)}</h2>
+                        <div class="text-left"><span class="text-2xl font-black text-indigo-600">${esc(p.price)}</span> <span class="text-xs font-bold text-slate-500">ريال</span></div>
+                    </div>
+                    <ul class="text-xs text-slate-700 font-bold flex flex-col gap-2 mb-3">
+                        <li class="flex items-start gap-2"><span>💎</span><span><b class="text-indigo-700">${esc(p.points)} نقطة</b><br><span class="text-[10px] text-slate-500">تكفي لنحو ${esc(platformContacts)} طلبات تواصل عبر المنصة${isMale ? ` (أو ${esc(specialContacts)} مع ذات الظروف الخاصة)` : ''}</span></span></li>
+                        ${extLines}
+                        ${p.adMonths > 0 ? `<li class="flex items-start gap-2"><span>📢</span><span>إعلان ملفك على شريط الموقع «ملفات مميزة» <b class="text-amber-700">مدة ${esc(monthsText(p.adMonths))}</b><br><span class="text-[10px] text-slate-500">يبدأ من اعتماد ملفك، وإن كان لديك إعلان ساري تُضاف المدة فوقه</span></span></li>` : ''}
+                        ${p.unlocksSpecial ? '<li class="flex items-start gap-2"><span>⭐</span><span>تفعيل مزايا الاشتراطات الخاصة لملفك</span></li>' : ''}
+                    </ul>
+                    ${isGuest
+                        ? `<button type="button" onclick="guestSubscribe()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-sm shadow-md active:scale-95 transition-all">سجّل دخولك للاشتراك في ${esc(p.name)}</button>`
+                        : `<button type="button" onclick="askSubscribe('${esc(p.id)}')" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md active:scale-95 transition-all">اشترك في ${esc(p.name)}</button>`}
+                </div>`;
+            }).join('');
+        }
+
+        function renderInfo() {
+            const pr = pageData.pricing || {};
+            const isMale = pageData.gender === 'ذكر';
+            document.getElementById('infoBox').innerHTML = `
+                <div class="bg-slate-100 border border-slate-200 rounded-2xl p-3 mt-4 text-[11px] text-slate-600 font-bold leading-relaxed">
+                    <p class="font-black text-slate-700 mb-1">كيف تُحسب التكاليف؟</p>
+                    <p>• التواصل مع ملف عبر المنصة: ${esc(pr.contactCostRegular)} نقاط${isMale ? ` (${esc(pr.contactCostSpecialWomen)} نقطة مع ذات الظروف الخاصة)` : ''}.</p>
+                    ${isMale ? `<p>• التواصل المباشر خارج المنصة بعد موافقة الطرف الآخر: ${esc(pr.directFee)} ريال (زواج معلن) أو ${esc(pr.directFeeSpecialWomen)} ريال (ظروف خاصة)، ويُسقطه التواصل المجاني من باقتك.</p>` : ''}
+                    <p>• بعد الاشتراك تصلك رسالة واتساب بالمبلغ وحسابات السداد، وتُفعَّل باقتك فور التأكد من التحويل.</p>
+                </div>`;
+        }
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 6 ]: جافاسكريبت - الاشتراك والتشغيل ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        function askSubscribe(packageId) {
+            const p = (pageData.packages || []).find(x => x.id === packageId);
+            if (!p || isSubmitting) return;
+            selectedPackageId = packageId;
+            document.getElementById('confirmTitle').innerText = `الاشتراك في ${p.name}`;
+            document.getElementById('confirmText').innerText = `المبلغ: ${p.price} ريال. سنرسل لك الآن على الواتساب المبلغ وحسابات السداد، وتُفعَّل الباقة بعد التأكد من التحويل.`;
+            document.getElementById('confirmBtn').onclick = submitSubscribe;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+        function closeConfirm() { document.getElementById('confirmModal').classList.add('hidden'); }
+        function closeDone() { document.getElementById('doneModal').classList.add('hidden'); }
+
+        async function submitSubscribe() {
+            if (isSubmitting || !selectedPackageId) return;
+            isSubmitting = true;
+            const btn = document.getElementById('confirmBtn');
+            const original = btn.innerText; btn.innerText = 'جاري الإرسال...'; btn.disabled = true;
+            try {
+                const res = await postJson({ action: 'requestPackage', phone: phoneParam, refId: refIdParam, packageId: selectedPackageId });
+                closeConfirm();
+                if (!res || res.success !== true) { showToast((res && (res.error || res.message)) || 'تعذر تسجيل الطلب.'); return; }
+                document.getElementById('doneText').innerText = res.message || 'تم تسجيل طلبك.';
+                document.getElementById('doneReceiptLink').href = receiptLink(res.packageName, res.price, res.reqId);
+                document.getElementById('doneModal').classList.remove('hidden');
+                loadPage(true);
+            } catch (e) {
+                closeConfirm();
+                showToast('تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.');
+            } finally { isSubmitting = false; btn.innerText = original; btn.disabled = false; }
+        }
+
+        async function loadPage(silent) {
+            renderGuestBox();
+            if (isGuest && !guestGender) {
+                document.getElementById('statusBox').innerHTML = ''; document.getElementById('pendingBox').innerHTML = ''; document.getElementById('infoBox').innerHTML = '';
+                document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-500 font-bold py-8">اختر باقات الرجال أو باقات النساء لعرضها.</p>';
+                return;
+            }
+            if (!silent) document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-400 font-bold py-10"><span class="inline-block spin">⏳</span> جاري تحميل الباقات...</p>';
+            try {
+                const res = await postJson(isGuest
+                    ? { action: 'getUserPackages', guestGender: guestGender }
+                    : { action: 'getUserPackages', phone: phoneParam, refId: refIdParam });
+                if (!res || res.success !== true) throw new Error((res && (res.error || res.message)) || 'تعذر التحميل');
+                pageData = res;
+                renderStatus(); renderPending(); renderPackages(); renderInfo();
+            } catch (e) {
+                if (!silent) document.getElementById('packagesList').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-10">${esc(e.message || 'تعذر تحميل الباقات')}<br><button type="button" onclick="loadPage()" class="mt-3 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">إعادة المحاولة</button></p>`;
+            }
+        }
+
+        loadPage();
+    </script>
+</body>
+</html>
