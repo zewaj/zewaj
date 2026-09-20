@@ -960,6 +960,11 @@
                 }
                 const dateA = getTimestamp(a.lastActionDate || a.date);
                 const dateB = getTimestamp(b.lastActionDate || b.date);
+                // ما ينتظر تدخل الإدارة (نزاع/دفع/غير مقروء/بانتظار اعتماد): الأقدم أولاً ليُنجَز الأطول انتظاراً قبل غيره.
+                // وما عداه (مقروء، تعارف، أرشيف): الأحدث أولاً. تاريخ مفقود يذهب لآخر المجموعة.
+                if (priorityA >= 1 && priorityA <= 4) {
+                    return (dateA || Number.MAX_SAFE_INTEGER) - (dateB || Number.MAX_SAFE_INTEGER);
+                }
                 return dateB - dateA;
             });
             
