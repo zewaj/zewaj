@@ -352,7 +352,7 @@
                             </div>
                         </div>
                         
-                        <div id="heroBalanceContainer" class="hidden items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1.5 md:px-4 rounded-full shadow-sm mx-auto w-max transition-opacity duration-300">
+                        <div id="heroBalanceContainer" onclick="loadIframe('packages.html')" title="الباقات والاشتراك" class="hidden items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1.5 md:px-4 rounded-full shadow-sm mx-auto w-max transition-opacity duration-300 cursor-pointer hover:bg-indigo-100">
                             <span class="text-[10px] md:text-xs font-bold text-indigo-700">الرصيد:</span>
                             <span id="heroWalletBal" class="text-xs md:text-sm font-black text-blue-600">0</span>
                             <span class="text-blue-500 text-xs md:text-sm">💎</span>
@@ -662,8 +662,15 @@
         // Event Listener for postMessages from Iframes
         window.addEventListener('message', function(event) {
             const data = event.data; if (!data) return;
-            
-            if (data.type === 'openProfileModal') { 
+
+            // 🟢 إخراج بالقوة يطلبه الـ iframe (activity) عند رد forceLogout؛ لا يُقبل إلا من الـ iframe نفسه
+            if (data.action === 'forceLogout') {
+                const fr = document.getElementById('appIframe');
+                if (fr && event.source === fr.contentWindow) forceLogoutNow(data.message);
+                return;
+            }
+
+            if (data.type === 'openProfileModal') {
                 window.lastOpenedProfileData = data.profileData; 
                 if (typeof openProfileModal === 'function') {
                     openProfileModal(data.profileData, data.title, data.subtitle);
@@ -768,7 +775,10 @@
                     console.warn(`⚠️ فشل الاتصال بالسيرفر (الخطأ: ${response.status}).`);
                     return { success: false };
                 }
-                return JSON.parse(await response.text());
+                const parsed = JSON.parse(await response.text());
+                // 🟢 الملف المحذوف: الخادم يرفض أي إجراء ويطلب الإخراج، فنُخرج العضو بالقوة ولو كانت جلسته محفوظة في المتصفح
+                if (parsed && parsed.forceLogout) forceLogoutNow(parsed.message);
+                return parsed;
             } catch (error) {
                 // تحويل الخطأ الأحمر المزعج إلى تنبيه أصفر صامت لحماية الواجهة من الانهيار
                 console.warn("⚠️ تعذر الوصول للرابط (قد يكون بسبب بيئة العرض أو حجب المتصفح):", error.message);
@@ -782,7 +792,10 @@
                 // إرسال forceRefresh للسيرفر لتجاوز الذاكرة المخبئية عند الحاجة
                 const result = await fetchFromGAS({ action: 'syncUserActivity', phone: phone, requesterRefId: reqRef, timestamp: Date.now(), forceRefresh: forceRefresh });
                 if(result && result.success) {
-                    
+
+                    // 🟢 الحالة الحيّة للملف من الخادم (كانت تُحفظ عند الدخول فقط فتبقى قديمة)
+                    if (result.profileStatus) localStorage.setItem('active_profile_status', result.profileStatus);
+
                     // 🟢 [تفعيل الأرقام والشاشات المنبثقة]
                     const unreadCount = result.actionableMessagesCount || 0;
                     const heroBadge = document.getElementById('heroRequestsBadge');
@@ -827,7 +840,10 @@
                     // ... (باقي كود حفظ الرصيد الأصلي) ...
                     localStorage.setItem('cached_wallet_balance', result.walletBalance || 0);
                     window.userPointsBalance = result.walletBalance || 0;
-                    
+                    // استحقاقات الباقات (تُقرأ في نافذة رسوم التواصل المباشر): تواصلات خارج المنصة المتبقية، وعلامة باقة الاشتراطات الخاصة
+                    localStorage.setItem('cached_free_external', result.freeExternalContacts || 0);
+                    localStorage.setItem('cached_special_package', result.hasSpecialPackage ? '1' : '0');
+
                     if (result.currentUserMarriageType !== undefined) {
                         localStorage.setItem('verified_user_mType', result.currentUserMarriageType);
                     }
@@ -1106,7 +1122,7 @@
                     if (heroLogoutBtn) heroLogoutBtn.classList.remove('hidden');
 
                     authArea.innerHTML = `
-                        <div class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm">
+                        <div onclick="loadIframe('packages.html')" title="الباقات والاشتراك" class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm cursor-pointer hover:bg-indigo-100">
                             <span class="text-xs font-bold text-indigo-700" id="headerWalletBal">${currentCacheBal}</span>
                             <span class="text-blue-500 text-xs">💎</span>
                         </div>
@@ -1204,6 +1220,27 @@
             }
         }
 
+        // 🟢 إخراج بالقوة (ملف محذوف): تنبيه ثم مسح الجلسة بالكامل. يُستدعى مرة واحدة فقط ولو تكرر الرد من عدة طلبات.
+        function forceLogoutNow(message) {
+            if (window.__forcedLogoutInProgress) return;
+            window.__forcedLogoutInProgress = true;
+            try { alert(message || 'تم حذف ملفك من المنصة ولا يمكنك استخدامها. للاستفسار تواصل مع الإدارة.'); } catch (e) {}
+            logout();
+        }
+
+        // 🟢 فحص دوري خفيف لحالة ملفي: يُخرج العضو الذي حُذف ملفه وهو ما زال فاتحاً الصفحة أو عائداً إليها بعد ساعات.
+        // (fetchFromGAS تتولى الإخراج تلقائياً عند رد forceLogout)
+        async function checkMyProfileStatus() {
+            const phone = localStorage.getItem('verified_user_phone');
+            const refId = localStorage.getItem('active_profile_refid');
+            if (!phone || !refId || refId === 'null' || refId === 'undefined') return;
+            const res = await fetchFromGAS({ action: 'getProfileStatus', phone: phone, requesterRefId: refId });
+            if (res && res.success && res.profileStatus) localStorage.setItem('active_profile_status', res.profileStatus);
+        }
+        setInterval(() => { if (!document.hidden) checkMyProfileStatus(); }, 120000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMyProfileStatus(); });
+        setTimeout(checkMyProfileStatus, 1500);
+
         function logout() {
             // 1. مسح الذاكرة المحلية بالكامل (LocalStorage) لضمان عدم بقاء أي كاش قديم
             localStorage.clear();
@@ -1246,7 +1283,7 @@
         function loadIframe(url) {
             closeLoginModal();
             const isLogged = !!localStorage.getItem('verified_user_phone');
-            if ((url.includes('smart.html') || url.includes('activity.html') || url.includes('contact.html')) && !isLogged) { 
+            if ((url.includes('smart.html') || url.includes('activity.html') || url.includes('contact.html') || url.includes('packages.html')) && !isLogged) {
                 window.currentActivePage = url;
                 openLoginModal(); 
                 return; 
@@ -1267,7 +1304,7 @@
             urlObj.searchParams.set('embedded', 'true'); 
             urlObj.searchParams.set('t', Date.now()); 
             
-            if (url.includes('activity.html') || url.includes('smart.html') || url.includes('contact.html')) {
+            if (url.includes('activity.html') || url.includes('smart.html') || url.includes('contact.html') || url.includes('packages.html')) {
                 if (phone) urlObj.searchParams.set('phone', phone);
                 if (refId) urlObj.searchParams.set('refId', refId);
                 if (firstName) urlObj.searchParams.set('userName', firstName);
@@ -1604,14 +1641,19 @@
                 
                 const baseFee = isSpecial ? DIRECT_FEE_SPECIAL_TARGET : DIRECT_FEE_NORMAL;
                 
-                const myMType = localStorage.getItem('verified_user_mType') || '';
                 const myGender = localStorage.getItem('verified_user_gender') || '';
                 const isMan = myGender.includes('رجل') || myGender.includes('ذكر') || myGender.includes('رجال');
-                const isUserExempt = isMan && (myMType.includes('خاص') || myMType.includes('اشتراطات') || myMType.includes('مسيار'));
-                
-                let feeText = isMan 
-                    ? (isUserExempt ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-emerald-500 text-lg font-black">${DIRECT_FEE_MEN_SPECIAL} ريال (مشمول باشتراكك)</span>` : `<span class="text-indigo-600 text-xl font-black">${baseFee} ريال</span>`)
-                    : `<span class="text-indigo-600 text-xl font-black">مجاناً</span>`;
+                // الرسم الفعلي من استحقاقات الرجل (باقاته) لا من نوع زواجه المسجَّل: تواصل مجاني ← 0، باقة الاشتراطات الخاصة ← رسمها الخفيض
+                const freeExternalLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
+                const hasSpecialPackage = localStorage.getItem('cached_special_package') === '1';
+
+                let feeText = !isMan
+                    ? `<span class="text-indigo-600 text-xl font-black">مجاناً</span>`
+                    : (freeExternalLeft > 0
+                        ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-emerald-500 text-lg font-black">مجاني من باقتك (متبقٍ ${freeExternalLeft})</span>`
+                        : (hasSpecialPackage
+                            ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-emerald-500 text-lg font-black">${DIRECT_FEE_MEN_SPECIAL} ريال (مشمول باشتراكك)</span>`
+                            : `<span class="text-indigo-600 text-xl font-black">${baseFee} ريال</span>`));
 
                 contentArea.innerHTML = `
                     <h3 class="text-lg font-black text-slate-800 mb-1">طلب تواصل مباشر</h3>
