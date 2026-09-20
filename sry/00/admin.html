@@ -990,7 +990,7 @@
                 } else if (s.includes('مرحلة التعارف')) {
                     statusBadge = `<span class="bg-sky-100 text-sky-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف</span>`;
                 } else if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) {
-                    statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 تدخلي فوراً (بانتظار الدفع)</span>`;
+                    statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">${req.freeContact === true ? '🎁 تدخلي فوراً (تواصل مجاني - سلّم الأرقام)' : '🚨 تدخلي فوراً (بانتظار الدفع)'}</span>`;
                 } else if (req.hasRequestedContact) {
                     statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 animate-pulse shrink-0 whitespace-nowrap">طلب تواصل</span>`;
                 } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
@@ -1072,7 +1072,7 @@
                     else if (s.includes('يوجد نزاع')) statusBadgeFull = `<span class="bg-rose-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-700 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخل الإدارة</span>`;
                     else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ أحد الطرفين أبلغ بعدم التوفيق - بانتظار تأكيد الآخر' : '⚠️ أحد الطرفين أبلغ بالزواج - بانتظار تأكيد الآخر'}</span>`;
                     else if (s.includes('مرحلة التعارف')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف الخارجي</span>`;
-                    else if (targetApproved) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 موافقة تبادل أرقام - بانتظار استلام الرسوم</span>`;
+                    else if (targetApproved) statusBadgeFull = `<span class="bg-emerald-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-emerald-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${req.freeContact === true ? '🎁 موافقة تبادل أرقام - تواصل مجاني من باقة الرجل (لا رسوم)' : '🚨 موافقة تبادل أرقام - بانتظار استلام الرسوم'}</span>`;
                     else if (req.hasRequestedContact) statusBadgeFull = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md border border-blue-200 animate-pulse shrink-0 whitespace-nowrap">الرجل طلب تواصل - بانتظار رد المرأة</span>`;
                     else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">${s}</span>`;
                     else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) statusBadgeFull = `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 shrink-0 whitespace-nowrap">${s}</span>`;
@@ -1130,7 +1130,7 @@
                         actionButtonHTML = `
                         ${queueButton}
                         <div class="bg-blue-50 text-blue-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-blue-200 shadow-sm leading-relaxed">
-                            ℹ️ إشعار آلي: المرأة وافقت على تبادل الأرقام. بانتظار استلام الرسوم من الرجل.
+                            ${req.freeContact === true ? '🎁 إشعار آلي: المرأة وافقت على تبادل الأرقام، وهذا التواصل مجاني من باقة الرجل (خُصم من تواصلاته، لا رسوم). سلّم الأرقام مباشرة.' : 'ℹ️ إشعار آلي: المرأة وافقت على تبادل الأرقام. بانتظار استلام الرسوم من الرجل.'}
                         </div>
                         <button onclick="executeAdminAction('${req.reqId}', 'closeChatSuccess')" class="w-full px-4 py-3 text-[12px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-md">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 
@@ -1440,6 +1440,18 @@
             document.getElementById('closeChatModal').classList.remove('hidden');
         }
 
+        // 🟢 رقم جوال الرجل في الطلب، سواء كان الطرف الأول (requester) أو الثاني (target). الجنس يصل من الخادم،
+        // وإن لم يصل (نسخة خادم قديمة) يُخمَّن من نص ملف الطرف الأول: إن بدا امرأة فالرجل هو الطرف الثاني.
+        function getManPhone(req) {
+            const clean = v => String(v || '').replace(/[^0-9]/g, '');
+            if (req.requesterGender === 'ذكر') return clean(req.requesterPhone);
+            if (req.targetGender === 'ذكر') return clean(req.targetPhone);
+            if (req.requesterGender === 'أنثى') return clean(req.targetPhone);
+            if (req.targetGender === 'أنثى') return clean(req.requesterPhone);
+            const looksFemale = /بكر|مطلقة|أرملة|أنثى|امرأة/.test(String(req.requesterData || ''));
+            return clean(looksFemale ? req.targetPhone : req.requesterPhone);
+        }
+
         async function executeAdminAction(reqId, actionType, chosenReason = null) {
             if(isProcessingAction) return;
             const req = allRequests.find(r => r.reqId === reqId);
@@ -1532,10 +1544,11 @@
                     scrollPositions = {}; 
                     sessionStorage.removeItem('admin_requests_cache');
                     
-                    let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, ''); 
+                    let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
                     let craftedUrl = ""; // رابط الواتساب النهائي
-                    
+
                     if (actionType === 'closeChatSuccess') {
+                        targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
                         let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\nتم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
                         craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
                     } else {
@@ -1686,8 +1699,8 @@
                     if (ctxType === 'proxyRequestDirect') {
                         waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
                     } else if (ctxType === 'proxyApproveDirect') {
-                        let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
-                        let adminLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
+                        // 🟢 رابط الوسيط العادي القصير (ينتهي برقم الجوال) بلا نص مشفّر طويل
+                        let adminLink = "https://wa.me/966590779236";
                         waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
                     }
                     
@@ -1758,7 +1771,7 @@
                                 
                                 if (act.type === 'closeChatSuccess') {
                                     let customPhoneToShare = act.payload.actionContext.split('|')[1] || "";
-                                    targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                                    targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
                                     waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\nيسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):\n\nرقم الجوال: " + customPhoneToShare + "\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
                                 } 
                                 else if (act.type === 'msgTarget' || act.type === 'msgStudent') {
@@ -1785,8 +1798,8 @@
                                     if (ctxType === 'proxyRequestDirect') {
                                         waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
                                     } else if (ctxType === 'proxyApproveDirect') {
-                                        let waBridgeText = "السلام عليكم، أبشرك وافقت الطرف الثاني على التواصل المباشر. أرغب بإتمام السداد.";
-                                        let adminLink = `https://wa.me/966590779236?text=${encodeURIComponent(waBridgeText)}`;
+                                        // 🟢 رابط الوسيط العادي القصير (ينتهي برقم الجوال) بلا نص مشفّر طويل
+                                        let adminLink = "https://wa.me/966590779236";
                                         waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
                                     }
                                 }
