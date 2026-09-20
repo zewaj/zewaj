@@ -1,4 +1,3 @@
-
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥 [ القسم  رقم 1: إعدادات الصفحة والـ Head ] 🟥 🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -1428,6 +1427,7 @@
                                         <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-slate-100 shadow-sm w-max">
                                             <span class="text-sm font-black text-indigo-700">#${safeRefId}</span>
                                         </div>
+                                        ${memberBadgeHtml(match.memberStars)}
                                     </div>
                                 </div>
 
@@ -1532,6 +1532,29 @@
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥 [ القسم رقم 20: السكربت - نافذة الملف التفصيلي والنسخ (Unified Profile) ] 🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
+        // شارة "عضو جاد" بعدد النجوم لمن اشترك في باقة (memberStars تأتي من الخادم)؛ من لا نجوم له لا شارة له
+        function memberBadgeHtml(stars, extraClass) {
+            const n = Math.min(parseInt(stars) || 0, 5);
+            if (n <= 0) return '';
+            // 4 = تاج فضي، 5 فأكثر = تاج ذهبي (من دفع باقة الاشتراطات الخاصة)؛ وما دونها نجوم
+            if (n >= 4) {
+                const gold = n >= 5;
+                const box = gold
+                    ? 'bg-gradient-to-b from-amber-100 to-amber-50 border-amber-400 text-amber-800 shadow-[0_0_8px_rgba(245,158,11,.45)]'
+                    : 'bg-gradient-to-b from-slate-100 to-white border-slate-300 text-slate-600 shadow-sm';
+                const crownStyle = gold ? '' : 'style="filter:grayscale(1) brightness(.85) contrast(1.35) drop-shadow(0 0 1px #64748b)"';
+                return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max border rounded-xl px-2.5 py-1 ${box} ${extraClass || ''}" title="عضو جاد - ${gold ? 'تاج ذهبي' : 'تاج فضي'}"><span class="text-[22px] leading-none" ${crownStyle}>👑</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+            }
+            // النجوم فوق الكلمة على شكل هرم: صف علوي أكبر ثم صف أسفله (3 = نجمة كبيرة فوق نجمتين)
+            const rowsMap = { 1: [1], 2: [2], 3: [1, 2] };
+            const rows = rowsMap[n];
+            const starsHtml = rows.map((count, idx) => {
+                const size = rows.length === 1 ? 'text-[14px]' : (idx === 0 ? 'text-[16px]' : 'text-[12px]');
+                return `<span class="flex items-center justify-center gap-0.5 leading-none ${size} ${idx > 0 ? '-mt-0.5' : ''}">${'⭐'.repeat(count)}</span>`;
+            }).join('');
+            return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-2.5 py-1 shadow-sm ${extraClass || ''}" title="عضو جاد"><span class="flex flex-col items-center">${starsHtml}</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+        }
+
         function openProfileModal(data, title, subtitle) {
             if(!data) { alert("بيانات الملف غير متوفرة."); return; }
 
