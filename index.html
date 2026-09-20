@@ -1368,6 +1368,38 @@
         <!-- ✂️ ---------- [ القسم رقم 22 : نافذة الملف الشامل والنسخ ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
+        // شارة "عضو جاد" بعدد النجوم لمن اشترك في باقة (memberStars تأتي من الخادم)؛ من لا نجوم له لا شارة له
+        function memberBadgeHtml(stars, extraClass) {
+            const n = Math.min(parseInt(stars) || 0, 5);
+            if (n <= 0) return '';
+            // 4 = تاج فضي، 5 فأكثر = تاج ذهبي (من دفع باقة الاشتراطات الخاصة)؛ وما دونها نجوم
+            if (n >= 4) {
+                const gold = n >= 5;
+                const box = gold
+                    ? 'bg-gradient-to-b from-amber-100 to-amber-50 border-amber-400 text-amber-800 shadow-[0_0_8px_rgba(245,158,11,.45)]'
+                    : 'bg-gradient-to-b from-slate-100 to-white border-slate-300 text-slate-600 shadow-sm';
+                const crownStyle = gold ? '' : 'style="filter:grayscale(1) brightness(.85) contrast(1.35) drop-shadow(0 0 1px #64748b)"';
+                return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max border rounded-xl px-2.5 py-1 ${box} ${extraClass || ''}" title="عضو جاد - ${gold ? 'تاج ذهبي' : 'تاج فضي'}"><span class="text-[22px] leading-none" ${crownStyle}>👑</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+            }
+            // النجوم فوق الكلمة على شكل هرم: صف علوي أكبر ثم صف أسفله (3 = نجمة كبيرة فوق نجمتين)
+            const rowsMap = { 1: [1], 2: [2], 3: [1, 2] };
+            const rows = rowsMap[n];
+            const starsHtml = rows.map((count, idx) => {
+                const size = rows.length === 1 ? 'text-[14px]' : (idx === 0 ? 'text-[16px]' : 'text-[12px]');
+                return `<span class="flex items-center justify-center gap-0.5 leading-none ${size} ${idx > 0 ? '-mt-0.5' : ''}">${'⭐'.repeat(count)}</span>`;
+            }).join('');
+            return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-2.5 py-1 shadow-sm ${extraClass || ''}" title="عضو جاد"><span class="flex flex-col items-center">${starsHtml}</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+        }
+
+        // رمز الشارة داخل الشريط المتحرك (نص فقط): 👑 لمن دفع الاشتراطات الخاصة (ذهبي)، 🥈 للتاج الفضي، والنجوم لغيرهم
+        function tickerBadgeText(stars) {
+            const n = Math.min(parseInt(stars) || 0, 5);
+            if (n <= 0) return '';
+            if (n >= 5) return '👑 ';
+            if (n === 4) return '🥈 ';
+            return '⭐'.repeat(n) + ' ';
+        }
+
         function openProfileModal(data, title, subtitle) {
             if(!data) { showToast("بيانات الملف غير متوفرة حالياً."); return; }
 
@@ -1399,7 +1431,8 @@
 
             if(titleEl) titleEl.innerText = title || 'تفاصيل ملف';
             if(subtitleEl) subtitleEl.innerText = subtitle || ('معلومات الملف رقم #' + (data.refId || data.RefId || data.refID || 'غير محدد'));
-            
+            if(subtitleEl && (parseInt(data.memberStars) || 0) > 0) subtitleEl.insertAdjacentHTML('beforeend', ' ' + memberBadgeHtml(data.memberStars));
+
             const refId = data.refId || data.RefId || data.refID || 'غير محدد';
             
             let detailedBioText = data.autoBio || data.content || data.ShortBio || data.shortBio || "النبذة غير متوفرة.";
@@ -1972,7 +2005,7 @@
                 const colorClass = isFemale ? 'text-pink-600 hover:text-pink-800' : 'text-blue-600 hover:text-blue-800'; 
                 window.currentCandidatesData[item.refId] = item;
                 const itemDataStr = encodeURIComponent(JSON.stringify(item));
-                itemsHtml += `<span class="cursor-pointer mx-6 transition-colors ${colorClass} hover:underline" onclick="openProfileModal(JSON.parse(decodeURIComponent('${itemDataStr}')), 'تفاصيل ملف', 'معلومات الملف رقم #${item.refId}')">${item.tickerText}</span>`; 
+                itemsHtml += `<span class="cursor-pointer mx-6 transition-colors ${colorClass} hover:underline" onclick="openProfileModal(JSON.parse(decodeURIComponent('${itemDataStr}')), 'تفاصيل ملف', 'معلومات الملف رقم #${item.refId}')">${tickerBadgeText(item.memberStars)}${item.tickerText}</span>`;
             });
             const fullSet = itemsHtml + `<span class="mx-8 text-indigo-400 font-black text-[10px] tracking-wide">✨ أبو العنود ✨</span>`; 
             ticker.innerHTML = fullSet + fullSet;
@@ -2003,6 +2036,7 @@
                         <div class="flex flex-col min-w-0 flex-1">
                             <div class="font-black text-base ${titleColor} truncate w-full" title="${item.featuredTitle}">${item.featuredTitle}</div>
                             <span class="text-[9px] font-bold ${badgeColor} px-2 py-0.5 rounded-md border w-max mt-1 shrink-0">#${item.refId}</span>
+                            ${memberBadgeHtml(item.memberStars, 'mt-1')}
                         </div>
                         <div class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-slate-50 border border-slate-100 overflow-hidden shadow-inner ml-2">${icon}</div>
                     </div>
