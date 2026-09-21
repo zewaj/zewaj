@@ -199,19 +199,20 @@
                 <input type="hidden" id="currentReqId">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">الحالة الجديدة أو الإجراء:</label>
-                    <select id="newStatus" class="w-full p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50">
+                    <select id="newStatus" onchange="onStatusSelectChange()" class="w-full p-2 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50">
                         <optgroup label="تغيير صامت (بدون واتساب)">
                             <option value="قيد الانتظار">قيد الانتظار (طلب جديد)</option>
                             <option value="بانتظار الطرف الأول">بانتظار الطرف الأول</option>
                             <option value="بانتظار الطرف الثاني">بانتظار الطرف الثاني</option>
                         </optgroup>
-                        <optgroup label="مراحل الدفع والتعارف (تستهلك الكوتا)">
-                            <option value="موافقة تبادل أرقام - بانتظار الدفع">موافقة تبادل أرقام - بانتظار الدفع ⏳</option>
+                        <optgroup label="مراحل الدفع والتعارف (تغيير حالة صامت)">
                             <option value="تم الدفع وتسليم الأرقام - في مرحلة التعارف">تم الدفع وتسليم الأرقام - في مرحلة التعارف 💬</option>
                         </optgroup>
-                        <optgroup label="تدخل بالنيابة (يرسل واتساب للعميل)">
-                            <option value="PROXY_REQUEST_DIRECT">طلب تواصل 🧔🏻‍♂️ (يُرسل من الرجل للمرأة آلياً)</option>
-                            <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (تُرسل من المرأة للرجل آلياً)</option>
+                        <optgroup label="تدخل بالنيابة عن العميل (يُنفَّذ كأنه منه ويصل الطرف الآخر واتساب آلياً)">
+                            <option value="PROXY_REQUEST_DIRECT">طلب تواصل مباشر 🧔🏻‍♂️ (من الرجل إلى المرأة)</option>
+                            <option value="PROXY_APPROVE_DIRECT">موافقة تبادل أرقام 🧕🏻 (من المرأة إلى الرجل، بالرسوم)</option>
+                            <option value="PROXY_REJECT_MAN">اعتذار بالنيابة عن الرجل 🧔🏻‍♂️</option>
+                            <option value="PROXY_REJECT_WOMAN">اعتذار بالنيابة عن المرأة 🧕🏻</option>
                         </optgroup>
                         <optgroup label="إغلاق نهائي للطلب (يُحرر الكوتا)">
                             <option value="مغلق - تم الزواج">مغلق - تم الزواج 💍</option>
@@ -220,6 +221,11 @@
                             <option value="مغلق - ملغى">مغلق - ملغى 🚫</option>
                         </optgroup>
                     </select>
+                </div>
+                <div id="proxyRejectBox" class="hidden bg-rose-50 border border-rose-200 rounded-xl p-2.5">
+                    <label class="block text-xs font-bold text-rose-800 mb-1">سبب الاعتذار (يصل الطرف الآخر باسم من تنوب عنه):</label>
+                    <select id="proxyRejectReason" onchange="onRejectReasonChange()" class="w-full p-2 border border-rose-200 rounded-lg outline-none text-xs bg-white"></select>
+                    <textarea id="proxyRejectCustom" rows="2" class="hidden w-full mt-2 p-2 border border-rose-200 rounded-lg outline-none text-xs bg-white" placeholder="اكتب سبب الاعتذار بلطف..."></textarea>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">ملاحظة إدارية مخفية (اختياري):</label>
@@ -1603,7 +1609,36 @@
                 statusSelect.add(newOption);
                 statusSelect.value = currentStatus;
             }
+            fillProxyRejectReasons();
+            onStatusSelectChange();
             document.getElementById('statusModal').classList.remove('hidden');
+        }
+
+        // أسباب الاعتذار الجاهزة نفسها التي يختار منها العميل في activity.html (نسخة مكررة عمداً: لا ملفات مشتركة)، مع خيار الكتابة الحرة
+        const PROXY_REJECT_REASONS = [
+            { v: 'أعتذر، البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.', t: 'البيانات والمواصفات العامة غير متوافقة' },
+            { v: 'أعتذر، لا أقبل بالتعدد (أبحث عن شخص غير متزوج).', t: 'لا أقبل بالتعدد (أبحث عن شخص غير متزوج)' },
+            { v: 'أعتذر، ظروفي لا تتناسب مع وجود أبناء من زواج سابق.', t: 'ظروفي لا تتناسب مع وجود أبناء من زواج سابق' },
+            { v: 'أعتذر، أبحث عن تكافؤ نسب معين.', t: 'أبحث عن تكافؤ نسب معين' },
+            { v: 'أعتذر، أبحث عن زواج تقليدي معلن فقط.', t: 'أبحث عن زواج تقليدي معلن فقط' },
+            { v: 'أعتذر، فارق العمر أو منطقة السكن غير مناسبة لي.', t: 'فارق العمر أو منطقة السكن غير مناسبة لي' },
+            { v: '__other', t: 'سبب آخر (أكتبه)' }
+        ];
+
+        function fillProxyRejectReasons() {
+            const sel = document.getElementById('proxyRejectReason');
+            if (sel.options.length) return;
+            PROXY_REJECT_REASONS.forEach(r => sel.add(new Option(r.t, r.v)));
+        }
+
+        function onStatusSelectChange() {
+            const v = document.getElementById('newStatus').value;
+            document.getElementById('proxyRejectBox').classList.toggle('hidden', !(v === 'PROXY_REJECT_MAN' || v === 'PROXY_REJECT_WOMAN'));
+            onRejectReasonChange();
+        }
+
+        function onRejectReasonChange() {
+            document.getElementById('proxyRejectCustom').classList.toggle('hidden', document.getElementById('proxyRejectReason').value !== '__other');
         }
 
         function closeModal() { document.getElementById('statusModal').classList.add('hidden'); }
@@ -1612,123 +1647,87 @@
             const reqId = document.getElementById('currentReqId').value;
             const statusSelectVal = document.getElementById('newStatus').value;
             let adminReply = document.getElementById('adminReply').value.trim();
-            
+
             const req = allRequests.find(r => r.reqId === reqId);
             if (!req) return;
+
+            // 🟢 التدخل بالنيابة: يُنفَّذ في الخادم بمنطق العميل نفسه (الرجل والمرأة من جنس الملف في الشيت، والرسالة تصل الطرف الآخر آلياً)
+            if (statusSelectVal.startsWith('PROXY_')) { await runProxyAction(req, statusSelectVal); return; }
+
+            // تغيير الحالة العادي صامت دائماً (لا واتساب). الملاحظة تُسجَّل في المحادثة فقط.
             let existingHistory = req.message ? req.message.split('---').map(c => c.trim()).filter(Boolean) : [];
-            
-            let actionContext = '';
-            let actualStatus = statusSelectVal;
             let payloadText = adminReply ? `[من الإدارة]: ${adminReply}` : "";
-
-            let isProxyAction = statusSelectVal.startsWith('PROXY_');
-
-            let manIsParty1 = true;
-            let rData = req.requesterData || '';
-            let tData = req.targetData || '';
-            if (rData.match(/(مطلقة|أرملة|بكر|عزباء|متزوجة|امرأة|بنت)/) || tData.match(/(مطلق|أرمل|أعزب|متزوج|رجل|ولد)/)) {
-                manIsParty1 = false;
-            }
-
-            if (isProxyAction) {
-                let proxyMsg = "";
-                if (statusSelectVal === 'PROXY_REQUEST_DIRECT') {
-                    let actingFor = manIsParty1 ? '1' : '2';
-                    actionContext = 'proxyRequestDirect|' + actingFor;
-                    actualStatus = manIsParty1 ? 'بانتظار الطرف الثاني' : 'بانتظار الطرف الأول';
-                    let prefix = manIsParty1 ? '[من الطرف الأول]' : '[من الطرف الثاني]';
-                    proxyMsg = prefix + " [تدخل إداري]: طلب تواصل مباشر وتبادل أرقام.";
-                } else if (statusSelectVal === 'PROXY_APPROVE_DIRECT') {
-                    let actingFor = manIsParty1 ? '2' : '1';
-                    actionContext = 'proxyApproveDirect|' + actingFor;
-                    actualStatus = 'موافقة تبادل أرقام - بانتظار الدفع';
-                    let prefix = manIsParty1 ? '[من الطرف الثاني]' : '[من الطرف الأول]';
-                    proxyMsg = prefix + " [تدخل إداري]: نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
-                }
-                
-                existingHistory.push(proxyMsg);
-                payloadText = "OVERWRITE_FLAG|||" + existingHistory.join("\n\n---\n\n");
-            } else if (payloadText !== "") {
+            if (payloadText !== "") {
                 existingHistory.push(payloadText);
                 payloadText = "OVERWRITE_FLAG|||" + existingHistory.join("\n\n---\n\n");
             }
 
-            if (!isProxyAction) {
-                const btn = document.getElementById('btnSaveStatus'); btn.disabled = true;
-                let actionId = 'act_' + Date.now();
-                pendingAdminActions.push({
-                    id: actionId, reqId: reqId, type: 'status_update', text: adminReply || "تحديث حالة", state: 'sending',
-                    payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: actualStatus, adminReply: payloadText, actionContext: actionContext },
-                    timestamp: Date.now()
-                });
-                savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
-                btn.disabled = false;
-                return;
+            const btn = document.getElementById('btnSaveStatus'); btn.disabled = true;
+            let actionId = 'act_' + Date.now();
+            pendingAdminActions.push({
+                id: actionId, reqId: reqId, type: 'status_update', text: adminReply || "تحديث حالة", state: 'sending',
+                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: statusSelectVal, adminReply: payloadText, actionContext: '' },
+                timestamp: Date.now()
+            });
+            savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
+            btn.disabled = false;
+        }
+
+        // 🟢 تنفيذ إجراء بالنيابة عن العميل. requestDirect/approveDirect/reject تعالجها adminActOnBehalf في الخادم.
+        async function runProxyAction(req, type) {
+            const map = {
+                PROXY_REQUEST_DIRECT: { actionType: 'requestDirect', title: 'طلب تواصل مباشر من الرجل', info: 'سيصل المرأة واتساب آلياً أن الرجل يطلب التواصل المباشر وتبادل الأرقام.' },
+                PROXY_APPROVE_DIRECT: { actionType: 'approveDirect', title: 'موافقة تبادل أرقام من المرأة', info: 'ستصل الرجل واتساب آلياً موافقة المرأة مع رسوم الحالة وحسابات السداد (أو إبلاغه أن التواصل مجاني من باقته وخصمه من تواصلاته)، وتُمنح المرأة نقطة المكافأة.' },
+                PROXY_REJECT_MAN: { actionType: 'reject', actingGender: 'ذكر', title: 'اعتذار بالنيابة عن الرجل', info: 'سيصل المرأة واتساب آلياً أن الرجل اعتذر مع السبب، ويُغلق الطلب.' },
+                PROXY_REJECT_WOMAN: { actionType: 'reject', actingGender: 'أنثى', title: 'اعتذار بالنيابة عن المرأة', info: 'سيصل الرجل واتساب آلياً أن المرأة اعتذرت مع السبب، ويُغلق الطلب.' }
+            };
+            const m = map[type];
+            if (!m) return;
+
+            let reason = '';
+            if (m.actionType === 'reject') {
+                const sel = document.getElementById('proxyRejectReason').value;
+                reason = sel === '__other' ? document.getElementById('proxyRejectCustom').value.trim() : sel;
+                if (!reason) { await showMsgModal('تنبيه', 'اختر سبب الاعتذار أو اكتبه.'); return; }
             }
 
-            // تم إزالة الشاشة البيضاء (window.open) من هنا
+            const ok = await showMsgModal(m.title, m.info + '\n\nلا يمكن التراجع عنه بعد الإرسال. هل تريد المتابعة؟', 'confirm');
+            if (!ok) return;
 
             const btn = document.getElementById('btnSaveStatus');
             const cancelBtn = document.getElementById('btnCancelStatus');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = "جاري الحفظ..."; btn.disabled = true; cancelBtn.disabled = true;
+            btn.innerHTML = "جاري التنفيذ..."; btn.disabled = true; cancelBtn.disabled = true;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: actualStatus, adminReply: payloadText, actionContext: actionContext }),
+                    body: JSON.stringify({ action: 'adminActOnBehalf', adminToken: state.adminToken, reqId: req.reqId, actionType: m.actionType, actingGender: m.actingGender || '', reason: reason }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
                 const textRes = await res.text();
                 let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
+                try { result = JSON.parse(textRes); } catch (e) { throw new Error("استجابة السيرفر غير صالحة."); }
+
                 if (result.success) {
                     closeModal(); scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
-                    
-                    let ctxParts = actionContext.split('|');
-                    let ctxType = ctxParts[0];
-                    let actingFor = ctxParts[1]; 
-                    
-                    let phoneToSend = actingFor === '1' ? String(req.targetPhone).replace(/[^0-9]/g, '') : String(req.requesterPhone).replace(/[^0-9]/g, '');
-                    let senderData = actingFor === '1' ? req.requesterData : req.targetData;
-                    let magicLink = actingFor === '1' ? result.targetMagicLink : result.requesterMagicLink;
-                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${phoneToSend}`;
-
-                    let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n`;
-                    
-                    if (ctxType === 'proxyRequestDirect') {
-                        waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
-                    } else if (ctxType === 'proxyApproveDirect') {
-                        // 🟢 رابط الوسيط العادي القصير (ينتهي برقم الجوال) بلا نص مشفّر طويل
-                        let adminLink = "https://wa.me/966590779236";
-                        waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
-                    }
-                    
-                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
-                    let craftedUrl = `https://wa.me/${phoneToSend}?text=${encodeURIComponent(waFullMsg)}`;
-                    showWaSuccessModal(craftedUrl, reqId);
-                    
-                    await fetchData(true, reqId);
+                    const sentTo = `${result.notified || ''}${result.notifiedName ? ' - ' + result.notifiedName : ''}${result.notifiedPhoneTail ? ' (' + result.notifiedPhoneTail + ')' : ''}`;
+                    await showMsgModal("تم التنفيذ", `${result.message || ''}\n\nأُرسل واتساب آلياً إلى: ${sentTo}`);
+                    await fetchData(true, req.reqId);
                 } else {
-                    await showMsgModal("تنبيه", result.message || "النظام مشغول.");
+                    await showMsgModal("تنبيه", result.message || "تعذر تنفيذ الإجراء.");
                 }
-            } catch(e) {
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تأخير", "تأخر استجابة السيرفر.");
-                } else {
-                    await showMsgModal("خطأ", "فشل الاتصال بالسيرفر.");
-                }
+            } catch (e) {
+                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر. قد يكون الإجراء نُفّذ، حدّث الصفحة وتحقق قبل إعادة المحاولة.");
+                else await showMsgModal("خطأ", "فشل الاتصال بالسيرفر.");
             } finally {
-                btn.innerHTML = originalHtml; 
+                btn.innerHTML = originalHtml;
                 btn.disabled = false; cancelBtn.disabled = false;
             }
         }
-
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 21: طابور العمليات الخلفية ومعالجة الأخطاء 🔴🔴🔴 -->
 <!-- ======================================================== -->
@@ -1760,14 +1759,14 @@
 
                         // 🟢 الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة،
                         // إلا إن كتب الأدمن رداً خاصاً في نافذة الحالة فيبقى الإرسال اليدوي لأنه يحمل نصه.
-                        // وتغيير الحالة بلا ردّ خاص ("تحديث حالة") لا نص فيه يستحق رسالة، فيبقى صامتاً كما تقول تسمية القائمة.
-                        let isPlainStatusUpdate = (act.type === 'status_update' && act.text === 'تحديث حالة');
+                        // وتغيير الحالة من الترس (status_update) صامت دائماً، والملاحظة المرافقة مخفية تُسجَّل في المحادثة فقط ولا تُرسل واتساب.
+                        let isPlainStatusUpdate = (act.type === 'status_update');
                         let serverAlreadyNotified = isPlainStatusUpdate || (result.autoNotified && act.type === 'closeChat');
                         if (result.waUrl) {
                             showWaSuccessModal(result.waUrl, act.reqId);
                         } else if (serverAlreadyNotified) {
                             // لا شيء: الإشعار التلقائي وصل
-                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || act.type === 'closeChat' || act.type === 'status_update' || (act.payload.actionContext && act.payload.actionContext.startsWith('proxy'))) {
+                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || act.type === 'closeChat') {
                             
                             const req = allRequests.find(r => r.reqId === act.reqId);
                             if(req) {
@@ -1786,29 +1785,11 @@
                                     let waIntro = act.type === 'msgTarget' ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
                                     waFullMsg += waIntro + "\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"\n\nللرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\nأو يمكنك الرد مباشرة هنا في الواتساب.";
                                 }
-                                else if (act.type === 'closeChat' || act.type === 'status_update') {
+                                else if (act.type === 'closeChat') {
                                     targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
                                     waFullMsg += "بخصوص طلبكم مع الطرف الآخر 👤: (" + (req.targetData || 'غير متوفرة') + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
                                 }
-                                else if (act.payload.actionContext) {
-                                    let ctxParts = act.payload.actionContext.split('|');
-                                    let ctxType = ctxParts[0];
-                                    let actingFor = ctxParts[1]; 
-                                    
-                                    targetPhoneNum = actingFor === '1' ? String(req.targetPhone).replace(/[^0-9]/g, '') : String(req.requesterPhone).replace(/[^0-9]/g, '');
-                                    let senderData = actingFor === '1' ? req.requesterData : req.targetData;
-                                    let magicLink = actingFor === '1' ? result.targetMagicLink : result.requesterMagicLink;
-                                    if (!magicLink) magicLink = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
 
-                                    if (ctxType === 'proxyRequestDirect') {
-                                        waFullMsg += `الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nهناك رغبة جادة منه للتقدم الرسمي ويطلب:\n\n*"التواصل المباشر وتبادل الأرقام معك أو مع ولي أمرك"*\n\n_نحتاج تأكيد موافقتكم، رفضكم، أو رغبتكم بمزيد من الاستفسارات._\n_للرد عبر المنصة:_\n${magicLink}\n_أو يمكنك الرد مباشرة هنا._`;
-                                    } else if (ctxType === 'proxyApproveDirect') {
-                                        // 🟢 رابط الوسيط العادي القصير (ينتهي برقم الجوال) بلا نص مشفّر طويل
-                                        let adminLink = "https://wa.me/966590779236";
-                                        waFullMsg += `نبشرك بأن الطرف الآخر 👤: (${senderData || 'غير متوفرة'})\nقد وافق نهائياً على طلب التواصل المباشر وتبادل الأرقام.\n\n_لإتمام الإجراءات واستلام الرقم، يرجى التواصل مع الوسيط مباشرة عبر الرابط التالي:_\n${adminLink}`;
-                                    }
-                                }
-                                
                                 if(targetPhoneNum) {
                                     let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
                                     showWaSuccessModal(craftedUrl, act.reqId);
