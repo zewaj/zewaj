@@ -625,7 +625,13 @@
     <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <!-- MAIN JAVASCRIPT -->
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+
+        // رابط مباشر لملف معيّن قابل للمشاركة: يُلحَق بنصوص النسخ/المشاركة فقط (لا يظهر داخل النبذة المعروضة).
+        function buildProfileShareLink(refId) {
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/search.html?refId=${refId}`;
+        }
+
         const maleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#e0f2fe"/><path d="M12 40 C12 10, 88 10, 88 40 L95 100 L5 100 Z" fill="#ef4444"/><rect x="30" y="35" width="40" height="45" rx="15" fill="#fde68a"/><path d="M20 30 Q50 20 80 30" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><path d="M25 35 Q50 25 75 35" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="55" r="3" fill="#1f2937"/><circle cx="58" cy="55" r="3" fill="#1f2937"/><path d="M42 65 Q50 72 58 65" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
         const femaleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#fce7f3"/><path d="M20 40 C20 10, 80 10, 80 40 L90 100 L10 100 Z" fill="#1f2937"/><circle cx="50" cy="50" r="20" fill="#fde68a"/><circle cx="42" cy="48" r="3" fill="#1f2937"/><circle cx="58" cy="48" r="3" fill="#1f2937"/><path d="M44 58 Q50 64 56 58" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
         
@@ -1460,8 +1466,8 @@
             const refId = data.refId || data.RefId || data.refID || 'غير محدد';
             
             let detailedBioText = data.autoBio || data.content || data.ShortBio || data.shortBio || "النبذة غير متوفرة.";
-            window.currentCleanBio = detailedBioText; 
-            const encodedDetailedBio = encodeURIComponent(detailedBioText);
+            window.currentCleanBio = detailedBioText;
+            const encodedDetailedBio = encodeURIComponent(detailedBioText + buildProfileShareLink(refId));
 
             // 🟢 التعديل الصارم: البحث عن الكلمة الدقيقة لتحديد نوع الزواج بدقة 100%
             let profileGender = data.gender || data.Gender || data['الجنس'] || data.targetGender || window.lastSearchedGender || '';
