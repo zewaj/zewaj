@@ -49,10 +49,6 @@
         }
         #selectionFloatingBar.show { bottom: 24px; }
         
-        .group-btn { transition: all 0.2s ease; }
-        .group-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; font-weight: bold; }
-        .group-btn:not(.active) { background-color: white; color: #64748b; border-color: #e2e8f0; }
-        .group-btn:not(.active):hover { background-color: #f8fafc; border-color: #cbd5e1; }
 
         body.in-iframe #mainPageHeader,
         body.in-iframe #smartSearchSection,
@@ -497,17 +493,12 @@
 
             try {
                 const result = await fetchFromGAS(requestData);
-                const phone = requestData.phone || localStorage.getItem('temp_user_phone');
-                if (phone) {
-                    try {
-                        const favRes = await fetchFromGAS({ action: 'getFavorites', phone: phone });
-                        if (favRes.success && favRes.favorites) window.userFavorites = favRes.favorites;
-                    } catch(e) { window.userFavorites = []; }
-                }
+                // (حُذف طلب getFavorites: غير موجود في الخادم ويؤخر النتائج بلا فائدة، والمفضلات تُقرأ من cached_favorites)
 
                 if (result.success && result.matches) {
                     const cacheKey = getCacheKey(requestData.phone, requestData.refId);
-                    localStorage.setItem(cacheKey, JSON.stringify(result));
+                    // امتلاء تخزين المتصفح لا يجب أن يمنع عرض النتائج (كان يظهر كـ"خطأ شبكة")
+                    try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch (storageErr) { try { localStorage.removeItem(cacheKey); } catch (e2) {} }
                     window.cachedSmartResult = result;
                     window.cachedSmartRequest = requestData;
                     const scrollArea = document.querySelector('main');
@@ -690,43 +681,22 @@
             let targetGenderForCards = requestData.sheetName === 'طلبات_النساء' ? 'ذكر' : 'أنثى';
             window.lastSearchedGender = targetGenderForCards; 
             document.getElementById('resultsArea').classList.remove('hidden');
-            window.realTotalSmartMatches = result.matches ? result.matches.length : 0;
+            window.realTotalSmartMatches = result.totalMatches || (result.matches ? result.matches.length : 0);
 
             if (window.realTotalSmartMatches > MAX_SMART_MATCHES) originalGlobalMatches = result.matches.slice(0, MAX_SMART_MATCHES);
             else originalGlobalMatches = result.matches || [];
             globalMatches = []; 
 
-            if (originalGlobalMatches.length > 50) {
-                groupingContainer.classList.remove('hidden');
-                groupingContainer.classList.add('flex');
-                const highMatch = originalGlobalMatches.filter(m => (m.matchPercentage || 0) >= 90);
-                const midMatch = originalGlobalMatches.filter(m => (m.matchPercentage || 0) >= 70 && (m.matchPercentage || 0) < 90);
-                const lowMatch = originalGlobalMatches.filter(m => (m.matchPercentage || 0) < 70);
-                let activeGroups = [];
-
-                if (highMatch.length >= 6) { activeGroups = ['high']; globalMatches = highMatch; }
-                else if (highMatch.length > 0 && highMatch.length < 6) { activeGroups = ['high', 'mid']; globalMatches = [...highMatch, ...midMatch]; if (globalMatches.length < 6 && lowMatch.length > 0) { activeGroups.push('low'); globalMatches = [...globalMatches, ...lowMatch]; } }
-                else if (highMatch.length === 0) { if (midMatch.length >= 6) { activeGroups = ['mid']; globalMatches = midMatch; } else if (midMatch.length > 0 && midMatch.length < 6) { activeGroups = ['mid', 'low']; globalMatches = [...midMatch, ...lowMatch]; } else { activeGroups = ['low']; globalMatches = lowMatch; } }
-
-                const baseClass = "flex-1 px-1 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-bold border shadow-sm transition-colors flex items-center justify-center whitespace-nowrap overflow-hidden";
-                let buttonsHTML = '';
-                if (highMatch.length > 0) buttonsHTML += `<button onclick="filterResultsByGroup('high', this)" class="group-btn ${activeGroups.includes('high') ? 'active' : ''} ${baseClass}">تطابق عالي (${highMatch.length})</button>`;
-                else buttonsHTML += `<button disabled class="${baseClass} bg-slate-50 text-slate-400 cursor-not-allowed opacity-70">تطابق عالي (0)</button>`;
-                if (midMatch.length > 0) buttonsHTML += `<button onclick="filterResultsByGroup('mid', this)" class="group-btn ${activeGroups.includes('mid') ? 'active' : ''} ${baseClass}">تطابق جيد (${midMatch.length})</button>`;
-                else buttonsHTML += `<button disabled class="${baseClass} bg-slate-50 text-slate-400 cursor-not-allowed opacity-70">تطابق جيد (0)</button>`;
-                if (lowMatch.length > 0) buttonsHTML += `<button onclick="filterResultsByGroup('low', this)" class="group-btn ${activeGroups.includes('low') ? 'active' : ''} ${baseClass}">تطابق مقبول (${lowMatch.length})</button>`;
-                else buttonsHTML += `<button disabled class="${baseClass} bg-slate-50 text-slate-400 cursor-not-allowed opacity-70">تطابق مقبول (0)</button>`;
-                groupingContainer.innerHTML = buttonsHTML;
-            } else {
-                globalMatches = originalGlobalMatches;
-                groupingContainer.classList.add('hidden');
-                groupingContainer.classList.remove('flex');
-            }
+            // (حُذف تقسيم عالي/جيد/مقبول بحسب النسبة: التقسيم الآن بحسب المنطقة ويأتي جاهزاً من الخادم في الحقل section)
+            globalMatches = originalGlobalMatches;
+            groupingContainer.classList.add('hidden');
+            groupingContainer.classList.remove('flex');
 
             let targetLoadCount = MATCHES_PER_LOAD;
             if (isSilentUpdate && currentlyDisplayedCount > MATCHES_PER_LOAD) targetLoadCount = currentlyDisplayedCount;
             currentlyDisplayedCount = 0;
             document.getElementById('matchesContainer').innerHTML = '';
+            window.lastRenderedSection = null;
             window.currentCandidatesData = {}; 
             
             if (globalMatches.length > 0) {
@@ -751,19 +721,6 @@
             }
         }
 
-        window.filterResultsByGroup = function(group, btnElement) {
-            document.querySelectorAll('.group-btn').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-            if (group === 'high') globalMatches = originalGlobalMatches.filter(m => (m.matchPercentage || 0) >= 90);
-            else if (group === 'mid') globalMatches = originalGlobalMatches.filter(m => (m.matchPercentage || 0) >= 70 && (m.matchPercentage || 0) < 90);
-            else globalMatches = originalGlobalMatches.filter(m => (m.matchPercentage || 0) < 70);
-            currentlyDisplayedCount = 0;
-            document.getElementById('matchesContainer').innerHTML = '';
-            let totalText = window.realTotalSmartMatches > MAX_SMART_MATCHES ? `أفضل ${MAX_SMART_MATCHES}` : originalGlobalMatches.length;
-            document.getElementById('resultsCount').innerText = `(${globalMatches.length} نتائج في هذه الفئة من أصل ${totalText})`;
-            loadNextBatch();
-        };
-
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
 /* 🟥🟥🟥 [ القسم رقم 13: نظام أسباب التطابق (Match Reasons Modal) ] 🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
@@ -773,12 +730,14 @@
             if(!candidate) return;
             const list = document.getElementById('matchReasonsList');
             list.innerHTML = '';
-            let points = [];
-            if(window.myUserData && candidate.city === window.myUserData.city) points.push('الإقامة في نفس المدينة ('+candidate.city+')');
-            if(candidate.matchPercentage >= 80) points.push('توافق عالي في المواصفات الأساسية');
-            if(window.myUserData && Math.abs(parseInt(candidate.age) - parseInt(window.myUserData.age)) <= 5) points.push('تقارب في العمر');
-            if(points.length === 0) points.push('توافق عام في معايير البحث المطروحة');
-            points.forEach(pt => { list.innerHTML += `<li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>${pt}</li>`; });
+            // الأسباب تصل جاهزة من الخادم (reasons) من نفس حساب المطابقة؛ الاحتياط للنتائج المخزّنة من نسخة أقدم
+            let points = Array.isArray(candidate.reasons) ? candidate.reasons.slice() : [];
+            if (points.length === 0) {
+                if(window.myUserData && candidate.city === window.myUserData.city) points.push('الإقامة في نفس المدينة ('+candidate.city+')');
+                if(window.myUserData && Math.abs(parseInt(candidate.age) - parseInt(window.myUserData.age)) <= 5) points.push('تقارب في العمر');
+                if(points.length === 0) points.push('توافق عام في معايير البحث المطروحة');
+            }
+            points.forEach(pt => { list.innerHTML += `<li class="flex items-center gap-2"><svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>${escapeSectionText(pt)}</li>`; });
             const modal = document.getElementById('matchReasonsModal');
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.remove('opacity-0'), 10);
@@ -792,6 +751,30 @@
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
 /* 🟥🟥🟥 [ القسم رقم 14: التحميل البطيء ورسم البطاقات (Lazy Loading & Card Rendering) ] 🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
+        // عنوان القسم يسبق أول بطاقة من كل قسم. التقسيم والترتيب يأتيان جاهزين من الخادم في الحقل section: special / inRegion / outRegion
+        function escapeSectionText(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function buildSectionHeaderHtml(match) {
+            const sec = match.section;
+            if (!sec || sec === window.lastRenderedSection) return '';
+            window.lastRenderedSection = sec;
+            const region = (window.myUserData && window.myUserData.regionName) ? window.myUserData.regionName : 'منطقتك';
+            const isSpecialViewer = !!(window.myUserData && window.myUserData.isSpecial);
+            let title = '', sub = '', tone = 'text-indigo-700 bg-indigo-50 border-indigo-100';
+            if (sec === 'special') {
+                title = window.lastSearchedGender === 'أنثى' ? 'ظروف خاصة' : 'اشتراطات خاصة';
+                sub = 'من كل المناطق، ومن هم في منطقتك أعلى قليلاً';
+                tone = 'text-amber-700 bg-amber-50 border-amber-100';
+            } else if (sec === 'inRegion') {
+                title = isSpecialViewer ? ('ملفات معلنة في ' + region) : ('في ' + region);
+                sub = 'مرتّبة بحسب أعلى توافق';
+            } else {
+                title = 'خارج منطقتك';
+                sub = 'نسبة التطابق فيها أقل بحكم المسافة';
+                tone = 'text-slate-600 bg-slate-100 border-slate-200';
+            }
+            return `<div class="col-span-full flex items-center gap-3 pt-2"><span class="shrink-0 px-3 py-1.5 rounded-xl border text-xs font-bold ${tone}">${escapeSectionText(title)}</span><span class="text-[10px] text-slate-500 font-medium">${escapeSectionText(sub)}</span><span class="flex-1 h-px bg-slate-200"></span></div>`;
+        }
+
         function loadNextBatch(specificCount = null) {
             const container = document.getElementById('matchesContainer');
             const targetGender = window.lastSearchedGender;
@@ -946,6 +929,8 @@
                         </div>
                     </div>
                 </div>`;
+                const sectionHeaderHtml = buildSectionHeaderHtml(match);
+                if (sectionHeaderHtml) container.insertAdjacentHTML('beforeend', sectionHeaderHtml);
                 container.insertAdjacentHTML('beforeend', cardHTML);
                 delay += 0.1;
             }
