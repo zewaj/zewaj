@@ -435,7 +435,8 @@
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
         async function fetchFromGAS(payload) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 25000);
+            // 🟢 45 ثانية بدل 25: سجل تنفيذات Apps Script الحقيقي أظهر طلبات تصل إلى 40+ ثانية (خادم بطيء، ليس عطلاً في الشبكة)
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
@@ -449,6 +450,17 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 throw error; // رمي الخطأ للقسم 9 ليتعامل مع الشبكة
+            }
+        }
+
+        // 🟢 محاولة ثانية صامتة قبل إظهار شاشة "تعذر الاتصال بالخادم": فشل المحاولة الأولى غالباً بسبب بطء مؤقت في Apps Script
+        // (وليس انقطاع شبكة فعلياً)، فمحاولة فورية ثانية تنجح غالباً بلا حاجة لأن يحدّث المستخدم الصفحة يدوياً عدة مرات.
+        async function fetchFromGASWithRetry(payload) {
+            try {
+                return await fetchFromGAS(payload);
+            } catch (firstError) {
+                console.warn("المحاولة الأولى فشلت، إعادة محاولة صامتة:", firstError);
+                return await fetchFromGAS(payload);
             }
         }
 
@@ -492,7 +504,7 @@
             }
 
             try {
-                const result = await fetchFromGAS(requestData);
+                const result = await fetchFromGASWithRetry(requestData);
                 // (حُذف طلب getFavorites: غير موجود في الخادم ويؤخر النتائج بلا فائدة، والمفضلات تُقرأ من cached_favorites)
 
                 if (result.success && result.matches) {
