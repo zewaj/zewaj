@@ -316,7 +316,13 @@
 /* 🟥🟥🟥 [ القسم رقم 1: إعدادات النظام والمتغيرات العامة ] 🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
-        let activeGenderTarget = null; 
+
+        // رابط مباشر لملف معيّن قابل للمشاركة: يُلحَق بنصوص النسخ/المشاركة فقط (لا يظهر داخل النبذة المعروضة).
+        function buildProfileShareLink(refId) {
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/search.html?refId=${refId}`;
+        }
+
+        let activeGenderTarget = null;
         window.currentCleanBio = ""; 
         let currentBulkPlatform = ''; 
         let currentTargetRefId = ''; 
@@ -849,7 +855,7 @@
                 }
 
                 const percentageDisplay = match.matchPercentage ? (match.matchPercentage + '%') : 'يدوي';
-                const encodedBriefWA = encodeURIComponent(match.shortBio ? match.shortBio : 'النبذة المختصرة غير متوفرة');
+                const encodedBriefWA = encodeURIComponent((match.shortBio ? match.shortBio : 'النبذة المختصرة غير متوفرة') + buildProfileShareLink(safeRefId));
                 
                 const isFav = cachedFavs.includes(safeRefId.toString());
                 const isReq = cachedReqs.includes(safeRefId.toString());
@@ -996,8 +1002,8 @@
             document.getElementById('upmSubtitle').innerText = subtitle;
             const refId = data.refId || data.RefId || data.refID || 'غير محدد';
             let detailedBioText = data.autoBio ? data.autoBio : 'النبذة التفصيلية غير متوفرة';
-            window.currentCleanBio = detailedBioText; 
-            const encodedDetailedBio = encodeURIComponent(detailedBioText);
+            window.currentCleanBio = detailedBioText;
+            const encodedDetailedBio = encodeURIComponent(detailedBioText + buildProfileShareLink(refId));
 
             const targetGender = window.lastSearchedGender || 'غير محدد';
             const safeMarriageType = data.marriageType || data.MarriageType || 'غير محدد';
@@ -1192,11 +1198,12 @@
             }
             let counter = 1; 
             for (let i = 0; i < selectedIdsArray.length; i++) {
-                const candidate = window.currentCandidatesData[selectedIdsArray[i]];
+                const candRefId = selectedIdsArray[i];
+                const candidate = window.currentCandidatesData[candRefId];
                 if(!candidate) continue;
                 fullText += `النتيجة رقم ${counter}:\n`;
-                if (formatType === 'brief') fullText += (candidate.shortBio ? candidate.shortBio : 'غير متوفرة') + "\n=====================\n\n";
-                else fullText += (candidate.autoBio ? candidate.autoBio : 'غير متوفرة') + "\n=====================\n\n";
+                if (formatType === 'brief') fullText += (candidate.shortBio ? candidate.shortBio : 'غير متوفرة') + buildProfileShareLink(candRefId) + "\n=====================\n\n";
+                else fullText += (candidate.autoBio ? candidate.autoBio : 'غير متوفرة') + buildProfileShareLink(candRefId) + "\n=====================\n\n";
                 counter++;
             }
             fullText += MSG_OUTRO; return fullText;
