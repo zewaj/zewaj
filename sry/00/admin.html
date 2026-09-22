@@ -809,6 +809,19 @@
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 16: دوال الفلترة وإحصائيات الأزرار 🔴🔴🔴 -->
 <!-- ======================================================== -->
+        // 🟢 ملف أحد الطرفين محذوف والطلب ما زال مفتوحاً: الطلبات التي لم يُردّ عليها يغلقها الخادم آلياً ويعيد النقاط،
+        // فما يبقى ظاهراً هنا هو ما سبق الرد عليه (أو حُذف ملف صاحب الطلب) ويحتاج مراجعتك.
+        function deletedSideText(req) {
+            const s = req.status || '';
+            if (s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى')) return '';
+            const rDel = req.requesterProfileStatus === 'محذوف';
+            const tDel = req.targetProfileStatus === 'محذوف';
+            if (rDel && tDel) return 'ملفا الطرفين محذوفان';
+            if (tDel) return 'ملف الطرف الثاني محذوف';
+            if (rDel) return 'ملف الطرف الأول محذوف';
+            return '';
+        }
+
         function updateDashboardStats() {
             let pending = 0, actionNeeded = 0, unreadCount = 0;
             let failedCount = pendingAdminActions.filter(a => a.state === 'failed').length;
@@ -826,8 +839,8 @@
 
                 if (isClosed || (s.includes('مرحلة التعارف') && !s.includes('نزاع') && !s.includes('تأكيد'))) {
                     // لا تفعل شيئاً في العدادات للطلبات المغلقة أو في التعارف المستقر
-                } else if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد')) {
-                    actionNeeded++; // 🟢 التعديل: النزاعات والحالات المعلقة تزيد عداد الأكشن الإداري
+                } else if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(r)) {
+                    actionNeeded++; // 🟢 التعديل: النزاعات والحالات المعلقة وملفات الطرف المحذوفة تزيد عداد الأكشن الإداري
                 } else if (r.hasRequestedContact) {
                     // 🟢 "طلب تواصل" فئة مستقلة (وميض أزرق): لا تُحسب في "بانتظار العملاء" (للمراسلات العادية فقط) ولا في "تتطلب تدخل" (تبدأ بعد موافقة المرأة)
                     // (إلا إن وصلت رسالة تنتظر اعتماد الإدارة فهذه تحتاج تدخلاً كأي رسالة)
@@ -920,7 +933,7 @@
                 let matchesStatus = false;
                 
                 if (currentFilterType === 'active') matchesStatus = !isClosed && !s.includes('مرحلة التعارف');
-                else if (currentFilterType === 'action') matchesStatus = !isClosed && ((req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
+                else if (currentFilterType === 'action') matchesStatus = !isClosed && (deletedSideText(req) !== '' || (req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
                 else if (currentFilterType === 'waiting') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && !req.hasRequestedContact && (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
                 else if (currentFilterType === 'acquaintance') matchesStatus = s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد'); // 🟢 يظهر في قائمة التعارف والأكشن
@@ -941,9 +954,9 @@
                 const s = req.status || '';
                 let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 
-                if (isClosed) return 8; 
-                // 🟢 إعطاء أولوية قصوى للنزاعات والطلبات المعلقة
-                if (s.includes('يوجد نزاع') || s.includes('بانتظار تأكيد')) return 1; 
+                if (isClosed) return 8;
+                // 🟢 إعطاء أولوية قصوى للنزاعات والطلبات المعلقة وما حُذف ملف أحد طرفيه
+                if (s.includes('يوجد نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(req)) return 1;
                 if ((req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) return 2;
 
                 if (s.includes('مرحلة التعارف')) return 7;
@@ -994,6 +1007,8 @@
                 if (isClosed) {
                     let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : "مغلق / مؤرشف");
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
+                } else if (deletedSideText(req)) {
+                    statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">🗑️ ${deletedSideText(req)} - راجعها</span>`;
                 } else if (s.includes('يوجد نزاع')) {
                     statusBadge = `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-700 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخلاً</span>`;
                 } else if (s.includes('بانتظار تأكيد')) {
@@ -1080,6 +1095,7 @@
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
                     
                     if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
+                    else if (deletedSideText(req)) statusBadgeFull = `<span class="bg-slate-700 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-slate-800 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🗑️ ${deletedSideText(req)} - هذه المحادثة تحتاج مراجعة</span>`;
                     else if (s.includes('يوجد نزاع')) statusBadgeFull = `<span class="bg-rose-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-700 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخل الإدارة</span>`;
                     else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ أحد الطرفين أبلغ بعدم التوفيق - بانتظار تأكيد الآخر' : '⚠️ أحد الطرفين أبلغ بالزواج - بانتظار تأكيد الآخر'}</span>`;
                     else if (s.includes('مرحلة التعارف')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف الخارجي</span>`;
@@ -1442,8 +1458,8 @@
                     <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة.</span>
                 </button>
                 <button onclick="executeAdminAction(document.getElementById('closeChatReqId').value, 'closeChat', 'حذف الملف')" class="w-full flex flex-col items-center justify-center p-3.5 rounded-xl border-2 border-rose-200 bg-white hover:bg-rose-50 transition-all text-rose-700 shadow-sm gap-1.5 group">
-                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">3. حذف الملف نهائياً 🗑️</span>
-                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب، ويُلغي جميع الطوابير المرتبطة.</span>
+                    <span class="font-extrabold text-sm group-hover:scale-105 transition-transform">3. الطرف الثاني حذف ملفه (أو لا يتجاوب) 🗑️</span>
+                    <span class="text-[10px] text-slate-500 font-bold">يُغلق الطلب. إن لم يردّ عليه أحد تُعاد نقاط صاحب الطلب كاملة وتصله رسالة واتساب بذلك.</span>
                 </button>
             `;
 
@@ -1500,7 +1516,7 @@
                     adminMessage = "[مغلق] تم إنهاء المحادثة وإغلاق الطلب بسبب إتمام الزواج بفضل الله.";
                     newStatus = "مغلق - تم الزواج";
                 } else if (chosenReason === 'حذف الملف') {
-                    adminMessage = "[مغلق] تم إنهاء المحادثة وإلغاء الطلب بناءً على رغبة العميل بحذف الملف نهائياً.";
+                    adminMessage = "[مغلق] تم إغلاق الطلب لحذف ملف الطرف الآخر (أو لعدم تجاوبه).";
                     newStatus = "مغلق - ملغى (حذف الملف نهائياً)"; 
                 } else if (chosenReason === 'إنهاء التعارف لعدم التوفيق') {
                     adminMessage = "[مغلق] تم إنهاء مرحلة التعارف لعدم التوفيق بين الطرفين، وإخلاء المساحة لفرص أخرى.";
