@@ -117,6 +117,20 @@
                     <h2 class="text-2xl font-black text-slate-800 mb-2">من تبحث عنه؟</h2>
                     <p class="text-slate-500">اختر لتظهر لك الفلاتر المخصصة</p>
                 </div>
+
+                <div class="max-w-xs mx-auto mb-6">
+                    <label class="block text-xs font-bold text-slate-400 text-center mb-2">أو ابحث مباشرة برقم الملف #</label>
+                    <div class="flex gap-2">
+                        <input type="text" inputmode="numeric" id="refIdSearchInput" placeholder="مثال: 1234" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-100 outline-none transition text-sm text-center" onkeydown="if(event.key==='Enter'){event.preventDefault(); searchByRefId();}">
+                        <button type="button" onclick="searchByRefId()" id="refIdSearchBtn" class="px-5 py-3 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold text-sm transition-colors shrink-0">بحث</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mb-6 max-w-md mx-auto">
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                    <span class="text-xs text-slate-400 font-bold">أو اختر الجنس</span>
+                    <div class="flex-1 h-px bg-slate-100"></div>
+                </div>
+
                 <div class="flex justify-center gap-6 mb-4">
                     <div id="cardFemale" onclick="selectTargetGender('أنثى')" class="gender-card bg-white border-2 border-slate-100 hover:border-pink-300 rounded-3xl p-6 w-40 sm:w-48 flex flex-col items-center justify-center cursor-pointer shadow-sm relative overflow-hidden group">
                         <div class="w-20 h-20 mb-3 text-pink-500 transition-transform group-hover:scale-110">
@@ -149,6 +163,19 @@
                     <span>تغيير الجنس</span>
                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                 </button>
+            </div>
+
+            <div id="refIdResultBanner" class="hidden bg-white border border-slate-200 rounded-2xl p-3 mb-4 flex justify-between items-center shadow-sm fade-in">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <p class="text-[10px] text-slate-400 font-bold mb-0.5">نتيجة البحث برقم الملف</p>
+                        <p id="refIdResultText" class="text-sm font-black text-slate-800 leading-none">...</p>
+                    </div>
+                </div>
+                <button onclick="resetRefIdSearch()" class="text-[10px] font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors shadow-sm shrink-0">بحث جديد</button>
             </div>
 
             <div id="filtersSummaryStrip" class="hidden bg-indigo-50/80 border border-indigo-100 rounded-2xl p-3 mb-6 flex flex-col gap-2 shadow-sm fade-in">
@@ -564,11 +591,29 @@
         };
         
         function getFlagEmoji(countryName) {
-            if(!countryName || countryName.trim() === '' || countryName === 'غير محدد' || countryName.includes('دولة أخرى') || countryName.includes('دولة اخرى')) return '🌍'; 
+            if(!countryName || countryName.trim() === '' || countryName === 'غير محدد' || countryName.includes('دولة أخرى') || countryName.includes('دولة اخرى')) return '🌍';
             for (let key in countryEmojiFlags) {
                 if (countryName.includes(key)) return countryEmojiFlags[key];
             }
-            return '🌍'; 
+            return '🌍';
+        }
+
+        // رابط مباشر لملف معيّن قابل للمشاركة: يُلحَق بنصوص النسخ/المشاركة فقط (لا يظهر داخل النبذة المعروضة).
+        function buildProfileShareLink(refId) {
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/search.html?refId=${refId}`;
+        }
+
+        function showSearchToast(msg) {
+            const toast = document.getElementById('customToast');
+            if (!toast) return;
+            document.getElementById('customToastText').innerText = msg;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => toast.classList.remove('opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 300);
+            }, 5000);
         }
 
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
@@ -1130,6 +1175,48 @@
             document.getElementById('manualSearchForm').classList.remove('hidden');
         }
 
+        async function searchByRefId(prefillValue) {
+            const input = document.getElementById('refIdSearchInput');
+            const val = (prefillValue !== undefined ? prefillValue : (input ? input.value : '')).toString().trim();
+            if (input && prefillValue !== undefined) input.value = val;
+            if (!val) return;
+
+            const btn = document.getElementById('refIdSearchBtn');
+            const originalBtnText = btn ? btn.innerText : '';
+            if (btn) { btn.disabled = true; btn.innerText = '...'; }
+
+            try {
+                const result = await fetchFromGAS({ action: "findProfileByRefId", refId: val });
+                if (result.success && result.profile) {
+                    clearAllFilters();
+                    document.getElementById('genderSelectionArea').classList.add('hidden');
+                    document.getElementById('genderSummaryStrip').classList.add('hidden');
+                    document.getElementById('manualSearchForm').classList.add('hidden');
+                    document.getElementById('filtersSummaryStrip').classList.add('hidden');
+
+                    document.getElementById('refIdResultText').innerText = `الملف رقم #${result.profile.refId}`;
+                    document.getElementById('refIdResultBanner').classList.remove('hidden');
+
+                    activeGenderTarget = result.profile.gender;
+                    processResultsDisplay({ success: true, matches: [result.profile] }, { filters: { targetGender: result.profile.gender } }, true);
+                } else {
+                    showSearchToast(result.message || "لم يتم العثور على ملف بهذا الرقم.");
+                }
+            } catch (e) {
+                console.error("RefId Search Error:", e);
+                showSearchToast("تعذر الاتصال بالخادم. حاول مرة أخرى.");
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = originalBtnText || 'بحث'; }
+            }
+        }
+
+        function resetRefIdSearch() {
+            document.getElementById('refIdResultBanner').classList.add('hidden');
+            const input = document.getElementById('refIdSearchInput');
+            if (input) input.value = '';
+            editGenderSelection();
+        }
+
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥 [ القسم رقم 18: السكربت - التهيئة عند التحميل ومعالجة الرابط (DOMContentLoaded) ] 🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
@@ -1143,8 +1230,13 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const isQuickSearch = urlParams.get('quickSearch') === 'true';
+            const linkedRefId = urlParams.get('refId');
 
-            if (isQuickSearch) {
+            if (linkedRefId) {
+                const refIdInput = document.getElementById('refIdSearchInput');
+                if (refIdInput) refIdInput.value = linkedRefId;
+                searchByRefId(linkedRefId);
+            } else if (isQuickSearch) {
                 const genderParam = urlParams.get('gender');
                 const targetGender = (genderParam === 'رجال' || genderParam === 'ذكر') ? 'ذكر' : 'أنثى';
                 
@@ -1357,7 +1449,7 @@
                 }
 
                 const safeShortBio = match.shortBio || match.ShortBio || '';
-                const encodedBriefWA = encodeURIComponent(safeShortBio);
+                const encodedBriefWA = encodeURIComponent(safeShortBio + buildProfileShareLink(safeRefId));
 
                 const currentUserGender = localStorage.getItem('verified_user_gender');
                 let interactionButtonsHTML = '';
@@ -1578,8 +1670,8 @@
             const safeMarriageType = data.marriageType || data.MarriageType || 'غير محدد';
             
             let detailedBioText = data.autoBio || "النبذة غير متوفرة.";
-            window.currentCleanBio = detailedBioText; 
-            const encodedDetailedBio = encodeURIComponent(detailedBioText);
+            window.currentCleanBio = detailedBioText;
+            const encodedDetailedBio = encodeURIComponent(detailedBioText + buildProfileShareLink(refId));
 
             const platformConfig = JSON.parse(localStorage.getItem('platform_config') || '{}');
             const regularCost = platformConfig.CONTACT_COST_REGULAR || 5;
@@ -1824,9 +1916,9 @@
 
                 fullText += `النتيجة رقم ${counter}:\n`;
                 if (formatType === 'brief') {
-                    fullText += (candidate.shortBio || "غير متوفر") + "\n=====================\n\n";
+                    fullText += (candidate.shortBio || "غير متوفر") + buildProfileShareLink(refId) + "\n=====================\n\n";
                 } else {
-                    fullText += (candidate.autoBio || "غير متوفر") + "\n=====================\n\n";
+                    fullText += (candidate.autoBio || "غير متوفر") + buildProfileShareLink(refId) + "\n=====================\n\n";
                 }
                 counter++;
             }
