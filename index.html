@@ -661,11 +661,20 @@
 
             // 🟢 رابط مباشر يفتح صفحة فرعية عند التحميل بدل الرئيسية، مع بقاء قشرة index.html (الشريط العلوي/السفلي) كما هي.
             // مثال: index.html?open=search يفتح البحث الشامل مباشرة (يعمل للزائر أيضاً لأن search.html لا تتطلب تسجيل دخول).
+            // مثال آخر: index.html?open=search&refId=1234 يفتح بطاقة الملف رقم 1234 مباشرة (نفس رابط "الملف المباشر" القابل للمشاركة).
             const directOpenParam = new URLSearchParams(window.location.search).get('open');
+            const directOpenRefId = new URLSearchParams(window.location.search).get('refId');
             const directOpenMap = { search: 'search.html', smart: 'smart.html', requests: 'activity.html?tab=requests', favorites: 'activity.html?tab=favorites', packages: 'packages.html', register: 'register.html' };
             if (directOpenParam && directOpenMap[directOpenParam]) {
-                if (directOpenParam === 'smart') { handleSmartNavigation(); }
-                else { loadIframe(directOpenMap[directOpenParam]); }
+                if (directOpenParam === 'smart') {
+                    handleSmartNavigation();
+                } else {
+                    let directTargetUrl = directOpenMap[directOpenParam];
+                    if (directOpenParam === 'search' && directOpenRefId) {
+                        directTargetUrl += (directTargetUrl.includes('?') ? '&' : '?') + 'refId=' + encodeURIComponent(directOpenRefId);
+                    }
+                    loadIframe(directTargetUrl);
+                }
             }
 
             const heroSection = document.getElementById('heroSection');
