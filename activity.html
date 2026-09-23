@@ -26,7 +26,7 @@
         // 🚨 إغلاق الثغرة: إخفاء الشريط يعتمد فقط على embedded أو وضع العميل
         if ((window.self !== window.top && !isGeminiCanvas) || initialParams.get('embedded') === 'true' || isClientMode) {
             document.documentElement.classList.add('in-iframe');
-            document.write('<style>#fallbackLogin { display: none !important; visibility: hidden !important; } #innerTabsContainer { display: none !important; } #dashboardContent { padding-top: 15px !important; } html, body { background-color: transparent !important; }</style>');
+            document.write('<style>#innerTabsContainer { display: none !important; } #dashboardContent { padding-top: 15px !important; } html, body { background-color: transparent !important; }</style>');
         }
     </script>
 
@@ -97,41 +97,9 @@
     </div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 6 ]: لوحة الاختبار (تختفي في الإنتاج) ---------- ✂️ -->
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-    <div id="fallbackLogin" class="fixed top-0 left-0 right-0 bg-[#0f172a] text-white z-[200] shadow-xl flex flex-col p-3 gap-3">
-        <div class="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto w-full relative">
-            
-            <div class="ml-auto bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0">
-                <span class="text-xs font-bold text-slate-400">الرصيد:</span>
-                <span id="userPointsDisplay" class="text-sm font-black text-amber-400">0</span>
-                <span>💎</span>
-            </div>
-
-            <span class="text-xs font-bold text-slate-300 ml-2">لوحة الاختبار:</span>
-            <div class="flex" dir="ltr">
-                <input type="tel" id="fbPhone" class="w-32 p-2 border border-slate-700 bg-[#1e293b] rounded-l-lg outline-none text-center text-sm font-bold text-white focus:border-indigo-500" placeholder="5XXXXXXXX">
-                <span class="p-2 border border-slate-700 border-l-0 bg-slate-700 rounded-r-lg text-sm text-slate-300 font-bold">+966</span>
-            </div>
-            <input type="text" id="fbRefId" class="w-24 p-2 border border-slate-700 bg-[#1e293b] rounded-lg outline-none text-center text-sm font-bold text-white focus:border-indigo-500" placeholder="رقم الملف">
-            <button id="fallbackSubmitBtn" onclick="applyFallbackLogin()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 shadow-md w-24">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                <span>عرض</span>
-            </button>
-            <button onclick="addCurrentToQuickAccess()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-lg transition-colors text-xs flex items-center gap-1 shadow-md" title="حفظ هذا الحساب للوصول السريع">
-                + إضافة
-            </button>
-        </div>
-        <div class="flex items-center justify-center gap-2 max-w-4xl mx-auto w-full overflow-x-auto hide-scroll pb-1">
-            <span class="text-[10px] font-bold text-slate-400 shrink-0">دخول سريع:</span>
-            <div id="quickAccessButtons" class="flex items-center gap-2"></div>
-        </div>
-    </div>
-
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 7 ]: الحاوية الرئيسية والتبويبات العلوية ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-    <div id="dashboardContent" class="w-full max-w-5xl mx-auto transition-all pt-[110px] pb-12">
+    <div id="dashboardContent" class="w-full max-w-5xl mx-auto transition-all pt-4 pb-12">
         <div class="unified-sticky-header sticky top-0 z-40 bg-[#f8fafc] shadow-sm border-b border-slate-200 mt-2">
             <!-- التبويبات الرئيسية -->
             <div id="innerTabsContainer" class="flex w-full overflow-x-auto hide-scroll bg-white">
@@ -269,13 +237,6 @@
         let windowLastInteractionY = window.innerHeight / 2;
 
         const spinnerSvg = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-        const defaultQuickAccess = [
-            { phone: '0506088616', refId: '4994' },
-            { phone: '0566956901', refId: '5916' }, 
-            { phone: '0567392580', refId: '5951' }
-            
-        ];
 
         window.latestIncomingTime = 0;
         window.latestOutgoingTime = 0;
@@ -612,9 +573,13 @@
             reqs.forEach(r => {
                 let st = r.status || '';
                 let isMasterClosed = st.includes('مغلق') || st.includes('مرفوض') || st.includes('رفض') || st.includes('ملغى') || st.includes('مكتمل');
-                if (!isMasterClosed && !st.includes('موافقة تبادل') && !st.includes('موافقة نهائية')) { activeCount++; }
-                // الحالات الجديدة (بانتظار الدفع أو التعارف) ستحسب كنشطة تلقائياً لعدم احتوائها على مغلق
-                if (st.includes('بانتظار الدفع') || st.includes('مرحلة التعارف') || st.includes('تسليم الأرقام')) { activeCount++; }
+                // 🟢 كانت الحالة المتقدمة (بانتظار الدفع/مرحلة التعارف/تسليم الأرقام) تُحسب مرتين لأنها تحقق هذا
+                // الشرط والشرط الذي كان تالياً له معاً (شرطان منفصلان لا else if)، فيرتفع العداد المعروض للعميل
+                // زوراً فوق العدد الحقيقي. صار الآن شرطاً واحداً: كل طلب غير مغلق يُحسب مرة واحدة فقط، والحالة
+                // المتقدمة تُحسب كنشطة دائماً حتى لو كانت ضمن استثناء "موافقة تبادل/نهائية".
+                let isAdvancedStage = st.includes('بانتظار الدفع') || st.includes('مرحلة التعارف') || st.includes('تسليم الأرقام');
+                let isExcludedPending = st.includes('موافقة تبادل') || st.includes('موافقة نهائية');
+                if (!isMasterClosed && (isAdvancedStage || !isExcludedPending)) { activeCount++; }
             });
 
             let quotaBannerHtml = '';
@@ -1668,12 +1633,10 @@
             const urlParams = new URLSearchParams(window.location.search);
             const magicToken = urlParams.get('token');
 
-            setupHeightObserver(); 
-            renderQuickAccessButtons();
+            setupHeightObserver();
 
-            // إخفاء قسري للشريط الأسود وتعديل المسافات إذا كان العميل يستخدم الرابط السحري
+            // تعديل المسافات إذا كان العميل يستخدم الرابط السحري
             if (magicToken || localStorage.getItem('is_client_mode') === 'true') {
-                const fb = document.getElementById('fallbackLogin'); if (fb) fb.style.display = 'none';
                 const tb = document.getElementById('innerTabsContainer'); if (tb) tb.style.display = 'none';
                 const content = document.getElementById('dashboardContent'); if (content) content.style.paddingTop = '5px';
             }
@@ -1727,10 +1690,7 @@
                     renderClientBanner(dispName);
                 }
 
-                if (phoneParam) { let cp = phoneParam.replace('+966', ''); const fbP = document.getElementById('fbPhone'); if(fbP) fbP.value = cp.startsWith('0') ? cp.substring(1) : cp; }
-                if (refIdParam) { const fbR = document.getElementById('fbRefId'); if(fbR) fbR.value = refIdParam; }
-
-                if (!phoneParam || !refIdParam) { switchTab('requests'); } 
+                if (!phoneParam || !refIdParam) { switchTab('requests'); }
                 else { 
                     switchTab(tabParam);
                     let cacheStr = localStorage.getItem('master_activity_cache');
@@ -1799,39 +1759,6 @@
         function showErrorState(errorMsg) {
             const errorHtml = `<div class="text-center text-sm text-rose-500 py-16 pb-24 font-bold w-full bg-rose-50 rounded-2xl border border-rose-100 shadow-sm">${errorMsg}</div>`;
             document.getElementById('favoritesList').innerHTML = errorHtml; document.getElementById('requestsList').innerHTML = errorHtml; document.getElementById('incomingRequestsList').innerHTML = errorHtml;
-        }
-
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 27 ]: لوحة الوصول السريع (Testing) ---------- ✂️ -->
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-        function renderQuickAccessButtons() {
-            let saved = []; try { saved = JSON.parse(localStorage.getItem('quick_access_accounts')) || []; } catch(e){}
-            let allAccounts = [...defaultQuickAccess]; saved.forEach(s => { if(!allAccounts.some(a => a.phone === s.phone && a.refId === s.refId)) allAccounts.push(s); });
-            const container = document.getElementById('quickAccessButtons'); container.innerHTML = '';
-            allAccounts.forEach(acc => { container.innerHTML += `<button type="button" onclick="useQuickAccess('${acc.phone}', '${acc.refId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-bold py-1 px-3 rounded-md transition-colors text-[10px] shadow-sm">ملف #${acc.refId}</button>`; });
-        }
-
-        function addCurrentToQuickAccess() {
-            let p = document.getElementById('fbPhone').value.trim(); let r = document.getElementById('fbRefId').value.trim();
-            if (!p || !r) { showMsgModal("تنبيه", "يرجى كتابة الجوال ورقم الملف أولاً."); return; }
-            let saved = []; try { saved = JSON.parse(localStorage.getItem('quick_access_accounts')) || []; } catch(e){}
-            if(!saved.some(a => a.phone === p && a.refId === r)) { saved.push({ phone: p, refId: r }); localStorage.setItem('quick_access_accounts', JSON.stringify(saved)); renderQuickAccessButtons(); showMsgModal("نجاح", "تمت الإضافة بنجاح!"); }
-        }
-
-        function useQuickAccess(phone, refId) {
-            let cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone; if(cleanPhone.startsWith('966')) cleanPhone = cleanPhone.substring(3);
-            document.getElementById('fbPhone').value = cleanPhone; document.getElementById('fbRefId').value = refId; applyFallbackLogin();
-        }
-
-        function applyFallbackLogin() {
-            let p = document.getElementById('fbPhone').value.trim(); let r = document.getElementById('fbRefId').value.trim();
-            if (!p || !r) { showMsgModal("تنبيه", "يرجى إدخال الجوال ورقم الملف."); return; }
-            let cleanPhone = p.startsWith('0') ? p.substring(1) : p; if(!cleanPhone.startsWith('+')) cleanPhone = '+966' + cleanPhone;
-            phoneParam = cleanPhone; refIdParam = r; localStorage.setItem('verified_user_phone', cleanPhone); localStorage.setItem('active_profile_refid', r);
-            const btn = document.getElementById('fallbackSubmitBtn'); const ogHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = spinnerSvg + '<span>جاري...</span>'; btn.classList.add('opacity-75', 'cursor-not-allowed');
-            localStorage.removeItem('master_activity_cache');
-            fetchData(false).finally(() => { btn.innerHTML = ogHtml; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); });
         }
     </script>
 </body>
