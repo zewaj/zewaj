@@ -1309,13 +1309,15 @@
         
         function viewRequestProfile(refId, isIncoming = false) {
             let req = isIncoming ? window.myIncomingReqsDataStore[refId] : window.myReqsDataStore[refId]; if (!req) return;
-            if (window.self !== window.top) { window.parent.postMessage({ type: 'openProfileModal', title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId, profileData: { refId: refId, autoBio: req.autoBio } }, '*'); } 
+            // 🟢 جنس الطرف الآخر يُرسل مع الملف: بدونه كانت القشرة تُخفي أزرار التواصل/النسخ/المفضلة عن المرأة (تحسبه خطأً "نفس الجنس")
+            const otherGender = isIncoming ? (req.requesterGender || req.gender || '') : (req.targetGender || req.gender || '');
+            if (window.self !== window.top) { window.parent.postMessage({ type: 'openProfileModal', title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId, profileData: { refId: refId, autoBio: req.autoBio, gender: otherGender } }, '*'); }
             else { showMsgModal("عرض الملف", req.autoBio || "التفاصيل غير متوفرة."); }
         }
-        
+
         function viewFavoriteProfile(refId) {
             let fav = window.myFavsDataStore[refId]; if (!fav) return;
-            if (window.self !== window.top) { window.parent.postMessage({ type: 'openProfileModal', title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId, profileData: { refId: refId, autoBio: fav.autoBio } }, '*'); } 
+            if (window.self !== window.top) { window.parent.postMessage({ type: 'openProfileModal', title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId, profileData: { refId: refId, autoBio: fav.autoBio, gender: fav.gender || '' } }, '*'); }
             else { showMsgModal("عرض الملف", fav.autoBio || "التفاصيل غير متوفرة."); }
         }
 
