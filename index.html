@@ -628,8 +628,9 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
 
         // رابط مباشر لملف معيّن قابل للمشاركة: يُلحَق بنصوص النسخ/المشاركة فقط (لا يظهر داخل النبذة المعروضة).
+        // 🟢 صار يفتح داخل قشرة index.html (الشريط العلوي/السفلي) بدل صفحة search.html وحدها بلا إطار.
         function buildProfileShareLink(refId) {
-            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/search.html?refId=${refId}`;
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/index.html?open=search&refId=${refId}`;
         }
 
         const maleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#e0f2fe"/><path d="M12 40 C12 10, 88 10, 88 40 L95 100 L5 100 Z" fill="#ef4444"/><rect x="30" y="35" width="40" height="45" rx="15" fill="#fde68a"/><path d="M20 30 Q50 20 80 30" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><path d="M25 35 Q50 25 75 35" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="55" r="3" fill="#1f2937"/><circle cx="58" cy="55" r="3" fill="#1f2937"/><path d="M42 65 Q50 72 58 65" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;

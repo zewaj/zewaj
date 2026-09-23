@@ -318,8 +318,9 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
 
         // رابط مباشر لملف معيّن قابل للمشاركة: يُلحَق بنصوص النسخ/المشاركة فقط (لا يظهر داخل النبذة المعروضة).
+        // 🟢 صار يفتح داخل قشرة index.html (الشريط العلوي/السفلي) بدل صفحة search.html وحدها بلا إطار.
         function buildProfileShareLink(refId) {
-            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/search.html?refId=${refId}`;
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/index.html?open=search&refId=${refId}`;
         }
 
         let activeGenderTarget = null;
