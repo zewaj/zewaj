@@ -110,7 +110,7 @@
                 <!-- طبقة التحميل التي تمنع التفاعل حتى وصول البيانات -->
                 <div id="initialLoaderOverlay" class="absolute inset-0 z-50 bg-white/70 backdrop-blur-[2px] flex flex-col items-center justify-center transition-opacity duration-500">
                     <svg class="w-10 h-10 animate-spin text-indigo-600 mb-3 drop-shadow-sm" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span class="text-sm font-bold text-indigo-900 animate-pulse bg-white/80 px-3 py-1 rounded-full shadow-sm">جاري تهيئة محرك البحث...</span>
+                    <span id="initialLoaderText" class="text-sm font-bold text-indigo-900 animate-pulse bg-white/80 px-3 py-1 rounded-full shadow-sm">جاري تهيئة محرك البحث...</span>
                 </div>
 
                 <div class="text-center mb-8">
@@ -1185,6 +1185,15 @@
             const originalBtnText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
 
+            // 🟢 طبقة تحميل كاملة تغطي صندوق البحث (نفس طبقة "جاري تهيئة محرك البحث" عند فتح الصفحة): إشارة
+            // بصرية واضحة لا لبس فيها بأن الضغطة اشتغلت، وتمنع فعلياً الضغط على بطاقات "ذكر/أنثى" تحتها أثناء الانتظار.
+            const overlay = document.getElementById('initialLoaderOverlay');
+            const overlayText = document.getElementById('initialLoaderText');
+            if (overlay) {
+                if (overlayText) overlayText.innerText = `جاري البحث عن الملف #${val}...`;
+                overlay.classList.remove('hidden', 'opacity-0');
+            }
+
             try {
                 const result = await fetchFromGAS({ action: "findProfileByRefId", refId: val });
                 if (result.success && result.profile) {
@@ -1207,6 +1216,10 @@
                 showSearchToast("تعذر الاتصال بالخادم. حاول مرة أخرى.");
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalBtnText || 'بحث'; }
+                if (overlay) {
+                    overlay.classList.add('opacity-0');
+                    setTimeout(() => overlay.classList.add('hidden'), 500);
+                }
             }
         }
 
