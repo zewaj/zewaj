@@ -70,6 +70,12 @@
         }
         .scroll-arrow:hover { background: #4f46e5; color: white; transform: translateY(-50%) scale(1.05); }
         .scroll-arrow.right { right: -5px; } .scroll-arrow.left { left: -5px; }
+
+        .deck-peek { position: relative; flex-shrink: 0; width: 228px; padding-top: 10px; padding-bottom: 6px; }
+        .deck-peek-back1, .deck-peek-back2 { position: absolute; top: 8px; left: 0; right: 0; bottom: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 1.5rem; pointer-events: none; }
+        .deck-peek-back1 { transform: rotate(-4deg) translateY(2px); opacity: .75; z-index: 1; }
+        .deck-peek-back2 { transform: rotate(4deg) translateY(-1px); opacity: .45; z-index: 0; }
+        .deck-peek-front { position: relative; z-index: 2; width: calc(100% - 22px); margin: 0 auto; }
     </style>
 </head>
 <body id="mainBody" class="text-slate-800">
@@ -458,24 +464,28 @@
             <div class="max-w-5xl mx-auto w-full flex-1">
                 <div class="pt-6 pb-2">
                     <div class="px-4 mb-3 flex items-center justify-between">
-                        <h2 class="text-sm font-black text-slate-800 flex items-center gap-2">
+                        <h2 class="text-sm font-black text-slate-800 flex items-center gap-2 flex-wrap">
                             <span class="w-1.5 h-5 bg-amber-400 rounded-full"></span> ملفات مميزة
+                            <span id="featuredRegionHint" class="text-[10px] font-bold text-indigo-400"></span>
                         </h2>
+                        <button id="featuredToggleBtn" onclick="toggleFeaturedRegionView()" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 shrink-0 hidden">عرض كل المناطق</button>
                     </div>
-                    
-                    <div class="relative group mx-2 mb-2" onmouseenter="pauseScroll('featuredContainer')" onmouseleave="resumeScroll('featuredContainer')">
+
+                    <div id="featuredCompactWrap" class="relative group mx-2 mb-2" onmouseenter="pauseScroll('featuredContainer')" onmouseleave="resumeScroll('featuredContainer')">
                         <button onclick="scrollHorizontally('featuredContainer', 1)" class="scroll-arrow right hidden sm:flex">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                         </button>
-                        
+
                         <div id="featuredContainer" class="flex overflow-x-auto hide-scroll gap-4 px-2 pb-4 pt-1 snap-x snap-mandatory scroll-smooth">
                             <div class="snap-center shrink-0 w-64 bg-slate-200 animate-pulse h-[140px] rounded-2xl"></div>
                         </div>
-                        
+
                         <button onclick="scrollHorizontally('featuredContainer', -1)" class="scroll-arrow left hidden sm:flex">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                     </div>
+
+                    <div id="featuredAllRegionsWrapper" class="hidden px-2 mb-2 flex flex-col gap-5"></div>
                 </div>
 
                 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -817,10 +827,16 @@
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
         async function fetchFromGAS(payload) {
+            const controller = new AbortController();
+            // 🟢 45 ثانية بدل بلا حد إطلاقاً: سجل تنفيذات Apps Script الحقيقي أظهر طلبات تصل إلى 40+ ثانية (خادم بطيء فعلاً، وليس عطلاً في الشبكة)،
+            // وبلا هذا الحد كان الطلب يعلّق بلا أي رد حتى يقرر المتصفح نفسه إسقاطه، فتبقى الرئيسية على شاشة التحميل لأكثر من دقيقة أحياناً.
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
             try {
                 const response = await fetch(SCRIPT_URL, {
-                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload), redirect: "follow"
+                    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload), redirect: "follow",
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 if (!response.ok) {
                     console.warn(`⚠️ فشل الاتصال بالسيرفر (الخطأ: ${response.status}).`);
                     return { success: false };
@@ -830,17 +846,26 @@
                 if (parsed && parsed.forceLogout) forceLogoutNow(parsed.message);
                 return parsed;
             } catch (error) {
+                clearTimeout(timeoutId);
                 // تحويل الخطأ الأحمر المزعج إلى تنبيه أصفر صامت لحماية الواجهة من الانهيار
-                console.warn("⚠️ تعذر الوصول للرابط (قد يكون بسبب بيئة العرض أو حجب المتصفح):", error.message);
+                console.warn("⚠️ تعذر الوصول للرابط (قد يكون بسبب بيئة العرض أو حجب المتصفح، أو انتهاء مهلة 45 ثانية):", error.message);
                 return { success: false };
             }
+        }
+
+        // 🟢 محاولة ثانية صامتة قبل الاستسلام لحالة "تعذر الوصول": فشل المحاولة الأولى غالباً بطء مؤقت في Apps Script وليس عطلاً حقيقياً،
+        // فمحاولة فورية ثانية تنجح في الغالب بلا حاجة لأن يحدّث الزائر الصفحة يدوياً عدة مرات (نفس نمط fetchFromGASWithRetry في smart.html).
+        async function fetchFromGASWithRetry(payload) {
+            const first = await fetchFromGAS(payload);
+            if (first && first.success) return first;
+            return await fetchFromGAS(payload);
         }
 
         async function fetchGlobalWalletBalance(phone, forceRefresh = false) {
             const reqRef = localStorage.getItem('active_profile_refid');
             try {
                 // إرسال forceRefresh للسيرفر لتجاوز الذاكرة المخبئية عند الحاجة
-                const result = await fetchFromGAS({ action: 'syncUserActivity', phone: phone, requesterRefId: reqRef, timestamp: Date.now(), forceRefresh: forceRefresh });
+                const result = await fetchFromGASWithRetry({ action: 'syncUserActivity', phone: phone, requesterRefId: reqRef, timestamp: Date.now(), forceRefresh: forceRefresh });
                 if(result && result.success) {
 
                     // 🟢 الحالة الحيّة للملف من الخادم (كانت تُحفظ عند الدخول فقط فتبقى قديمة)
@@ -2066,39 +2091,45 @@
         }
 
         async function fetchShowcaseData() {
-            try { 
-                const result = await fetchFromGAS({ action: "getShowcaseData" }); 
-                if(result && result.success && result.data) { 
-                    let recentArr = result.data.recent || []; 
-                    let featuredArr = result.data.featured || []; 
-                    
-                    const isLogged = !!localStorage.getItem('verified_user_phone'); 
-                    const userGender = localStorage.getItem('verified_user_gender') || ""; 
-                    
-                    if (isLogged && userGender) { 
-                        const isFemale = userGender.includes('أنثى') || userGender.includes('نساء') || userGender.includes('انثى') || userGender.includes('بنت'); 
-                        const isMale = userGender.includes('ذكر') || userGender.includes('رجل') || userGender.includes('رجال'); 
-                        
-                        if (isFemale) { 
-                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال'))); 
-                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال'))); 
-                        } else if (isMale) { 
-                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت'))); 
-                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت'))); 
-                        } 
-                    } 
-                    
-                    renderTicker(recentArr); 
-                    renderFeaturedCards(featuredArr); 
+            try {
+                const isLogged = !!localStorage.getItem('verified_user_phone');
+                const myPhone = localStorage.getItem('verified_user_phone') || '';
+                const myRefId = localStorage.getItem('active_profile_refid') || '';
+                // 🟢 phone/refId يُرسَلان فقط لحساب منطقة الزائر (myRegion) في الخادم بحث خفيف لملف واحد؛ لا يغيّران مفتاح الكاش المشترك لبقية البيانات (القسم رقم 25)
+                const reqParams = { action: "getShowcaseData" };
+                if (isLogged && myRefId) { reqParams.phone = myPhone; reqParams.refId = myRefId; }
+                const result = await fetchFromGASWithRetry(reqParams);
+                if(result && result.success && result.data) {
+                    let recentArr = result.data.recent || [];
+                    let featuredArr = result.data.featured || [];
+                    const myRegion = result.myRegion || '';
+
+                    const userGender = localStorage.getItem('verified_user_gender') || "";
+
+                    if (isLogged && userGender) {
+                        const isFemale = userGender.includes('أنثى') || userGender.includes('نساء') || userGender.includes('انثى') || userGender.includes('بنت');
+                        const isMale = userGender.includes('ذكر') || userGender.includes('رجل') || userGender.includes('رجال');
+
+                        if (isFemale) {
+                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال')));
+                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('ذكر') || item.gender.includes('رجل') || item.gender.includes('رجال')));
+                        } else if (isMale) {
+                            recentArr = recentArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت')));
+                            featuredArr = featuredArr.filter(item => item.gender && (item.gender.includes('أنثى') || item.gender.includes('انثى') || item.gender.includes('نساء') || item.gender.includes('بنت')));
+                        }
+                    }
+
+                    renderTicker(recentArr);
+                    renderFeaturedCards(featuredArr, myRegion);
                 } else {
-                    renderTicker([]); 
-                    renderFeaturedCards([]);
+                    renderTicker([]);
+                    renderFeaturedCards([], '');
                 }
-            } catch (err) { 
-                console.warn("Showcase Error:", err.message); 
-                renderTicker([]); 
-                renderFeaturedCards([]);
-            } 
+            } catch (err) {
+                console.warn("Showcase Error:", err.message);
+                renderTicker([]);
+                renderFeaturedCards([], '');
+            }
         }
 
         function renderTicker(recentArr) {
@@ -2120,51 +2151,165 @@
             ticker.innerHTML = fullSet + fullSet;
         }
 
-        function renderFeaturedCards(featuredArr) {
-            const container = document.getElementById('featuredContainer'); 
+        // 🟢 بطاقة "ملفات مميزة": الجزء العلوي فقط من بطاقة البحث/المطابقة الموحّدة (أفاتار+ميدالية، #الرقم المرجعي، حلقة "يدوي" بدل نسبة تطابق
+        // لأن getShowcaseData لا تُحسب مقابل ملف زائر معيّن، سطر الجنسية/الأصل، وصف رقاقات الحالة/العمر/الإقامة) بعرض بطاقات متراصّة (Deck)
+        function buildFeaturedTopCardHTML(item) {
+            const isFemale = item.gender && (item.gender.includes('أنثى') || item.gender.includes('نساء') || item.gender.includes('بنت'));
+            const avatarFile = item.avatarFile || (isFemale ? 'hijab_maroon.png' : 'suit.png');
+            const icon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(avatarFile)}" loading="lazy" onerror="this.style.display='none'">`;
+            const medal = featuredMedal(item.memberStars);
+            const safeRefId = escapeHtml(item.refId);
+
+            // 🟢 nationality/originType/tribeName/city/maritalStatus/age تصل فقط بعد لصق تعديل handleGetShowcaseData في Apps Script وإعادة النشر؛
+            // قبل ذلك تظهر "غير محدد" بدل كسر البطاقة (احتياطي متعمّد، الرسالة الكاملة في القسم رقم 25).
+            const safeNationality = item.nationality || 'غير محدد';
+            const safeOriginType = item.originType || '';
+            const safeTribeName = item.tribeName || '';
+            let displayOriginTribe = safeOriginType;
+            if (safeOriginType && safeTribeName && safeTribeName !== 'لا يوجد' && safeTribeName !== 'غير محدد') {
+                displayOriginTribe = `${safeOriginType} - ${safeTribeName}`;
+            }
+            const originLine = escapeHtml(`${safeNationality}${displayOriginTribe ? ' - ' + displayOriginTribe : ''}`);
+            const safeAge = item.age ? escapeHtml(item.age) : '--';
+            const safeCity = escapeHtml(item.city || 'غير محدد');
+            const safeMaritalStatus = escapeHtml(item.maritalStatus || 'غير محدد');
+            const headerBg = isFemale ? 'background:linear-gradient(to bottom, #fdf2f8, #ffffff);' : 'background:linear-gradient(to bottom, #eef2ff, #ffffff);';
+
+            return `
+            <div class="deck-peek snap-center">
+                <div class="deck-peek-back2"></div>
+                <div class="deck-peek-back1"></div>
+                <div data-refid="${safeRefId}" onclick="openFeaturedProfile(this)" class="deck-peek-front bg-white rounded-[1.5rem] border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden">
+                    <div class="p-3.5" style="${headerBg}">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="relative w-11 h-11 shrink-0">
+                                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center border border-white shadow-sm overflow-hidden bg-white/90" style="${medal.ring}">${icon}</div>
+                                    ${medal.medal}
+                                </div>
+                                <span class="bg-white/90 px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm text-xs font-black text-indigo-700 shrink-0">#${safeRefId}</span>
+                            </div>
+                            <div class="relative w-10 h-10 rounded-full flex items-center justify-center shadow-sm shrink-0 bg-white border border-slate-100" title="نتيجة التطابق غير متاحة لبطاقات الملفات المميزة">
+                                <span class="text-[9px] font-black text-slate-400 leading-none">يدوي</span>
+                            </div>
+                        </div>
+                        <div class="bg-white/90 py-1.5 px-3 rounded-lg border border-slate-100 shadow-sm w-full text-center mt-2.5">
+                            <span class="truncate text-slate-800 font-bold text-xs inline-block w-full">${originLine}</span>
+                        </div>
+                    </div>
+                    <div class="p-3 pt-2.5 bg-white">
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <div class="bg-slate-50 py-1.5 px-1 rounded-xl border border-slate-100 flex flex-col items-center justify-center gap-0.5" title="الإقامة">
+                                <span class="text-slate-400 text-[9px] font-bold">الإقامة</span>
+                                <strong class="text-slate-800 text-[10px] truncate w-full text-center">${safeCity}</strong>
+                            </div>
+                            <div class="bg-slate-50 py-1.5 px-1 rounded-xl border border-slate-100 flex flex-col items-center justify-center gap-0.5" title="العمر">
+                                <span class="text-slate-400 text-[9px] font-bold">العمر</span>
+                                <strong class="text-slate-800 text-[10px] truncate w-full text-center">${safeAge} سنة</strong>
+                            </div>
+                            <div class="bg-indigo-50 py-1.5 px-1 rounded-xl border border-indigo-100 flex flex-col items-center justify-center gap-0.5 shadow-sm" title="الحالة الاجتماعية">
+                                <span class="text-indigo-400 text-[9px] font-bold">الحالة</span>
+                                <strong class="text-indigo-700 text-[10px] font-black truncate w-full text-center">${safeMaritalStatus}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // 🟢 المناطق الخمس (تطابق geoRegions/geoRegionLabels في الخادم حرفياً) لتسمية المجموعات في عرض "كل المناطق"
+        const REGION_ORDER = ['الوسطى', 'الشرقية', 'الغربية', 'الجنوب', 'الشمال'];
+        const REGION_LABELS = { 'الوسطى': 'المنطقة الوسطى (الرياض والقصيم)', 'الشرقية': 'المنطقة الشرقية (مع الأحساء)', 'الغربية': 'المنطقة الغربية (مكة والمدينة)', 'الجنوب': 'المنطقة الجنوبية (عسير، الباحة، جازان، نجران)', 'الشمال': 'المنطقة الشمالية' };
+
+        function renderFeaturedCards(featuredArr, myRegion) {
+            const container = document.getElementById('featuredContainer');
             if(!container) return;
-            if(!featuredArr || featuredArr.length === 0) {
+            window.currentCandidatesData = window.currentCandidatesData || {};
+            featuredArr.forEach(item => { window.currentCandidatesData[item.refId] = item; });
+
+            window._featuredAllArr = featuredArr || [];
+            window._myRegion = myRegion || '';
+
+            const hint = document.getElementById('featuredRegionHint');
+            const toggleBtn = document.getElementById('featuredToggleBtn');
+            const hasOtherRegions = window._featuredAllArr.some(it => it.region && it.region !== window._myRegion);
+            if (toggleBtn) toggleBtn.classList.toggle('hidden', window._featuredAllArr.length === 0 || !hasOtherRegions);
+
+            // منطقتي فقط افتراضياً؛ فإن لم تُعرف منطقة الزائر (زائر/بلا ملف/إقامة خارج السعودية) أو لم توجد ملفات في منطقته، تُعرض كل الملفات كما كانت
+            let compactArr = window._featuredAllArr;
+            if (myRegion) {
+                const ownRegion = window._featuredAllArr.filter(it => it.region === myRegion);
+                if (ownRegion.length > 0) compactArr = ownRegion;
+                if (hint) hint.textContent = ownRegion.length > 0 ? ('· ' + (REGION_LABELS[myRegion] || myRegion).split('(')[0].trim()) : '';
+            } else if (hint) hint.textContent = '';
+
+            if(compactArr.length === 0) {
                 container.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-10 flex flex-col items-center gap-2"><svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>لا توجد ملفات مميزة متاحة حالياً.</div>';
                 return;
             }
-            let htmlStr = '';
-            window.currentCandidatesData = window.currentCandidatesData || {};
-            
-            featuredArr.forEach(item => {
-                const isFemale = item.gender && (item.gender.includes('أنثى') || item.gender.includes('نساء') || item.gender.includes('بنت')); 
-                const bgColors = isFemale ? 'bg-gradient-to-br from-white to-pink-50/30 border-slate-200' : 'bg-gradient-to-br from-white to-indigo-50/30 border-slate-200'; 
-                const titleColor = isFemale ? 'text-pink-700' : 'text-indigo-700'; 
-                const badgeColor = isFemale ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'; 
-                // 🟢 أفاتار حقيقي حسب الجنسية/التغطية (avatarFile من الخادم)، مع احتياطي محايد لو الخادم القديم لسا ما يرجّعه
-                const avatarFile = item.avatarFile || (isFemale ? 'hijab_maroon.png' : 'suit.png');
-                const icon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(avatarFile)}" loading="lazy" onerror="this.style.display='none'">`;
-                window.currentCandidatesData[item.refId] = item;
-                const medal = featuredMedal(item.memberStars);
+            const htmlStr = compactArr.map(buildFeaturedTopCardHTML).join('');
+            container.innerHTML = htmlStr + htmlStr;
+            setupInfiniteSnapScroll('featuredContainer');
+        }
 
-                htmlStr += `
-                <div data-refid="${escapeHtml(item.refId)}" onclick="openFeaturedProfile(this)" class="snap-center shrink-0 w-[85vw] sm:w-72 h-[140px] ${bgColors} border p-4 rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition-all group flex flex-col justify-between relative">
-                    <div class="flex items-center justify-between gap-2 mb-3">
-                        <div class="flex flex-col min-w-0 flex-1">
-                            <div class="font-black text-base ${titleColor} truncate w-full" title="${escapeHtml(item.featuredTitle)}">${escapeHtml(item.featuredTitle)}</div>
-                            <span class="text-[9px] font-bold ${badgeColor} px-2 py-0.5 rounded-md border w-max mt-1 shrink-0">#${escapeHtml(item.refId)}</span>
-                        </div>
-                        <div class="relative w-11 h-11 shrink-0 ml-2">
-                            <div class="w-11 h-11 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 overflow-hidden shadow-inner" style="${medal.ring}">${icon}</div>
-                            ${medal.medal}
-                        </div>
+        // 🟢 "عرض كل المناطق": يبدّل من الشريط الأفقي الواحد (منطقة الزائر فقط) إلى قائمة عمودية بصف أفقي مستقل لكل منطقة
+        function toggleFeaturedRegionView() {
+            const compact = document.getElementById('featuredCompactWrap');
+            const allWrap = document.getElementById('featuredAllRegionsWrapper');
+            const btn = document.getElementById('featuredToggleBtn');
+            if (!compact || !allWrap || !btn) return;
+            const isShowingAll = !allWrap.classList.contains('hidden');
+            if (isShowingAll) {
+                allWrap.classList.add('hidden');
+                compact.classList.remove('hidden');
+                btn.textContent = 'عرض كل المناطق';
+            } else {
+                renderFeaturedAllRegions(window._featuredAllArr || [], window._myRegion || '');
+                compact.classList.add('hidden');
+                allWrap.classList.remove('hidden');
+                btn.textContent = 'عرض منطقتي فقط';
+            }
+        }
+
+        function renderFeaturedAllRegions(featuredArr, myRegion) {
+            const wrap = document.getElementById('featuredAllRegionsWrapper');
+            if (!wrap) return;
+            if (!featuredArr || featuredArr.length === 0) {
+                wrap.innerHTML = '<div class="w-full text-center text-sm font-bold text-slate-400 py-6">لا توجد ملفات مميزة متاحة حالياً.</div>';
+                return;
+            }
+            const groups = {};
+            featuredArr.forEach(item => {
+                const key = item.region || 'أخرى';
+                (groups[key] = groups[key] || []).push(item);
+            });
+            let order = REGION_ORDER.slice();
+            if (myRegion && order.includes(myRegion)) order = [myRegion, ...order.filter(r => r !== myRegion)];
+            order.push('أخرى');
+
+            let html = '';
+            order.forEach(key => {
+                const items = groups[key];
+                if (!items || items.length === 0) return;
+                const label = REGION_LABELS[key] || 'خارج نطاق المناطق الخمس';
+                const isMine = key === myRegion;
+                html += `
+                <div>
+                    <div class="px-2 mb-2 flex items-center gap-2">
+                        <span class="text-xs font-black ${isMine ? 'text-indigo-700' : 'text-slate-600'}">${escapeHtml(label)}</span>
+                        ${isMine ? '<span class="text-[9px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100">منطقتك</span>' : ''}
                     </div>
-                    <div class="text-xs font-bold text-slate-600 leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${escapeHtml(item.featuredSub)}
+                    <div class="flex overflow-x-auto hide-scroll gap-4 px-1 pb-2 snap-x snap-mandatory scroll-smooth">
+                        ${items.map(buildFeaturedTopCardHTML).join('')}
                     </div>
                 </div>`;
             });
-            container.innerHTML = htmlStr + htmlStr; 
-            setupInfiniteSnapScroll('featuredContainer');
+            wrap.innerHTML = html;
         }
 
         async function fetchLiveStats() {
             try {
-                const result = await fetchFromGAS({ action: "getStats" });
+                const result = await fetchFromGASWithRetry({ action: "getStats" });
                 const c = document.getElementById('statsCarousel');
                 if(!c) return;
                 
