@@ -2125,7 +2125,9 @@
                 const bgColors = isFemale ? 'bg-gradient-to-br from-white to-pink-50/30 border-slate-200' : 'bg-gradient-to-br from-white to-indigo-50/30 border-slate-200'; 
                 const titleColor = isFemale ? 'text-pink-700' : 'text-indigo-700'; 
                 const badgeColor = isFemale ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'; 
-                const icon = isFemale ? femaleSVG : maleSVG;
+                // 🟢 أفاتار حقيقي حسب الجنسية/التغطية (avatarFile من الخادم)، مع احتياطي محايد لو الخادم القديم لسا ما يرجّعه
+                const avatarFile = item.avatarFile || (isFemale ? 'hijab_maroon.png' : 'suit.png');
+                const icon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="transform: scale(1.35);" loading="lazy" onerror="this.style.display='none'">`;
                 window.currentCandidatesData[item.refId] = item;
                 const medal = featuredMedal(item.memberStars);
 

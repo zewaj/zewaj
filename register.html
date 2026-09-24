@@ -648,15 +648,31 @@
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <h3 class="text-lg font-bold text-gray-900 mb-2">تم الحفظ بنجاح! 🎉</h3>
-            <div class="bg-red-50 border border-red-200 rounded-xl p-2.5 mb-4 text-center">
-                <p class="text-[11px] font-bold text-red-700 leading-relaxed">
-                    خطوة أخيرة هامة جداً:<br>يجب إرسال ملفك الآن للإدارة لاعتماده، وبدون هذه الخطوة لن يظهر ملفك للمشتركين.
-                </p>
+
+            <!-- تسجيل جديد وصلت رسالته للوسيط تلقائياً: لا فعل مطلوب من العميل -->
+            <div id="faAutoSentState" class="hidden">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-4 text-center">
+                    <p class="text-[11px] font-bold text-emerald-700 leading-relaxed">
+                        تم إرسال ملفك تلقائياً إلى الإدارة للمراجعة والاعتماد. لا حاجة لأي إجراء إضافي منك الآن.
+                    </p>
+                </div>
+                <button onclick="closeFinalActionModal();" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl shadow-md transition-all active:scale-95">
+                    <span class="text-xs">حسناً، متابعة</span>
+                </button>
             </div>
-            <button onclick="executeFinalWhatsAppSync();" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 mb-2 whatsapp-glow">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                <span class="text-xs">أرسل للاعتماد (واتساب)</span>
-            </button>
+
+            <!-- تعديل بيانات، أو تسجيل جديد تعذّر إرساله تلقائياً: يبقى الإرسال اليدوي كما كان -->
+            <div id="faManualSendState" class="hidden">
+                <div class="bg-red-50 border border-red-200 rounded-xl p-2.5 mb-4 text-center">
+                    <p id="faManualWarningText" class="text-[11px] font-bold text-red-700 leading-relaxed">
+                        خطوة أخيرة هامة جداً:<br>يجب إرسال ملفك الآن للإدارة لاعتماده، وبدون هذه الخطوة لن يظهر ملفك للمشتركين.
+                    </p>
+                </div>
+                <button onclick="executeFinalWhatsAppSync();" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 mb-2 whatsapp-glow">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.275-.883-.63-1.48-1.408-1.653-1.705-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    <span class="text-xs">أرسل للاعتماد (واتساب)</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -708,8 +724,12 @@
         let verifiedFullPhone = "";
         let isMale = null;
         let editInfoState = null; 
-        let dynamicDropdowns = null; 
-        let currentViewData = null; 
+        let dynamicDropdowns = null;
+        // 🟢 رسوم الوسيط: القيم الافتراضية تُستبدل بما في شيت الإعدادات (مفاتيح FEE_*) عبر getPublicConfig، وآخر قيمة تُحفظ محلياً
+        const DEFAULT_PLATFORM_FEES = { menSpecialAdvance: 1000, menMatch: 3000, womenMatch: 2000, directFee: 150, directFeeSpecialWomen: 250, packageContacts: 4, packagePoints: 250 };
+        let platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES);
+        try { const cachedFees = JSON.parse(localStorage.getItem('platform_fees')); if (cachedFees && cachedFees.menMatch > 0) platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES, cachedFees); } catch(e) {}
+        let currentViewData = null;
         let currentViewedIndexInDashboard = null; 
         let hasClickedWaToApprove = false;
         
@@ -1398,7 +1418,21 @@ function closeTermsModal() {
 
         function cleanArabicText(text) { if(!text) return ""; return text.replace(/[a-zA-Z]+/g, '').trim(); }
 
+        async function fetchPlatformFees() {
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getPublicConfig" }) });
+                const result = JSON.parse(await res.text());
+                const f = result && result.success ? result.fees : null;
+                if (f && f.menMatch >= 0 && f.womenMatch >= 0) {
+                    platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES, f);
+                    try { localStorage.setItem('platform_fees', JSON.stringify(f)); } catch(e) {}
+                    if (isMale !== null) generateTerms();
+                }
+            } catch(e) {}
+        }
+
         async function fetchDropdownData() {
+            fetchPlatformFees();
             const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000); 
             try {
                 const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getDropdowns" }), signal: controller.signal });
@@ -1649,16 +1683,16 @@ function closeTermsModal() {
 
             let pointsNote = "";
             if (cachedProfiles && cachedProfiles.length > 0) {
-                pointsNote = `<div class="bg-blue-50 border border-blue-200 p-2.5 rounded-xl mt-2 text-blue-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">ℹ️ ملاحظة: إضافة أفراد الأسرة لا تشمل النقاط المجانية، وتتطلب شحن الرصيد عبر الإدارة للتواصل.</p></div>`;
+                pointsNote = `<div class="bg-blue-50 border border-blue-200 p-2.5 rounded-xl mt-2 text-blue-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">✅ إضافة فرد الأسرة مجاناً<span class="align-super text-[7px]">*</span></p><p class="text-[7px] text-blue-400 font-normal mt-0.5 leading-relaxed">* بدون رصيد نقاط مجاني (يُشحن لاحقاً عند الحاجة للتواصل)</p></div>`;
             } else {
                 pointsNote = `<div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl mt-2 text-emerald-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">🎁 احصل على نقاط ترحيبية مجانية (لأول ملف يتم تسجيله في حسابك).</p></div>`;
             }
 
             if(isMale) { 
                 const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false; 
-                container.innerHTML = (isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px]">⚠️ مسار خاص: 1000 ريال مقدم + 3000 ريال توفيق.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 مسار معلن: 200 ريال بحث + 3000 ريال توفيق.</h3></div>`) + pointsNote; 
+                container.innerHTML = (isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px] leading-relaxed">⚠️ مسار خاص: باقة ${platformFees.menSpecialAdvance} ريال تشمل ${platformFees.packageContacts} أرقام تواصل مباشر و${platformFees.packagePoints} نقطة، + ${platformFees.menMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px] leading-relaxed">📌 مسار معلن: رسوم التواصل المباشر ${platformFees.directFee} ريال مع امرأة (زواج معلن)، و${platformFees.directFeeSpecialWomen} ريال مع امرأة (ظروف خاصة / مسيار)، + ${platformFees.menMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>`) + pointsNote;
             } else { 
-                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و 2000 ريال رسوم توفيق بعد الملكة.</h3></div>` + pointsNote; 
+                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و ${platformFees.womenMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>` + pointsNote; 
             }
         }
 
@@ -1670,15 +1704,16 @@ function closeTermsModal() {
             let myTags = []; let partnerTags = [];
             const customNiqabSVG = `<svg class="w-3.5 h-3.5 inline-block ml-1 text-gray-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,4c2.86,0,5.26,1.91,5.85,4.5H6.15C6.74,5.91,9.14,4,12,4z M4.26,14C4.1,13.36,4,12.69,4,12c0-0.5,0.06-0.98,0.15-1.45h15.7c0.09,0.47,0.15,0.95,0.15,1.45c0,0.69-0.1,1.36-0.26,2H4.26z M12,20c-3.14,0-5.85-1.83-7.15-4.5h14.3C17.85,18.17,15.14,20,12,20z"/></svg>`;
             const hijabIcon = `🧕`;
+            const maskIcon = `😷`;
 
-            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; } 
+            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
             else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
-            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
-            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+            else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة", "كمامة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
+            else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة", "كمامة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
 
             const drawTag = (tag, isMyTag) => {
                 let iconStr = ''; let cleanTag = tag;
-                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; }
+                if (tag === 'منقبة') { iconStr = customNiqabSVG; cleanTag = 'منقبة'; } else if (tag === 'محجبة') { iconStr = hijabIcon; cleanTag = 'محجبة'; } else if (tag === 'كمامة') { iconStr = maskIcon; cleanTag = 'كمامة'; }
                 return `<label class="smart-tag cursor-pointer shrink-0"><input type="checkbox" name="${isMyTag ? 'myInfoTags' : 'partnerTags'}" value="${cleanTag}"><div class="px-2 py-1 bg-white text-gray-700 text-[9px] font-bold rounded-full border border-gray-300 hover:border-blue-400 select-none shadow-sm transition-all flex items-center gap-1">${iconStr} ${cleanTag}</div></label>`;
             };
 
@@ -2355,7 +2390,7 @@ function closeTermsModal() {
                     skinColor: getC('skinColor') || "غير محدد", marriageType: isMale ? getV('menMarriageType') : getV('womenMarriageType'),
                     specialConditions: isMale ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، '),
                     acceptMarried: !isMale ? getV('acceptMarried') : "", monthlyIncome: isMale ? getV('monthlyIncome') : "",
-                    fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? "1000 مقدم + 3000 توفيق" : "200 بحث + 3000 توفيق") : "2000 توفيق",
+                    fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? `${platformFees.menSpecialAdvance} باقة + ${platformFees.menMatch} توفيق` : `${platformFees.directFee} / ${platformFees.directFeeSpecialWomen} تواصل مباشر + ${platformFees.menMatch} توفيق`) : `${platformFees.womenMatch} توفيق`,
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
                     howHeard: getV('howHeard'), agreedToTerms: "نعم موافق", autoBio: "#طلب_زواج_جديد" 
                 };
@@ -2376,8 +2411,32 @@ function closeTermsModal() {
 
                 if(result.success) {
                     closeTermsModal(); const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
-                    const fa = document.getElementById('finalActionModal'); if(fa) fa.classList.remove('hidden'); 
-                    registeredUserData = result.data || {}; hasClickedWaToApprove = false; cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' }); 
+                    const fa = document.getElementById('finalActionModal');
+                    if (fa) {
+                        // 🟢 التسجيل الجديد فقط يُرسَل تلقائياً للوسيط من الخادم (handleSaveRegistration). التعديل
+                        // (updateRegistration) يبقى يدوياً دائماً بقرار صاحب المشروع، فلا نتحقق من waAutoSent إلا
+                        // للتسجيل الجديد. لا نُرسل مرتين أبداً: إن نجح الإرسال الآلي لا يظهر زر الإرسال اليدوي إطلاقاً.
+                        const isNewRegistration = !editInfoState;
+                        const wasAutoSent = isNewRegistration && result.data && result.data.waAutoSent === true;
+                        const autoState = document.getElementById('faAutoSentState');
+                        const manualState = document.getElementById('faManualSendState');
+                        const manualWarning = document.getElementById('faManualWarningText');
+
+                        if (wasAutoSent) {
+                            if(autoState) autoState.classList.remove('hidden');
+                            if(manualState) manualState.classList.add('hidden');
+                        } else {
+                            if(autoState) autoState.classList.add('hidden');
+                            if(manualState) manualState.classList.remove('hidden');
+                            if (manualWarning) {
+                                manualWarning.innerHTML = isNewRegistration
+                                    ? 'تعذّر إرسال ملفك تلقائياً للإدارة (غالباً بسبب ضعف الشبكة).<br>يرجى الضغط على الزر أدناه لإرساله يدوياً حتى يظهر للمشتركين.'
+                                    : 'خطوة أخيرة هامة جداً:<br>يجب إرسال ملفك الآن للإدارة لاعتماده، وبدون هذه الخطوة لن يظهر ملفك للمشتركين.';
+                            }
+                        }
+                        fa.classList.remove('hidden');
+                    }
+                    registeredUserData = result.data || {}; hasClickedWaToApprove = false; cachedProfiles = []; window.scrollTo({ top: 0, behavior: 'smooth' });
                     if(!isAdminMode) localStorage.removeItem(`draft_${verifiedFullPhone}`); 
                     if(result.refId && !isAdminMode) localStorage.setItem('active_profile_uid', String(result.refId)); // 🟢 هذا هو السطر الجديد
                 } else { showMsgModal("ملاحظة من الخادم", result.message); }
@@ -2387,20 +2446,26 @@ function closeTermsModal() {
             } finally { btn.innerHTML = originalText; btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); }
         }
 
+        async function finishRegistrationFlow() {
+            hasClickedWaToApprove = true;
+            const fa = document.getElementById('finalActionModal'); if(fa) fa.classList.add('hidden');
+            const rf = document.getElementById('registrationForm'); if(rf) rf.reset();
+
+            await loadDashboard();
+            if (window.parent && window.parent !== window) { window.parent.postMessage({ action: 'authSuccess' }, '*'); }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // زر "حسناً، متابعة" في حالة الإرسال التلقائي الناجح: لا حاجة لفتح واتساب إطلاقاً.
+        function closeFinalActionModal() { finishRegistrationFlow(); }
+
         async function executeFinalWhatsAppSync() {
             const resData = registeredUserData;
             if (resData && (resData.shortBio || resData.autoBio)) {
                 const adminMessage = `${resData.shortBio || '---'}\n\n════════════════\n👤 الاسم: ${resData.fullName || '---'}\n🔒 معلومات سرية: ${resData.secretInfo || 'لا يوجد'}\n════════════════\n📱 ${resData.unifiedName || '---'}`;
                 const encodedMessage = encodeURIComponent(adminMessage); const brokerPhone = "966590779236"; window.open(`https://api.whatsapp.com/send?phone=${brokerPhone}&text=${encodedMessage}`, '_blank');
             }
-            
-            hasClickedWaToApprove = true;
-            const fa = document.getElementById('finalActionModal'); if(fa) fa.classList.add('hidden');
-            const rf = document.getElementById('registrationForm'); if(rf) rf.reset();
-            
-            await loadDashboard(); 
-            if (window.parent && window.parent !== window) { window.parent.postMessage({ action: 'authSuccess' }, '*'); }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            await finishRegistrationFlow();
         }
     </script>
 </body>

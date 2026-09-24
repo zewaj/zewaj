@@ -57,6 +57,9 @@
             transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         #selectionFloatingBar.show { bottom: 24px; }
+        /* 🟢 تسمية "عضو جاد" الوامضة أسفل الأفاتار مباشرة (بدل عمود منفصل يكبّر ارتفاع البطاقة) */
+        @keyframes memberGlowPulse { 0%, 100% { opacity: .55; text-shadow: 0 0 2px currentColor; } 50% { opacity: 1; text-shadow: 0 0 5px currentColor, 0 0 9px currentColor; } }
+        .member-glow { font-size: 8px; font-weight: 900; line-height: 1; white-space: nowrap; animation: memberGlowPulse 1.6s ease-in-out infinite; }
     </style>
 </head>
 <body class="text-slate-800 antialiased pb-16 relative">
@@ -1415,9 +1418,10 @@
                 let percentageDisplay = 'يدوي';
                 
                 let avatarColor = targetGender === 'أنثى' ? 'text-pink-400' : 'text-indigo-400';
-                let avatarIcon = targetGender === 'أنثى' 
-                    ? femaleSVGs[Math.floor(Math.random() * femaleSVGs.length)] 
-                    : maleSVGs[Math.floor(Math.random() * maleSVGs.length)];
+                // 🟢 أفاتار حقيقي حسب الجنسية/التغطية (match.avatarFile من الخادم)، مع احتياطي محايد لو الخادم القديم لسا ما يرجّعه
+                const avatarFile = match.avatarFile || (targetGender === 'أنثى' ? 'hijab_maroon.png' : 'suit.png');
+                let avatarIcon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="transform: scale(1.35);" loading="lazy" onerror="this.style.display='none'">`;
+                const medal = memberMedalHtml(match.memberStars);
 
                 const safeNationality = match.nationality || match.Nationality || 'غير محدد';
                 const countryCode = getCountryCode(safeNationality);
@@ -1525,15 +1529,20 @@
                             <div class="flex items-center w-full justify-between gap-3 relative z-10">
                                 
                                 <div class="flex items-center gap-2.5 flex-1 justify-start">
-                                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md border border-white ${avatarColor} shrink-0 overflow-hidden bg-white/90">
-                                        ${avatarIcon}
+                                    <div class="flex flex-col items-center gap-0.5 shrink-0">
+                                        <div class="relative w-12 h-12">
+                                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md border border-white ${avatarColor} overflow-hidden bg-white/90" style="${medal.ring}">
+                                                ${avatarIcon}
+                                            </div>
+                                            ${medal.medal}
+                                        </div>
+                                        <div style="height:10px;line-height:10px;">${medal.caption}</div>
                                     </div>
-                                    
+
                                     <div class="flex flex-col gap-1.5 items-start">
                                         <div class="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-slate-100 shadow-sm w-max">
                                             <span class="text-sm font-black text-indigo-700">#${safeRefId}</span>
                                         </div>
-                                        ${memberBadgeHtml(match.memberStars)}
                                     </div>
                                 </div>
 
@@ -1639,26 +1648,29 @@
 /* 🟥🟥🟥🟥 [ القسم رقم 20: السكربت - نافذة الملف التفصيلي والنسخ (Unified Profile) ] 🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
         // شارة "عضو جاد" بعدد النجوم لمن اشترك في باقة (memberStars تأتي من الخادم)؛ من لا نجوم له لا شارة له
-        function memberBadgeHtml(stars, extraClass) {
+        // 🟢 استبدلت memberBadgeHtml (بطاقة/عمود منفصل يكبّر ارتفاع البطاقة) بميدالية صغيرة فوق الأفاتار + تسمية وامضة أسفله
+        // بارتفاع ثابت محجوز دائماً (حتى لو فاضي) — فبطاقة "عضو جاد" وأي بطاقة عادية يصير لهما نفس الارتفاع بالضبط.
+        function memberMedalHtml(stars) {
             const n = Math.min(parseInt(stars) || 0, 5);
-            if (n <= 0) return '';
-            // 4 = تاج فضي، 5 فأكثر = تاج ذهبي (من دفع باقة الاشتراطات الخاصة)؛ وما دونها نجوم
+            if (n <= 0) return { ring: '', medal: '', caption: '' };
+            const base = 'position:absolute;bottom:-6px;right:-8px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:800;line-height:1;';
             if (n >= 4) {
                 const gold = n >= 5;
-                const box = gold
-                    ? 'bg-gradient-to-b from-amber-100 to-amber-50 border-amber-400 text-amber-800 shadow-[0_0_8px_rgba(245,158,11,.45)]'
-                    : 'bg-gradient-to-b from-slate-100 to-white border-slate-300 text-slate-600 shadow-sm';
-                const crownStyle = gold ? '' : 'style="filter:grayscale(1) brightness(.85) contrast(1.35) drop-shadow(0 0 1px #64748b)"';
-                return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max border rounded-xl px-2.5 py-1 ${box} ${extraClass || ''}" title="عضو جاد - ${gold ? 'تاج ذهبي' : 'تاج فضي'}"><span class="text-[22px] leading-none" ${crownStyle}>👑</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+                const ringColor = gold ? '#f59e0b' : '#94a3b8';
+                const box = gold ? 'background:#fef3c7;border:1.5px solid #f59e0b;' : 'background:#f1f5f9;border:1.5px solid #94a3b8;';
+                const crownStyle = gold ? '' : 'filter:grayscale(1) brightness(.85) contrast(1.35);';
+                const captionColor = gold ? '#d97706' : '#64748b';
+                return {
+                    ring: `box-shadow:0 0 0 2px ${ringColor};`,
+                    medal: `<span title="عضو جاد - ${gold ? 'تاج ذهبي' : 'تاج فضي'}" style="${base}width:18px;height:18px;font-size:10px;${box}"><span style="${crownStyle}">👑</span></span>`,
+                    caption: `<span class="member-glow" style="color:${captionColor}">عضو جاد</span>`
+                };
             }
-            // النجوم فوق الكلمة على شكل هرم: صف علوي أكبر ثم صف أسفله (3 = نجمة كبيرة فوق نجمتين)
-            const rowsMap = { 1: [1], 2: [2], 3: [1, 2] };
-            const rows = rowsMap[n];
-            const starsHtml = rows.map((count, idx) => {
-                const size = rows.length === 1 ? 'text-[14px]' : (idx === 0 ? 'text-[16px]' : 'text-[12px]');
-                return `<span class="flex items-center justify-center gap-0.5 leading-none ${size} ${idx > 0 ? '-mt-0.5' : ''}">${'⭐'.repeat(count)}</span>`;
-            }).join('');
-            return `<span class="inline-flex flex-col items-center align-middle gap-0.5 w-max bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-2.5 py-1 shadow-sm ${extraClass || ''}" title="عضو جاد"><span class="flex flex-col items-center">${starsHtml}</span><span class="text-[9px] font-black leading-none">عضو جاد</span></span>`;
+            return {
+                ring: 'box-shadow:0 0 0 2px #fcd34d;',
+                medal: `<span title="عضو جاد" style="${base}min-width:18px;height:16px;padding:0 3px;font-size:9px;background:#fffbeb;border:1.5px solid #fcd34d;color:#b45309;">${n}⭐</span>`,
+                caption: `<span class="member-glow" style="color:#b45309">عضو جاد</span>`
+            };
         }
 
         function openProfileModal(data, title, subtitle) {
