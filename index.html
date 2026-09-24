@@ -636,6 +636,16 @@
         const maleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#e0f2fe"/><path d="M12 40 C12 10, 88 10, 88 40 L95 100 L5 100 Z" fill="#ef4444"/><rect x="30" y="35" width="40" height="45" rx="15" fill="#fde68a"/><path d="M20 30 Q50 20 80 30" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><path d="M25 35 Q50 25 75 35" fill="none" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/><circle cx="42" cy="55" r="3" fill="#1f2937"/><circle cx="58" cy="55" r="3" fill="#1f2937"/><path d="M42 65 Q50 72 58 65" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
         const femaleSVG = `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-sm"><circle cx="50" cy="50" r="48" fill="#fce7f3"/><path d="M20 40 C20 10, 80 10, 80 40 L90 100 L10 100 Z" fill="#1f2937"/><circle cx="50" cy="50" r="20" fill="#fde68a"/><circle cx="42" cy="48" r="3" fill="#1f2937"/><circle cx="58" cy="48" r="3" fill="#1f2937"/><path d="M44 58 Q50 64 56 58" fill="none" stroke="#1f2937" stroke-width="2" stroke-linecap="round"/></svg>`;
 
+        // 🟢 بعض ملفات avatars/ الشخصية فيها مرسومة قليلاً بعيدة عن مركز الدائرة أصلاً (من التصميم الأصلي)،
+        // فهذا الجدول يصحّح نقطة التركيز (object-position) لكل ملف على حدة ليظهر الوجه في المنتصف تماماً داخل أي دائرة.
+        const AVATAR_OBJECT_POSITION = {
+            'hijab_black.png': '62%', 'gulf_red.png': '62%', 'gulf_white.png': '62%', 'turban_gulf.png': '62%', 'hijab_mask.png': '75%'
+        };
+        function avatarImgStyle(file) {
+            const pos = AVATAR_OBJECT_POSITION[file] || '50%';
+            return `transform: scale(1.35); object-position: ${pos} center;`;
+        }
+
         // 🟢 تهريب أي نص قادم من الخادم/المستخدم قبل حقنه في innerHTML أو في سمة HTML (يمنع XSS المخزَّن من بيانات الملفات)
         function escapeHtml(str) {
             return String(str === undefined || str === null ? '' : str)
@@ -2127,7 +2137,7 @@
                 const badgeColor = isFemale ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-indigo-50 text-indigo-600 border-indigo-100'; 
                 // 🟢 أفاتار حقيقي حسب الجنسية/التغطية (avatarFile من الخادم)، مع احتياطي محايد لو الخادم القديم لسا ما يرجّعه
                 const avatarFile = item.avatarFile || (isFemale ? 'hijab_maroon.png' : 'suit.png');
-                const icon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="transform: scale(1.35);" loading="lazy" onerror="this.style.display='none'">`;
+                const icon = `<img src="avatars/${avatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(avatarFile)}" loading="lazy" onerror="this.style.display='none'">`;
                 window.currentCandidatesData[item.refId] = item;
                 const medal = featuredMedal(item.memberStars);
 

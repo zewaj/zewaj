@@ -193,6 +193,9 @@
                             <div class="relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 mb-1.5">
                                 <div id="heroAvatar" class="w-full h-full rounded-full border-2 border-white shadow bg-gray-50 overflow-hidden flex items-center justify-center"></div>
                                 <button id="heroMainBadge" type="button" class="absolute -top-1.5 left-1/2 transform -translate-x-1/2 text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm flex items-center gap-0.5 whitespace-nowrap z-20 transition-all"></button>
+                                <button type="button" onclick="openAvatarPicker()" title="تغيير الصورة الرمزية" class="absolute bottom-0 left-0 w-6 h-6 bg-white text-gray-600 hover:text-indigo-600 rounded-full shadow border border-gray-200 flex items-center justify-center z-20">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
                             </div>
                             
                             <div class="flex flex-col items-center w-full relative z-30">
@@ -634,6 +637,18 @@
                     <svg class="w-4 h-4 text-gray-400 group-hover:text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- 🟢 نافذة اختيار الصورة الرمزية (avatars/*): اختيار صريح يُخزَّن بعمود 41 ويطغى على الحساب التلقائي بالجنسية -->
+    <div id="avatarPickerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[140] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl p-4 max-w-sm w-full shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <button type="button" onclick="closeAvatarPicker()" class="absolute top-2.5 left-2.5 text-gray-400 hover:text-gray-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-sm font-bold text-gray-900 mb-1 text-center">اختر صورتك الرمزية</h3>
+            <p class="text-[10px] text-gray-500 mb-4 leading-relaxed text-center">لو ما اخترت شيء، تبقى الصورة تُحدَّد تلقائياً حسب جنسيتك.</p>
+            <div id="avatarPickerGrid" class="grid grid-cols-3 gap-2"></div>
         </div>
     </div>
 
@@ -1926,7 +1941,8 @@ function closeTermsModal() {
 
                 let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-200 hover:bg-gray-50";
                 let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
-                const avatarSvg = p.gender === 'ذكر' ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>` : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+                const pAvatarFile = p.avatarFile || (p.gender === 'ذكر' ? 'suit.png' : 'hijab_maroon.png');
+                const avatarSvg = `<div class="w-7 h-7 rounded-full overflow-hidden shrink-0 shadow-sm bg-gray-100"><img src="avatars/${pAvatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(pAvatarFile)}" onerror="this.style.display='none'"></div>`;
                 const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
 
                 carouselHtml += `<button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]"><div class="relative shrink-0 mb-0.5">${avatarSvg}${hasAlert ? '<div class="absolute -top-0.5 -right-0.5">' + pulseDot + '</div>' : ''}</div><div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">${shortName}</div><div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">${iterRel}</div>${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}</button>`;
@@ -1934,7 +1950,8 @@ function closeTermsModal() {
             if(familyGrid) familyGrid.innerHTML = carouselHtml;
 
             const heroAvatar = document.getElementById('heroAvatar');
-            if(heroAvatar) heroAvatar.innerHTML = activeProfile.gender === 'ذكر' ? '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>' : '<svg viewBox="0 0 64 64" class="w-full h-full p-1 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>';
+            const heroAvatarFile = activeProfile.avatarFile || (activeProfile.gender === 'ذكر' ? 'suit.png' : 'hijab_maroon.png');
+            if(heroAvatar) heroAvatar.innerHTML = `<img src="avatars/${heroAvatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(heroAvatarFile)}" onerror="this.style.display='none'">`;
 
             let bioStr = activeProfile.autoBio || (activeProfile.fullDetails && activeProfile.fullDetails.autoBio) || "";
             if(!bioStr || typeof bioStr !== 'string' || bioStr.trim() === "") bioStr = "النبذة التلقائية قيد التحديث في قاعدة البيانات...";
@@ -2017,7 +2034,8 @@ function closeTermsModal() {
 
                                 let bgClass = isActive ? "bg-indigo-50 border-indigo-300 shadow-sm ring-1 ring-indigo-200" : "bg-white border-gray-100 hover:bg-gray-50";
                                 let shortName = p.name ? p.name.split(' ')[0] : 'مستخدم';
-                                const avatarSvg = p.gender === 'ذكر' ? `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#e0f2fe"/><path d="M12 28 C12 8, 52 8, 52 28 L58 64 L42 64 L38 45 L26 45 L22 64 L6 64 Z" fill="#ef4444"/><rect x="20" y="24" width="24" height="28" rx="10" fill="#fde68a"/><path d="M14 22 Q32 16 50 22" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><path d="M16 26 Q32 20 48 26" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round"/><circle cx="28" cy="36" r="2" fill="#1f2937"/><circle cx="36" cy="36" r="2" fill="#1f2937"/><path d="M28 44 Q32 48 36 44" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/><path d="M23 40 Q32 52 41 40 Q32 46 23 40" fill="#1f2937"/></svg>` : `<svg viewBox="0 0 64 64" class="w-7 h-7 drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+                                const pAvatarFile = p.avatarFile || (p.gender === 'ذكر' ? 'suit.png' : 'hijab_maroon.png');
+                const avatarSvg = `<div class="w-7 h-7 rounded-full overflow-hidden shrink-0 shadow-sm bg-gray-100"><img src="avatars/${pAvatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(pAvatarFile)}" onerror="this.style.display='none'"></div>`;
                                 const pulseDot = hasAlert ? `<span class="flex h-2.5 w-2.5 relative shrink-0"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white"></span></span>` : ``;
 
                                 carouselHtml += `<button onclick="selectProfileInDashboard('${pUid}')" class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border ${bgClass} transition-all duration-300 group w-full text-center relative overflow-hidden h-full min-h-[75px]"><div class="relative shrink-0 mb-0.5">${avatarSvg}${hasAlert ? '<div class="absolute -top-0.5 -right-0.5 z-10">' + pulseDot + '</div>' : ''}</div><div class="text-[9px] sm:text-[10px] font-bold text-gray-900 truncate w-full px-1">${shortName}</div><div class="text-[7px] sm:text-[8px] text-gray-500 font-medium truncate w-full">${iterRel}</div>${isIterMain ? '<div class="absolute top-1 left-1 text-[6px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded border border-amber-200">رئيسي</div>' : ''}</button>`;
@@ -2077,6 +2095,77 @@ function closeTermsModal() {
         function closeShareCopyModal() {
             const modal = document.getElementById('shareCopyModal');
             if(modal) modal.classList.add('hidden');
+        }
+
+        // 🟢 بعض ملفات avatars/ الشخصية فيها مرسومة قليلاً بعيدة عن مركز الدائرة أصلاً (من التصميم الأصلي)،
+        // فهذا الجدول يصحّح نقطة التركيز (object-position) لكل ملف على حدة ليظهر الوجه في المنتصف تماماً داخل أي دائرة.
+        const AVATAR_OBJECT_POSITION = {
+            'hijab_black.png': '62%', 'gulf_red.png': '62%', 'gulf_white.png': '62%', 'turban_gulf.png': '62%', 'hijab_mask.png': '75%'
+        };
+        function avatarImgStyle(file) {
+            const pos = AVATAR_OBJECT_POSITION[file] || '50%';
+            return `transform: scale(1.35); object-position: ${pos} center;`;
+        }
+
+        // 🟢 كتالوج الصور الرمزية المتاحة لكل جنس (يطابق ملفات avatars/) لنافذة "اختر صورتك الرمزية"
+        const AVATAR_CATALOG = {
+            male: [
+                { file: 'gulf_red.png', label: 'شماغ أحمر' },
+                { file: 'gulf_white.png', label: 'غترة بيضاء' },
+                { file: 'turban_gulf.png', label: 'عمامة خليجية' },
+                { file: 'turban_african.png', label: 'عمامة أفريقية' },
+                { file: 'suit.png', label: 'بدلة رسمية' },
+                { file: 'kufi.png', label: 'طاقية' }
+            ],
+            female: [
+                { file: 'hijab_black.png', label: 'محجبة' },
+                { file: 'hijab_maroon.png', label: 'محجبة' },
+                { file: 'hijab_mask.png', label: 'محجبة بكمامة' },
+                { file: 'niqab_black.png', label: 'منقبة' },
+                { file: 'niqab_pink.png', label: 'منقبة' }
+            ]
+        };
+
+        function openAvatarPicker() {
+            if (!currentViewData) return;
+            const isMale = currentViewData.gender === 'ذكر';
+            const list = isMale ? AVATAR_CATALOG.male : AVATAR_CATALOG.female;
+            const current = currentViewData.avatarFile || (isMale ? 'suit.png' : 'hijab_maroon.png');
+            const grid = document.getElementById('avatarPickerGrid');
+            if (grid) {
+                grid.innerHTML = list.map(item => `
+                    <button type="button" onclick="chooseAvatarOption('${item.file}')" class="flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all ${item.file === current ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}">
+                        <div class="w-14 h-14 rounded-full overflow-hidden bg-gray-100"><img src="avatars/${item.file}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(item.file)}" onerror="this.style.display='none'"></div>
+                        <span class="text-[9px] font-bold text-gray-700">${item.label}</span>
+                    </button>
+                `).join('');
+            }
+            const modal = document.getElementById('avatarPickerModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeAvatarPicker() {
+            const modal = document.getElementById('avatarPickerModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function chooseAvatarOption(fileName) {
+            if (!currentViewData) return;
+            closeAvatarPicker();
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "updateAvatarChoice", phone: verifiedFullPhone, rowIndex: currentViewData.rowIndex, sheetName: currentViewData.sheetName, avatarChoice: fileName }) });
+                const result = await res.json();
+                if (result.success) {
+                    currentViewData.avatarFile = result.avatarFile;
+                    const heroAvatar = document.getElementById('heroAvatar');
+                    if (heroAvatar) heroAvatar.innerHTML = `<img src="avatars/${result.avatarFile}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(result.avatarFile)}" onerror="this.style.display='none'">`;
+                    showMsgModal('تم ✅', 'تم تحديث صورتك الرمزية بنجاح.');
+                } else {
+                    showMsgModal('تنبيه', result.message || 'تعذر تحديث الصورة، حاول مرة أخرى.');
+                }
+            } catch (e) {
+                showMsgModal('تنبيه', 'تعذر الاتصال بالخادم، تحقق من الإنترنت وحاول مرة أخرى.');
+            }
         }
 
         function executeActionChoice(lengthType) {
