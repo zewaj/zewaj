@@ -634,22 +634,47 @@
 /* 🟥🟥🟥🟥 [ القسم رقم 14: السكربت - دوال جلب البيانات والفلترة (API & Local Filter Logic) ] 🟥🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
         async function fetchFromGAS(payload) {
+            const controller = new AbortController();
+            // 🟢 45 ثانية بدل بلا حد إطلاقاً: بدونها كان "بحث الآن" يعلّق بلا نهاية تقريباً لو تأخر الخادم (نفس إصلاح smart.html/index.html)
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify(payload),
-                    redirect: "follow"
+                    redirect: "follow",
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 const text = await response.text();
                 if (text.trim().startsWith('<')) {
-                    console.warn("استلمنا صفحة HTML بدلاً من JSON من السيرفر. قد يكون هناك حظر أمني (Iframe) أو السكربت يطلب تسجيل دخول.");
-                    return { success: false, message: "فشل الاتصال بالخادم (HTML Response)." };
+                    // 🟢 [2026-09-25] السبب الغالب هو امتلاء مقاعد التنفيذ المتزامن في Apps Script (سقف Google = 1000)،
+                    // فيرد HTML بدل JSON. نرفع علم serverBusy لتتجنب إعادة المحاولة زيادة الاختناق على خادم مختنق أصلاً.
+                    console.warn("استلمنا صفحة HTML بدلاً من JSON من السيرفر (الأرجح: ازدحام العمليات المتزامنة).");
+                    return { success: false, serverBusy: true, message: "المنصة مزدحمة حالياً، يرجى المحاولة بعد لحظات." };
                 }
                 return JSON.parse(text);
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error("Network or Fetch Error:", error);
                 throw error;
+            }
+        }
+
+        // 🟢 محاولة ثانية صامتة قبل إظهار خطأ للمستخدم (نفس نمط smart.html): تُستخدم فقط لعمليات القراءة (بحث/فلاتر/بحث برقم مرجعي)
+        // ولا تُستخدم لِـ toggleFavorite لأنها عملية "قلب حالة" وإعادة إرسالها بعد نجاح فعلي غير مؤكَّد قد تُلغي التبديل الأول.
+        // 🟢 [2026-09-25] لا تُعاد المحاولة عند ازدحام الخادم (serverBusy) ولا عند انتهاء المهلة: سجل التنفيذ أظهر تنفيذات
+        // تصل 100 ثانية بينما مهلتنا 45، فالطلب الأصلي يظل يعمل على الخادم وإعادة الإرسال تضيف عملية ثانية فوقه.
+        // وفي بقية حالات الفشل يسبق المحاولةَ الثانية تأخيرٌ عشوائي 2–4 ثوانٍ حتى لا ترتد كل الأجهزة على الخادم معاً.
+        async function fetchFromGASWithRetry(payload) {
+            try {
+                // ردّ الازدحام (serverBusy) يصل هنا كقيمة عادية لا كاستثناء، فيُعاد للمتصل كما هو بلا إعادة محاولة.
+                return await fetchFromGAS(payload);
+            } catch (firstError) {
+                if (firstError && firstError.name === 'AbortError') throw firstError;
+                console.warn("المحاولة الأولى فشلت، إعادة محاولة صامتة بعد تأخير:", firstError);
+                await new Promise(r => setTimeout(r, 2000 + Math.floor(Math.random() * 2000)));
+                return await fetchFromGAS(payload);
             }
         }
 
@@ -767,7 +792,7 @@
             
             try {
                 // الاعتماد الكلي على السيرفر لضمان تطابق البيانات 100%
-                const result = await fetchFromGAS({ action: "getDropdowns" });
+                const result = await fetchFromGASWithRetry({ action: "getDropdowns" });
                 if (result.success && result.data) { 
                     serverDropdowns = result.data; 
                 }
@@ -1021,7 +1046,7 @@
             loading.classList.add('flex');
 
             try {
-                const result = await fetchFromGAS(requestData);
+                const result = await fetchFromGASWithRetry(requestData);
                 
                 if (result.success && result.matches) {
                     result.matches = applyLocalFilters(result.matches, requestData.filters);
@@ -1209,7 +1234,7 @@
             }
 
             try {
-                const result = await fetchFromGAS({ action: "findProfileByRefId", refId: val });
+                const result = await fetchFromGASWithRetry({ action: "findProfileByRefId", refId: val });
                 if (result.success && result.profile) {
                     clearAllFilters();
                     document.getElementById('genderSelectionArea').classList.add('hidden');
