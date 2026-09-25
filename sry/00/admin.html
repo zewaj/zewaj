@@ -1479,6 +1479,17 @@
             return clean(looksFemale ? req.targetPhone : req.requesterPhone);
         }
 
+        // 🟢 نبذة المرأة (رقم ملفها، قبيلتها/عائلتها، منطقتها، حالتها الاجتماعية) — نفس منطق تحديد الطرف في getManPhone
+        // لتُرسَل مع رسالة تسليم الأرقام، لا رقم الجوال وحده.
+        function getWomanSummary(req) {
+            if (req.requesterGender === 'أنثى') return req.requesterData || '';
+            if (req.targetGender === 'أنثى') return req.targetData || '';
+            if (req.requesterGender === 'ذكر') return req.targetData || '';
+            if (req.targetGender === 'ذكر') return req.requesterData || '';
+            const looksFemale = /بكر|مطلقة|أرملة|أنثى|امرأة/.test(String(req.requesterData || ''));
+            return (looksFemale ? req.requesterData : req.targetData) || '';
+        }
+
         async function executeAdminAction(reqId, actionType, chosenReason = null) {
             if(isProcessingAction) return;
             const req = allRequests.find(r => r.reqId === reqId);
@@ -1576,7 +1587,8 @@
 
                     if (actionType === 'closeChatSuccess') {
                         targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
-                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\nتم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*يسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
+                        let womanSummary = getWomanSummary(req); // 🟢 نبذتها (رقم الملف، القبيلة، المنطقة، الحالة الاجتماعية) قبل رقم جوالها
+                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\nتم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*بيانات الطرف الآخر (المخطوبة/ولي الأمر):*\n👤 ${womanSummary || 'غير متوفرة'}\n\n*يسعدنا تزويدك برقم التواصل المعتمد:*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
                         craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
                     } else {
                         let waIntro = actionType === 'msgTarget' 
@@ -1792,8 +1804,9 @@
                                 if (act.type === 'closeChatSuccess') {
                                     let customPhoneToShare = act.payload.actionContext.split('|')[1] || "";
                                     targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
-                                    waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\nيسعدنا تزويدك برقم التواصل المعتمد للطرف الآخر (ولي الأمر / المخطوبة):\n\nرقم الجوال: " + customPhoneToShare + "\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
-                                } 
+                                    let womanSummary = getWomanSummary(req); // 🟢 نبذتها قبل رقم جوالها
+                                    waFullMsg += "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\nبيانات الطرف الآخر (المخطوبة/ولي الأمر):\n" + (womanSummary || 'غير متوفرة') + "\n\nيسعدنا تزويدك برقم التواصل المعتمد:\n\nرقم الجوال: " + customPhoneToShare + "\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
+                                }
                                 else if (act.type === 'msgTarget' || act.type === 'msgStudent') {
                                     targetPhoneNum = String(act.type === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
                                     let magicLinkToSend = act.type === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
