@@ -839,9 +839,17 @@
                 clearTimeout(timeoutId);
                 if (!response.ok) {
                     console.warn(`⚠️ فشل الاتصال بالسيرفر (الخطأ: ${response.status}).`);
-                    return { success: false };
+                    return { success: false, serverBusy: true };
                 }
-                const parsed = JSON.parse(await response.text());
+                const text = await response.text();
+                // 🟢 [2026-09-25] Apps Script يرد صفحة HTML بدل JSON حين تمتلئ مقاعد التنفيذ المتزامن (سقف Google = 1000)
+                // أو حين تتعطل الخدمة مؤقتاً. هذا ما كان يظهر للعميل كـ"السيرفر يرسل بيانات غير متوقعة".
+                // نميّزه هنا بعلم serverBusy حتى لا تُعاد المحاولة فوق خادم مختنق أصلاً فنزيد اختناقه.
+                if (text.trim().startsWith('<')) {
+                    console.warn("⚠️ الخادم مزدحم: وصلت صفحة HTML بدل JSON (سقف العمليات المتزامنة في Apps Script).");
+                    return { success: false, serverBusy: true };
+                }
+                const parsed = JSON.parse(text);
                 // 🟢 الملف المحذوف: الخادم يرفض أي إجراء ويطلب الإخراج، فنُخرج العضو بالقوة ولو كانت جلسته محفوظة في المتصفح
                 if (parsed && parsed.forceLogout) forceLogoutNow(parsed.message);
                 return parsed;
@@ -849,15 +857,22 @@
                 clearTimeout(timeoutId);
                 // تحويل الخطأ الأحمر المزعج إلى تنبيه أصفر صامت لحماية الواجهة من الانهيار
                 console.warn("⚠️ تعذر الوصول للرابط (قد يكون بسبب بيئة العرض أو حجب المتصفح، أو انتهاء مهلة 45 ثانية):", error.message);
-                return { success: false };
+                // انتهاء المهلة معناه أن التنفيذ ما زال يعمل على الخادم (Apps Script لا يتوقف بانقطاع المتصفح)،
+                // فإعادة الإرسال الفورية تضيف عملية ثانية فوق الأولى التي لم تنتهِ بعد. نعاملها كازدحام أيضاً.
+                return { success: false, serverBusy: (error.name === 'AbortError') };
             }
         }
 
-        // 🟢 محاولة ثانية صامتة قبل الاستسلام لحالة "تعذر الوصول": فشل المحاولة الأولى غالباً بطء مؤقت في Apps Script وليس عطلاً حقيقياً،
-        // فمحاولة فورية ثانية تنجح في الغالب بلا حاجة لأن يحدّث الزائر الصفحة يدوياً عدة مرات (نفس نمط fetchFromGASWithRetry في smart.html).
+        // 🟢 محاولة ثانية صامتة قبل الاستسلام لحالة "تعذر الوصول": فشل المحاولة الأولى غالباً بطء مؤقت وليس عطلاً حقيقياً.
+        // 🟢 [2026-09-25] أُضيف شرطان بعد أن أظهر سجل التنفيذ أن إعادة المحاولة الفورية كانت تُضاعف الحمل في أسوأ لحظة:
+        //   1) لا نعيد المحاولة إطلاقاً حين يكون الفشل بسبب ازدحام الخادم (serverBusy): الطلب الأصلي غالباً ما زال يعمل
+        //      على الخادم (التنفيذ يصل 100 ثانية بينما مهلتنا 45)، فإعادة الإرسال تضيف عملية جديدة فوق عملية حيّة وتزيد الاختناق.
+        //   2) تأخير عشوائي 2–4 ثوانٍ قبل المحاولة الثانية بدل الفور، فلا ترتد كل أجهزة الزوار على الخادم في نفس اللحظة.
         async function fetchFromGASWithRetry(payload) {
             const first = await fetchFromGAS(payload);
             if (first && first.success) return first;
+            if (first && first.serverBusy) return first;
+            await new Promise(r => setTimeout(r, 2000 + Math.floor(Math.random() * 2000)));
             return await fetchFromGAS(payload);
         }
 
@@ -2307,6 +2322,25 @@
             wrap.innerHTML = html;
         }
 
+        // 🟢 تبديل بطاقة "المسجّلون حسب المنطقة" بين الرسم الدائري والتفاصيل — الزر ثابت خارج الحاويتين المتبدّلتين فيبقى قابلاً للضغط دائماً؛
+        // closest/querySelector (لا id) لأن البطاقة مكرَّرة مرتين في نفس الحاوية (تمرير لانهائي)، فمعرّف ثابت كان سيصطدم بنفسه.
+        function toggleRegionDetail(btn) {
+            const card = btn.closest('.region-card-wrap');
+            if (!card) return;
+            const donutView = card.querySelector('.region-donut-view');
+            const detailView = card.querySelector('.region-detail-view');
+            const showingDetail = !detailView.classList.contains('hidden');
+            if (showingDetail) {
+                detailView.classList.add('hidden'); detailView.classList.remove('flex');
+                donutView.classList.remove('hidden');
+                btn.textContent = 'عرض تفاصيل كل منطقة ▾';
+            } else {
+                donutView.classList.add('hidden');
+                detailView.classList.remove('hidden'); detailView.classList.add('flex');
+                btn.textContent = 'رجوع للرسم البياني ▴';
+            }
+        }
+
         async function fetchLiveStats() {
             try {
                 const result = await fetchFromGASWithRetry({ action: "getStats" });
@@ -2320,12 +2354,25 @@
                     const femaleAbstractSVG = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>`;
 
                     // 🟢 المناطق الخمس (نفس تقسيم محرك المطابقة geoRegions) لبطاقة التوزيع الجغرافي؛ d.geo5 يصل فقط بعد نشر تحديث الخادم (احتياطي {men:0,women:0} قبل ذلك)
-                    const REGION5_ORDER = [['الوسطى','المنطقة الوسطى'],['الشرقية','المنطقة الشرقية'],['الغربية','المنطقة الغربية'],['الجنوب','المنطقة الجنوبية'],['الشمال','المنطقة الشمالية']];
+                    // ألوان المناطق مختارة بعيداً تماماً عن الأزرق/الوردي عمداً (محجوزان حصرياً لتمييز الرجال/النساء في التفاصيل) لتفادي أي التباس بين "لون المنطقة" و"لون الجنس"
+                    const REGION5_ORDER = [['الوسطى','المنطقة الوسطى','#0F6E56'],['الشرقية','المنطقة الشرقية','#D85A30'],['الغربية','المنطقة الغربية','#854F0B'],['الجنوب','المنطقة الجنوبية','#534AB7'],['الشمال','المنطقة الشمالية','#791F1F']];
                     const geo5 = d.geo5 || {};
-                    const regionRowsHtml = REGION5_ORDER.map(([key, label]) => {
+                    const regionStats = REGION5_ORDER.map(([key, label, color]) => {
                         const g = geo5[key] || { men: 0, women: 0 };
-                        return `<div class="flex justify-between items-center text-slate-600"><span>${label}</span><span><span class="text-blue-600">${g.men}</span> <span class="text-slate-300 mx-0.5">/</span> <span class="text-pink-600">${g.women}</span></span></div>`;
+                        return { key, label, color, men: g.men, women: g.women, total: g.men + g.women };
+                    });
+                    const regionGrandTotal = regionStats.reduce((s, r) => s + r.total, 0) || 1;
+                    const DONUT_CIRC = 301.6;
+                    let regionCumulative = 0;
+                    const regionDonutArcsHtml = regionStats.map(r => {
+                        const arcLen = (r.total / regionGrandTotal) * DONUT_CIRC;
+                        const dashoffset = -regionCumulative;
+                        regionCumulative += arcLen;
+                        return `<circle cx="60" cy="60" r="48" fill="none" stroke="${r.color}" stroke-width="16" stroke-dasharray="${arcLen.toFixed(1)} ${DONUT_CIRC}" stroke-dashoffset="${dashoffset.toFixed(1)}" transform="rotate(-90 60 60)"/>`;
                     }).join('');
+                    // 🟢 تسمية مختصرة في الشارة الملوّنة (بلا "المنطقة") بطلب صاحب المشروع لتقليل ارتفاع البطاقة؛ الاسم الكامل يبقى في عرض التفاصيل
+                    const regionLegendHtml = regionStats.map(r => `<span class="inline-flex items-center gap-1 text-[10px] font-bold"><span class="w-2 h-2 rounded-full shrink-0" style="background:${r.color}"></span><span class="text-slate-600">${r.key}</span><span class="font-black" style="color:${r.color}">٪${Math.round((r.total / regionGrandTotal) * 100)}</span></span>`).join('');
+                    const regionDetailRowsHtml = regionStats.map(r => `<div class="flex justify-between items-center text-slate-600 text-xs font-bold"><span>${r.label}</span><span><span class="text-blue-600">${r.men}</span> <span class="text-slate-300 mx-0.5">/</span> <span class="text-pink-600">${r.women}</span></span></div>`).join('');
 
                     const matches = d.matches || { thisMonth: 0, total: 2590 };
                     const firstReply = d.firstReply || { accepted: 0, declined: 0, successRate: null };
@@ -2334,11 +2381,23 @@
                     const ringStyle = successPct !== null ? `background: conic-gradient(${ringColor} ${successPct}%, #e2e8f0 0);` : `background:#e2e8f0;`;
                     const successDisplay = successPct !== null ? successPct + '٪' : 'قريباً';
 
+                    const totalRegisteredEver = d.totalRegisteredEver || 5599;
+
                     let statsHtml = `
-                        <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-3xl shadow-lg shadow-indigo-200 text-white relative overflow-hidden"><div class="text-indigo-100 text-sm font-bold mb-1">إجمالي الملفات</div><div class="text-5xl font-black mb-4 tracking-tight">${d.total.men + d.total.women}</div><div class="flex justify-between items-center text-xs font-bold bg-black/20 p-3 rounded-2xl backdrop-blur-md"><div><span class="text-indigo-200 mr-1">الرجال:</span> <span>${d.total.men}</span></div><div class="w-px h-4 bg-white/20"></div><div><span class="text-pink-200 mr-1">النساء:</span> <span>${d.total.women}</span></div></div></div>
+                        <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-3xl shadow-lg shadow-indigo-200 text-white relative overflow-hidden"><div class="text-indigo-100 text-sm font-bold mb-1">الملفات النشطة حالياً</div><div class="text-5xl font-black mb-3 tracking-tight">${d.total.men + d.total.women}</div><div class="flex justify-between items-center text-xs font-bold bg-black/20 p-3 rounded-2xl backdrop-blur-md mb-2"><div><span class="text-indigo-200 mr-1">الرجال:</span> <span>${d.total.men}</span></div><div class="w-px h-4 bg-white/20"></div><div><span class="text-pink-200 mr-1">النساء:</span> <span>${d.total.women}</span></div></div><div class="text-[10px] font-bold text-indigo-100 bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between"><span>📈 إجمالي المسجّلين منذ الانطلاق</span><span class="text-white font-black">${totalRegisteredEver.toLocaleString('ar')}+</span></div></div>
                         <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">${maleAbstractSVG}</div><h3 class="text-sm font-bold text-slate-800">الحالة الاجتماعية <span class="text-blue-600">(رجال)</span></h3></div><div class="space-y-2 text-xs font-bold"><div class="flex justify-between items-center text-slate-600"><span>عزاب</span> <span>${d.marital.single.men}</span></div><div class="flex justify-between items-center text-slate-600"><span>متزوج (يبحث عن أخرى)</span> <span>${d.marital.married ? d.marital.married.men : 0}</span></div><div class="flex justify-between items-center text-slate-600"><span>مطلقين</span> <span>${d.marital.divorced.men}</span></div><div class="flex justify-between items-center text-slate-600"><span>أرامل</span> <span>${d.marital.widowed.men}</span></div></div></div>
                         <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500">${femaleAbstractSVG}</div><h3 class="text-sm font-bold text-slate-800">الحالة الاجتماعية <span class="text-pink-600">(نساء)</span></h3></div><div class="space-y-2 text-xs font-bold"><div class="flex justify-between items-center text-slate-600"><span>أبكار</span> <span>${d.marital.single.women}</span></div><div class="flex justify-between items-center text-slate-600"><span>مطلقات</span> <span>${d.marital.divorced.women}</span></div><div class="flex justify-between items-center text-slate-600"><span>أرامل</span> <span>${d.marital.widowed.women}</span></div></div></div>
-                        <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><h3 class="text-sm font-bold text-slate-800">المسجّلون حسب المنطقة</h3></div><div class="space-y-2 text-xs font-bold">${regionRowsHtml}</div></div>
+                        <div class="region-card-wrap snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><h3 class="text-sm font-bold text-slate-800">المسجّلون حسب المنطقة</h3></div>
+                            <div class="region-donut-view flex flex-col items-center gap-2">
+                                <svg width="96" height="96" viewBox="0 0 120 120">${regionDonutArcsHtml}<text x="60" y="56" text-anchor="middle" font-size="17" font-weight="900" fill="#1e293b">${regionGrandTotal}</text><text x="60" y="72" text-anchor="middle" font-size="7" font-weight="700" fill="#94a3b8">مسجَّل</text></svg>
+                                <div class="flex flex-wrap justify-center gap-x-3 gap-y-1 w-full">${regionLegendHtml}</div>
+                            </div>
+                            <div class="region-detail-view hidden flex-col gap-2">
+                                <div class="flex justify-center gap-3 text-[9px] font-bold mb-1"><span class="text-blue-600">● رجال</span><span class="text-pink-600">● نساء</span></div>
+                                ${regionDetailRowsHtml}
+                            </div>
+                            <button onclick="toggleRegionDetail(this)" class="region-toggle-btn text-[10px] font-bold text-indigo-600 mt-3 self-center">عرض تفاصيل كل منطقة ▾</button>
+                        </div>
                         <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm"><div class="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3"><div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></div><h3 class="text-sm font-bold text-slate-800">حالات التوافق</h3></div><div class="space-y-2 text-xs font-bold"><div class="flex justify-between items-center text-slate-600"><span>هذا الشهر</span> <span>${matches.thisMonth}</span></div><div class="flex justify-between items-center text-slate-600"><span>تراكمياً منذ الانطلاق</span> <span>${matches.total}</span></div></div></div>
                         <div class="snap-center shrink-0 w-[85vw] sm:w-72 flex flex-col items-center justify-center bg-white border border-slate-200 p-5 rounded-3xl shadow-sm gap-2"><h3 class="text-sm font-bold text-slate-800 self-start mb-1">المراسلات الناجحة</h3><div class="relative w-20 h-20 rounded-full flex items-center justify-center shadow-sm" style="${ringStyle}"><div class="absolute inset-[5px] bg-white rounded-full flex items-center justify-center"><span class="text-lg font-black text-slate-800">${successDisplay}</span></div></div><p class="text-[10px] text-slate-400 font-bold text-center mt-1">نسبة الموافقة المبدئية من أول ردّ على طلبات التواصل</p></div>
                     `;
@@ -2355,10 +2414,13 @@
         }
 
         window.onload = () => {
+            // 🟢 [2026-09-25] حُذف من هنا fetchShowcaseData() و fetchLiveStats(): كانتا تُستدعيان مسبقاً في DOMContentLoaded
+            // أعلاه، وكلا الحدثين يقع في كل تحميل للصفحة (DOMContentLoaded عند انتهاء قراءة HTML، و onload بعد تحميل الصور).
+            // النتيجة كانت مضاعفة طلبات الرئيسية: كل زائر يرسل getShowcaseData مرتين و getStats مرتين. والأسوأ أن الاستدعاءين
+            // يقعان بفارق أجزاء من الثانية فلا يجد الثاني كاش الأول جاهزاً بعد، فيقرأ كلاهما الورقتين كاملتين (عمل ثقيل مضاعف).
+            // سجل تنفيذات Apps Script أظهر 11 عملية متزامنة في ثانية واحدة بمدد تصل 103 ثانية بسبب هذا التضخيم.
             updateAuthUI();
-            fetchShowcaseData();
-            fetchLiveStats();
-            
+
             const mainArea = document.getElementById('appScrollContainer');
             if (mainArea) mainArea.scrollTo(0, 0);
         };
