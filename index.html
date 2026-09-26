@@ -651,6 +651,18 @@
         const AVATAR_OBJECT_POSITION = {
             'hijab_black.png': '62%', 'gulf_red.png': '62%', 'gulf_white.png': '62%', 'turban_gulf.png': '62%', 'hijab_mask.png': '75%'
         };
+        // 🟢 نفس جدول أكواد الدول المستخدم في search.html/smart.html (لا ملفات مشتركة في هذا المشروع، فكل دالة مكررة تُعدَّل في كل ملف يستخدمها) — لعلم الدولة في خلفية بطاقة "ملفات مميزة"
+        const countryCodes = {
+            "سعودي": "sa", "كويت": "kw", "إمارات": "ae", "امارات": "ae", "قطر": "qa", "بحرين": "bh", "عمان": "om",
+            "مصر": "eg", "أردن": "jo", "اردن": "jo", "سوريا": "sy", "سوري": "sy", "لبنان": "lb", "فلسطين": "ps", "يمن": "ye",
+            "عراق": "iq", "مغرب": "ma", "جزائر": "dz", "تونس": "tn", "ليبيا": "ly", "سودان": "sd"
+        };
+        function getCountryCode(countryName) {
+            if (!countryName || countryName.trim() === '' || countryName === 'غير محدد' || countryName.includes('دولة أخرى') || countryName.includes('دولة اخرى')) return 'un';
+            for (let key in countryCodes) { if (countryName.includes(key)) return countryCodes[key]; }
+            return 'un';
+        }
+
         function avatarImgStyle(file) {
             const pos = AVATAR_OBJECT_POSITION[file] || '50%';
             return `transform: scale(1.35); object-position: ${pos} center;`;
@@ -2166,8 +2178,8 @@
             ticker.innerHTML = fullSet + fullSet;
         }
 
-        // 🟢 بطاقة "ملفات مميزة": الجزء العلوي فقط من بطاقة البحث/المطابقة الموحّدة (أفاتار+ميدالية، #الرقم المرجعي، حلقة "يدوي" بدل نسبة تطابق
-        // لأن getShowcaseData لا تُحسب مقابل ملف زائر معيّن، سطر الجنسية/الأصل، وصف رقاقات الحالة/العمر/الإقامة) بعرض بطاقات متراصّة (Deck)
+        // 🟢 بطاقة "ملفات مميزة": الجزء العلوي فقط من بطاقة البحث/المطابقة الموحّدة (أفاتار+ميدالية، #الرقم المرجعي، علم الجنسية خلفية الرأس كما في search.html/smart.html،
+        // سطر الجنسية/الأصل، وصف رقاقات الحالة/العمر/الإقامة) بعرض بطاقات متراصّة (Deck). حلقة "يدوي" (نسبة تطابق غير متاحة هنا) حُذفت بطلب صاحب المشروع لإفساح مساحة العلم.
         function buildFeaturedTopCardHTML(item) {
             const isFemale = item.gender && (item.gender.includes('أنثى') || item.gender.includes('نساء') || item.gender.includes('بنت'));
             const avatarFile = item.avatarFile || (isFemale ? 'hijab_maroon.png' : 'suit.png');
@@ -2188,7 +2200,21 @@
             const safeAge = item.age ? escapeHtml(item.age) : '--';
             const safeCity = escapeHtml(item.city || 'غير محدد');
             const safeMaritalStatus = escapeHtml(item.maritalStatus || 'غير محدد');
-            const headerBg = isFemale ? 'background:linear-gradient(to bottom, #fdf2f8, #ffffff);' : 'background:linear-gradient(to bottom, #eef2ff, #ffffff);';
+            const countryCode = getCountryCode(safeNationality);
+            const flagUrl = `https://flagcdn.com/w320/${countryCode}.png`;
+            const headerBg = `background: linear-gradient(to left, rgba(249, 250, 251, 0.9), rgba(249, 250, 251, 1)), url('${flagUrl}'); background-size: cover; background-position: left center;`;
+
+            // 🟢 لمسات المرأة فقط (بطلب صاحب المشروع): شريط الجنسية/القبيلة رفيع (لا مضغوط عرضاً — نفس امتداده الكامل) بخط أصغر، وفاصل مزخرف
+            // بمعيّن وردي بين الرأس والرقاقات بدل الانتقال المباشر. بطاقة الرجل تبقى بلا أي تغيير.
+            const pillClass = isFemale
+                ? 'bg-white/90 py-0.5 px-3 rounded-md border border-rose-100 shadow-sm w-full text-center mt-2.5'
+                : 'bg-white/90 py-1.5 px-3 rounded-lg border border-slate-100 shadow-sm w-full text-center mt-2.5';
+            const pillTextClass = isFemale
+                ? 'truncate text-slate-700 font-bold text-[9px] inline-block w-full'
+                : 'truncate text-slate-800 font-bold text-xs inline-block w-full';
+            const dividerHtml = isFemale
+                ? `<div class="relative h-px mx-4" style="background:linear-gradient(to left, transparent, #F3C6D3, transparent);"><span class="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-rose-300" style="transform:translate(-50%,-50%) rotate(45deg);"></span></div>`
+                : '';
 
             return `
             <div class="deck-peek snap-center">
@@ -2196,22 +2222,18 @@
                 <div class="deck-peek-back1"></div>
                 <div data-refid="${safeRefId}" onclick="openFeaturedProfile(this)" class="deck-peek-front bg-white rounded-[1.5rem] border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden">
                     <div class="p-3.5" style="${headerBg}">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <div class="relative w-11 h-11 shrink-0">
-                                    <div class="w-11 h-11 rounded-2xl flex items-center justify-center border border-white shadow-sm overflow-hidden bg-white/90" style="${medal.ring}">${icon}</div>
-                                    ${medal.medal}
-                                </div>
-                                <span class="bg-white/90 px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm text-xs font-black text-indigo-700 shrink-0">#${safeRefId}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="relative w-11 h-11 shrink-0">
+                                <div class="w-11 h-11 rounded-2xl flex items-center justify-center border border-white shadow-sm overflow-hidden bg-white/90" style="${medal.ring}">${icon}</div>
+                                ${medal.medal}
                             </div>
-                            <div class="relative w-10 h-10 rounded-full flex items-center justify-center shadow-sm shrink-0 bg-white border border-slate-100" title="نتيجة التطابق غير متاحة لبطاقات الملفات المميزة">
-                                <span class="text-[9px] font-black text-slate-400 leading-none">يدوي</span>
-                            </div>
+                            <span class="bg-white/90 px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm text-xs font-black text-indigo-700 shrink-0">#${safeRefId}</span>
                         </div>
-                        <div class="bg-white/90 py-1.5 px-3 rounded-lg border border-slate-100 shadow-sm w-full text-center mt-2.5">
-                            <span class="truncate text-slate-800 font-bold text-xs inline-block w-full">${originLine}</span>
+                        <div class="${pillClass}">
+                            <span class="${pillTextClass}">${originLine}</span>
                         </div>
                     </div>
+                    ${dividerHtml}
                     <div class="p-3 pt-2.5 bg-white">
                         <div class="grid grid-cols-3 gap-1.5">
                             <div class="bg-slate-50 py-1.5 px-1 rounded-xl border border-slate-100 flex flex-col items-center justify-center gap-0.5" title="الإقامة">
