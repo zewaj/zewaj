@@ -2204,17 +2204,16 @@
             const flagUrl = `https://flagcdn.com/w320/${countryCode}.png`;
             const headerBg = `background: linear-gradient(to left, rgba(249, 250, 251, 0.9), rgba(249, 250, 251, 1)), url('${flagUrl}'); background-size: cover; background-position: left center;`;
 
-            // 🟢 لمسات المرأة فقط (بطلب صاحب المشروع): شريط الجنسية/القبيلة رفيع (لا مضغوط عرضاً — نفس امتداده الكامل) بخط أصغر، وفاصل مزخرف
-            // بمعيّن وردي بين الرأس والرقاقات بدل الانتقال المباشر. بطاقة الرجل تبقى بلا أي تغيير.
+            // 🟢 الفاصل المزخرف الآن للجنسين معاً. الفرق البسيط الباقي بين البطاقتين: شريط الجنسية/القبيلة عند المرأة أرفع (نفس امتداده الكامل، فقط أقصر ارتفاعاً) وبخط أصغر من الرجل.
+            // كلا الشريطين الآن flex بارتفاع ثابت ومحاذاة وسط حقيقية (لا اعتماد على padding/line-height) كي لا يلتصق النص بالحافة العلوية كما كان.
             const pillClass = isFemale
-                ? 'bg-white/90 py-0.5 px-3 rounded-md border border-rose-100 shadow-sm w-full text-center mt-2.5'
-                : 'bg-white/90 py-1.5 px-3 rounded-lg border border-slate-100 shadow-sm w-full text-center mt-2.5';
+                ? 'bg-white/90 px-3 rounded-md border border-rose-100 shadow-sm w-full flex items-center justify-center mt-2.5'
+                : 'bg-white/90 px-3 rounded-lg border border-slate-100 shadow-sm w-full flex items-center justify-center mt-2.5';
+            const pillStyle = isFemale ? 'height:20px;' : 'height:27px;';
             const pillTextClass = isFemale
-                ? 'truncate text-slate-700 font-bold text-[9px] inline-block w-full'
-                : 'truncate text-slate-800 font-bold text-xs inline-block w-full';
-            const dividerHtml = isFemale
-                ? `<div class="relative h-px mx-4" style="background:linear-gradient(to left, transparent, #F3C6D3, transparent);"><span class="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-rose-300" style="transform:translate(-50%,-50%) rotate(45deg);"></span></div>`
-                : '';
+                ? 'truncate text-slate-700 font-bold text-[9px] w-full text-center'
+                : 'truncate text-slate-800 font-bold text-xs w-full text-center';
+            const dividerHtml = `<div class="relative h-px mx-4" style="background:linear-gradient(to left, transparent, #F3C6D3, transparent);"><span class="absolute top-1/2 left-1/2 w-1.5 h-1.5 ${isFemale ? 'bg-rose-300' : 'bg-indigo-300'}" style="transform:translate(-50%,-50%) rotate(45deg);"></span></div>`;
 
             return `
             <div class="deck-peek snap-center">
@@ -2229,7 +2228,7 @@
                             </div>
                             <span class="bg-white/90 px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm text-xs font-black text-indigo-700 shrink-0">#${safeRefId}</span>
                         </div>
-                        <div class="${pillClass}">
+                        <div class="${pillClass}" style="${pillStyle}">
                             <span class="${pillTextClass}">${originLine}</span>
                         </div>
                     </div>
