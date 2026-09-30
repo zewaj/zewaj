@@ -34,11 +34,12 @@
 <body class="text-slate-800 antialiased">
     <div class="max-w-2xl mx-auto px-3 pt-4 pb-24">
 
-        <div class="text-center mb-4">
+        <div id="pageTitleBox" class="text-center mb-4">
             <h1 class="text-xl font-black text-slate-800">💎 الباقات والاشتراك</h1>
             <p class="text-[11px] text-slate-500 font-bold mt-1">تُضاف نقاط الباقة فوق رصيدك الحالي ولا تستبدله.</p>
         </div>
 
+        <div id="reasonBox"></div>
         <div id="guestBox"></div>
         <div id="statusBox"></div>
         <div id="pendingBox"></div>
@@ -85,6 +86,11 @@
         // زائر غير مسجّل (أو لم يكمل ملفه): يتصفح الباقات فقط ويختار باقات الرجال أو النساء، والاشتراك يتطلب دخولاً
         const isGuest = !phoneParam || !refIdParam || refIdParam === 'null';
         let guestGender = '';
+
+        // وضع النافذة المنبثقة (تفتحها القشرة index.html): العنوان في رأس النافذة فنخفيه هنا، ويصلنا سبب الفتح
+        const isModalMode = urlParams.get('modal') === '1';
+        const openReason = urlParams.get('reason') || '';
+        const needPoints = parseInt(urlParams.get('need')) || 0;
 
         let pageData = null;
         let selectedPackageId = null;
@@ -142,6 +148,19 @@
             showToast('سجّل دخولك أو أنشئ حسابك مجاناً أولاً لتتمكن من الاشتراك.');
             if (window.self !== window.top) window.parent.postMessage({ action: 'requireLogin' }, '*');
             else setTimeout(() => { window.location.href = 'register.html'; }, 1200);
+        }
+
+        // سبب الفتح: عند نقص الرصيد نشرح للعميل لماذا يرى الباقات وماذا سيحدث بعد الاشتراك
+        function renderReason() {
+            const box = document.getElementById('reasonBox');
+            if (isModalMode) document.getElementById('pageTitleBox').classList.add('hidden');
+            if (openReason !== 'nobalance' || isGuest) { box.innerHTML = ''; return; }
+            const bal = pageData && pageData.wallet ? (pageData.wallet.balance || 0) : (parseInt(safeStorage('cached_wallet_balance')) || 0);
+            box.innerHTML = `
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 mb-3 text-center">
+                    <p class="text-xs font-black text-rose-700">رصيدك (${esc(bal)}) لا يكفي لإتمام طلبك${needPoints ? ` — يحتاج ${esc(needPoints)} نقطة` : ''}.</p>
+                    <p class="text-[11px] font-bold text-rose-600 mt-1">اختر باقة وتُضاف نقاطها لرصيدك بعد تأكيد السداد، ثم أغلق هذه النافذة وأكمل طلبك من حيث توقفت.</p>
+                </div>`;
         }
 
         function renderStatus() {
@@ -252,6 +271,7 @@
         }
 
         async function loadPage(silent) {
+            if (isModalMode) document.getElementById('pageTitleBox').classList.add('hidden');
             renderGuestBox();
             if (isGuest && !guestGender) {
                 document.getElementById('statusBox').innerHTML = ''; document.getElementById('pendingBox').innerHTML = ''; document.getElementById('infoBox').innerHTML = '';
@@ -265,7 +285,7 @@
                     : { action: 'getUserPackages', phone: phoneParam, refId: refIdParam });
                 if (!res || res.success !== true) throw new Error((res && (res.error || res.message)) || 'تعذر التحميل');
                 pageData = res;
-                renderStatus(); renderPending(); renderPackages(); renderInfo();
+                renderReason(); renderStatus(); renderPending(); renderPackages(); renderInfo();
             } catch (e) {
                 if (!silent) document.getElementById('packagesList').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-10">${esc(e.message || 'تعذر تحميل الباقات')}<br><button type="button" onclick="loadPage()" class="mt-3 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">إعادة المحاولة</button></p>`;
             }
