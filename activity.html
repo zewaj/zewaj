@@ -206,6 +206,7 @@
         <div id="msgModalBox" class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl transform transition-all text-center relative">
             <h3 id="msgModalTitle" class="text-lg font-bold text-slate-800 mb-2">تنبيه</h3>
             <p id="msgModalText" class="text-xs text-slate-600 mb-6 leading-relaxed font-medium whitespace-pre-wrap"></p>
+            <button type="button" id="msgModalPkgBtn" onclick="closeModal(); window.parent.postMessage({ action: 'openPackages', reason: 'nobalance' }, '*')" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl transition-colors text-sm shadow-md mb-2">💎 اطلع على الباقات</button>
             <button type="button" onclick="closeModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">حسناً فهمت</button>
         </div>
     </div>
@@ -1261,9 +1262,11 @@
         function closeReplyModal() { document.getElementById('replyModal').classList.add('hidden'); }
         function closeModal() { document.getElementById('msgModal').classList.add('hidden'); }
         
-        function showMsgModal(title, text) { 
-            document.getElementById('msgModalTitle').innerText = title; 
-            document.getElementById('msgModalText').innerText = text; 
+        function showMsgModal(title, text, offerPackages) {
+            document.getElementById('msgModalTitle').innerText = title;
+            document.getElementById('msgModalText').innerText = text;
+            // زر الباقات يظهر فقط في رسائل نقص الرصيد وداخل القشرة (المنبثقة تُبنى هناك)
+            document.getElementById('msgModalPkgBtn').classList.toggle('hidden', !(offerPackages && window.self !== window.top));
             
             const modalBox = document.getElementById('msgModalBox');
             let safeY = Math.max(20, windowLastInteractionY - 150);
@@ -1417,7 +1420,7 @@
             if (document.getElementById('quotaWarning') && document.getElementById('quotaWarning').innerHTML.includes('انتهى')) requiredPoints = 1;
 
             if (requiredPoints > 0 && window.userPointsBalance < requiredPoints) {
-                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`); return;
+                showMsgModal("عفواً، الرصيد غير كافٍ", `هذا الإجراء يتطلب (${requiredPoints} نقاط)، ورصيدك الحالي هو (${window.userPointsBalance}).`, true); return;
             }
 
             // 🟢 موافقة المرأة على تبادل الأرقام تذهب لمسارها الخاص submitFinalApproval (فوري بلا اعتماد إداري + نقطة المكافأة)، وأي رد آخر يبقى replyToRequest
