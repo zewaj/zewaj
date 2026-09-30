@@ -358,7 +358,7 @@
                             </div>
                         </div>
                         
-                        <div id="heroBalanceContainer" onclick="loadIframe('packages.html')" title="الباقات والاشتراك" class="hidden items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1.5 md:px-4 rounded-full shadow-sm mx-auto w-max transition-opacity duration-300 cursor-pointer hover:bg-indigo-100">
+                        <div id="heroBalanceContainer" onclick="openPackagesModal('header')" title="الباقات والاشتراك" class="hidden items-center justify-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1.5 md:px-4 rounded-full shadow-sm mx-auto w-max transition-opacity duration-300 cursor-pointer hover:bg-indigo-100">
                             <span class="text-[10px] md:text-xs font-bold text-indigo-700">الرصيد:</span>
                             <span id="heroWalletBal" class="text-xs md:text-sm font-black text-blue-600">0</span>
                             <span class="text-blue-500 text-xs md:text-sm">💎</span>
@@ -369,7 +369,7 @@
                                 سجل الآن مجاناً
                             </button>
                             
-                            <button id="heroGuestPackagesBtn" onclick="loadIframe('packages.html')" class="hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 md:py-2.5 rounded-xl border border-indigo-100 text-xs md:text-sm transition-colors">
+                            <button id="heroGuestPackagesBtn" onclick="openPackagesModal('header')" class="hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 md:py-2.5 rounded-xl border border-indigo-100 text-xs md:text-sm transition-colors">
                                 💎 تعرّف على الباقات والاشتراك
                             </button>
 
@@ -615,6 +615,30 @@
         </div>
     </div>
 
+    <!-- 🟢 نافذة الباقات المنبثقة: تُفتح فوق الصفحة الحالية فلا يغادر العميل بحثه، ويعود إليه بإغلاقها -->
+    <div id="packagesModal" class="fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 sm:px-4" onclick="if(event.target===this) closePackagesModal()">
+        <div class="bg-slate-50 w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden transform translate-y-6 transition-transform duration-300" style="height:90vh;max-height:90dvh;">
+            <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0">
+                <span class="text-sm font-black text-slate-800">💎 الباقات والاشتراك</span>
+                <button type="button" onclick="closePackagesModal()" aria-label="إغلاق" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black flex items-center justify-center">✕</button>
+            </div>
+            <iframe id="packagesFrame" title="الباقات والاشتراك" class="flex-1 w-full border-0 bg-transparent"></iframe>
+        </div>
+    </div>
+
+    <!-- 🟢 بطاقة تعريف العميل الجديد بالباقات (مرة واحدة لكل حساب) -->
+    <div id="packagesIntroModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3 transform scale-95 transition-transform duration-300">
+            <div class="text-4xl">🎁</div>
+            <h3 class="text-lg font-black text-slate-800">أهلاً بك في المنصة</h3>
+            <p id="packagesIntroText" class="text-sm text-slate-600 font-medium leading-relaxed"></p>
+            <div class="flex gap-2 mt-2">
+                <button type="button" onclick="closePackagesIntro()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm">لاحقاً</button>
+                <button type="button" onclick="closePackagesIntro(); openPackagesModal('intro')" class="flex-[1.4] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl shadow-md text-sm">💎 عرض الباقات</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 🟢 نافذة الإشعار المنبثقة الإجبارية -->
     <div id="unreadAlertModal" class="fixed inset-0 z-[300] flex items-center justify-center bg-slate-900/70 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 px-4">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm mx-auto shadow-2xl text-center flex flex-col gap-3 transform scale-95 transition-transform duration-300">
@@ -784,7 +808,15 @@
             
             // الصفحات الفرعية (البحث/الذكي) تطلب من القشرة إظهار نافذة "تسجيل الدخول مطلوب"
             if (data.action === 'requireLogin') {
+                // الطلب قد يأتي من نافذة الباقات نفسها (زائر ضغط اشترك): نغلقها ليظهر الدخول فوق الصفحة
+                closePackagesModal();
                 openLoginModal();
+            }
+
+            // الصفحات الفرعية (البحث/الذكي/مراسلاتي) تطلب فتح الباقات منبثقة بدل مغادرة الصفحة (مثلاً عند نقص الرصيد)
+            if (data.action === 'openPackages') {
+                const fr = document.getElementById('appIframe');
+                if (fr && event.source === fr.contentWindow) openPackagesModal(data.reason || 'nobalance', data.need);
             }
 
             // activity.html تطلب مزامنة شاملة بعد أي تعديل (رد، مفضلة، تحديث يدوي)
@@ -951,9 +983,10 @@
                     }
                     
                     localStorage.setItem('master_activity_cache', JSON.stringify(result));
-                    updateWalletDisplay();
-                    
                     if (result.config) localStorage.setItem('platform_config', JSON.stringify(result.config));
+                    updateWalletDisplay();
+                    setTimeout(maybeShowPackagesIntro, 2500);
+
                     if (result.favorites) localStorage.setItem('cached_favorites', JSON.stringify(result.favorites.map(f => f.refId)));
                     if (result.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(result.contactedIds));
                     
@@ -990,6 +1023,18 @@
             if(headerBal) headerBal.innerText = currentCacheBal;
             const heroWalletBal = document.getElementById('heroWalletBal');
             if(heroWalletBal) heroWalletBal.innerText = currentCacheBal;
+
+            // 🟢 رصيد لا يكفي طلب تواصل واحد: تنبض شارة 💎 بلون تنبيه لتدل العميل على الباقات
+            try {
+                let cfg = {}; try { cfg = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+                const minCost = cfg.CONTACT_COST_REGULAR !== undefined ? cfg.CONTACT_COST_REGULAR : 5;
+                const low = (parseInt(currentCacheBal) || 0) < minCost;
+                [document.getElementById('heroBalanceContainer'), headerBal && headerBal.closest('[onclick]')].forEach(el => {
+                    if (!el) return;
+                    ['ring-2', 'ring-amber-400', 'animate-pulse'].forEach(c => el.classList.toggle(c, low));
+                    if (low) el.title = 'رصيدك منخفض، اضغط للاطلاع على الباقات';
+                });
+            } catch (e) {}
         }
 
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -1247,7 +1292,7 @@
                     if (heroLogoutBtn) heroLogoutBtn.classList.remove('hidden');
 
                     authArea.innerHTML = `
-                        <div onclick="loadIframe('packages.html')" title="الباقات والاشتراك" class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm cursor-pointer hover:bg-indigo-100">
+                        <div onclick="openPackagesModal('header')" title="الباقات والاشتراك" class="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full shadow-sm cursor-pointer hover:bg-indigo-100">
                             <span class="text-xs font-bold text-indigo-700" id="headerWalletBal">${currentCacheBal}</span>
                             <span class="text-blue-500 text-xs">💎</span>
                         </div>
@@ -1482,6 +1527,75 @@
             }
         }
         
+        // 🟢 نافذة الباقات المنبثقة: reason = header | nobalance | intro | guest ؛ need = عدد النقاط المطلوبة (لرسالة نقص الرصيد)
+        let packagesModalHideTimer;
+        function openPackagesModal(reason, need) {
+            const m = document.getElementById('packagesModal');
+            const fr = document.getElementById('packagesFrame');
+            if (!m || !fr) { loadIframe('packages.html'); return; }
+            const phone = localStorage.getItem('verified_user_phone') || '';
+            const refId = localStorage.getItem('active_profile_refid') || '';
+            const u = new URL('packages.html', window.location.origin + window.location.pathname);
+            u.searchParams.set('embedded', 'true'); u.searchParams.set('modal', '1'); u.searchParams.set('t', Date.now());
+            if (phone) u.searchParams.set('phone', phone);
+            if (refId && refId !== 'null') u.searchParams.set('refId', refId);
+            if (reason) u.searchParams.set('reason', reason);
+            if (need) u.searchParams.set('need', need);
+            fr.src = u.href;
+            clearTimeout(packagesModalHideTimer);
+            m.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('translate-y-6'); }, 10);
+        }
+
+        function closePackagesModal() {
+            const m = document.getElementById('packagesModal');
+            if (!m || m.classList.contains('hidden')) return;
+            m.classList.add('opacity-0'); m.querySelector('div').classList.add('translate-y-6');
+            document.body.style.overflow = '';
+            clearTimeout(packagesModalHideTimer);
+            packagesModalHideTimer = setTimeout(() => {
+                m.classList.add('hidden');
+                const fr = document.getElementById('packagesFrame'); if (fr) fr.src = 'about:blank';
+            }, 300);
+            // قد يكون الأدمن فعّل باقته أثناء وجوده: نحدّث الرصيد بصمت عند العودة
+            const phone = localStorage.getItem('verified_user_phone');
+            if (phone) fetchGlobalWalletBalance(phone, true);
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePackagesModal(); });
+
+        // 🟢 تعريف العميل الجديد بالباقات: مرة واحدة لكل حساب، بعد اكتمال ملفه وبلا مزاحمة نافذة أخرى
+        function maybeShowPackagesIntro() {
+            try {
+                const phone = localStorage.getItem('verified_user_phone');
+                const refId = localStorage.getItem('active_profile_refid');
+                if (!phone || !refId || refId === 'null') return;
+                const key = 'packages_intro_seen_' + phone;
+                if (localStorage.getItem(key)) return;
+                // لا نقاطع التسجيل (نافذة إرسال الملف للوسيط وغيرها): تُؤجَّل للمزامنة التالية
+                if ((window.currentActivePage || '').includes('register.html')) return;
+                const others = ['unreadAlertModal', 'masterContactModal', 'loginRequiredModal', 'packagesModal'];
+                if (others.some(id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); })) return;
+                let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+                const cost = config.CONTACT_COST_REGULAR !== undefined ? config.CONTACT_COST_REGULAR : 5;
+                const bal = parseInt(localStorage.getItem('cached_wallet_balance') || '0') || 0;
+                const reqs = cost > 0 ? Math.floor(bal / cost) : 0;
+                document.getElementById('packagesIntroText').innerText = bal > 0
+                    ? `أهديناك ${bal} نقطة عند تسجيلك، تكفي لنحو ${reqs} طلبات تواصل. وإذا احتجت المزيد فلدينا باقات مناسبة تُضاف نقاطها فوق رصيدك.`
+                    : 'لدينا باقات مناسبة تمنحك نقاطاً للتواصل مع الملفات التي تعجبك، وتُضاف فوق رصيدك.';
+                localStorage.setItem(key, '1');
+                const m = document.getElementById('packagesIntroModal');
+                m.classList.remove('hidden');
+                setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
+            } catch (e) {}
+        }
+        function closePackagesIntro() {
+            const m = document.getElementById('packagesIntroModal');
+            if (!m) return;
+            m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
         function goToLogin(destination) {
             sessionStorage.setItem('intended_destination', destination);
             closeLoginModal(); 
@@ -1874,6 +1988,11 @@
                     
                     const pointsCost = isSpecial ? costSpecial : costRegular;
 
+                    // 🟢 الرصيد لا يكفي: نخبره فوراً (قبل أن يضغط تأكيد) مع زر الباقات، بدل رفض متأخر
+                    const liveBal = parseInt(localStorage.getItem('cached_wallet_balance') || currentBal || 0) || 0;
+                    if (liveBal < pointsCost) {
+                        renderNoBalanceInContactModal(pointsCost, liveBal);
+                    } else {
                     contentArea.innerHTML = `
                         <h3 class="text-lg font-black text-slate-800 mb-1">طلب تواصل مبدئي</h3>
                         <p class="text-sm text-slate-500 mb-3 leading-relaxed">سيتم إرسال طلب تواصل آلي للطرف الآخر لإبداء رغبتك بالارتباط.</p>
@@ -1897,6 +2016,7 @@
                         <button onclick="closeMasterContactModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">إلغاء</button>
                         <button id="mcmConfirmBtn" onclick="confirmMasterContactRequest()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">تأكيد وإرسال آلي</button>
                     `;
+                    }
                 }
             }
 
@@ -1905,6 +2025,24 @@
                 m.classList.remove('hidden');
                 setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-95'); }, 10);
             }
+        }
+
+        // 🟢 حالة "نقاطك غير كافية" داخل نافذة التواصل: تعرض الرصيد والمطلوب وزر الباقات (تُستدعى قبل التأكيد وبعد رفض الخادم)
+        function renderNoBalanceInContactModal(cost, bal) {
+            const contentArea = document.getElementById('mcmContentArea');
+            const actionButtons = document.getElementById('mcmActionButtons');
+            if (!contentArea || !actionButtons) return;
+            cost = parseInt(cost) || 0; bal = parseInt(bal) || 0;
+            contentArea.innerHTML = `
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex flex-col items-center text-center gap-2">
+                    <div class="text-4xl">💎</div>
+                    <h3 class="text-lg font-black text-slate-800">نقاطك غير كافية لهذا الطلب</h3>
+                    <p class="text-sm text-slate-600 font-medium leading-relaxed">يحتاج الطلب إلى <b class="text-indigo-700">${cost}</b> نقطة، ورصيدك الحالي <b class="text-rose-600">${bal}</b>.</p>
+                    <p class="text-xs text-slate-500 font-bold">اشترك في إحدى باقاتنا وتُضاف النقاط لرصيدك، ثم أكمل طلبك من حيث توقفت.</p>
+                </div>`;
+            actionButtons.innerHTML = `
+                <button onclick="closeMasterContactModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">إغلاق</button>
+                <button onclick="closeMasterContactModal(); openPackagesModal('nobalance', ${cost})" class="flex-[1.6] bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 rounded-xl transition-colors shadow-md text-sm">💎 اطلع على الباقات</button>`;
         }
 
         function closeMasterContactModal() {
@@ -1960,8 +2098,7 @@
                 requiredPoints = isSpecial ? costSpecial : costRegular;
                 
                 if (parseInt(localStorage.getItem('cached_wallet_balance') || '0') < requiredPoints) {
-                    showToast(`❌ رصيدك غير كافٍ. تحتاج إلى ${requiredPoints} نقاط على الأقل.`);
-                    closeMasterContactModal();
+                    renderNoBalanceInContactModal(requiredPoints, parseInt(localStorage.getItem('cached_wallet_balance') || '0'));
                     return;
                 }
             }
@@ -2043,6 +2180,10 @@
                         <button onclick="closeMasterContactModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">إلغاء</button>
                         <button id="mcmConfirmBtn" onclick="confirmMasterContactRequest(true)" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">تأكيد الانضمام</button>
                     `;
+                } else if (result.code === 'NO_BALANCE' || (result.message && result.message.includes('غير كاف'))) {
+                    // الخادم رفض لنقص الرصيد (الرصيد المحلي قديم): نزامن الرصيد ونعرض حالة الباقات
+                    fetchGlobalWalletBalance(phone);
+                    renderNoBalanceInContactModal(result.required || requiredPoints, result.balance !== undefined ? result.balance : (parseInt(localStorage.getItem('cached_wallet_balance') || '0')));
                 } else {
                     btn.innerText = origText;
                     btn.disabled = false;
