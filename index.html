@@ -137,7 +137,9 @@
         <div style="max-width:320px; width:100%;">
             <div id="magicBootSpinner" style="width:46px; height:46px; margin:0 auto 18px; border:4px solid #99f6e4; border-top-color:#0d9488; border-radius:50%; animation:magicSpin 0.9s linear infinite;"></div>
             <p id="magicBootTitle" style="font-weight:800; font-size:17px; color:#134e4a; margin:0 0 6px;">جاري فتح مساحتك الآمنة…</p>
-            <p id="magicBootText" style="font-weight:500; font-size:13px; color:#64748b; margin:0;">لحظات ونعرض لك مراسلاتك</p>
+            <p id="magicBootText" style="font-weight:500; font-size:13px; color:#64748b; margin:0; min-height:40px; line-height:1.9;">لحظات ونعرض لك مراسلاتك</p>
+            <div id="magicBootBar" style="height:5px; background:#ccfbf1; border-radius:99px; overflow:hidden; margin:16px auto 0; max-width:240px;"><div style="height:100%; width:40%; background:#0d9488; border-radius:99px; animation:magicBar 1.6s ease-in-out infinite;"></div></div>
+            <p id="magicBootTip" style="font-weight:500; font-size:11px; color:#94a3b8; margin:14px 0 0; display:none;">🔒 رابطك خاص بك ومراسلاتك محفوظة. لا تحتاج لتحديث الصفحة.</p>
             <div id="magicBootActions" style="display:none; margin-top:20px; gap:10px; flex-direction:column;">
                 <button id="magicBootRetryBtn" onclick="location.reload()" style="background:#0d9488; color:#fff; font-weight:800; font-size:14px; border:0; border-radius:14px; padding:12px; cursor:pointer;">إعادة المحاولة</button>
                 <button id="magicBootLoginBtn" onclick="exitMagicBoot('login')" style="background:#fff; color:#0f766e; font-weight:700; font-size:13px; border:1px solid #99f6e4; border-radius:14px; padding:11px; cursor:pointer;">تسجيل الدخول برمز التحقق</button>
@@ -145,7 +147,7 @@
             </div>
         </div>
     </div>
-    <style>@keyframes magicSpin { to { transform: rotate(360deg); } }</style>
+    <style>@keyframes magicSpin { to { transform: rotate(360deg); } } @keyframes magicBar { 0% { transform: translateX(260%); } 100% { transform: translateX(-160%); } }</style>
 
     <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <!-- ✂️ ---------- [ القسم رقم 02 : الشريط العلوي ] ---------- ✂️ -->
@@ -781,6 +783,7 @@
             const el = id => document.getElementById(id);
             if (!el('magicBootOverlay')) return;
             el('magicBootSpinner').style.display = 'none';
+            const barEl = el('magicBootBar'); if (barEl) barEl.style.display = 'none';
             el('magicBootTitle').innerText = 'تعذر فتح الرابط';
             el('magicBootText').innerText = msg || 'الرابط غير صالح أو منتهي الصلاحية.';
             el('magicBootRetryBtn').style.display = allowRetry ? 'block' : 'none';
@@ -795,7 +798,21 @@
         }
         async function runMagicBoot() {
             const boot = window.__magicBoot;
+            // 🟢 رسائل انتظار متدرجة: الفتح البارد قد يتجاوز 30 ثانية (بطء الخادم الفعلي)، والصمت الطويل يدفع العميل لتحديث الصفحة فتبدأ الدورة من جديد.
+            // الرسائل تطمئنه وتطلب منه الانتظار؛ تتوقف عند وصول النتيجة (نجاحاً أو فشلاً).
+            const stages = [
+                [5000,  'نجهّز مراسلاتك وبياناتك بأمان…', false],
+                [12000, 'الخادم مشغول قليلاً، ما زلنا نجهّز مساحتك. شكراً لصبرك 🌿', true],
+                [25000, 'التجهيز يأخذ وقتاً أطول من المعتاد. لا تحدّث الصفحة، سنفتح مراسلاتك فور جاهزيتها.', true]
+            ];
+            const stageTimers = stages.map(([ms, txt, tip]) => setTimeout(() => {
+                const t = document.getElementById('magicBootText'); if (t) t.innerText = txt;
+                const tp = document.getElementById('magicBootTip'); if (tp && tip) tp.style.display = 'block';
+            }, ms));
             const res = await boot.promise;
+            stageTimers.forEach(clearTimeout);
+            const bar = document.getElementById('magicBootBar'); if (bar) bar.style.display = 'none';
+            const tipEl = document.getElementById('magicBootTip'); if (tipEl) tipEl.style.display = 'none';
             if (!res.ok) { showMagicBootFailure(res.message, true); return; }
             const r = res.data || {};
             if (r.forceLogout) { showMagicBootFailure(r.message, false); return; }
