@@ -1079,6 +1079,45 @@
 
         function closeMsgModal() { document.getElementById('msgModal').classList.add('hidden'); }
 
+        // 🟢 [2026-10-03] أسباب "اعتذار بلطف" بحسب جنس المعتذر. القيمة المرسلة للطرف الآخر = "أعتذر، " + النص.
+        // نفس القائمتين مكررتان في sry/00/admin.html (REJECT_REASONS_MEN/WOMEN) لاعتذار الإدارة بلسان أحد الطرفين: عدّلهما معاً.
+        const REJECT_REASONS_MEN = [
+            'البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.',
+            'لا أرغب بوجود أبناء من زواج سابق.',
+            'فارق العمر غير مناسب لي.',
+            'منطقة السكن غير مناسبة لي.',
+            'أبحث عن بكر.',
+            'أرغب بزواج غير معلن (مسيار).',
+            'أرغب بزوجة من نفس جنسيتي.',
+            'لا أقبل بعمل المرأة.',
+            'أبحث عن زوجة ملتزمة بالحجاب.',
+            'أبحث عن تكافؤ نسب معين.'
+        ];
+        const REJECT_REASONS_WOMEN = [
+            'البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.',
+            'لا أقبل بالتعدد، وأبحث عن شخص غير متزوج.',
+            'لا أرغب بوجود أبناء من زواج سابق.',
+            'فارق العمر غير مناسب لي.',
+            'منطقة السكن غير مناسبة لي.',
+            'أرغب بزواج بظروف خاصة.',
+            'أبحث عن زواج معلن فقط.',
+            'أرغب بالزواج من سعودي فقط، أو من نفس جنسيتي.',
+            'الوضع المادي أو الشروط غير مناسبة لي.',
+            'أبحث عن تكافؤ نسب معين.'
+        ];
+
+        // جنس المعتذر = جنس الملف النشط للمستخدم؛ لو تعذّر تحديده (جلسة قديمة) نعتمد قائمة الرجال.
+        function getApologizerGender() {
+            let g = localStorage.getItem('verified_user_gender') || '';
+            if (!g) { try { g = (JSON.parse(localStorage.getItem('currentUser') || '{}').gender) || ''; } catch (e) {} }
+            return (g.includes('أنثى') || g.includes('نساء') || g.includes('بنت') || g.includes('امرأة') || g.includes('انثى')) ? 'women' : 'men';
+        }
+
+        function buildRejectReasonsHtml(gender) {
+            const list = gender === 'women' ? REJECT_REASONS_WOMEN : REJECT_REASONS_MEN;
+            return list.map((txt, i) => `<label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، ${txt}" class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"${i === 0 ? ' checked' : ''}> <span class="text-xs text-slate-700 font-medium leading-snug">${txt}</span></label>`).join('');
+        }
+
         const OUTCOME_REPLIES = {
             'تم الزواج': { title: 'إبلاغ عن إتمام الزواج', text: 'تم الاتفاق والزواج ولله الحمد.' },
             'تأكيد الإنهاء': { title: 'تأكيد إنهاء التعارف', text: 'تم تأكيد إنهاء التعارف وإبراء الذمة.' },
@@ -1108,14 +1147,9 @@
                 msgInput.readOnly = false;
                 msgInput.classList.remove('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
                 radioContainer.style.display = 'flex';
-                radioContainer.innerHTML = `
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500" checked> <span class="text-xs text-slate-700 font-medium leading-snug">البيانات والمواصفات العامة غير متوافقة.</span></label>
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، لا أقبل بالتعدد (أبحث عن شخص غير متزوج)." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">لا أقبل بالتعدد (أبحث عن شخص غير متزوج).</span></label>
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، ظروفي لا تتناسب مع وجود أبناء من زواج سابق." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">ظروفي لا تتناسب مع وجود أبناء من زواج سابق.</span></label>
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، أبحث عن تكافؤ نسب معين." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">أبحث عن تكافؤ نسب معين.</span></label>
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، أبحث عن زواج تقليدي معلن فقط." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">أبحث عن زواج تقليدي معلن فقط.</span></label>
-                    <label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، فارق العمر أو منطقة السكن غير مناسبة لي." class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"> <span class="text-xs text-slate-700 font-medium leading-snug">فارق العمر أو منطقة السكن غير مناسبة لي.</span></label>
-                `;
+                // 🟢 [2026-10-03] قائمتا أسباب الاعتذار منفصلتان بجنس المعتذر (من يضغط الزر): REJECT_REASONS_MEN / REJECT_REASONS_WOMEN أعلاه.
+                radioContainer.innerHTML = buildRejectReasonsHtml(getApologizerGender());
+
             } else if (type === 'موافقة تبادل أرقام') {
                 msgInput.style.display = 'block';
                 msgInput.value = "نعم، أوافق على التواصل المباشر مع الطرف الثاني وتبادل الأرقام معي أو مع ولي الأمر.";
