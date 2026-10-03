@@ -9,6 +9,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>منصة الزواج - تسجيل / دخول</title>
+    <!-- 🟢 [2026-10-03] استثناء أمني لجلسة الرابط السحري (magic_session، تُضبط في index.html عند الدخول من رابط الواتساب): هذه الصفحة تعرض بيانات الملف كاملة
+         (ومنها المعلومات السرية) وتسمح بالتعديل والحذف وإضافة الملفات وتبديل الرئيسي، فتتطلب دخولاً كاملاً برمز التحقق. أول سكربت في الصفحة: document.open() يقطع
+         تحليل الصفحة فلا يُنفَّذ بقية الكود ولا يُطلب أي ملف من الخادم. تعديل الإدارة (mode=admin_edit) مستثنى لأنه بتوكن الإدارة لا بهوية العميل.
+         ⚠️ هذا حاجز واجهة فقط: الخادم لا يصدر جلسات للمستخدم (الثغرة الأمنية رقم 1)، فالحماية الحقيقية تتطلب توكن جلسة يتحقق منه الخادم. -->
+    <script>
+        (function () {
+            var blocked = false;
+            try {
+                var q = new URLSearchParams(window.location.search);
+                blocked = localStorage.getItem('magic_session') === '1' && q.get('mode') !== 'admin_edit';
+            } catch (e) {}
+            if (!blocked) return;
+            window.__magicBlocked = true;
+            // document.open() وحده لا يوقف تنفيذ بقية سكربتات الصفحة (قِيس: كانت تطلب getUserProfiles من الخادم رغم الحاجز)، فنقفل قنوات الشبكة صراحةً
+            // (بلا window.stop لأنه يُفسد كتابة صفحة الحاجز): لا طلب خادم ولا قراءة لبيانات الملف (ومعلوماته السرية) من هذه الصفحة طالما الجلسة سحرية.
+            window.fetch = function () { return Promise.reject(new Error('magic_session_blocked')); };
+            window.XMLHttpRequest = function () { throw new Error('magic_session_blocked'); };
+            window.magicGoBack = function () {
+                if (window.self !== window.top) window.parent.postMessage({ action: 'navigate', url: 'activity.html?tab=requests' }, window.location.origin);
+                else window.location.href = 'index.html?open=requests';
+            };
+            window.magicFullLogin = function () {
+                try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+                window.location.reload();
+            };
+            document.open();
+            document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>تسجيل الدخول مطلوب</title>' +
+                '<style>body{margin:0;font-family:Tajawal,Tahoma,sans-serif;background:#f8fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;box-sizing:border-box}' +
+                '.c{max-width:340px;width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:28px 22px;text-align:center;box-shadow:0 10px 30px rgba(15,23,42,.06)}' +
+                '.i{font-size:42px;margin-bottom:8px}h1{font-size:18px;color:#0f172a;margin:0 0 10px}p{font-size:13px;color:#64748b;line-height:1.9;margin:0 0 20px}' +
+                'button{display:block;width:100%;border:0;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}' +
+                '.p1{background:#0d9488;color:#fff;margin-bottom:10px}.p2{background:#f1f5f9;color:#475569}</style></head><body><div class="c"><div class="i">🔐</div>' +
+                '<h1>هذه الصفحة تتطلب تسجيل دخول كامل</h1>' +
+                '<p>دخلت من رابط الواتساب إلى مساحتك الآمنة لمتابعة مراسلاتك. ولحماية بياناتك، تعديل الملف أو حذفه أو إضافة فرد يتطلب تأكيد هويتك برمز التحقق.</p>' +
+                '<button class="p1" onclick="magicFullLogin()">تسجيل الدخول برمز التحقق</button>' +
+                '<button class="p2" onclick="magicGoBack()">الرجوع إلى مراسلاتي</button></div></body></html>');
+            document.close();
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
