@@ -861,8 +861,16 @@
             if (window.__magicBoot) {
                 runMagicBoot(); // الرئيسية والرصيد يُجلبان بعد فتح مراسلاتي (انظر runMagicBoot)
             } else {
-                fetchShowcaseData();
-                fetchLiveStats();
+                // 🟢 رابط ملف مباشر (?open=search&refId=): الرئيسية مخفية خلف الـiframe فلا نطلق طلبَي الصفحة الرئيسية
+                // (showcase/stats) الآن لأنهما تنافسان بحث الملف على مقاعد الخادم المتزامنة المحدودة. يُجلبان عند الرجوع
+                // للرئيسية (showHomePage). الرصيد يبقى لأنه خفيف ويخص الشريط العلوي.
+                const _qs = new URLSearchParams(window.location.search);
+                if (_qs.get('open') === 'search' && _qs.get('refId')) {
+                    window.__homeDataDeferred = true;
+                } else {
+                    fetchShowcaseData();
+                    fetchLiveStats();
+                }
                 const phone = localStorage.getItem('verified_user_phone');
                 if(phone) { fetchGlobalWalletBalance(phone); }
             }
@@ -1601,8 +1609,9 @@
             
             updateAuthUI();
             updateNavHighlight('home');
-            if (typeof fetchShowcaseData === 'function') fetchShowcaseData(); 
-            
+            if (typeof fetchShowcaseData === 'function') fetchShowcaseData();
+            if (window.__homeDataDeferred) { window.__homeDataDeferred = false; if (typeof fetchLiveStats === 'function') fetchLiveStats(); } // أُجّلت عند فتح رابط ملف مباشر
+
             const phone = localStorage.getItem('verified_user_phone');
             if (phone && typeof fetchGlobalWalletBalance === 'function') fetchGlobalWalletBalance(phone);
         }

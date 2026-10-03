@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محرك البحث المتقدم | منصة الزواج</title>
+    <title>محرك البحث المتقدم | منصة وسيط زواج أبو العنود</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -86,11 +86,15 @@
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-slate-900">محرك البحث المتقدم</h1>
-                    <p class="text-sm text-slate-500">منصة الزواج لاختيار شريك الحياة (بحث يدوي)</p>
+                    <h1 class="text-2xl font-bold text-slate-900">منصة وسيط زواج أبو العنود</h1>
+                    <p class="text-sm text-slate-500">محرك البحث المتقدم لاختيار شريك الحياة (بحث يدوي)</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <a href="index.html" class="text-sm bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 transition-colors shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10"></path></svg>
+                    الرئيسية
+                </a>
                 <div class="text-sm bg-indigo-50 text-primary px-4 py-2 rounded-full font-medium border border-indigo-100 flex items-center gap-2">
                     <span class="relative flex h-3 w-3">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -115,6 +119,16 @@
                     <svg class="w-10 h-10 animate-spin text-indigo-600 mb-3 drop-shadow-sm" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span id="initialLoaderText" class="text-sm font-bold text-indigo-900 animate-pulse bg-white/80 px-3 py-1 rounded-full shadow-sm">جاري تهيئة محرك البحث...</span>
                 </div>
+                <script>
+                    // رابط ملف مباشر (?refId=): نص الانتظار الصحيح من أول لحظة بدل "تهيئة محرك البحث" ثم تبديله لاحقاً.
+                    (function () {
+                        try {
+                            var rid = new URLSearchParams(window.location.search).get('refId');
+                            var t = document.getElementById('initialLoaderText');
+                            if (rid && t) t.textContent = 'جاري فتح الملف #' + rid.replace(/[^0-9]/g, '') + '...';
+                        } catch (e) {}
+                    })();
+                </script>
 
                 <div class="text-center mb-8">
                     <h2 class="text-2xl font-black text-slate-800 mb-2">من تبحث عنه؟</h2>
@@ -787,9 +801,31 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         let serverDropdowns = {};
 
-        async function fetchSearchDropdowns() {
+        // 🟢 مالك واحد لطبقة التحميل (#initialLoaderOverlay): كان لها مالكان (جلب القوائم وبحث رقم الملف) كلٌّ بمؤقت إخفاء خاص،
+        // فكان مؤقت القوائم القديم (500ms) يخفيها بعدما أعادت البحثُ إظهارها والطلب ما زال معلّقاً (يظهر نموذج فارغ بلا مؤشر).
+        // الآن لا تُخفى إلا حين ينتهي الاثنان معاً: القوائم جاهزة ولا بحث برقم الملف جارٍ.
+        let dropdownsReady = false;
+        let refIdSearchInFlight = false;
+        let loaderHideTimer = null;
+
+        function showSearchLoader(text) {
             const overlay = document.getElementById('initialLoaderOverlay');
-            
+            const label = document.getElementById('initialLoaderText');
+            clearTimeout(loaderHideTimer);
+            if (label && text) label.innerText = text;
+            if (overlay) overlay.classList.remove('hidden', 'opacity-0');
+        }
+
+        function releaseSearchLoader() {
+            const overlay = document.getElementById('initialLoaderOverlay');
+            if (!overlay || refIdSearchInFlight) return;
+            if (!dropdownsReady) { showSearchLoader('جاري تهيئة محرك البحث...'); return; }
+            overlay.classList.add('opacity-0');
+            clearTimeout(loaderHideTimer);
+            loaderHideTimer = setTimeout(() => overlay.classList.add('hidden'), 500);
+        }
+
+        async function fetchSearchDropdowns() {
             try {
                 // الاعتماد الكلي على السيرفر لضمان تطابق البيانات 100%
                 const result = await fetchFromGASWithRetry({ action: "getDropdowns" });
@@ -806,11 +842,9 @@
                     setTimeout(() => toast.classList.remove('opacity-0'), 10);
                 }
             } finally {
-                // إخفاء طبقة التحميل السماح للمستخدم بالتفاعل
-                if (overlay) {
-                    overlay.classList.add('opacity-0');
-                    setTimeout(() => overlay.classList.add('hidden'), 500);
-                }
+                // إخفاء طبقة التحميل للسماح للمستخدم بالتفاعل (تؤجَّل تلقائياً إن كان بحث رقم ملف ما زال جارياً)
+                dropdownsReady = true;
+                releaseSearchLoader();
             }
         }
 
@@ -1218,20 +1252,16 @@
             const input = document.getElementById('refIdSearchInput');
             const val = (prefillValue !== undefined ? prefillValue : (input ? input.value : '')).toString().trim();
             if (input && prefillValue !== undefined) input.value = val;
-            if (!val) return;
+            if (!val || refIdSearchInFlight) return;
 
             const btn = document.getElementById('refIdSearchBtn');
             const originalBtnText = btn ? btn.innerText : '';
             if (btn) { btn.disabled = true; btn.innerText = '...'; }
 
-            // 🟢 طبقة تحميل كاملة تغطي صندوق البحث (نفس طبقة "جاري تهيئة محرك البحث" عند فتح الصفحة): إشارة
-            // بصرية واضحة لا لبس فيها بأن الضغطة اشتغلت، وتمنع فعلياً الضغط على بطاقات "ذكر/أنثى" تحتها أثناء الانتظار.
-            const overlay = document.getElementById('initialLoaderOverlay');
-            const overlayText = document.getElementById('initialLoaderText');
-            if (overlay) {
-                if (overlayText) overlayText.innerText = `جاري البحث عن الملف #${val}...`;
-                overlay.classList.remove('hidden', 'opacity-0');
-            }
+            // 🟢 طبقة تحميل كاملة تغطي صندوق البحث: إشارة بصرية واضحة بأن الضغطة اشتغلت، وتمنع الضغط على بطاقات "ذكر/أنثى"
+            // تحتها أثناء الانتظار. (prefillValue لا يأتي إلا من الرابط المباشر، فنصّه "فتح" لا "بحث".)
+            refIdSearchInFlight = true;
+            showSearchLoader(`${prefillValue !== undefined ? 'جاري فتح الملف' : 'جاري البحث عن الملف'} #${val}...`);
 
             try {
                 const result = await fetchFromGASWithRetry({ action: "findProfileByRefId", refId: val });
@@ -1255,10 +1285,8 @@
                 showSearchToast("تعذر الاتصال بالخادم. حاول مرة أخرى.");
             } finally {
                 if (btn) { btn.disabled = false; btn.innerText = originalBtnText || 'بحث'; }
-                if (overlay) {
-                    overlay.classList.add('opacity-0');
-                    setTimeout(() => overlay.classList.add('hidden'), 500);
-                }
+                refIdSearchInFlight = false;
+                releaseSearchLoader();
             }
         }
 
@@ -1278,11 +1306,15 @@
                 if (headerElement) headerElement.style.display = 'none';
             }
 
-            await fetchSearchDropdowns();
+            // 🟢 القوائم تُجلب دائماً، لكن رابط الملف المباشر لا ينتظرها: عرض ملف واحد لا يحتاجها، وزر "بحث جديد" بعده
+            // يحتاجها فقط (وتكون وصلت بحلول ذلك، وإلا بقيت الطبقة حتى تصل). البحث السريع quickSearch يحتاجها فينتظرها.
+            const dropdownsPromise = fetchSearchDropdowns();
 
             const urlParams = new URLSearchParams(window.location.search);
             const isQuickSearch = urlParams.get('quickSearch') === 'true';
             const linkedRefId = urlParams.get('refId');
+
+            if (!linkedRefId) await dropdownsPromise;
 
             if (linkedRefId) {
                 const refIdInput = document.getElementById('refIdSearchInput');
