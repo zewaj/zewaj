@@ -10,9 +10,62 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>منصة أبو العنود للزواج</title>
+    <!-- 🟢 [2026-10-03] دخول الرابط السحري (index.html?token=...): يبدأ طلب verifyTokenAndSync (تحقق + مزامنة في طلب واحد) فوراً في أول الصفحة،
+         قبل تحميل Tailwind والخطوط وباقي السكربتات، بدل انتظار تحميل activity.html كاملة ثم طلبين متتاليين. تعالج النتيجة runMagicBoot() لاحقاً. -->
+    <script>
+        (function () {
+            try { localStorage.removeItem('is_client_mode'); } catch (e) {} // علم قديم كان يخفي عناصر الموقع في صفحة مراسلاتي
+            var token = null;
+            try { token = new URLSearchParams(location.search).get('token'); } catch (e) {}
+            if (!token || !/^[A-Za-z0-9]{8,64}$/.test(token)) return;
+            var boot = window.__magicBoot = { busy: true, token: token };
+            document.documentElement.classList.add('magic-boot');
+            var URL_GAS = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+            function call(payload) {
+                var controller = new AbortController();
+                var timer = setTimeout(function () { controller.abort(); }, 45000);
+                return fetch(URL_GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: controller.signal })
+                    .then(function (r) { return r.text(); })
+                    .then(function (t) { clearTimeout(timer); return JSON.parse(t); }); // JSON.parse يفشل إن جاء رد HTML (خادم مشغول) فيعالجه attempt()
+            }
+            // احتياطي لمرحلة النشر: لو لصق صاحب المشروع هذا الموقع قبل سكربت الخادم الجديد يرد الخادم "إجراء غير معروف"، فنكمل بالمسار القديم (طلبان) بدل الفشل
+            function legacyTwoStep() {
+                return call({ action: 'verifyToken', token: token }).then(function (v) {
+                    if (!v || !v.success) return v;
+                    return call({ action: 'syncUserActivity', phone: v.phone, requesterRefId: v.refId }).then(function (s) {
+                        if (!s || !s.success) return s;
+                        s.magicIdentity = { phone: v.phone, refId: v.refId, name: v.name, gender: v.gender, unifiedName: v.unifiedName };
+                        return s;
+                    });
+                });
+            }
+            function attempt() {
+                var controller = new AbortController();
+                var timer = setTimeout(function () { controller.abort(); }, 45000);
+                return fetch(URL_GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'verifyTokenAndSync', token: token }), signal: controller.signal })
+                    .then(function (r) { return r.text(); })
+                    .then(function (t) {
+                        clearTimeout(timer);
+                        try {
+                            var d = JSON.parse(t);
+                            if (d && d.success === false && d.message === 'إجراء غير معروف') return legacyTwoStep().then(function (x) { return { ok: true, data: x }; });
+                            return { ok: true, data: d };
+                        }
+                        catch (e) { return { ok: false, busy: true, message: 'الخادم مشغول حالياً، حاول بعد لحظات.' }; } // رد HTML = امتلاء مقاعد التنفيذ
+                    })
+                    .catch(function () { clearTimeout(timer); return { ok: false, busy: true, message: 'تعذر الاتصال بالخادم، تحقق من الشبكة وحاول مجدداً.' }; });
+            }
+            // محاولة ثانية صامتة بعد 2–4 ثوانٍ لأي فشل اتصال (لا لرد الخادم المشغول: الطلب الأول غالباً ما زال يعمل هناك، وإعادته تزيد الاختناق)
+            boot.promise = attempt().then(function (first) {
+                if (first.ok || first.busy === true && first.message.indexOf('مشغول') !== -1) return first;
+                return new Promise(function (r) { setTimeout(r, 2000 + Math.floor(Math.random() * 2000)); }).then(attempt);
+            });
+        })();
+    </script>
+    <style>html.magic-boot #magicBootOverlay { display: flex !important; }</style>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <style>
         html, body {
             height: 100%; overflow: hidden; font-family: 'Tajawal', sans-serif; 
@@ -79,6 +132,20 @@
     </style>
 </head>
 <body id="mainBody" class="text-slate-800">
+    <!-- 🟢 شاشة فتح "المساحة الآمنة" بالرابط السحري: تظهر فور فتح الصفحة (بالعلم magic-boot من سكربت الـ head) وتُخفى بعد وصول البيانات -->
+    <div id="magicBootOverlay" style="display:none; position:fixed; inset:0; z-index:300; background:linear-gradient(180deg,#f0fdfa,#f8fafc); align-items:center; justify-content:center; padding:24px; text-align:center;">
+        <div style="max-width:320px; width:100%;">
+            <div id="magicBootSpinner" style="width:46px; height:46px; margin:0 auto 18px; border:4px solid #99f6e4; border-top-color:#0d9488; border-radius:50%; animation:magicSpin 0.9s linear infinite;"></div>
+            <p id="magicBootTitle" style="font-weight:800; font-size:17px; color:#134e4a; margin:0 0 6px;">جاري فتح مساحتك الآمنة…</p>
+            <p id="magicBootText" style="font-weight:500; font-size:13px; color:#64748b; margin:0;">لحظات ونعرض لك مراسلاتك</p>
+            <div id="magicBootActions" style="display:none; margin-top:20px; gap:10px; flex-direction:column;">
+                <button id="magicBootRetryBtn" onclick="location.reload()" style="background:#0d9488; color:#fff; font-weight:800; font-size:14px; border:0; border-radius:14px; padding:12px; cursor:pointer;">إعادة المحاولة</button>
+                <button id="magicBootLoginBtn" onclick="exitMagicBoot('login')" style="background:#fff; color:#0f766e; font-weight:700; font-size:13px; border:1px solid #99f6e4; border-radius:14px; padding:11px; cursor:pointer;">تسجيل الدخول برمز التحقق</button>
+                <button onclick="exitMagicBoot('home')" style="background:transparent; color:#64748b; font-weight:700; font-size:12px; border:0; padding:8px; cursor:pointer;">الصفحة الرئيسية</button>
+            </div>
+        </div>
+    </div>
+    <style>@keyframes magicSpin { to { transform: rotate(360deg); } }</style>
 
     <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <!-- ✂️ ---------- [ القسم رقم 02 : الشريط العلوي ] ---------- ✂️ -->
@@ -707,13 +774,81 @@
         window.userPointsBalance = parseInt(localStorage.getItem('cached_wallet_balance') || '0');
         window.activeContactRefId = null;
         
+        // 🟢 [2026-10-03] دخول الرابط السحري: الطلب بدأ أصلاً من سكربت الـ head (window.__magicBoot). هنا نعالج نتيجته: ننقل هوية العميل وبياناته
+        // لنفس مفاتيح الدخول العادي ثم نفتح "مراسلاتي" داخل القشرة بكل عناصر الموقع (الشريطان العلوي والسفلي، الرصيد، البحث...)،
+        // فلا تُعاد أي مزامنة (الكاش وصل جاهزاً في الرد نفسه). الرئيسية (الأحدث/المميز/الإحصائيات) تُجلب بعد الفتح بثوانٍ كي لا تزاحم الطلب الحرج.
+        function showMagicBootFailure(msg, allowRetry) {
+            const el = id => document.getElementById(id);
+            if (!el('magicBootOverlay')) return;
+            el('magicBootSpinner').style.display = 'none';
+            el('magicBootTitle').innerText = 'تعذر فتح الرابط';
+            el('magicBootText').innerText = msg || 'الرابط غير صالح أو منتهي الصلاحية.';
+            el('magicBootRetryBtn').style.display = allowRetry ? 'block' : 'none';
+            el('magicBootActions').style.display = 'flex';
+        }
+        function exitMagicBoot(dest) {
+            if (window.__magicBoot) window.__magicBoot.busy = false;
+            document.documentElement.classList.remove('magic-boot');
+            updateAuthUI();
+            fetchShowcaseData(); fetchLiveStats();
+            if (dest === 'login') loadIframe('register.html');
+        }
+        async function runMagicBoot() {
+            const boot = window.__magicBoot;
+            const res = await boot.promise;
+            if (!res.ok) { showMagicBootFailure(res.message, true); return; }
+            const r = res.data || {};
+            if (r.forceLogout) { showMagicBootFailure(r.message, false); return; }
+            if (!r.success || !r.magicIdentity) { showMagicBootFailure(r.message, false); return; }
+
+            const id = r.magicIdentity;
+            const digits = String(id.phone || '').replace(/[^0-9]/g, '');
+            const dispName = id.unifiedName || id.name || ('ملف #' + id.refId);
+            delete r.magicIdentity;
+
+            // تبديل هوية كامل: لا يبقى أي أثر لمستخدم سابق على نفس الجهاز
+            localStorage.clear(); sessionStorage.clear();
+            localStorage.setItem('verified_user_phone', '+' + digits);
+            localStorage.setItem('active_profile_refid', id.refId);
+            localStorage.setItem('active_profile_uid', id.refId);
+            localStorage.setItem('verified_user_name', id.name || 'عضونا الكريم');
+            localStorage.setItem('verified_user_gender', id.gender || '');
+            localStorage.setItem('active_profile_status', r.profileStatus || 'نشط');
+            // جلسة الرابط السحري: تقبل المراسلات والتصفح، وتحجب تعديل/حذف/إضافة الملفات (register.html تطلب دخولاً كاملاً برمز التحقق)
+            localStorage.setItem('magic_session', '1');
+            localStorage.setItem('magic_session_name', dispName);
+            sessionStorage.setItem('unreadPopupShown', 'true'); // المراسلات مفتوحة أمامه أصلاً
+
+            localStorage.setItem('cached_wallet_balance', r.walletBalance || 0);
+            window.userPointsBalance = r.walletBalance || 0;
+            localStorage.setItem('cached_free_external', r.freeExternalContacts || 0);
+            localStorage.setItem('cached_special_package', r.hasSpecialPackage ? '1' : '0');
+            if (r.currentUserMarriageType !== undefined) localStorage.setItem('verified_user_mType', r.currentUserMarriageType);
+            if (r.config) localStorage.setItem('platform_config', JSON.stringify(r.config));
+            if (r.favorites) localStorage.setItem('cached_favorites', JSON.stringify(r.favorites.map(f => f.refId)));
+            if (r.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(r.contactedIds));
+            localStorage.setItem('master_activity_cache', JSON.stringify(r));
+
+            window.__noSyncUntil = Date.now() + 20000; // أي مزامنة تلقائية (updateAuthUI/loadIframe) تتخطى: البيانات وصلت للتو
+            boot.busy = false;
+            history.replaceState({}, '', window.location.pathname); // إزالة التوكن من الرابط
+            updateAuthUI();
+            updateWalletDisplay();
+            document.documentElement.classList.remove('magic-boot');
+            loadIframe('activity.html?tab=requests');
+            setTimeout(() => { fetchShowcaseData(); fetchLiveStats(); }, 3000);
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             updateAuthUI();
-            fetchShowcaseData();
-            fetchLiveStats();
-
-            const phone = localStorage.getItem('verified_user_phone');
-            if(phone) { fetchGlobalWalletBalance(phone); }
+            if (window.__magicBoot) {
+                runMagicBoot(); // الرئيسية والرصيد يُجلبان بعد فتح مراسلاتي (انظر runMagicBoot)
+            } else {
+                fetchShowcaseData();
+                fetchLiveStats();
+                const phone = localStorage.getItem('verified_user_phone');
+                if(phone) { fetchGlobalWalletBalance(phone); }
+            }
 
             // 🟢 رابط مباشر يفتح صفحة فرعية عند التحميل بدل الرئيسية، مع بقاء قشرة index.html (الشريط العلوي/السفلي) كما هي.
             // مثال: index.html?open=search يفتح البحث الشامل مباشرة (يعمل للزائر أيضاً لأن search.html لا تتطلب تسجيل دخول).
@@ -922,6 +1057,10 @@
 
         async function fetchGlobalWalletBalance(phone, forceRefresh = false) {
             const reqRef = localStorage.getItem('active_profile_refid');
+            // 🟢 أثناء/بعد فتح الرابط السحري مباشرة: البيانات وصلت أو في الطريق، فالمزامنة التلقائية تتخطى (الإجبارية forceRefresh تمر دائماً)
+            if (!forceRefresh && ((window.__magicBoot && window.__magicBoot.busy) || Date.now() < (window.__noSyncUntil || 0))) {
+                return window.userPointsBalance || parseInt(localStorage.getItem('cached_wallet_balance') || '0');
+            }
             try {
                 // إرسال forceRefresh للسيرفر لتجاوز الذاكرة المخبئية عند الحاجة
                 const result = await fetchFromGASWithRetry({ action: 'syncUserActivity', phone: phone, requesterRefId: reqRef, timestamp: Date.now(), forceRefresh: forceRefresh });
@@ -1404,6 +1543,7 @@
             const phone = localStorage.getItem('verified_user_phone');
             const refId = localStorage.getItem('active_profile_refid');
             if (!phone || !refId || refId === 'null' || refId === 'undefined') return;
+            if ((window.__magicBoot && window.__magicBoot.busy) || Date.now() < (window.__noSyncUntil || 0)) return; // فُحصت الحالة للتو مع فتح الرابط السحري
             const res = await fetchFromGAS({ action: 'getProfileStatus', phone: phone, requesterRefId: refId });
             if (res && res.success && res.profileStatus) { localStorage.setItem('active_profile_status', res.profileStatus); updateStatusBadgeDisplay(res.profileStatus); }
         }
