@@ -1637,31 +1637,54 @@
                 statusSelect.add(newOption);
                 statusSelect.value = currentStatus;
             }
-            fillProxyRejectReasons();
             onStatusSelectChange();
             document.getElementById('statusModal').classList.remove('hidden');
         }
 
         // أسباب الاعتذار الجاهزة نفسها التي يختار منها العميل في activity.html (نسخة مكررة عمداً: لا ملفات مشتركة)، مع خيار الكتابة الحرة
-        const PROXY_REJECT_REASONS = [
-            { v: 'أعتذر، البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.', t: 'البيانات والمواصفات العامة غير متوافقة' },
-            { v: 'أعتذر، لا أقبل بالتعدد (أبحث عن شخص غير متزوج).', t: 'لا أقبل بالتعدد (أبحث عن شخص غير متزوج)' },
-            { v: 'أعتذر، ظروفي لا تتناسب مع وجود أبناء من زواج سابق.', t: 'ظروفي لا تتناسب مع وجود أبناء من زواج سابق' },
-            { v: 'أعتذر، أبحث عن تكافؤ نسب معين.', t: 'أبحث عن تكافؤ نسب معين' },
-            { v: 'أعتذر، أبحث عن زواج تقليدي معلن فقط.', t: 'أبحث عن زواج تقليدي معلن فقط' },
-            { v: 'أعتذر، فارق العمر أو منطقة السكن غير مناسبة لي.', t: 'فارق العمر أو منطقة السكن غير مناسبة لي' },
-            { v: '__other', t: 'سبب آخر (أكتبه)' }
+        // 🟢 [2026-10-03] القائمتان بحسب من يعتذر بلسانه (رجل/امرأة)، وهما نفس REJECT_REASONS_MEN/WOMEN في activity.html (عدّلهما معاً).
+        // القيمة المرسلة = "أعتذر، " + النص. خيار الكتابة الحرة يبقى في آخر كل قائمة (للإدارة فقط).
+        const PROXY_REJECT_TEXTS_MEN = [
+            'البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.',
+            'لا أرغب بوجود أبناء من زواج سابق.',
+            'فارق العمر غير مناسب لي.',
+            'منطقة السكن غير مناسبة لي.',
+            'أبحث عن بكر.',
+            'أرغب بزواج غير معلن (مسيار).',
+            'أرغب بزوجة من نفس جنسيتي.',
+            'لا أقبل بعمل المرأة.',
+            'أبحث عن زوجة ملتزمة بالحجاب.',
+            'أبحث عن تكافؤ نسب معين.'
+        ];
+        const PROXY_REJECT_TEXTS_WOMEN = [
+            'البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.',
+            'لا أقبل بالتعدد، وأبحث عن شخص غير متزوج.',
+            'لا أرغب بوجود أبناء من زواج سابق.',
+            'فارق العمر غير مناسب لي.',
+            'منطقة السكن غير مناسبة لي.',
+            'أرغب بزواج بظروف خاصة.',
+            'أبحث عن زواج معلن فقط.',
+            'أرغب بالزواج من سعودي فقط، أو من نفس جنسيتي.',
+            'الوضع المادي أو الشروط غير مناسبة لي.',
+            'أبحث عن تكافؤ نسب معين.'
         ];
 
-        function fillProxyRejectReasons() {
+        // تُعاد تعبئة القائمة عند كل تغيير اختيار (رجل/امرأة) لأن القائمتين مختلفتان
+        function fillProxyRejectReasons(kind) {
             const sel = document.getElementById('proxyRejectReason');
-            if (sel.options.length) return;
-            PROXY_REJECT_REASONS.forEach(r => sel.add(new Option(r.t, r.v)));
+            const texts = kind === 'PROXY_REJECT_WOMAN' ? PROXY_REJECT_TEXTS_WOMEN : PROXY_REJECT_TEXTS_MEN;
+            const key = kind === 'PROXY_REJECT_WOMAN' ? 'W' : 'M';
+            if (sel.dataset.kind === key && sel.options.length) return;
+            sel.innerHTML = '';
+            texts.forEach(t => sel.add(new Option(t.replace(/[.،]+$/, ''), 'أعتذر، ' + t)));
+            sel.add(new Option('سبب آخر (أكتبه)', '__other'));
+            sel.dataset.kind = key;
         }
 
         function onStatusSelectChange() {
             const v = document.getElementById('newStatus').value;
             document.getElementById('proxyRejectBox').classList.toggle('hidden', !(v === 'PROXY_REJECT_MAN' || v === 'PROXY_REJECT_WOMAN'));
+            if (v === 'PROXY_REJECT_MAN' || v === 'PROXY_REJECT_WOMAN') fillProxyRejectReasons(v);
             onRejectReasonChange();
         }
 
