@@ -7,6 +7,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>نشاطات العميل - منصة زواج</title>
+    <!-- 🟢 [2026-10-03] الرابط السحري القديم (activity.html?token=...) ما زال يعمل لكن بتحويل فوري للقشرة index.html?token=... — أول سكربت في الصفحة قبل Tailwind والخطوط،
+         فلا يُحمَّل شيء من هذه الصفحة. القشرة هي التي تتحقق من التوكن وتفتح "مراسلاتي" بكل عناصر الموقع. يُطبَّق فقط عند فتحها وحدها (خارج iframe). -->
+    <script>
+        (function () {
+            if (window.self !== window.top) return;
+            try {
+                var p = new URLSearchParams(window.location.search);
+                var t = p.get('token');
+                var legacy = localStorage.getItem('is_client_mode') === 'true';
+                if (t && /^[A-Za-z0-9]{8,64}$/.test(t)) { window.location.replace('index.html?token=' + encodeURIComponent(t)); window.__redirectingToShell = true; }
+                else if (legacy) { window.location.replace('index.html?open=requests'); window.__redirectingToShell = true; }
+            } catch (e) {}
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -1615,6 +1629,8 @@
             if (!dashContent) return;
             
             const homeUrl = window.location.pathname.replace('activity.html', 'index.html');
+            // 🟢 داخل القشرة (iframe) الشريط السفلي للموقع فيه "الرئيسية" أصلاً، فلا زر إضافي
+            const homeBtnHtml = (window.self !== window.top) ? '' : `<a href="${homeUrl}" class="flex shrink-0 items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-teal-200 text-[10px] font-bold text-teal-700 hover:bg-teal-50 hover:scale-105 transition shadow-sm"><span>الرئيسية</span> <span class="text-sm">🏠</span></a>`;
             const bannerHtml = `
                 <div id="magicTokenBanner" class="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 px-4 py-3 flex items-center justify-between shadow-sm mb-4 mx-4 mt-2 rounded-2xl fade-in">
                     <div class="flex items-center gap-2">
@@ -1624,15 +1640,14 @@
                             <p class="text-xs font-black text-teal-900 line-clamp-1">${name}</p>
                         </div>
                     </div>
-                    <a href="${homeUrl}" class="flex shrink-0 items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-teal-200 text-[10px] font-bold text-teal-700 hover:bg-teal-50 hover:scale-105 transition shadow-sm">
-                        <span>الرئيسية</span> <span class="text-sm">🏠</span>
-                    </a>
+                    ${homeBtnHtml}
                 </div>
             `;
             dashContent.insertAdjacentHTML('afterbegin', bannerHtml);
         }
 
         window.onload = async () => {
+            if (window.__redirectingToShell) return; // التحويل للقشرة بدأ في أول الصفحة؛ لا طلبات هنا
             const urlParams = new URLSearchParams(window.location.search);
             const magicToken = urlParams.get('token');
 
@@ -1688,7 +1703,7 @@
                 refIdParam = localStorage.getItem('active_profile_refid') || "";
                 tabParam = urlParams.get('tab') || 'requests'; window.userStatusParam = urlParams.get('status') || '';
                 
-                if (localStorage.getItem('is_client_mode') === 'true') {
+                if (localStorage.getItem('is_client_mode') === 'true' || localStorage.getItem('magic_session') === '1') {
                     let dispName = localStorage.getItem('magic_session_name') || 'عميلنا العزيز';
                     renderClientBanner(dispName);
                 }
