@@ -31,7 +31,7 @@
                 else window.location.href = 'index.html?open=requests';
             };
             window.magicFullLogin = function () {
-                try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+                try { localStorage.clear(); sessionStorage.clear(); sessionStorage.setItem('login_only', '1'); } catch (e) {}
                 window.location.reload();
             };
             document.open();
@@ -46,6 +46,35 @@
                 '<button class="p1" onclick="magicFullLogin()">تسجيل الدخول برمز التحقق</button>' +
                 '<button class="p2" onclick="magicGoBack()">الرجوع إلى مراسلاتي</button></div></body></html>');
             document.close();
+        })();
+    </script>
+    <!-- 🟢 [2026-10-04] وضع "الدخول فقط" بعد ضغط "تسجيل الدخول برمز التحقق" من جلسة الرابط السحري (sessionStorage.login_only تضبطه magicFullLogin):
+         لا يظهر خلف نافذة الرمز أي نموذج أو لوحة (خلفية معتمة تماماً)، والعنوان يشرح أن الأمر تأكيد هوية لحساب مسجّل لا تسجيل جديد
+         (العنوان الافتراضي "تسجيل الدخول / طلب جديد" كان يوحي للعميل المسجّل بأنه يبدأ طلباً جديداً). ينتهي الوضع تلقائياً عند إخفاء نافذة الرمز بعد نجاح الدخول. -->
+    <script>
+        (function () {
+            var on = false;
+            try { on = sessionStorage.getItem('login_only') === '1'; } catch (e) {}
+            if (!on || window.__magicBlocked) return;
+            document.documentElement.classList.add('login-only');
+            document.write('<style>html.login-only #dashboardSection, html.login-only #mainFormSection { display: none !important; } html.login-only #otpSection > div.absolute { background: #f8fafc !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; } html.login-only body { background: #f8fafc; }</style>');
+            document.addEventListener('DOMContentLoaded', function () {
+                var h = document.querySelector('#otpSheet h2');
+                if (h) {
+                    h.textContent = 'تأكيد هويتك';
+                    var p = document.createElement('p');
+                    p.className = 'text-[11px] text-gray-500 font-medium leading-relaxed mt-1 px-2';
+                    p.innerHTML = 'لديك حساب مسجّل مسبقاً. أدخل رقم جوالك المسجّل لإرسال رمز التحقق إلى واتساب، ثم تفتح لك ملفاتك. <b class="text-gray-700">هذا ليس تسجيلاً جديداً.</b>';
+                    h.parentNode.appendChild(p);
+                }
+                var os = document.getElementById('otpSection');
+                if (os) new MutationObserver(function () {
+                    if (os.classList.contains('hidden')) {
+                        document.documentElement.classList.remove('login-only');
+                        try { sessionStorage.removeItem('login_only'); } catch (e) {}
+                    }
+                }).observe(os, { attributes: true, attributeFilter: ['class'] });
+            });
         })();
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -1888,9 +1917,35 @@ function closeTermsModal() {
                     if(dashboardContent) dashboardContent.classList.remove('hidden');
 
                     if (localCache && !isAdminMode && cachedProfiles && cachedProfiles.length > 0) { console.warn("Offline fallback used smoothly."); } 
-                    else { showMsgModal("خطأ اتصال", "الشبكة ضعيفة أو السيرفر مشغول. يرجى المحاولة لاحقاً."); if(!cachedProfiles || cachedProfiles.length === 0) showMainForm(); }
+                    // 🔴 [2026-10-04] كان هنا showMainForm() عند فشل الاتصال: عميل مسجّل أصلاً وسيرفر بطيء (المهلة 35 ثانية مرتين) فيرى نموذج التسجيل الفارغ ويظن أنه غير مسجّل
+                    // فيعيد إدخال بياناته (ملف مكرر). فشل الاتصال لا يعني "لا ملفات": نعرض بطاقة إعادة محاولة صريحة، ولا نفتح النموذج إلا برد الخادم الصريح "لم يتم العثور على أي ملفات".
+                    else { if(!cachedProfiles || cachedProfiles.length === 0) showProfilesLoadError(); else showMsgModal("خطأ اتصال", "الشبكة ضعيفة أو السيرفر مشغول. يرجى المحاولة لاحقاً."); }
                 }
             }
+        }
+
+        // 🟢 [2026-10-04] بطاقة فشل تحميل الملفات: بديل عن عرض نموذج التسجيل (انظر التعليق في loadDashboard). تُبنى عند الحاجة داخل dashboardSection.
+        function showProfilesLoadError() {
+            const dash = document.getElementById('dashboardSection'); if (!dash) return;
+            const content = document.getElementById('dashboardContent'); if (content) content.classList.add('hidden');
+            let box = document.getElementById('profilesLoadError');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'profilesLoadError';
+                box.className = 'w-full max-w-sm mx-auto mt-16 bg-white border border-gray-200 rounded-3xl shadow-sm p-6 text-center fade-in';
+                box.innerHTML = '<div class="text-4xl mb-2">⏳</div>' +
+                    '<h3 class="text-base font-black text-gray-900 mb-2">تعذّر تحميل ملفاتك الآن</h3>' +
+                    '<p class="text-xs text-gray-500 leading-relaxed mb-5">الخادم مشغول أو الشبكة ضعيفة. <b class="text-gray-700">هذا لا يعني أنك غير مسجّل</b>، بياناتك محفوظة ولا حاجة لإعادة التسجيل. أعد المحاولة بعد لحظات.</p>' +
+                    '<button type="button" onclick="retryLoadDashboard()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-sm text-sm">إعادة المحاولة</button>';
+                dash.appendChild(box);
+            }
+            box.classList.remove('hidden');
+        }
+
+        function retryLoadDashboard() {
+            const box = document.getElementById('profilesLoadError'); if (box) box.classList.add('hidden');
+            isDashboardLoading = false;
+            loadDashboard();
         }
 
         function selectProfileInDashboard(uid) {
