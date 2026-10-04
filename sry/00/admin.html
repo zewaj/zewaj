@@ -1792,6 +1792,7 @@
 
             isProcessingAction = true;
             document.getElementById('refreshIcon').classList.add('sync-spin');
+            const failedNow = []; // إجراءات رفضها الخادم في هذه الدورة: تُعرض صراحةً بعد الانتهاء حتى لا تُكتشف بعد أيام
 
             for(let i=0; i<acts.length; i++) {
                 let act = acts[i];
@@ -1853,6 +1854,7 @@
                         let errAct = pendingAdminActions.find(a => a.id === act.id);
                         if(errAct) { errAct.state = 'failed'; errAct.errorMsg = result.message || "النظام مشغول"; }
                         savePendingActions();
+                        failedNow.push('الطلب #' + act.reqId + ': ' + (result.message || 'النظام مشغول'));
                     }
                 } catch (e) {
                     // 🟢 تحقق: هل وصلت العملية فعلاً للسيرفر رغم انقطاع الاتصال؟
@@ -1870,12 +1872,16 @@
                     let errAct = pendingAdminActions.find(a => a.id === act.id);
                     if(errAct) { errAct.state = 'failed'; errAct.errorMsg = "خطأ في الاتصال بالخادم"; }
                     savePendingActions();
+                    failedNow.push('الطلب #' + act.reqId + ': خطأ في الاتصال بالخادم');
                 }
             }
-            
+
             isProcessingAction = false;
             document.getElementById('refreshIcon').classList.remove('sync-spin');
             await fetchData(true);
+            if (failedNow.length) {
+                await showMsgModal("⚠️ لم يُحفظ الإجراء", failedNow.join('\n') + '\n\nلم يُنفَّذ شيء في الشيت. يمكنك إعادة المحاولة من فلتر «فاشلة».');
+            }
         }
 
         function retryAdminAction(actionId) {
