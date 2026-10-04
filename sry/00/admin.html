@@ -1373,7 +1373,7 @@
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: direction }),
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: direction }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -1552,7 +1552,7 @@
                 let actionId = 'act_' + Date.now();
                 pendingAdminActions.push({
                     id: actionId, reqId: reqId, type: actionType, text: adminMessage, state: 'sending',
-                    payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext },
+                    payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext },
                     timestamp: Date.now()
                 });
                 savePendingActions();
@@ -1570,7 +1570,7 @@
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext }),
+                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -1717,7 +1717,7 @@
             let actionId = 'act_' + Date.now();
             pendingAdminActions.push({
                 id: actionId, reqId: reqId, type: 'status_update', text: adminReply || "تحديث حالة", state: 'sending',
-                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, newStatus: statusSelectVal, adminReply: payloadText, actionContext: '' },
+                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: statusSelectVal, adminReply: payloadText, actionContext: '' },
                 timestamp: Date.now()
             });
             savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
@@ -1755,7 +1755,7 @@
             try {
                 const res = await fetch(SCRIPT_URL, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminActOnBehalf', adminToken: state.adminToken, reqId: req.reqId, actionType: m.actionType, actingGender: m.actingGender || '', reason: reason }),
+                    body: JSON.stringify({ action: 'adminActOnBehalf', adminToken: state.adminToken, reqId: req.reqId, rowHint: req.rowIndex, actionType: m.actionType, actingGender: m.actingGender || '', reason: reason }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
