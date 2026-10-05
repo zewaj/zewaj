@@ -841,6 +841,7 @@
                 const notes = w.notes ? `<details class="mb-2"><summary class="text-[10px] font-bold text-slate-400 cursor-pointer text-center">سجل باقات هذا العميل</summary><pre class="text-[10px] text-slate-600 bg-white border border-slate-100 rounded-lg p-2 mt-1 whitespace-pre-wrap text-right">${escPkg(w.notes)}</pre></details>` : '';
                 const btns = (res.packages || []).map(p => `<button type="button" onclick="selectWalletPackage('${escPkg(p.id)}')" class="bg-white border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 rounded-xl p-2.5 text-center transition-all active:scale-95"><span class="block text-[11px] font-black text-slate-700">${escPkg(p.name)}</span><span class="block text-[10px] font-bold text-slate-500">${p.price} ريال</span><span class="block text-[10px] font-black text-indigo-600">+${p.points} نقطة</span>${p.external > 0 ? `<span class="block text-[10px] font-bold text-emerald-600">+${p.external} تواصل خارجي</span>` : ''}${p.adMonths > 0 ? `<span class="block text-[10px] font-bold text-amber-600">📢 إعلان ${p.adMonths} أشهر</span>` : ''}</button>`).join('');
                 box.innerHTML = `<p class="text-[10px] font-black text-indigo-600 mb-1 text-center">إضافة باقة (تُضاف فوق الرصيد الحالي)</p>${infoLine}${notes}<div class="grid grid-cols-2 gap-2">${btns || '<p class="col-span-2 text-[11px] text-slate-400 font-bold text-center py-2">لا توجد باقات مناسبة لهذا الملف.</p>'}</div><div id="pkg-preview"></div>
+                <div id="pkg-history" class="mt-4"><p class="text-[10px] text-slate-400 font-bold text-center"><i class="fas fa-spinner fa-spin"></i> جاري تحميل باقات العميل...</p></div>
                 <details class="mt-3"><summary class="text-[10px] font-bold text-slate-400 cursor-pointer text-center">ضبط الاشتراك يدوياً (لمن اشترك قبل النظام أو لتصحيح رقم) — لا يمسّ النقاط</summary>
                     <div class="mt-2 bg-white border border-slate-100 rounded-xl p-3 flex flex-col gap-2">
                         ${isMale ? `<label class="flex items-center justify-between text-[11px] font-bold text-slate-600">تواصلات خارج المنصة المتبقية <input type="number" id="sub-free" min="0" value="${w.freeExternal || 0}" class="w-20 text-center px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg"></label>` : ''}
@@ -849,10 +850,160 @@
                         <button type="button" onclick="submitSetSubscription(this)" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-2.5 rounded-xl font-black text-xs active:scale-95 transition-all">حفظ الاشتراك</button>
                     </div>
                 </details>`;
+                window.loadPackageHistory(refId);
             } catch (e) {
                 const box = document.getElementById('pkg-section');
                 if (box) box.innerHTML = `<p class="text-[11px] text-rose-600 font-bold text-center py-2">تعذر تحميل الباقات: ${escPkg(e.message)}</p>`;
             }
+        };
+
+        // 🟢 باقات العميل المضافة (تعديل كامل / حذف كامل): كل إدخال يظهر ببطاقة، والحذف يعكس الأثر بخيارات يقررها الأدمن، والتعديل يطبّق الفرق فقط
+        window.loadPackageHistory = async function(refId) {
+            const box = document.getElementById('pkg-history'); if (!box) return;
+            try {
+                const res = await apiCall({ action: 'adminGetPackageHistory', refId: refId, adminToken: state.adminToken });
+                window.pkgHistoryState = { refId: refId, gender: res.gender, entries: res.entries || [] };
+                renderPackageHistory();
+            } catch (e) {
+                box.innerHTML = `<p class="text-[11px] text-rose-600 font-bold text-center">تعذر تحميل باقات العميل: ${escPkg(e.message)}</p>`;
+            }
+        };
+
+        function renderPackageHistory() {
+            const box = document.getElementById('pkg-history'); const hs = window.pkgHistoryState; if (!box || !hs) return;
+            const isMale = hs.gender === 'ذكر';
+            const active = hs.entries.filter(e => !e.deleted); const deleted = hs.entries.filter(e => e.deleted);
+            const card = e => `
+                <div class="bg-white border border-slate-200 rounded-xl p-2.5 shadow-sm">
+                    <div class="flex items-center justify-between gap-2"><b class="text-[12px] text-slate-800">${escPkg(e.packageName)}</b><span class="text-[11px] font-black text-indigo-600">${e.price} ريال</span></div>
+                    <p class="text-[10px] text-slate-500 font-bold mt-0.5">${escPkg(e.date)} · +${e.points} نقطة${isMale && e.external > 0 ? ` · +${e.external} تواصل خارجي` : ''}${e.adMonths > 0 ? ` · 📢 ${e.adMonths} أشهر` : ''}${e.stars > 0 ? ` · ${e.stars}⭐` : ''}${e.special ? ' · اشتراطات خاصة' : ''}</p>
+                    ${e.note ? `<p class="text-[10px] text-slate-400 font-bold">${escPkg(e.note)}</p>` : ''}
+                    ${e.estimated ? '<p class="text-[10px] text-amber-600 font-bold">سجل قديم: النجوم والإعلان مقدَّران من الباقة الحالية</p>' : ''}
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="openEditPackageEntry(${e.row})" class="flex-1 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] font-black"><i class="fas fa-pen"></i> تعديل</button>
+                        <button type="button" onclick="openDeletePackageEntry(${e.row})" class="flex-1 py-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 text-[11px] font-black"><i class="fas fa-trash"></i> حذف</button>
+                    </div>
+                </div>`;
+            box.innerHTML = `
+                <p class="text-[10px] font-black text-slate-600 mb-1.5 text-center">باقات هذا العميل (تعديل أو حذف)</p>
+                <div class="flex flex-col gap-2">${active.length ? active.map(card).join('') : '<p class="text-[11px] text-slate-400 font-bold text-center py-1">لا توجد باقات مضافة في السجل.</p>'}</div>
+                <div id="pkg-entry-action"></div>
+                ${deleted.length ? `<details class="mt-2"><summary class="text-[10px] font-bold text-slate-400 cursor-pointer text-center">باقات محذوفة (${deleted.length})</summary>${deleted.map(e => `<div class="text-[10px] text-slate-400 font-bold bg-white/60 border border-slate-100 rounded-lg px-2 py-1 mt-1 line-through">${escPkg(e.packageName)} · ${escPkg(e.date)} · ${e.points} نقطة</div>`).join('')}</details>` : ''}`;
+        }
+
+        function pkgEntryByRow(row) { const hs = window.pkgHistoryState; return hs ? hs.entries.find(e => e.row === row) : null; }
+
+        // --- الحذف: خيارات عكس مستقلة ومعاينة لما سيحدث ---
+        window.openDeletePackageEntry = function(row) {
+            const e = pkgEntryByRow(row); const st = window.walletPkgState; const hs = window.pkgHistoryState; if (!e || !st) return;
+            const isMale = hs.gender === 'ذكر'; const w = st.wallet || {};
+            const chk = (id, label, on) => `<label class="flex items-center gap-2 text-[11px] font-bold text-slate-600"><input type="checkbox" id="${id}" ${on ? 'checked' : ''} class="w-4 h-4" onchange="updateDeletePreview(${row})"> ${label}</label>`;
+            document.getElementById('pkg-entry-action').innerHTML = `
+                <div class="mt-3 bg-white border-2 border-rose-200 rounded-2xl p-3">
+                    <p class="text-[11px] font-black text-rose-700 mb-2 text-center">حذف «${escPkg(e.packageName)}» (${escPkg(e.date)})</p>
+                    <div class="flex flex-col gap-1.5 mb-2">
+                        ${chk('del-points', `عكس النقاط (-${e.points})`, e.points > 0)}
+                        ${isMale ? chk('del-external', `عكس التواصل الخارجي (-${e.external})`, e.external > 0) : ''}
+                        ${chk('del-stars', `خفض النجوم/الشارة إلى أعلى باقة متبقية`, e.stars > 0)}
+                        ${isMale ? chk('del-special', 'إلغاء علامة باقة الاشتراطات الخاصة (إن لم تبقَ باقة أخرى بها)', e.special) : ''}
+                        ${chk('del-ad', `عكس مدة الإعلان (-${e.adMonths} أشهر)`, e.adMonths > 0)}
+                        ${chk('del-notify', 'إرسال واتساب للعميل بالتصحيح', false)}
+                    </div>
+                    <div id="del-preview" class="text-[11px] font-bold text-slate-600 bg-slate-50 rounded-lg p-2 mb-2"></div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="document.getElementById('pkg-entry-action').innerHTML=''" class="w-1/3 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">إلغاء</button>
+                        <button type="button" onclick="submitDeletePackageEntry(${row}, this)" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs">تأكيد الحذف</button>
+                    </div>
+                </div>`;
+            updateDeletePreview(row);
+        };
+
+        window.updateDeletePreview = function(row) {
+            const e = pkgEntryByRow(row); const st = window.walletPkgState; const hs = window.pkgHistoryState; const box = document.getElementById('del-preview'); if (!e || !st || !box) return;
+            const w = st.wallet || {}; const isMale = hs.gender === 'ذكر'; const on = id => { const el = document.getElementById(id); return el && el.checked; };
+            const bal = on('del-points') ? Math.max(0, (w.balance || 0) - e.points) : (w.balance || 0);
+            let t = `الرصيد: ${w.balance || 0} ← <b class="text-rose-600">${bal}</b>`;
+            if (on('del-points') && (w.balance || 0) < e.points) t += ' <span class="text-amber-600">(الرصيد الحالي أقل من نقاط الباقة، سيصير 0)</span>';
+            if (isMale && on('del-external')) t += `<br>التواصل الخارجي: ${w.freeExternal || 0} ← <b class="text-rose-600">${Math.max(0, (w.freeExternal || 0) - e.external)}</b>`;
+            box.innerHTML = t;
+        };
+
+        window.submitDeletePackageEntry = async function(row, btn) {
+            const hs = window.pkgHistoryState; if (!hs) return;
+            const on = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+            const opts = { points: on('del-points'), external: on('del-external'), stars: on('del-stars'), special: on('del-special'), ad: on('del-ad'), notify: on('del-notify') };
+            setBtnLoading(btn, true, '');
+            try {
+                const opId = 'op_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const res = await apiCall({ action: 'adminDeletePackageEntry', refId: hs.refId, logRow: row, opts: opts, opId: opId, adminToken: state.adminToken });
+                showToast(res.message);
+                const profile = state.searchResults.find(p => p.refId === hs.refId); if (profile) profile.walletBalance = res.newBalance;
+                renderResults(); window.loadWalletPackages(hs.refId);
+            } catch (err) { showToast(err.message, 'error'); setBtnLoading(btn, false, 'تأكيد الحذف'); }
+        };
+
+        // --- التعديل: نموذج كامل (اختيار باقة أخرى يملأ الحقول، ويمكن تعديل أي رقم) ---
+        window.openEditPackageEntry = function(row) {
+            const e = pkgEntryByRow(row); const st = window.walletPkgState; const hs = window.pkgHistoryState; if (!e || !st) return;
+            const isMale = hs.gender === 'ذكر';
+            const opts = (st.packages || []).map(p => `<option value="${escPkg(p.id)}" ${p.id === e.packageId ? 'selected' : ''}>${escPkg(p.name)} — ${p.price} ريال</option>`).join('');
+            const num = (id, label, val, extra = '') => `<label class="flex items-center justify-between text-[11px] font-bold text-slate-600">${label}<input type="number" id="${id}" min="0" value="${val}" oninput="updateEditPreview(${row})" class="w-24 text-center px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg" ${extra}></label>`;
+            document.getElementById('pkg-entry-action').innerHTML = `
+                <div class="mt-3 bg-white border-2 border-indigo-200 rounded-2xl p-3">
+                    <p class="text-[11px] font-black text-indigo-700 mb-2 text-center">تعديل «${escPkg(e.packageName)}» (${escPkg(e.date)})</p>
+                    <div class="flex flex-col gap-2 mb-2">
+                        <label class="flex items-center justify-between text-[11px] font-bold text-slate-600">الباقة
+                            <select id="edit-pkg" onchange="fillEditFromPackage(${row})" class="max-w-[60%] px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px]"><option value="">${escPkg(e.packageName)} (الحالية)</option>${opts}</select></label>
+                        ${num('edit-price', 'السعر (ريال)', e.price)}
+                        ${num('edit-points', 'النقاط المضافة', e.points)}
+                        ${isMale ? num('edit-external', 'التواصل الخارجي المضاف', e.external) : ''}
+                        ${num('edit-stars', 'النجوم', e.stars, 'max="10"')}
+                        ${num('edit-ad', 'مدة الإعلان (أشهر)', e.adMonths)}
+                        ${isMale ? `<label class="flex items-center gap-2 text-[11px] font-bold text-slate-600"><input type="checkbox" id="edit-special" ${e.special ? 'checked' : ''} class="w-4 h-4"> تفعّل الاشتراطات الخاصة</label>` : ''}
+                        <input type="text" id="edit-note" value="${escPkg(e.note)}" placeholder="ملاحظة (اختياري)" class="w-full text-[11px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+                    </div>
+                    <div id="edit-preview" class="text-[11px] font-bold text-slate-600 bg-slate-50 rounded-lg p-2 mb-2"></div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="document.getElementById('pkg-entry-action').innerHTML=''" class="w-1/3 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">إلغاء</button>
+                        <button type="button" onclick="submitEditPackageEntry(${row}, this)" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs">حفظ التعديل</button>
+                    </div>
+                </div>`;
+            updateEditPreview(row);
+        };
+
+        window.fillEditFromPackage = function(row) {
+            const st = window.walletPkgState; const id = document.getElementById('edit-pkg').value; const hs = window.pkgHistoryState;
+            const p = (st.packages || []).find(x => x.id === id); if (!p) return;
+            const set = (el, v) => { const x = document.getElementById(el); if (x) x.value = v; };
+            set('edit-price', p.price); set('edit-points', p.points); set('edit-external', hs.gender === 'ذكر' ? p.external : 0); set('edit-stars', p.stars); set('edit-ad', p.adMonths || 0);
+            const sp = document.getElementById('edit-special'); if (sp) sp.checked = !!p.unlocksSpecial;
+            updateEditPreview(row);
+        };
+
+        window.updateEditPreview = function(row) {
+            const e = pkgEntryByRow(row); const st = window.walletPkgState; const hs = window.pkgHistoryState; const box = document.getElementById('edit-preview'); if (!e || !st || !box) return;
+            const w = st.wallet || {}; const v = id => { const el = document.getElementById(id); return el ? (parseInt(el.value) || 0) : 0; };
+            const bal = Math.max(0, (w.balance || 0) + v('edit-points') - e.points);
+            let t = `الرصيد: ${w.balance || 0} ← <b class="text-indigo-600">${bal}</b> (${v('edit-points') - e.points >= 0 ? '+' : ''}${v('edit-points') - e.points})`;
+            if (hs.gender === 'ذكر') t += `<br>التواصل الخارجي: ${w.freeExternal || 0} ← <b class="text-indigo-600">${Math.max(0, (w.freeExternal || 0) + v('edit-external') - e.external)}</b>`;
+            if (v('edit-ad') !== e.adMonths) t += `<br>الإعلان: ${v('edit-ad') - e.adMonths > 0 ? '+' : ''}${v('edit-ad') - e.adMonths} أشهر`;
+            box.innerHTML = t;
+        };
+
+        window.submitEditPackageEntry = async function(row, btn) {
+            const hs = window.pkgHistoryState; if (!hs) return;
+            const el = id => document.getElementById(id); const val = id => el(id) ? el(id).value : '';
+            const sel = el('edit-pkg'); const selId = sel ? sel.value : '';
+            const p = ((window.walletPkgState || {}).packages || []).find(x => x.id === selId);
+            const values = { packageId: p ? p.id : undefined, packageName: p ? p.name : undefined, price: val('edit-price'), points: val('edit-points'), external: val('edit-external'), stars: val('edit-stars'), adMonths: val('edit-ad'), special: el('edit-special') ? el('edit-special').checked : false, note: val('edit-note') };
+            setBtnLoading(btn, true, '');
+            try {
+                const opId = 'op_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const res = await apiCall({ action: 'adminEditPackageEntry', refId: hs.refId, logRow: row, values: values, opId: opId, adminToken: state.adminToken });
+                showToast(res.message);
+                const profile = state.searchResults.find(pr => pr.refId === hs.refId); if (profile) profile.walletBalance = res.newBalance;
+                renderResults(); window.loadWalletPackages(hs.refId);
+            } catch (err) { showToast(err.message, 'error'); setBtnLoading(btn, false, 'حفظ التعديل'); }
         };
 
         window.selectWalletPackage = function(pkgId) {
