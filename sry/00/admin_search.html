@@ -29,6 +29,8 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        /* حاوية التمرير الرئيسية: شريط التمرير (على اليسار في RTL) كان يقتطع من عرض المحتوى وحده فيميل عن منتصف الشاشة؛ نحجز مساحته على الجانبين معاً */
+        .scroll-balanced { scrollbar-gutter: stable both-edges; }
         .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .toast-enter { animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
@@ -101,7 +103,7 @@
         </div>
 
         <div id="dashboard-view" class="hidden flex-1 overflow-hidden flex flex-col">
-            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar scroll-balanced">
                 <div class="max-w-7xl mx-auto pb-24">
                     
 <!-- -->
