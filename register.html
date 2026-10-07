@@ -640,8 +640,8 @@
 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 -->
     <div id="termsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[120] hidden flex items-center justify-center p-4 fade-in">
-        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
-            <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between">
+        <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[92dvh]">
+            <div class="bg-indigo-600 px-4 py-3 flex items-center justify-between shrink-0">
                 <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     الشروط
@@ -654,12 +654,13 @@
             <div class="p-4 overflow-y-auto space-y-3">
                 <div id="dynamicTermsContainer"></div>
 
-                <div class="flex items-start gap-2 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
-                    <input type="checkbox" id="agreeTerms" required class="mt-0.5 w-3.5 h-3.5 text-indigo-600 rounded border-gray-300 accent-indigo-600 cursor-pointer">
-                    <label for="agreeTerms" class="text-[10px] font-bold text-gray-800 cursor-pointer leading-relaxed">أشهد بصحة البيانات، وألتزم بالشروط والرسوم، وأتعهد بالجدية.</label>
+                <!-- 🟢 [2026-10-07] التعهد الرسمي: هو المرجع الوحيد المسجَّل للرسوم (يُحفظ نصه مع الأرقام في عمود agreedToTerms بصف الملف)؛ نوافذ التواصل لاحقاً تذكّر به فقط ولا تُسجّل شيئاً في الشيت. -->
+                <div class="flex items-start gap-3 bg-amber-50 p-3.5 rounded-xl border-2 border-amber-300">
+                    <input type="checkbox" id="agreeTerms" required class="mt-1 w-6 h-6 shrink-0 text-indigo-600 rounded border-gray-300 accent-indigo-600 cursor-pointer">
+                    <label for="agreeTerms" id="agreeTermsLabel" class="text-[13px] font-black text-gray-900 cursor-pointer leading-loose">أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بصحة بياناتي وجديّتي، وبالتزامي بالرسوم المبيّنة أعلاه عند استحقاقها، وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة أمام الجهات المعنية.</label>
                 </div>
-                
-                <div id="modalError" class="hidden text-red-600 text-[10px] font-bold text-center bg-red-50 p-2 rounded-lg border border-red-200">يرجى الموافقة على التعهد للمتابعة.</div>
+
+                <div id="modalError" class="hidden text-red-600 text-xs font-black text-center bg-red-50 p-2.5 rounded-lg border border-red-200">يرجى الموافقة على التعهد للمتابعة.</div>
             </div>
 
             <div class="bg-gray-50 px-4 py-2.5 flex justify-between gap-2 border-t border-gray-200">
@@ -1771,12 +1772,33 @@ function closeTermsModal() {
                 pointsNote = `<div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl mt-2 text-emerald-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">🎁 احصل على نقاط ترحيبية مجانية (لأول ملف يتم تسجيله في حسابك).</p></div>`;
             }
 
-            if(isMale) { 
-                const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false; 
-                container.innerHTML = (isSpecial ? `<div class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 shadow-sm"><h3 class="font-bold text-[10px] leading-relaxed">⚠️ مسار خاص: باقة ${platformFees.menSpecialAdvance} ريال تشمل ${platformFees.packageContacts} أرقام تواصل مباشر و${platformFees.packagePoints} نقطة، + ${platformFees.menMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>` : `<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 shadow-sm"><h3 class="font-bold text-[10px] leading-relaxed">📌 مسار معلن: رسوم التواصل المباشر ${platformFees.directFee} ريال مع امرأة (زواج معلن)، و${platformFees.directFeeSpecialWomen} ريال مع امرأة (ظروف خاصة / مسيار)، + ${platformFees.menMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>`) + pointsNote;
-            } else { 
-                container.innerHTML = `<div class="bg-pink-50 border border-pink-200 p-3 rounded-xl text-pink-900 shadow-sm"><h3 class="font-bold text-[10px]">📌 التسجيل مجاني، و ${platformFees.womenMatch} ريال رسوم الزواج بعد الملكة مباشرة.</h3></div>` + pointsNote; 
+            // 🟢 [2026-10-07] الرسوم بخط كبير وواضح في بطاقات منفصلة (رسوم التواصل المباشر / رسوم التوفيق بعد الملكة)، ثم التعهد الرسمي أسفلها.
+            // الأرقام من platformFees (الشيت عبر getPublicConfig). نص التعهد يتبدّل بجنس المسجّل، وما يُحفظ في الشيت يبنيه buildPledgeRecord().
+            const feeCard = (title, value, sub, tone) => `<div class="bg-${tone}-50 border-2 border-${tone}-200 p-3 rounded-xl shadow-sm text-center"><div class="text-xs font-black text-${tone}-800 mb-1">${title}</div><div class="text-2xl font-black text-${tone}-900 leading-tight">${value}</div><div class="text-[11px] font-bold text-${tone}-700 mt-1 leading-relaxed">${sub}</div></div>`;
+            const lbl = document.getElementById('agreeTermsLabel');
+            if (lbl) lbl.innerText = isMale
+                ? 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بصحة بياناتي وجديّتي، وبأنني غير متلاعب ولا متحايل، وبالتزامي بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة أمام الجهات المعنية.'
+                : 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بصحة بياناتي وجديّتي، وبأنني غير متلاعبة ولا متحايلة، وبالتزامي بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة أمام الجهات المعنية.';
+
+            if(isMale) {
+                const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false;
+                const cards = isSpecial
+                    ? feeCard('باقة المسار الخاص', `${platformFees.menSpecialAdvance} ريال`, `تشمل ${platformFees.packageContacts} أرقام تواصل مباشر و${platformFees.packagePoints} نقطة`, 'amber')
+                    : feeCard('رسوم التواصل المباشر', `${platformFees.directFee} ريال`, `مع امرأة زواج معلن، و${platformFees.directFeeSpecialWomen} ريال مع امرأة ظروف خاصة / مسيار`, 'amber');
+                container.innerHTML = `<div class="space-y-2">${cards}${feeCard('رسوم التوفيق بعد الملكة', `${platformFees.menMatch} ريال`, 'تُستحق عند إتمام الزواج بتوفيق الله', 'rose')}</div>` + pointsNote;
+            } else {
+                container.innerHTML = `<div class="space-y-2">${feeCard('التسجيل', 'مجاني', 'ولا رسوم عليكِ للتواصل المباشر', 'emerald')}${feeCard('رسوم التوفيق بعد الملكة', `${platformFees.womenMatch} ريال`, 'تُستحق عند إتمام الزواج بتوفيق الله', 'rose')}</div>` + pointsNote;
             }
+        }
+
+        // 🟢 نص موافقة التسجيل المحفوظ في عمود agreedToTerms بصف الملف (هو السجل الوحيد لتعهد الرسوم؛ لا عمود ولا ورقة أخرى).
+        // يبدأ بـ"نعم موافق" كما كان، ثم الأرقام التي رآها المسجِّل وقت الاعتماد والتاريخ.
+        function buildPledgeRecord(isSpecialMan) {
+            const d = new Date().toISOString().slice(0, 10);
+            const feesTxt = isMale
+                ? (isSpecialMan ? `باقة ${platformFees.menSpecialAdvance} + توفيق ${platformFees.menMatch}` : `تواصل مباشر ${platformFees.directFee}/${platformFees.directFeeSpecialWomen} + توفيق ${platformFees.menMatch}`)
+                : `توفيق ${platformFees.womenMatch}`;
+            return `نعم موافق | تعهد رسمي بالرسوم: ${feesTxt} ريال | ${d}`;
         }
 
         function renderSmartTags() {
@@ -2589,7 +2611,7 @@ function closeTermsModal() {
                     acceptMarried: !isMale ? getV('acceptMarried') : "", monthlyIncome: isMale ? getV('monthlyIncome') : "",
                     fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? `${platformFees.menSpecialAdvance} باقة + ${platformFees.menMatch} توفيق` : `${platformFees.directFee} / ${platformFees.directFeeSpecialWomen} تواصل مباشر + ${platformFees.menMatch} توفيق`) : `${platformFees.womenMatch} توفيق`,
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
-                    howHeard: getV('howHeard'), agreedToTerms: "نعم موافق", autoBio: "#طلب_زواج_جديد" 
+                    howHeard: getV('howHeard'), agreedToTerms: buildPledgeRecord(isMale && getV('menMarriageType') === "زواج باشتراطات خاصة"), autoBio: "#طلب_زواج_جديد" 
                 };
 
                 if (!isAdminMode) {

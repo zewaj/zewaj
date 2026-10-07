@@ -2096,5 +2096,23 @@
             }
         }
     </script>
+<script>
+// 🟢 [2026-10-07] ملاحظة تعليمية للنساء فقط (نسخة مكررة في smart.html: عدّلهما معاً): طلب المرأة للتواصل يصل الرجلَ باسم الموقع كترشيح منّا
+// (انظر handleRequestContact في الخادم) فلا حرج عليها في المبادرة. تُغلق بزر "فهمت" ولا تعود (localStorage.women_initiative_note_seen).
+(function () {
+    try {
+        var g = localStorage.getItem('verified_user_gender') || '';
+        var isWoman = g.indexOf('أنثى') !== -1 || g.indexOf('نساء') !== -1 || g.indexOf('امرأة') !== -1 || g.indexOf('بنت') !== -1;
+        if (!isWoman || localStorage.getItem('women_initiative_note_seen') === '1') return;
+        var bar = document.createElement('div');
+        bar.id = 'womenInitiativeNote';
+        bar.setAttribute('dir', 'rtl');
+        bar.style.cssText = 'display:flex;gap:10px;align-items:flex-start;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:14px;padding:10px 12px;margin:8px 10px;font-size:12px;line-height:1.8;color:#065f46;font-weight:700;position:relative;z-index:5;flex-shrink:0';
+        bar.innerHTML = '<span style="font-size:20px;line-height:1.4">💚</span><div style="flex:1"><b style="font-weight:900">لا حرج عليكِ في المبادرة.</b> عند طلبك التواصل مع أي رجل يصله الطلب باسم الموقع كترشيح منّا، فلا يظهر أنكِ من بادرتِ.</div><button type="button" style="background:#fff;color:#047857;border:1px solid #6ee7b7;border-radius:10px;padding:3px 10px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">فهمت</button>';
+        bar.querySelector('button').onclick = function () { try { localStorage.setItem('women_initiative_note_seen', '1'); } catch (e) {} bar.remove(); };
+        document.body.insertBefore(bar, document.body.firstChild);
+    } catch (e) {}
+})();
+</script>
 </body>
 </html>

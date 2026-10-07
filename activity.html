@@ -173,7 +173,7 @@
 <!-- ✂️ ---------- [ القسم رقم 11 ]: نافذة إرسال رسالة / تعديل (Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="replyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4 fade-in">
-        <div id="replyModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-hidden">
+        <div id="replyModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-x-hidden overflow-y-auto max-h-[92dvh]">
             <div id="replyModalHeaderBg" class="absolute top-0 left-0 right-0 h-16 bg-indigo-50 border-b border-indigo-100 -z-10"></div>
             <button type="button" onclick="closeReplyModal()" class="absolute top-3 left-3 text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -200,14 +200,14 @@
 <!-- ✂️ ---------- [ القسم رقم 12 ]: نافذة تأكيد الإجراء (Confirm Action Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="confirmActionModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 fade-in">
-        <div id="confirmActionBox" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center relative">
+        <div id="confirmActionBox" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center relative max-h-[92dvh] overflow-y-auto">
             <div class="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
             <h3 class="text-lg font-bold text-slate-800 mb-2">تأكيد الإجراء</h3>
             <p id="confirmActionText" class="text-xs text-slate-600 mb-6 leading-relaxed font-medium whitespace-pre-wrap">جاري الحساب...</p>
-            <div class="flex gap-2">
-                <button type="button" onclick="executeConfirmAction()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">نعم، متأكد</button>
+            <div class="flex gap-2 sticky bottom-0 bg-white pt-2">
+                <button type="button" id="confirmActionYesBtn" onclick="executeConfirmAction()" class="flex-[1.6] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">نعم، متأكد</button>
                 <button type="button" onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">تراجع</button>
             </div>
         </div>
@@ -1133,7 +1133,10 @@
             
             const msgInput = document.getElementById('replyMessage');
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
-            
+            // نظّف بقايا نافذة التعهد (موافقة تبادل الأرقام) وأعد نص الزر الافتراضي قبل بناء النافذة الجديدة
+            const oldPledge = document.getElementById('replyPledgeBox'); if (oldPledge) oldPledge.remove();
+            const subBtn0 = document.getElementById('replySubmitBtn'); if (subBtn0) subBtn0.innerHTML = '<span>تأكيد الإرسال</span>';
+
             let radioContainer = document.getElementById('rejectionRadios');
             if (!radioContainer) {
                 radioContainer = document.createElement('div');
@@ -1156,6 +1159,12 @@
                 msgInput.readOnly = true;
                 msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
                 if (radioContainer) radioContainer.style.display = 'none';
+                // 🟢 [2026-10-07] تنبيه رسوم التوفيق + التعهد قبل موافقة المرأة (يُحذف عند فتح أي نوع رد آخر، انظر بداية الدالة)
+                const pb = document.createElement('div'); pb.id = 'replyPledgeBox'; pb.className = 'mb-4';
+                pb.innerHTML = buildFeePledgeHtml(false);
+                msgInput.parentNode.insertBefore(pb, msgInput.nextSibling);
+                const subBtn = document.getElementById('replySubmitBtn'); if (subBtn) subBtn.innerHTML = '<span>أتعهد وأوافق على التبادل</span>';
+                setTimeout(() => { const rb = document.getElementById('replyModalBox'); if (rb) rb.style.marginTop = '0px'; }, 0);
             } else if (outcomeReply) {
                 // 🟢 نافذة الزواج / تأكيد الإنهاء / تأكيد الزواج (نصوص ثابتة تطابق ما يسجله الخادم)
                 msgInput.style.display = 'block';
@@ -1221,36 +1230,14 @@
             // (التواصل المباشر جزء من مراسلة قائمة أصلاً، فلا يُمنع صاحب "قيد المراجعة" منه؛ أما الطلبات الجديدة فمنعها في القشرة والخادم)
             window.lastInteractedReqId = reqId;
 
-            let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config')) || {}; } catch(e){}
-            const FEE_NORMAL = config.DIRECT_CONTACT_FEE !== undefined ? config.DIRECT_CONTACT_FEE : 150;
-            const FEE_SPECIAL_WOMAN = config.DIRECT_FEE_SPECIAL_WOMEN !== undefined ? config.DIRECT_FEE_SPECIAL_WOMEN : 250;
-            const FEE_SPECIAL_MAN = config.DIRECT_FEE_MEN_SPECIAL !== undefined ? config.DIRECT_FEE_MEN_SPECIAL : 0;
-            // رسوم زواج الرجل (بعد الملكة) من الشيت: FEE_MEN_MATCH، وتنطبق على كل الرجال حتى أصحاب باقة الاشتراطات الخاصة
-            const FEE_MATCH_MAN = config.FEE_MEN_MATCH !== undefined ? config.FEE_MEN_MATCH : 3000;
-
-            // الرسم الفعلي من استحقاقات الرجل (باقاته) لا من نوع زواجه المسجَّل: تواصل مجاني ← 0، باقة الاشتراطات الخاصة ← رسمها الخفيض، غيره ← بحسب المرأة
-            const freeExternalLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
-            const hasSpecialPackage = localStorage.getItem('cached_special_package') === '1';
+            // 🟢 [2026-10-07] بدل صندوق الرسم النابض: بطاقتا الرسوم (التواصل المباشر + التوفيق، من الشيت) ثم التعهد الرسمي، ولا يُرسل الطلب قبل اختيار التعهد.
+            // (الحساب نفسه: تواصل مجاني ← 0، باقة الاشتراطات الخاصة ← DIRECT_FEE_MEN_SPECIAL، غيره ← بحسب ملف المرأة؛ داخل buildFeePledgeHtml)
             const isTargetSpecial = (targetMarriageType || '').includes('ظروف') || (targetMarriageType || '').includes('خاص');
 
-            let finalFee = isTargetSpecial ? FEE_SPECIAL_WOMAN : FEE_NORMAL;
-            if (hasSpecialPackage) finalFee = FEE_SPECIAL_MAN;
-            const isFreeContact = freeExternalLeft > 0;
-            if (isFreeContact) finalFee = 0;
-
-            const matchFeeHtml = Number(FEE_MATCH_MAN) > 0
-                ? `<p class="text-[10px] text-slate-500 font-medium mt-2 underline decoration-dotted underline-offset-4">وبعد الملكة (إتمام الزواج) تُستحق رسوم التوفيق: ${FEE_MATCH_MAN} ريال</p>`
-                : '';
-
             const textEl = document.getElementById('confirmActionText');
-            // إبراز الرسوم لتكون واضحة وتنبض بالأحمر
-            if (finalFee === 0) {
-                textEl.innerHTML = isFreeContact
-                    ? `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">🎁 هذا التواصل مجاني من باقتك (0 ريال)، ويُخصم من تواصلاتك المجانية عند موافقة الطرف الآخر. المتبقي لديك: ${freeExternalLeft}</strong>${matchFeeHtml}`
-                    : `تأكيد الإجراء<br><br><strong class="text-emerald-600 block bg-emerald-50 p-2 rounded-lg mt-2">هذا الإجراء مجاني تماماً ومشمول في باقتك (0 ريال).</strong>${matchFeeHtml}`;
-            } else {
-                textEl.innerHTML = `تأكيد الإجراء<br><br><div class="bg-rose-50 border border-rose-200 p-3 rounded-lg mt-2 shadow-sm animate-pulse"><p class="text-xs font-bold text-slate-700 mb-1">في حال موافقة الطرف الآخر، توجد رسوم إدارية قدرها:</p><strong class="text-rose-600 text-lg block">(${finalFee} ريال)</strong>${matchFeeHtml}</div>`;
-            }
+            textEl.innerHTML = '<div class="text-sm font-black text-slate-800 text-center mb-1">طلب تواصل مباشر وتبادل أرقام</div>' + buildFeePledgeHtml(isTargetSpecial);
+            window.pledgeRequired = true;
+            const yesBtn = document.getElementById('confirmActionYesBtn'); if (yesBtn) yesBtn.innerText = 'أتعهد وأطلب التواصل';
 
             // "نعم، متأكد" تُرسل الطلب مباشرة (المعالج يُخزَّن هنا ولا يُستبدل بدالة عامة كي لا تتداخل مع نافذة إلغاء الانتظار)
             window.pendingConfirmAction = function() { window.sendDirectContactRequest(reqId); };
@@ -1284,9 +1271,93 @@
             window.processPendingAction(actionId);
         };
 
-        function closeConfirmModal() { window.pendingConfirmAction = null; document.getElementById('confirmActionModal').classList.add('hidden'); }
+        function closeConfirmModal() {
+            window.pendingConfirmAction = null; window.pledgeRequired = false;
+            const yb = document.getElementById('confirmActionYesBtn'); if (yb) yb.innerText = 'نعم، متأكد'; // يُعاد نص الزر الافتراضي بعد نافذة التعهد
+            document.getElementById('confirmActionModal').classList.add('hidden');
+        }
         // زر "نعم، متأكد": ينفّذ المعالج المخزَّن في pendingConfirmAction (تواصل مباشر أو إلغاء انتظار)
-        function executeConfirmAction() { const fn = window.pendingConfirmAction; closeConfirmModal(); if (typeof fn === 'function') fn(); }
+        // 🟢 حين تكون النافذة نافذة تعهد الرسوم (pledgeRequired) لا يُنفَّذ شيء ولا تُغلق قبل اختيار مربع التعهد
+        function executeConfirmAction() {
+            if (window.pledgeRequired && !ensureFeePledge()) return;
+            const fn = window.pendingConfirmAction; closeConfirmModal(); if (typeof fn === 'function') fn();
+        }
+
+        // 🟢 [2026-10-07] تنبيه الرسوم + التعهد (نسخة من index.html: عدّلهما معاً). يُستعمل هنا في (1) طلب الرجل للتواصل المباشر داخل المراسلات
+        // و(2) موافقة المرأة على تبادل الأرقام. الأرقام من الشيت عبر platform_config. هذه النوافذ تذكّر بالتعهد فقط ولا تُسجّل شيئاً في الشيت (السجل الوحيد هو تعهد صفحة التسجيل في agreedToTerms).
+        const FEE_PLEDGE_TEXT_MAN = 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بأنني صادق في بياناتي وطلبي، غير متلاعب ولا متحايل، وبأنني ملتزم بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وبعدم تجاوز المنصة في التواصل مع الطرف الآخر. وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة، وأقبل مساءلتي عنها أمام الجهات المعنية.';
+        const FEE_PLEDGE_TEXT_WOMAN = 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بأنني صادقة في بياناتي وطلبي، غير متلاعبة ولا متحايلة، وبأنني ملتزمة بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وبعدم تجاوز المنصة في التواصل مع الطرف الآخر. وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة، وأقبل مساءلتي عنها أمام الجهات المعنية.';
+
+        function buildFeePledgeHtml(isTargetSpecial) {
+            let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+            const myGender = localStorage.getItem('verified_user_gender') || '';
+            const isMan = myGender.includes('رجل') || myGender.includes('ذكر') || myGender.includes('رجال');
+            const num = (v, d) => (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) ? Number(v) : d;
+            const baseFee = isTargetSpecial ? num(config.DIRECT_FEE_SPECIAL_WOMEN, 250) : num(config.DIRECT_CONTACT_FEE, 150);
+            const specialPkgFee = num(config.DIRECT_FEE_MEN_SPECIAL, 0);
+            const matchFee = isMan ? num(config.FEE_MEN_MATCH, 3000) : num(config.FEE_WOMEN_MATCH, 2000);
+            const freeLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
+            const hasSpecialPkg = localStorage.getItem('cached_special_package') === '1';
+
+            let directValue, directSub;
+            if (!isMan) {
+                directValue = '<b class="text-emerald-600 text-base">بدون رسوم عليكِ</b>';
+                directSub = 'التواصل المباشر وتبادل الأرقام لا رسوم فيه عليكِ.';
+            } else if (freeLeft > 0) {
+                directValue = `<span class="line-through text-slate-400 ml-2 text-xs">${baseFee} ريال</span><b class="text-emerald-600 text-sm">مجاني من باقتك (متبقٍ ${freeLeft})</b>`;
+                directSub = 'ويُخصم من تواصلاتك المجانية عند موافقة الطرف الآخر.';
+            } else if (hasSpecialPkg) {
+                directValue = `<span class="line-through text-slate-400 ml-2 text-xs">${baseFee} ريال</span><b class="text-emerald-600 text-sm">${specialPkgFee} ريال (مشمول باشتراكك)</b>`;
+                directSub = 'تُستحق في حال موافقة الطرف الآخر وقبل استلام الرقم.';
+            } else {
+                directValue = `<b class="text-rose-600 text-lg">${baseFee} ريال</b>`;
+                directSub = 'تُستحق في حال موافقة الطرف الآخر وقبل استلام الرقم، ' + (isTargetSpecial ? 'ولأن ملف هذا الطرف «زواج بظروف خاصة».' : 'بحسب بيانات هذا الطرف.');
+            }
+
+            const matchRow = matchFee > 0 ? `
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2 text-right">
+                    <div class="text-[11px] font-black text-amber-800">رسوم التوفيق</div>
+                    <div class="my-0.5"><b class="text-rose-600 text-lg">${matchFee} ريال</b></div>
+                    <div class="text-[10px] font-medium text-slate-600 leading-relaxed">تُستحق عند إتمام الزواج بتوفيق الله${(isMan && freeLeft > 0) ? '، ولو كان تواصلك المباشر مجانياً من الباقة' : ''}.</div>
+                </div>` : '';
+
+            // (تُحشر النتيجة بلا فراغات لأن #confirmActionText يستعمل whitespace-pre-wrap فكانت أسطر القالب ستظهر فراغات)
+            return `
+                <div id="feePledgeBlock" class="mt-3 text-right">
+                    <div class="text-xs font-black text-amber-800 mb-2">⚠️ رسوم تأتي لاحقاً، اطّلع عليها قبل المتابعة</div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2 text-right">
+                        <div class="text-[11px] font-black text-amber-800">رسوم التواصل المباشر</div>
+                        <div class="my-0.5">${directValue}</div>
+                        <div class="text-[10px] font-medium text-slate-600 leading-relaxed">${directSub}</div>
+                    </div>
+                    ${matchRow}
+                    <label id="feePledgeBox" class="flex items-start gap-2.5 p-3 rounded-xl border-2 border-slate-300 bg-white cursor-pointer mt-3 text-right transition-colors">
+                        <input type="checkbox" id="feePledgeChk" onchange="onFeePledgeToggle()" class="mt-1 w-5 h-5 accent-emerald-600 shrink-0">
+                        <span class="text-[11px] leading-relaxed font-bold text-slate-700">${isMan ? FEE_PLEDGE_TEXT_MAN : FEE_PLEDGE_TEXT_WOMAN}</span>
+                    </label>
+                    <p id="feePledgeErr" class="hidden text-[11px] font-bold text-rose-600 mt-1.5 text-right">اختر التعهد أولاً لمتابعة الإرسال.</p>
+                </div>`.replace(/\n\s*/g, '');
+        }
+
+        function onFeePledgeToggle() {
+            const chk = document.getElementById('feePledgeChk'); const box = document.getElementById('feePledgeBox'); const err = document.getElementById('feePledgeErr');
+            if (err) err.classList.add('hidden');
+            if (box && chk) {
+                box.classList.toggle('border-emerald-500', chk.checked); box.classList.toggle('bg-emerald-50', chk.checked);
+                box.classList.toggle('border-slate-300', !chk.checked); box.classList.remove('border-rose-400', 'bg-rose-50');
+                if (!chk.checked) box.classList.add('bg-white');
+            }
+        }
+
+        function ensureFeePledge() {
+            const chk = document.getElementById('feePledgeChk');
+            if (!chk) return true;
+            if (chk.checked) return true;
+            const box = document.getElementById('feePledgeBox'); const err = document.getElementById('feePledgeErr');
+            if (err) err.classList.remove('hidden');
+            if (box) { box.classList.remove('border-slate-300', 'bg-white'); box.classList.add('border-rose-400', 'bg-rose-50'); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            return false;
+        }
 
         let currentReplyReqId = null; let currentReplyType = null;
         
@@ -1427,6 +1498,8 @@
         async function submitReply() {
             if (window.isSubmittingAction) return;
             if (!phoneParam || !currentReplyReqId) return;
+            // 🟢 موافقة المرأة على تبادل الأرقام: لا تُرسل قبل اختيار مربع التعهد
+            if (currentReplyType === 'موافقة تبادل أرقام' && !ensureFeePledge()) return;
 
             let req = window.myReqsDataStore[currentReplyReqId] || window.myIncomingReqsDataStore[currentReplyReqId];
             if (req) {
