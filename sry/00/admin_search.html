@@ -275,9 +275,12 @@
             return map[s] || map['نشط'];
         }
 
-        async function apiCall(payload, retries = 2) {
+        // timeoutMs: الحذف والحظر يقرآن الورقتين وورقة الطلبات كاملة ويرسلان واتساب، فيتجاوزان 20 ثانية أحياناً (كان الإجراء يتم في الخادم
+        // والواجهة تعرض "تأخر السيرفر"). تُمرَّر لهما مهلة أطول (SLOW_ACTION_TIMEOUT) بمحاولة إعادة واحدة.
+        const SLOW_ACTION_TIMEOUT = 75000;
+        async function apiCall(payload, retries = 2, timeoutMs = 20000) {
             for (let attempt = 0; attempt <= retries; attempt++) {
-                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 20000);
+                const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 try {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow', signal: controller.signal });
                     clearTimeout(timeoutId); if (!res.ok) throw new Error(`خطأ سيرفر: ${res.status}`);
@@ -785,7 +788,7 @@
             const notifyDelete = newStatus === 'محذوف' && !!(notifyEl && notifyEl.checked);
             setBtnLoading(btnElement, true, '');
             try {
-                const delRes = await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, notify: notifyDelete, adminToken: state.adminToken });
+                const delRes = await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, notify: notifyDelete, adminToken: state.adminToken }, 1, newStatus === 'محذوف' ? SLOW_ACTION_TIMEOUT : 20000);
                 showToast((newStatus === 'محذوف' && delRes && delRes.message) ? delRes.message : `تم تغيير الحالة إلى: ${newStatus}`);
                 const profile = state.searchResults.find(p => p.refId === refId);
                 if (profile) profile.profileStatus = newStatus;
@@ -805,7 +808,7 @@
         window.actionBanAccount = async function(refId) {
             openModal('حظر الحساب', '<div class="py-10 flex justify-center"><div class="loader border-rose-600 border-t-transparent w-8 h-8 border-4"></div></div>', '', 'p-4 w-full');
             try {
-                const info = await apiCall({ action: 'adminGetBanInfo', refId: refId, adminToken: state.adminToken });
+                const info = await apiCall({ action: 'adminGetBanInfo', refId: refId, adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
                 window.banState = info;
                 const head = `<p class="text-xs font-black text-slate-800 mb-1 text-center">الجوال <span class="font-mono dir-ltr">${escPkg(info.phone)}</span></p><p class="text-[11px] font-bold text-slate-500 mb-3 text-center">${escPkg(info.summary || ('ملف #' + info.refId))}</p>`;
                 const past = info.pastBans ? `<p class="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mb-3 text-center">سبق حظر هذا الحساب ${info.pastBans} مرة ثم رُفع</p>` : '';
@@ -858,7 +861,7 @@
             setBtnLoading(btn, true, '');
             try {
                 const opId = 'ban_' + Date.now() + '_' + Math.floor(Math.random() * 100000); // يمنع تكرار الحظر والرسالة عند إعادة apiCall للمحاولة
-                const res = await apiCall({ action: 'adminBanAccount', refId: info.refId, reason: document.getElementById('ban-reason').value.trim(), condType: condType, packageId: packageId, condText: condText, notify: document.getElementById('ban-notify').checked, opId: opId, adminToken: state.adminToken });
+                const res = await apiCall({ action: 'adminBanAccount', refId: info.refId, reason: document.getElementById('ban-reason').value.trim(), condType: condType, packageId: packageId, condText: condText, notify: document.getElementById('ban-notify').checked, opId: opId, adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
                 showToast(res.message || 'تم حظر الحساب');
                 const pkg = (info.packages || []).find(p => p.id === packageId);
                 markPhoneBanState(info.phone, true, condType === 'package' && pkg ? ('الاشتراك في ' + pkg.name) : condText);
@@ -872,7 +875,7 @@
             const noteEl = document.getElementById('unban-note'); const notifyEl = document.getElementById('unban-notify');
             setBtnLoading(btn, true, '');
             try {
-                const res = await apiCall({ action: 'adminUnbanAccount', phone: phone, note: noteEl ? noteEl.value.trim() : '', notify: notifyEl ? notifyEl.checked : true, adminToken: state.adminToken });
+                const res = await apiCall({ action: 'adminUnbanAccount', phone: phone, note: noteEl ? noteEl.value.trim() : '', notify: notifyEl ? notifyEl.checked : true, adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
                 showToast(res.message || 'تم رفع الحظر');
                 markPhoneBanState(phone, false, '');
                 if (phoneOverride) window.openBansList(); else closeModal();
@@ -883,7 +886,7 @@
         window.openBansList = async function() {
             openModal('الحسابات المحظورة', '<div class="py-10 flex justify-center"><div class="loader border-rose-600 border-t-transparent w-8 h-8 border-4"></div></div>', '', 'p-4 w-full');
             try {
-                const res = await apiCall({ action: 'adminGetBans', adminToken: state.adminToken });
+                const res = await apiCall({ action: 'adminGetBans', adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
                 const active = res.active || []; const lifted = res.lifted || [];
                 const card = b => `
                     <div class="bg-white border border-rose-200 rounded-2xl p-3 shadow-sm">
