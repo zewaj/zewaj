@@ -1924,8 +1924,13 @@ function closeTermsModal() {
                             processUrlActions(); 
                         }
                     } catch(renderErr) { console.error("خطأ أثناء بناء الواجهة:", renderErr); }
+                } else if (result.banned) {
+                    // 🟢 حساب محظور (رقم الجوال بكل ملفاته): لا تُعرض الملفات ولا نموذج التسجيل. داخل القشرة تتولى index شاشة الإيقاف وشرط العودة.
+                    if(dashboardContent) dashboardContent.classList.add('hidden');
+                    if (window.self !== window.top) window.parent.postMessage({ action: 'accountBanned', banInfo: result.banInfo }, '*');
+                    else showMsgModal("حسابكم موقوف", result.message);
                 } else {
-                    if(result.message === "لم يتم العثور على أي ملفات") { cachedProfiles = []; showMainForm(); } 
+                    if(result.message === "لم يتم العثور على أي ملفات") { cachedProfiles = []; showMainForm(); }
                     else { if (retryCount === 0) showMsgModal("خطأ", result.message); if (cachedProfiles.length === 0) logout(); }
                 }
                 isDashboardLoading = false;

@@ -684,6 +684,25 @@
         </div>
     </div>
 
+    <!-- 🟢 شاشة إيقاف الحساب (حظر مشروط): تغطي المنصة كلها عدا نافذة الباقات، حتى يستوفي العميل شرط العودة -->
+    <div id="banOverlay" class="fixed inset-0 z-[205] hidden items-center justify-center bg-slate-900/80 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3">
+            <div class="text-4xl">🚫</div>
+            <h3 class="text-lg font-black text-slate-800">حسابكم موقوف</h3>
+            <p class="text-sm text-slate-600 font-bold leading-relaxed">تم إيقاف حسابكم في المنصة لعدم الالتزام بشروط المنصة والتعهد.</p>
+            <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3">
+                <p class="text-[11px] font-bold text-rose-600 mb-1">لإعادة تفعيل الحساب يلزم:</p>
+                <p id="banCondText" class="text-sm font-black text-rose-700 leading-relaxed"></p>
+            </div>
+            <button type="button" id="banPackagesBtn" onclick="openBanPackages()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md">💎 الاشتراك في الباقة المطلوبة</button>
+            <a id="banWhatsappLink" href="https://wa.me/966590779236" target="_blank" rel="noopener" class="block w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md">التواصل مع الوسيط عبر واتساب</a>
+            <div class="flex gap-2">
+                <button type="button" id="banRecheckBtn" onclick="recheckBan()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200">تم السداد؟ تحديث الحالة</button>
+                <button type="button" onclick="logout()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200">تسجيل الخروج</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 🟢 نافذة الباقات المنبثقة: تُفتح فوق الصفحة الحالية فلا يغادر العميل بحثه، ويعود إليه بإغلاقها -->
     <div id="packagesModal" class="fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 sm:px-4" onclick="if(event.target===this) closePackagesModal()">
         <div class="bg-slate-50 w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden transform translate-y-6 transition-transform duration-300" style="height:90vh;max-height:90dvh;">
@@ -926,6 +945,13 @@
                 return;
             }
 
+            // 🟢 حساب محظور اكتشفته صفحة فرعية (register عند الدخول، activity عند أي إجراء): القشرة تعرض شاشة الإيقاف وشرط العودة
+            if (data.action === 'accountBanned') {
+                const banFr = document.getElementById('appIframe');
+                if (banFr && event.source === banFr.contentWindow) showBanScreen(data.banInfo);
+                return;
+            }
+
             if (data.type === 'openProfileModal') {
                 // 🟢 window.lastOpenedProfileData تُضبط الآن مركزياً داخل openProfileModal نفسها (تغطي أيضاً الفتح المباشر من بطاقات الرئيسية)
                 if (typeof openProfileModal === 'function') {
@@ -1056,6 +1082,8 @@
                 const parsed = JSON.parse(text);
                 // 🟢 الملف المحذوف: الخادم يرفض أي إجراء ويطلب الإخراج، فنُخرج العضو بالقوة ولو كانت جلسته محفوظة في المتصفح
                 if (parsed && parsed.forceLogout) forceLogoutNow(parsed.message);
+                // 🟢 الحساب المحظور: الخادم يرفض كل إجراء عدا الباقات، فنعرض شاشة الإيقاف وشرط العودة (بلا مسح الجلسة ليتمكن من طلب الباقة)
+                if (parsed && parsed.banned) showBanScreen(parsed.banInfo);
                 return parsed;
             } catch (error) {
                 clearTimeout(timeoutId);
@@ -1562,6 +1590,32 @@
             logout();
         }
 
+        // 🟢 شاشة إيقاف الحساب (حظر مشروط على رقم الجوال بكل ملفاته): تغطي المنصة عدا نافذة الباقات. info = banInfo من الخادم.
+        function showBanScreen(info) {
+            const o = document.getElementById('banOverlay');
+            if (!o) return;
+            window.__banInfo = info || {};
+            document.getElementById('banCondText').textContent = window.__banInfo.condText || 'التواصل مع الوسيط لتسوية المستحقات';
+            document.getElementById('banPackagesBtn').style.display = (window.__banInfo.condType === 'package') ? 'block' : 'none';
+            document.getElementById('banWhatsappLink').href = 'https://wa.me/' + String(window.__banInfo.mediatorPhone || '966590779236').replace(/[^0-9]/g, '');
+            o.classList.remove('hidden'); o.classList.add('flex');
+        }
+
+        // الباقة تُطلب على الملف المخالف (صاحب الشرط) أياً كان فرد الأسرة الذي يضغط، وتفعيلها يرفع الحظر عن كل ملفات الجوال
+        function openBanPackages() {
+            openPackagesModal('ban', 0, (window.__banInfo && window.__banInfo.refId) || '');
+        }
+
+        async function recheckBan() {
+            const btn = document.getElementById('banRecheckBtn');
+            const original = btn.innerText; btn.innerText = 'جاري التحقق...'; btn.disabled = true;
+            const res = await fetchFromGAS({ action: 'getProfileStatus', phone: localStorage.getItem('verified_user_phone') || '', requesterRefId: localStorage.getItem('active_profile_refid') || '' });
+            btn.innerText = original; btn.disabled = false;
+            if (res && res.banned) { showToast('الحساب ما زال موقوفاً. يُعاد تفعيله فور تأكيد السداد.'); return; }
+            if (res && res.success) { window.location.reload(); return; }
+            showToast('تعذر التحقق الآن، حاول بعد قليل.');
+        }
+
         // 🟢 فحص دوري خفيف لحالة ملفي: يُخرج العضو الذي حُذف ملفه وهو ما زال فاتحاً الصفحة أو عائداً إليها بعد ساعات.
         // (fetchFromGAS تتولى الإخراج تلقائياً عند رد forceLogout)
         async function checkMyProfileStatus() {
@@ -1695,12 +1749,12 @@
         
         // 🟢 نافذة الباقات المنبثقة: reason = header | nobalance | intro | guest ؛ need = عدد النقاط المطلوبة (لرسالة نقص الرصيد)
         let packagesModalHideTimer;
-        function openPackagesModal(reason, need) {
+        function openPackagesModal(reason, need, refOverride) {
             const m = document.getElementById('packagesModal');
             const fr = document.getElementById('packagesFrame');
             if (!m || !fr) { loadIframe('packages.html'); return; }
             const phone = localStorage.getItem('verified_user_phone') || '';
-            const refId = localStorage.getItem('active_profile_refid') || '';
+            const refId = refOverride || localStorage.getItem('active_profile_refid') || ''; // refOverride: الملف المخالف من شاشة الحظر
             const u = new URL('packages.html', window.location.origin + window.location.pathname);
             u.searchParams.set('embedded', 'true'); u.searchParams.set('modal', '1'); u.searchParams.set('t', Date.now());
             if (phone) u.searchParams.set('phone', phone);
