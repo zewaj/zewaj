@@ -819,7 +819,14 @@
             if (rDel && tDel) return 'ملفا الطرفين محذوفان';
             if (tDel) return 'ملف الطرف الثاني محذوف';
             if (rDel) return 'ملف الطرف الأول محذوف';
+            // 🟢 حساب أحد الطرفين محظور (حظر مشروط على رقم الجوال): المحادثة الجارية تبقى وتُراجَع هنا، والمحظور لا يستطيع الرد حتى يُرفع حظره
+            if (req.requesterBanned && req.targetBanned) return 'حسابا الطرفين محظوران';
+            if (req.targetBanned) return 'حساب الطرف الثاني محظور';
+            if (req.requesterBanned) return 'حساب الطرف الأول محظور';
             return '';
+        }
+        function deletedSideIcon(req) {
+            return (req.requesterProfileStatus === 'محذوف' || req.targetProfileStatus === 'محذوف') ? '🗑️' : '🚫';
         }
 
         function updateDashboardStats() {
@@ -1008,7 +1015,7 @@
                     let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : "مغلق / مؤرشف");
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
                 } else if (deletedSideText(req)) {
-                    statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">🗑️ ${deletedSideText(req)} - راجعها</span>`;
+                    statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">${deletedSideIcon(req)} ${deletedSideText(req)} - راجعها</span>`;
                 } else if (s.includes('يوجد نزاع')) {
                     statusBadge = `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-700 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخلاً</span>`;
                 } else if (s.includes('بانتظار تأكيد')) {
@@ -1095,7 +1102,7 @@
                     let statusBadgeFull = `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded-md border border-amber-200 shrink-0 whitespace-nowrap">جديد / قيد الانتظار</span>`;
                     
                     if (isClosed) statusBadgeFull = `<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md border border-slate-300 shrink-0 whitespace-nowrap">${s}</span>`;
-                    else if (deletedSideText(req)) statusBadgeFull = `<span class="bg-slate-700 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-slate-800 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🗑️ ${deletedSideText(req)} - هذه المحادثة تحتاج مراجعة</span>`;
+                    else if (deletedSideText(req)) statusBadgeFull = `<span class="bg-slate-700 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-slate-800 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${deletedSideIcon(req)} ${deletedSideText(req)} - هذه المحادثة تحتاج مراجعة</span>`;
                     else if (s.includes('يوجد نزاع')) statusBadgeFull = `<span class="bg-rose-600 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-700 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخل الإدارة</span>`;
                     else if (s.includes('بانتظار تأكيد')) statusBadgeFull = `<span class="bg-orange-500 text-white text-[11px] font-extrabold px-3 py-1.5 rounded-lg border border-orange-600 animate-pulse shadow-md flex items-center gap-1.5 shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ أحد الطرفين أبلغ بعدم التوفيق - بانتظار تأكيد الآخر' : '⚠️ أحد الطرفين أبلغ بالزواج - بانتظار تأكيد الآخر'}</span>`;
                     else if (s.includes('مرحلة التعارف')) statusBadgeFull = `<span class="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-1 rounded-md border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف الخارجي</span>`;

@@ -76,6 +76,9 @@
                     <i class="fas fa-gem text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
                     <span id="pkgreq-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow">0</span>
                 </button>
+                <button onclick="openBansList()" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-rose-50 text-slate-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="الحسابات المحظورة">
+                    <i class="fas fa-ban text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
+                </button>
                 <button onclick="document.getElementById('smart-search-input').focus(); window.scrollTo({top: 0, behavior: 'smooth'});" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="الذهاب للبحث">
                     <i class="fas fa-search text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
                 </button>
@@ -578,6 +581,11 @@
                 const currentBalance = p.walletBalance || 0;
                 const walletBadge = `<button onclick="actionUpdateWallet('${p.refId}', ${currentBalance}, ${isMale}, '${displayMarriageType}')" class="bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1.5 shadow-sm shrink-0 transition-colors cursor-pointer group" title="إدارة الرصيد"><i class="far fa-gem text-pink-500 group-hover:scale-110 transition-transform"></i> ${currentBalance}</button>`;
 
+                // 🟢 الحظر على رقم الجوال (كل ملفاته): شارة حمراء للحظر القائم، ورمادية لمن سبق حظره ثم رُفع
+                const banBadge = p.banned
+                    ? `<button onclick="actionBanAccount('${p.refId}')" class="bg-rose-600 hover:bg-rose-700 text-white border border-rose-700 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1 shadow-sm shrink-0" title="${escPkg(p.banCond || '')}"><i class="fas fa-ban"></i> محظور</button>`
+                    : (p.pastBans ? `<span class="bg-slate-100 text-slate-600 border border-slate-300 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1 shadow-sm shrink-0" title="رُفع عنه الحظر سابقاً"><i class="fas fa-history"></i> سبق حظره${p.pastBans > 1 ? ' (' + p.pastBans + ')' : ''}</span>` : '');
+
                 const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
                 const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
                 const base64ShortBio = encodeBase64(decodedShortBio);
@@ -607,6 +615,7 @@
                                 ${statusBadge}
                                 ${marriageTypeBadge}
                                 ${walletBadge}
+                                ${banBadge}
                             </div>
                         </div>
 
@@ -745,6 +754,8 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 //
         window.actionChangeStatus = function(refId) {
+            const statusProfile = state.searchResults.find(p => p.refId === refId);
+            const isBannedNow = !!(statusProfile && statusProfile.banned);
             const html = `
                 <div class="text-center mb-6">
                     <div class="w-10 h-10 bg-slate-50 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-3 text-lg shadow-sm border border-slate-100"><i class="fas fa-sliders-h"></i></div>
@@ -757,22 +768,139 @@
                     <button onclick="submitChangeStatus('${refId}', 'خامل', this)" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-moon mb-1 text-base"></i> خامل</button>
                     <button onclick="submitChangeStatus('${refId}', 'قيد المراجعة', this)" class="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-clock mb-1 text-base"></i> المراجعة</button>
                     <button onclick="submitChangeStatus('${refId}', 'تم الزواج', this)" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center"><i class="fas fa-ring mb-1 text-base"></i> الزواج</button>
-                    <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center col-span-3"><i class="fas fa-trash mb-1 text-base"></i> محذوف</button>
+                    <button onclick="submitChangeStatus('${refId}', 'محذوف', this)" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 py-2.5 rounded-xl font-bold transition-all text-xs shadow-sm flex flex-col items-center col-span-3"><i class="fas fa-trash mb-1 text-base"></i> محذوف (حذف عادي بلا التزامات)</button>
+                    <label class="col-span-3 flex items-center justify-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer"><input type="checkbox" id="delete-notify" checked class="w-4 h-4 accent-red-600"> إرسال رسالة واتساب للعميل بأن ملفه حُذف</label>
+                </div>
+                <div class="pt-4 border-t border-slate-100">
+                    <button onclick="actionBanAccount('${refId}')" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-black transition-all text-xs shadow-sm flex items-center justify-center gap-2"><i class="fas fa-ban text-base"></i> ${isBannedNow ? 'الحساب محظور: عرض الحظر أو رفعه' : 'حظر الحساب (لم يسدّد أو متلاعب، بشرط للعودة)'}</button>
+                    <p class="text-center text-[10px] text-slate-400 font-bold mt-2">الحظر يشمل رقم الجوال بكل ملفاته، ولا يغيّر حالة الملف.</p>
                 </div>
             `;
             openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 w-full');
         };
         
         window.submitChangeStatus = async function(refId, newStatus, btnElement) {
+            // رسالة الحذف للعميل: للحذف الفردي فقط وبحسب خانة الاختيار (تُقرأ قبل أن يغيّر setBtnLoading شيئاً في النافذة)
+            const notifyEl = document.getElementById('delete-notify');
+            const notifyDelete = newStatus === 'محذوف' && !!(notifyEl && notifyEl.checked);
             setBtnLoading(btnElement, true, '');
             try {
-                await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, adminToken: state.adminToken });
-                showToast(`تم تغيير الحالة إلى: ${newStatus}`); 
+                const delRes = await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, notify: notifyDelete, adminToken: state.adminToken });
+                showToast((newStatus === 'محذوف' && delRes && delRes.message) ? delRes.message : `تم تغيير الحالة إلى: ${newStatus}`);
                 const profile = state.searchResults.find(p => p.refId === refId);
                 if (profile) profile.profileStatus = newStatus;
                 closeModal(); 
                 renderResults(); 
             } catch(e) { showToast(e.message, 'error'); } finally { setBtnLoading(btnElement, false); }
+        };
+
+        // 🟢 حظر الحساب المشروط (القسم 29 في الخادم): الحظر على رقم الجوال بكل ملفاته، والشرط (باقة أو نص/مبلغ حر) يُحدَّد هنا لحظة الحظر.
+        // شرط الباقة يُرفع آلياً عند تفعيل تلك الباقة (أو أغلى منها) لأي ملف على نفس الجوال؛ والشرط الحر يُرفع يدوياً من هذه النافذة.
+        function banFamilyHtml(family) {
+            if (!family || !family.length) return '';
+            return `<div class="bg-slate-50 border border-slate-200 rounded-xl p-2 mb-3"><p class="text-[10px] font-black text-slate-500 mb-1">ملفات هذا الجوال (يشملها الحظر كلها):</p>` +
+                family.map(f => `<div class="text-[11px] font-bold text-slate-700 flex justify-between gap-2 py-0.5"><span class="truncate">#${escPkg(f.refId)} ${escPkg(f.relation || '')} · ${escPkg(f.unified || '')}</span><span class="shrink-0 text-slate-400">${escPkg(f.status)}</span></div>`).join('') + `</div>`;
+        }
+
+        window.actionBanAccount = async function(refId) {
+            openModal('حظر الحساب', '<div class="py-10 flex justify-center"><div class="loader border-rose-600 border-t-transparent w-8 h-8 border-4"></div></div>', '', 'p-4 w-full');
+            try {
+                const info = await apiCall({ action: 'adminGetBanInfo', refId: refId, adminToken: state.adminToken });
+                window.banState = info;
+                const head = `<p class="text-xs font-black text-slate-800 mb-1 text-center">الجوال <span class="font-mono dir-ltr">${escPkg(info.phone)}</span></p><p class="text-[11px] font-bold text-slate-500 mb-3 text-center">${escPkg(info.summary || ('ملف #' + info.refId))}</p>`;
+                const past = info.pastBans ? `<p class="text-[11px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mb-3 text-center">سبق حظر هذا الحساب ${info.pastBans} مرة ثم رُفع</p>` : '';
+
+                if (info.ban) {
+                    openModal('الحساب محظور', head + banFamilyHtml(info.family) + `
+                        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-3 text-center">
+                            <p class="text-[10px] font-bold text-rose-500">محظور منذ ${escPkg(info.ban.date)} · الملف المخالف #${escPkg(info.ban.refId)}</p>
+                            <p class="text-xs font-black text-rose-700 mt-1">شرط الرفع: ${escPkg(info.ban.condText)}</p>
+                        </div>
+                        <input type="text" id="unban-note" placeholder="ملاحظة الرفع (مثلاً: سدّد خارج المنصة)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-2">
+                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer mb-1"><input type="checkbox" id="unban-notify" checked class="w-4 h-4 accent-emerald-600"> إرسال رسالة واتساب للعميل بإعادة التفعيل</label>
+                        <p class="text-[10px] text-slate-400 font-bold">إن كان الشرط باقة فتفعيلها من «طلبات الباقات» أو «إضافة باقة» يرفع الحظر تلقائياً، ولا حاجة للرفع اليدوي.</p>`,
+                        `<button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm">إغلاق</button><button onclick="submitUnban(this)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-black text-sm">رفع الحظر يدوياً</button>`, 'p-4 w-full');
+                    return;
+                }
+
+                const pkgOptions = (info.packages || []).map(p => `<option value="${escPkg(p.id)}" ${p.id === info.suggestedPackageId ? 'selected' : ''}>${escPkg(p.name)} (${escPkg(p.price)} ريال)</option>`).join('');
+                openModal('حظر الحساب', head + past + banFamilyHtml(info.family) + `
+                    <label class="block text-[11px] font-black text-slate-700 mb-1">سبب الحظر (داخلي، لا يراه العميل)</label>
+                    <textarea id="ban-reason" rows="2" placeholder="مثلاً: تزوّج ولم يسدّد رسوم التوفيق" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3"></textarea>
+                    <p class="text-[11px] font-black text-slate-700 mb-1">شرط العودة (يظهر للعميل)</p>
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer mb-1"><input type="radio" name="ban-cond" value="package" ${pkgOptions ? 'checked' : 'disabled'} class="w-4 h-4 accent-rose-600"> الاشتراك في باقة ${info.isSpecial ? '<span class="text-[10px] text-purple-600">(اشتراطات خاصة)</span>' : ''}</label>
+                    <select id="ban-package" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3">${pkgOptions}</select>
+                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer mb-1"><input type="radio" name="ban-cond" value="custom" ${pkgOptions ? '' : 'checked'} class="w-4 h-4 accent-rose-600"> شرط آخر أحدده (مبلغ أو مطلوب)</label>
+                    <input type="text" id="ban-custom" placeholder="مثلاً: سداد رسوم التوفيق 3000 ريال" onfocus="document.querySelector('input[name=ban-cond][value=custom]').checked = true" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3">
+                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer"><input type="checkbox" id="ban-notify" checked class="w-4 h-4 accent-rose-600"> إرسال رسالة واتساب للعميل بالحظر وشرط العودة</label>
+                    <p class="text-[10px] text-slate-400 font-bold mt-2 leading-relaxed">الطلبات التي لم يُردّ عليها على ملفاته تُغلق وتُعاد نقاط أصحابها، والمحادثات الجارية تبقى وعليها شارة في لوحة المراسلات. رصيده لا يُمسّ. والباقة تُمنح كاملة عند السداد، ويمكنك تعديلها بعدها من «باقات هذا العميل».</p>`,
+                    `<button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm">إلغاء</button><button onclick="submitBan(this)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-black text-sm">تأكيد الحظر</button>`, 'p-4 w-full');
+            } catch (e) {
+                document.getElementById('modal-body').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-8">تعذر التحميل: ${escPkg(e.message)}</p>`;
+            }
+        };
+
+        function markPhoneBanState(phone, banned, condText) {
+            state.searchResults.forEach(p => {
+                if (String(p.phone || '').replace(/\D/g, '') !== String(phone || '').replace(/\D/g, '')) return;
+                if (!banned && p.banned) p.pastBans = (p.pastBans || 0) + 1;
+                p.banned = banned; p.banCond = banned ? condText : '';
+            });
+        }
+
+        window.submitBan = async function(btn) {
+            const info = window.banState; if (!info) return;
+            const condType = (document.querySelector('input[name=ban-cond]:checked') || {}).value || 'custom';
+            const packageId = document.getElementById('ban-package').value;
+            const condText = document.getElementById('ban-custom').value.trim();
+            if (condType === 'custom' && !condText) return showToast('اكتب شرط العودة', 'error');
+            if (!confirm('تأكيد حظر هذا الحساب بكل ملفاته؟')) return;
+            setBtnLoading(btn, true, '');
+            try {
+                const opId = 'ban_' + Date.now() + '_' + Math.floor(Math.random() * 100000); // يمنع تكرار الحظر والرسالة عند إعادة apiCall للمحاولة
+                const res = await apiCall({ action: 'adminBanAccount', refId: info.refId, reason: document.getElementById('ban-reason').value.trim(), condType: condType, packageId: packageId, condText: condText, notify: document.getElementById('ban-notify').checked, opId: opId, adminToken: state.adminToken });
+                showToast(res.message || 'تم حظر الحساب');
+                const pkg = (info.packages || []).find(p => p.id === packageId);
+                markPhoneBanState(info.phone, true, condType === 'package' && pkg ? ('الاشتراك في ' + pkg.name) : condText);
+                closeModal(); renderResults();
+            } catch (e) { showToast(e.message, 'error'); setBtnLoading(btn, false, 'تأكيد الحظر'); }
+        };
+
+        window.submitUnban = async function(btn, phoneOverride) {
+            const phone = phoneOverride || (window.banState && window.banState.phone); if (!phone) return;
+            if (!confirm('رفع الحظر عن هذا الحساب وإعادة ملفاته إلى حالتها السابقة؟')) return;
+            const noteEl = document.getElementById('unban-note'); const notifyEl = document.getElementById('unban-notify');
+            setBtnLoading(btn, true, '');
+            try {
+                const res = await apiCall({ action: 'adminUnbanAccount', phone: phone, note: noteEl ? noteEl.value.trim() : '', notify: notifyEl ? notifyEl.checked : true, adminToken: state.adminToken });
+                showToast(res.message || 'تم رفع الحظر');
+                markPhoneBanState(phone, false, '');
+                if (phoneOverride) window.openBansList(); else closeModal();
+                renderResults();
+            } catch (e) { showToast(e.message, 'error'); setBtnLoading(btn, false, 'رفع الحظر'); }
+        };
+
+        window.openBansList = async function() {
+            openModal('الحسابات المحظورة', '<div class="py-10 flex justify-center"><div class="loader border-rose-600 border-t-transparent w-8 h-8 border-4"></div></div>', '', 'p-4 w-full');
+            try {
+                const res = await apiCall({ action: 'adminGetBans', adminToken: state.adminToken });
+                const active = res.active || []; const lifted = res.lifted || [];
+                const card = b => `
+                    <div class="bg-white border border-rose-200 rounded-2xl p-3 shadow-sm">
+                        <div class="flex items-center justify-between gap-2 mb-1"><b class="text-xs text-slate-800 font-mono dir-ltr">${escPkg(b.phone)}</b><span class="text-[10px] font-bold text-slate-400">${escPkg(b.date)} · #${escPkg(b.refId)}</span></div>
+                        <p class="text-[11px] text-slate-600 font-bold leading-snug">${escPkg(b.summary)}</p>
+                        <p class="text-[11px] text-rose-700 font-black mt-1">شرط الرفع: ${escPkg(b.condText)}</p>
+                        ${b.reason ? `<p class="text-[10px] text-slate-500 font-bold mt-0.5">السبب: ${escPkg(b.reason)}</p>` : ''}
+                        <div class="flex gap-2 mt-2">
+                            <a href="${pkgWaLink(b.phone)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black flex items-center gap-1"><i class="fab fa-whatsapp"></i> واتساب</a>
+                            <button type="button" onclick="submitUnban(this, '${escPkg(b.phone)}')" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">رفع الحظر</button>
+                        </div>
+                    </div>`;
+                const liftedHtml = lifted.length ? `<p class="text-[10px] font-black text-slate-400 mt-4 mb-1 text-center">آخر ما رُفع</p>` + lifted.map(b => `<div class="text-[10px] text-slate-500 font-bold bg-white/60 border border-slate-100 rounded-lg px-2 py-1.5 mb-1"><div class="flex justify-between gap-2"><span class="font-mono dir-ltr">${escPkg(b.phone)} · #${escPkg(b.refId)}</span><span>${escPkg(b.liftedDate)}</span></div><div class="text-slate-400">${escPkg(b.liftedHow)}</div></div>`).join('') : '';
+                document.getElementById('modal-body').innerHTML = `<div class="flex flex-col gap-2">${active.length ? active.map(card).join('') : '<p class="text-center text-sm text-slate-400 font-bold py-8">لا توجد حسابات محظورة حالياً.</p>'}</div>${liftedHtml}`;
+            } catch (e) {
+                document.getElementById('modal-body').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-8">تعذر التحميل: ${escPkg(e.message)}</p>`;
+            }
         };
 
         window.actionToggleShowcase = function(refId) {
@@ -1065,6 +1193,7 @@
                         <div class="flex items-center justify-between gap-2 mb-1"><b class="text-sm text-slate-800">${escPkg(r.packageName)}</b><span class="text-sm font-black text-indigo-600">${escPkg(r.price)} ريال</span></div>
                         <p class="text-[11px] text-slate-600 font-bold leading-snug">${escPkg(r.unified || ('ملف #' + r.refId))}</p>
                         <p class="text-[10px] text-slate-400 font-bold mt-0.5">#${escPkg(r.refId)} · ${escPkg(r.reqId)} · ${escPkg(r.date)}</p>
+                        ${r.banned ? '<p class="text-[10px] font-black text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1 mt-1">🚫 حساب محظور: تفعيل الباقة المطلوبة (أو أغلى منها) يرفع الحظر تلقائياً</p>' : ''}
                         <div class="flex gap-2 mt-2">
                             <a href="${pkgWaLink(r.phone)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black flex items-center gap-1"><i class="fab fa-whatsapp"></i> واتساب</a>
                             <button type="button" onclick="activatePackageRequest('${escPkg(r.reqId)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">✅ تم السداد ← تفعيل</button>
