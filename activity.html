@@ -665,7 +665,8 @@
                 let statusColor;
                 if (isAcquaintancePhase) statusColor = 'text-purple-700 bg-purple-50 border-purple-200';
                 else if (isWaitingPayment) statusColor = currentUserIsMale ? 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
-                else if (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                else if (isMasterClosed && statusText.includes('تم الزواج')) statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                else if (!isMasterClosed && (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven)) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
                 else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
                 else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
                 else if (isQueued) statusColor = 'text-purple-600 bg-purple-50 border-purple-200';
@@ -753,7 +754,11 @@
                         <button type="button" onclick="event.stopPropagation(); window.cancelQueuedReq('${req.reqId}')" class="w-full py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-bold shadow-sm transition-colors">❌ إلغاء الانتظار واسترجاع النقاط</button>
                     </div>`;
                 } else if (isMasterClosed || isAccepted || req.finalApprovalGiven) {
-                    if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
+                    // 🟢 [2026-10-09] الإغلاق يُفحص أولاً: علم الموافقة (finalApprovalGiven) يبقى TRUE للأبد، فكان الطلب المغلق بعد التعارف
+                    // يعرض "🎉 تمت الموافقة، الطلب في عهدة الإدارة" بالأخضر. المغلق يعرض نتيجته (closedNoteHtml) بلون محايد.
+                    if (isMasterClosed) {
+                        actionAreaHtml = closedNoteHtml(statusText);
+                    } else if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
                         actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
                     } else {
                         actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
@@ -892,7 +897,8 @@
                 let statusColor;
                 if (isAcquaintancePhase) statusColor = 'text-purple-700 bg-purple-50 border-purple-200';
                 else if (isWaitingPayment) statusColor = currentUserIsMale ? 'text-amber-700 bg-amber-50 border-amber-200 animate-pulse' : 'text-emerald-700 bg-emerald-50 border-emerald-200';
-                else if (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                else if (isMasterClosed && statusText.includes('تم الزواج')) statusColor = 'text-emerald-700 bg-emerald-50 border-emerald-200';
+                else if (!isMasterClosed && (statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية') || isAccepted || req.finalApprovalGiven)) statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
                 else if (statusText.includes('مرفوض') || statusText.includes('رفض') || statusText.includes('ملغى')) statusColor = 'text-rose-600 bg-rose-50 border-rose-200';
                 else if (isMasterClosed) statusColor = 'text-slate-600 bg-slate-50 border-slate-200';
                 else if (statusText.includes('ردك')) statusColor = 'text-amber-600 bg-amber-50 border-amber-200 animate-pulse';
@@ -976,9 +982,12 @@
                 } else if (isWaitingPayment) {
                     let msg = currentUserIsMale ? "⏳ الطلب بانتظار إتمام إجراءات الدفع من قبلك لاستلام الرقم." : "⏳ تمت الموافقة، الطلب في عهدة الإدارة بانتظار استكمال الإجراءات.";
                     actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">${msg}</p></div>`;
+                } else if (isMasterClosed) {
+                    // 🟢 [2026-10-09] الإغلاق قبل علم الموافقة (انظر التعليق نفسه في بطاقة الصادر)
+                    actionAreaHtml = closedNoteHtml(statusText);
                 } else if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
                     actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
-                } else if (isMasterClosed || isAccepted) {
+                } else if (isAccepted) {
                     actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-500 font-bold">تم إغلاق المحادثة.</p></div>`;
                 } else if (isPendingAdmin) {
                     if (isRealLastFromMe) {
@@ -1125,6 +1134,17 @@
         function buildRejectReasonsHtml(gender) {
             const list = gender === 'women' ? REJECT_REASONS_WOMEN : REJECT_REASONS_MEN;
             return list.map((txt, i) => `<label class="flex items-start gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-rose-50 hover:border-rose-200 transition bg-white shadow-sm"><input type="radio" name="rejectReason" value="أعتذر، ${txt}" class="mt-0.5 w-4 h-4 text-rose-600 focus:ring-rose-500"${i === 0 ? ' checked' : ''}> <span class="text-xs text-slate-700 font-medium leading-snug">${txt}</span></label>`).join('');
+        }
+
+        // 🟢 [2026-10-09] شريط أسفل بطاقة الطلب المغلق يذكر نتيجته، بدل رسالة الموافقة الخضراء القديمة التي كانت تبقى بعد الإغلاق.
+        function closedNoteHtml(statusText) {
+            const s = statusText || '';
+            if (s.includes('تم الزواج')) return `<div class="bg-emerald-50 p-2.5 border-t border-emerald-100 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">💍 أُغلق الطلب: تم الزواج، بارك الله لكما.</p></div>`;
+            let note = 'تم إغلاق المحادثة.';
+            if (s.includes('إنهاء التعارف')) note = 'أُغلق الطلب: انتهى التعارف لعدم التوفيق.';
+            else if (s.includes('اعتذار') || s.includes('مرفوض')) note = 'أُغلق الطلب: تم الاعتذار.';
+            else if (s.includes('ملغى')) note = 'أُغلق الطلب: تم إلغاؤه.';
+            return `<div class="bg-slate-100 p-2.5 border-t border-slate-200 text-center rounded-b-2xl"><p class="text-[11px] text-slate-500 font-bold">🔒 ${note}</p></div>`;
         }
 
         const OUTCOME_REPLIES = {
