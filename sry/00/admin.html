@@ -189,6 +189,18 @@
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 7: نوافذ منبثقة (تحديث الحالة يدوياً) 🔴🔴🔴 -->
 <!-- ======================================================== -->
+    <!-- 🟢 [2026-10-09] نافذة الدور: من يراسل هذا الملف الآن ومن ينتظر بعده بالترتيب، مع إعادة الترتيب (كان زرها يستدعي openQueueModal غير المعرّفة فلا يعمل) -->
+    <div id="queueModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-purple-600 px-4 py-3 flex items-center justify-between shrink-0">
+                <h3 class="text-sm font-bold text-white">👥 الدور على الملف</h3>
+                <button type="button" onclick="closeQueueModal()" class="text-white/80 hover:text-white text-lg leading-none">✕</button>
+            </div>
+            <div id="queueModalBody" class="p-4 overflow-y-auto space-y-3 text-right"></div>
+            <div id="queueModalFooter" class="bg-slate-50 px-4 py-3 flex gap-2 border-t border-slate-200 shrink-0"></div>
+        </div>
+    </div>
+
     <div id="statusModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 fade-in">
         <div class="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col">
             <div class="bg-slate-800 px-4 py-3 flex items-center justify-between">
@@ -1029,7 +1041,9 @@
                 } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
                     statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
                 } else if (s.includes('قائمة الانتظار')) {
-                    statusBadge = `<span class="bg-purple-100 text-purple-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-200 shrink-0 whitespace-nowrap">طابور الانتظار</span>`;
+                    // 🟢 الشارة نفسها تفتح نافذة الدور (رقم الدور ظاهر عليها)
+                    let qn = (s.match(/رقم\s*(\d+)/) || [])[1];
+                    statusBadge = `<button type="button" onclick="event.stopPropagation(); openQueueModal('${req.targetRefId || req.targetPhone}', '${req.reqId}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-300 shrink-0 whitespace-nowrap cursor-pointer" title="عرض الدور">👥 في الدور${qn ? ' · رقم ' + qn : ''}</button>`;
                 } else if (s.includes('مقبول مبدئياً')) {
                     statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">مقبول مبدئياً ✅</span>`;
                 } else if (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده')) {
@@ -1122,9 +1136,11 @@
                     
                     let actionButtonHTML = '';
                     let queueButton = '';
-                    if (s.includes('قائمة الانتظار')) {
-                        let targetIdProxy = req.targetRefId || req.targetPhone;
-                        queueButton = `<button onclick="openQueueModal('${targetIdProxy}')" class="w-full mb-3 px-4 py-2.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">⚙️ إدارة طابور الانتظار لهذا العميل</button>`;
+                    // 🟢 [2026-10-09] الزر يظهر للمنتظر في الدور، وكذلك للمحادثة الجارية إن كان على ملف الطرف الثاني منتظرون (ليُعرف من بعده)
+                    let targetIdProxy = req.targetRefId || req.targetPhone;
+                    let queuedOnTarget = isClosed ? 0 : getQueueFor(targetIdProxy).queued.length;
+                    if (!isClosed && (s.includes('قائمة الانتظار') || queuedOnTarget > 0)) {
+                        queueButton = `<button onclick="openQueueModal('${targetIdProxy}', '${req.reqId}')" class="w-full mb-3 px-4 py-2.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm">👥 عرض الدور على هذا الملف وترتيبه (${queuedOnTarget} في الانتظار)</button>`;
                     }
 
                     let isSendingNow = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'sending');
@@ -1510,6 +1526,128 @@
         function waRecipientLine(unified) {
             const u = String(unified || '').trim();
             return u ? `📌 *هذه الرسالة خاصة بالملف:* ${u}\n\n` : '';
+        }
+
+        // 🟢 [2026-10-09] نافذة الدور. تُبنى من allRequests الموجودة في الصفحة (لا طلب خادم للعرض):
+        // المحادثة الجارية مع صاحب/ة الملف الآن، ثم المنتظرون بترتيب رقم الدور. إعادة الترتيب تُحفظ بـ adminReorderQueue،
+        // والخادم يفعّل التالي برقم الدور (كان بالتاريخ فلا أثر للترتيب). queueState.order = أرقام طلبات المنتظرين بالترتيب المعروض.
+        const queueState = { targetKey: null, fromReqId: null, order: [], dirty: false, saving: false };
+        const qEsc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const qIsClosed = s => s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
+        const qNumber = r => { const m = String(r.status || '').match(/رقم\s*(\d+)/); return m ? parseInt(m[1], 10) : 9999; };
+        const qTargetKey = r => String(r.targetRefId || r.targetPhone || '');
+
+        // كل المفتوح على ملف واحد: الجاري (غير منتظر) والمنتظرون مرتّبين
+        function getQueueFor(targetKey) {
+            const open = allRequests.filter(r => qTargetKey(r) === String(targetKey) && !qIsClosed(r.status || ''));
+            const queued = open.filter(r => (r.status || '').includes('قائمة الانتظار'))
+                .sort((a, b) => (qNumber(a) - qNumber(b)) || (getTimestamp(a.date) - getTimestamp(b.date)));
+            const active = open.filter(r => !(r.status || '').includes('قائمة الانتظار'));
+            return { active, queued };
+        }
+
+        function openQueueModal(targetKey, fromReqId) {
+            queueState.targetKey = String(targetKey || ''); queueState.fromReqId = fromReqId || null;
+            queueState.order = getQueueFor(queueState.targetKey).queued.map(r => r.reqId);
+            queueState.dirty = false; queueState.saving = false;
+            renderQueueModal();
+            document.getElementById('queueModal').classList.remove('hidden');
+        }
+
+        function closeQueueModal() { document.getElementById('queueModal').classList.add('hidden'); }
+
+        function renderQueueModal() {
+            const body = document.getElementById('queueModalBody'); const footer = document.getElementById('queueModalFooter');
+            if (!body || !footer) return;
+            const q = getQueueFor(queueState.targetKey);
+            const byId = {}; q.queued.forEach(r => byId[r.reqId] = r);
+            // ترتيب العرض = المسودة المحلية، مع إسقاط من خرج من الدور وإلحاق من دخله منذ فتح النافذة
+            const order = queueState.order.filter(id => byId[id]);
+            q.queued.forEach(r => { if (!order.includes(r.reqId)) order.push(r.reqId); });
+            queueState.order = order;
+
+            const any = q.active[0] || q.queued[0];
+            const targetData = any ? (any.targetData || '') : '';
+            const row = (r, idx, isQueued) => {
+                const isFrom = r.reqId === queueState.fromReqId;
+                const moveBtns = isQueued ? `
+                    <div class="flex flex-col gap-1 shrink-0">
+                        <button type="button" onclick="moveQueueItem(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="w-7 h-6 rounded-md border border-slate-300 bg-white text-slate-600 text-xs font-black disabled:opacity-30" title="تقديم">▲</button>
+                        <button type="button" onclick="moveQueueItem(${idx}, 1)" ${idx === order.length - 1 ? 'disabled' : ''} class="w-7 h-6 rounded-md border border-slate-300 bg-white text-slate-600 text-xs font-black disabled:opacity-30" title="تأخير">▼</button>
+                    </div>` : '';
+                return `
+                <div class="flex items-center gap-2 p-2.5 rounded-xl border ${isFrom ? 'border-purple-400 bg-purple-50' : 'border-slate-200 bg-white'}">
+                    <div class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[11px] font-black ${isQueued ? 'bg-purple-600 text-white' : 'bg-emerald-600 text-white'}">${isQueued ? (idx + 1) : '●'}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] font-bold text-slate-800 leading-snug">${qEsc(r.requesterData || ('ملف #' + (r.requesterRefId || '')))}</div>
+                        <div class="text-[10px] text-slate-500 font-medium mt-0.5">${qEsc(r.reqId)} · ${qEsc(isQueued ? ('طلب في ' + (r.date || '-')) : (r.status || ''))}${isFrom ? ' · <b class="text-purple-700">الطلب الذي فتحتَ منه</b>' : ''}</div>
+                    </div>
+                    ${moveBtns}
+                    <button type="button" onclick="queueOpenReq('${qEsc(r.reqId)}', ${isQueued ? 'true' : 'false'})" class="shrink-0 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-[10px] font-bold">فتح</button>
+                </div>`;
+            };
+
+            body.innerHTML = `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    <div class="text-[10px] font-bold text-slate-500 mb-0.5">الملف المطلوب</div>
+                    <div class="text-xs font-black text-slate-800 leading-snug">${qEsc(targetData || ('#' + queueState.targetKey))}</div>
+                </div>
+                <div>
+                    <div class="text-[11px] font-black text-emerald-700 mb-1.5">يراسله الآن (${q.active.length})</div>
+                    ${q.active.length ? q.active.map(r => row(r, 0, false)).join('<div class="h-1.5"></div>') : '<div class="text-[11px] text-slate-400 font-bold p-2 text-center border border-dashed border-slate-200 rounded-xl">لا محادثة جارية</div>'}
+                </div>
+                <div>
+                    <div class="text-[11px] font-black text-purple-700 mb-1.5">في الدور (${order.length})</div>
+                    ${order.length ? order.map((id, i) => row(byId[id], i, true)).join('<div class="h-1.5"></div>') : '<div class="text-[11px] text-slate-400 font-bold p-2 text-center border border-dashed border-slate-200 rounded-xl">لا أحد في الدور</div>'}
+                </div>`;
+
+            footer.innerHTML = `
+                <button type="button" onclick="closeQueueModal()" class="flex-1 py-2 text-xs text-slate-600 font-bold hover:bg-slate-200 rounded-xl border border-slate-300">إغلاق</button>
+                ${order.length > 1 ? `<button type="button" id="queueSaveBtn" onclick="saveQueueOrder()" ${queueState.dirty && !queueState.saving ? '' : 'disabled'} class="flex-[1.5] py-2 text-xs font-bold rounded-xl bg-purple-600 text-white disabled:opacity-40">${queueState.saving ? '⏳ جاري الحفظ...' : 'حفظ الترتيب الجديد'}</button>` : ''}`;
+        }
+
+        function moveQueueItem(idx, dir) {
+            const j = idx + dir; const o = queueState.order;
+            if (queueState.saving || j < 0 || j >= o.length) return;
+            const t = o[idx]; o[idx] = o[j]; o[j] = t;
+            queueState.dirty = true;
+            renderQueueModal();
+        }
+
+        async function saveQueueOrder() {
+            if (queueState.saving || !queueState.dirty || queueState.order.length < 2) return;
+            queueState.saving = true; renderQueueModal();
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminReorderQueue', adminToken: state.adminToken, orderedReqIds: queueState.order }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                let result; try { result = JSON.parse(await res.text()); } catch (e) { throw new Error('استجابة السيرفر غير صالحة.'); }
+                if (!result.success) throw new Error(result.message || 'تعذر حفظ الترتيب.');
+                // نعكس الترتيب محلياً فوراً (نفس ما كتبه الخادم) ثم نجلب الحقيقة من الشيت
+                queueState.order.forEach((id, i) => { const r = allRequests.find(x => x.reqId === id); if (r) r.status = 'في قائمة الانتظار - رقم ' + (i + 1); });
+                queueState.dirty = false; queueState.saving = false;
+                sessionStorage.removeItem('admin_requests_cache');
+                renderQueueModal(); applyFilters();
+                fetchData(true).then(() => { if (!document.getElementById('queueModal').classList.contains('hidden') && !queueState.dirty) renderQueueModal(); });
+            } catch (e) {
+                clearTimeout(timeoutId);
+                queueState.saving = false; renderQueueModal();
+                await showMsgModal('لم يُحفظ الترتيب', e.name === 'AbortError' ? 'تأخر استجابة السيرفر. أعد المحاولة.' : (e.message || 'فشل الاتصال بالخادم.'));
+            }
+        }
+
+        // يفتح طلباً من نافذة الدور: ينتقل للتبويب الذي يظهر فيه ويمسح البحث حتى لا يُحجب
+        function queueOpenReq(reqId, isQueued) {
+            closeQueueModal();
+            const si = document.getElementById('searchInput'); if (si) si.value = '';
+            const r = allRequests.find(x => x.reqId === reqId);
+            const st = r ? (r.status || '') : '';
+            setFilter(isQueued ? 'queue' : (st.includes('مرحلة التعارف') ? 'acquaintance' : 'active'));
+            openRequest(reqId);
         }
 
         async function executeAdminAction(reqId, actionType, chosenReason = null) {
