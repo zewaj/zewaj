@@ -346,7 +346,12 @@
                     if (targetRefId) {
                         document.getElementById('search-type-ref').checked = true;
                         els.searchInput.value = targetRefId;
-                        performQuickSearch();
+                        // open=wallet (من زر "النقاط والباقات" في admin.html): تُفتح نافذة إدارة الرصيد تلقائياً بعد وصول الملف
+                        const autoOpen = urlParams.get('open');
+                        Promise.resolve(performQuickSearch()).then(() => {
+                            const p = (state.searchResults || []).find(x => String(x.refId) === String(targetRefId)) || (state.searchResults || [])[0];
+                            if (autoOpen === 'wallet' && p) actionUpdateWallet(p.refId, p.walletBalance || 0, !!(p.sheetName && p.sheetName.includes('الرجال')), p.marriageType || '');
+                        });
                     } else {
                         loadPendingProfiles(); // في حال لم يتم تمرير رقم طلب
                     }

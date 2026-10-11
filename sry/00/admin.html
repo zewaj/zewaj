@@ -2069,11 +2069,15 @@
         let qaCtx = null;
         let qaBanInfoPromise = null;
         let qaDeleteArmed = false;
-        const QA_STATUS_BTNS = [
-            ['نشط', 'bg-emerald-50 text-emerald-700 border-emerald-200', '✅'], ['نشر', 'bg-cyan-50 text-cyan-700 border-cyan-200', '📣'],
-            ['جديد', 'bg-blue-50 text-blue-700 border-blue-200', '⭐'], ['قيد المراجعة', 'bg-orange-50 text-orange-700 border-orange-200', '⏳'],
-            ['خامل', 'bg-slate-50 text-slate-700 border-slate-200', '🌙'], ['تم الزواج', 'bg-yellow-50 text-yellow-700 border-yellow-200', '💍']
-        ];
+        const QA_STATUS_BTNS = [['تم الزواج', 'bg-yellow-50 text-yellow-700 border-yellow-200', '💍']];
+
+        function qaOpenEdit() {
+            const c = qaCtx; if (!c) return;
+            const ph = qaDigits(c.phone);
+            if (!ph) { qaToast('رقم الجوال غير متوفر للتعديل', 'error'); return; }
+            window.open('../../register.html?targetPhone=' + ph + '&mode=admin_edit', '_blank');
+        }
+        function qaOpenWallet() { const c = qaCtx; if (!c) return; qaCloseModal(); openQuickProfile(c.refId, 'wallet'); }
 
         function qaEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
         function qaDigits(s) { return String(s || '').replace(/\D/g, ''); }
@@ -2192,11 +2196,13 @@
                 <div class="p-4">
                     <p class="text-[11px] font-bold text-slate-600 leading-relaxed mb-1">${qaEsc(c.summary || '-')}</p>
                     <p class="text-[11px] font-black mb-3 text-slate-500">الحالة الحالية: <span class="text-slate-800">${qaEsc(cur)}</span>${c.getBanned() ? ' <span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">🚫 محظور</span>' : ''}</p>
-                    <div class="grid grid-cols-3 gap-2 mb-3">${btns}</div>
+                    <div class="grid grid-cols-3 gap-2 mb-3">${btns}
+                        <button onclick="qaOpenWallet()" class="bg-pink-50 text-pink-700 border border-pink-200 rounded-xl py-2.5 text-[11px] font-black flex flex-col items-center gap-0.5 active:scale-95 hover:shadow"><span class="text-base leading-none">💎</span>النقاط والباقات</button>
+                        <button onclick="qaOpenEdit()" class="bg-blue-50 text-blue-700 border border-blue-200 rounded-xl py-2.5 text-[11px] font-black flex flex-col items-center gap-0.5 active:scale-95 hover:shadow"><span class="text-base leading-none">✏️</span>تعديل الملف</button>
+                    </div>
                     <button id="qaDelBtn" onclick="qaDelete()" ${cur === 'محذوف' ? 'disabled' : ''} class="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl py-2.5 text-xs font-black mb-1 ${cur === 'محذوف' ? 'opacity-40' : ''}">🗑️ حذف الملف (بلا التزامات)</button>
                     <label class="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-600 mb-3 cursor-pointer"><input type="checkbox" id="qaNotify" checked class="w-4 h-4 accent-red-600"> إرسال واتساب للعميل بأن ملفه حُذف</label>
                     <button onclick="qaOpenBan()" class="w-full bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-2.5 text-xs font-black">🚫 ${c.getBanned() ? 'الحساب محظور: عرض أو رفع الحظر' : 'حظر الحساب (بشرط للعودة)'}</button>
-                    <button onclick="qaCloseModal(); openQuickProfile('${qaEsc(c.refId)}')" class="w-full mt-3 text-[11px] font-bold text-indigo-600 hover:underline">عرض البطاقة الكاملة (الرصيد، الباقات، التعديل)</button>
                 </div>`);
         }
 
@@ -2211,16 +2217,23 @@
 
         function qaDelete() {
             const c = qaCtx; if (!c) return;
-            const btn = document.getElementById('qaDelBtn');
-            if (!qaDeleteArmed) {
-                qaDeleteArmed = true;
-                btn.textContent = '⚠️ اضغط مرة أخرى لتأكيد الحذف';
-                btn.className = 'w-full bg-red-600 text-white border border-red-700 rounded-xl py-2.5 text-xs font-black mb-1 animate-pulse';
-                setTimeout(() => { if (qaDeleteArmed && document.getElementById('qaDelBtn')) { qaDeleteArmed = false; qaRenderMain(); } }, 4000);
-                return;
-            }
             const notifyEl = document.getElementById('qaNotify');
             const notify = !!(notifyEl && notifyEl.checked);
+            qaConfirmScreen('🗑️ تأكيد حذف الملف #' + c.refId, 'سيُحذف الملف (حذف عادي بلا التزامات)' + (notify ? ' وتُرسل للعميل رسالة واتساب بالحذف.' : ' بدون رسالة واتساب.'), 'نعم، احذف', () => qaDoDelete(notify));
+        }
+
+        // شاشة تأكيد صريحة (بدل تغيير نص الزر): «نعم» تنفّذ، «رجوع» تعود للوحة
+        function qaConfirmScreen(title, text, okLabel, onOk) {
+            window.__qaOnOk = onOk;
+            qaShell(`<div class="bg-rose-600 px-4 py-3"><h3 class="text-white font-black text-sm">${qaEsc(title)}</h3></div>
+                <div class="p-5 text-center"><p class="text-sm font-bold text-slate-700 leading-relaxed mb-5">${qaEsc(text)}</p>
+                <div class="flex gap-2"><button onclick="qaBackToMain()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-sm">رجوع</button>
+                <button onclick="window.__qaOnOk && window.__qaOnOk()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-black text-sm">${qaEsc(okLabel)}</button></div></div>`);
+        }
+        function qaBackToMain() { if (qaCtx && qaCtx.banInfo && document.getElementById('qaBanBtn')) return qaOpenBan(); qaRenderMain(); }
+
+        function qaDoDelete(notify) {
+            const c = qaCtx; if (!c) return;
             const undo = qaPatchLocal(c.refId, c.phone, { status: 'محذوف' });
             const payload = { action: 'adminSoftDeleteProfile', refId: c.refId, newStatus: 'محذوف', notify: notify, adminToken: state.adminToken };
             const label = 'حذف الملف #' + c.refId;
@@ -2264,20 +2277,16 @@
             const condType = (document.querySelector('input[name=qaCond]:checked') || {}).value || 'custom';
             const custom = document.getElementById('qaBanCustom').value.trim();
             if (condType === 'custom' && !custom) { qaToast('اكتب شرط العودة', 'error'); return; }
-            const btn = document.getElementById('qaBanBtn');
-            if (btn.dataset.armed !== '1') { // ضغطة تأكيد ثانية
-                btn.dataset.armed = '1'; btn.textContent = '⚠️ اضغط مرة أخرى لتأكيد الحظر'; btn.classList.add('animate-pulse');
-                setTimeout(() => { if (btn.isConnected) { btn.dataset.armed = '0'; btn.textContent = 'تأكيد الحظر'; btn.classList.remove('animate-pulse'); } }, 4000);
-                return;
-            }
             const payload = {
                 action: 'adminBanAccount', refId: info.refId, reason: document.getElementById('qaBanReason').value.trim(), condType: condType,
                 packageId: document.getElementById('qaBanPkg').value, condText: custom, notify: document.getElementById('qaBanNotify').checked,
                 opId: 'ban_' + Date.now() + '_' + Math.floor(Math.random() * 100000), adminToken: state.adminToken
             };
-            const undo = qaPatchLocal(c.refId, info.phone, { banned: true });
-            qaCloseModal();
-            qaRun('حظر الحساب ' + info.phone, payload, undo, 90000);
+            qaConfirmScreen('🚫 تأكيد حظر الحساب', 'سيُحظر الجوال ' + info.phone + ' بكل ملفاته (' + (info.family || []).length + ').' + (payload.notify ? ' وتُرسل للعميل رسالة واتساب بالحظر وشرط العودة.' : ' بدون رسالة واتساب.'), 'نعم، احظر', () => {
+                const undo = qaPatchLocal(c.refId, info.phone, { banned: true });
+                qaCloseModal();
+                qaRun('حظر الحساب ' + info.phone, payload, undo, 90000);
+            });
         }
 
         function qaSubmitUnban() {
@@ -2292,13 +2301,13 @@
         // ==========================================
         // دوال عرض بطاقة العميل (Iframe Modal)
         // ==========================================
-        function openQuickProfile(refId) {
+        function openQuickProfile(refId, autoOpen) {
             if (!refId || refId === 'undefined') {
                 showMsgModal("تنبيه", "رقم الملف أو الجوال غير متوفر لعرض البطاقة.", 'alert');
                 return;
             }
             document.getElementById('iframeLoader').classList.remove('hidden');
-            document.getElementById('quickProfileIframe').src = `admin_search.html?embed=true&refId=${encodeURIComponent(refId)}`;
+            document.getElementById('quickProfileIframe').src = `admin_search.html?embed=true&refId=${encodeURIComponent(refId)}${autoOpen ? '&open=' + encodeURIComponent(autoOpen) : ''}`;
             document.getElementById('quickProfileModal').classList.remove('hidden');
         }
 
