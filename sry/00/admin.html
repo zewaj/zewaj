@@ -436,7 +436,7 @@
                 const closeChatHidden = document.getElementById('closeChatModal').classList.contains('hidden');
                 const waSuccessHidden = document.getElementById('waSuccessModal') ? document.getElementById('waSuccessModal').classList.contains('hidden') : true;
                 
-                if(!isFetchingData && !isProcessingAction && pendingAdminActions.length === 0 && forwardHidden && statusHidden && msgHidden && closeChatHidden && waSuccessHidden) {
+                if(!isFetchingData && !isProcessingAction && !qaInflight && pendingAdminActions.length === 0 && forwardHidden && statusHidden && msgHidden && closeChatHidden && waSuccessHidden) {
                     fetchData(true); 
                 }
             }, 60000);
@@ -1248,6 +1248,7 @@
                                     <div class="flex items-center gap-0.5 bg-white inline-flex p-0.5 px-1.5 rounded border border-blue-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate ml-1">جوال: ${req.requesterPhone || '-'}</span>
                                         ${req.requesterPhone ? `<a href="https://wa.me/${String(req.requesterPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.requesterRefId ? `<button onclick="openQuickActions('${req.reqId}','requester')" class="text-amber-600 hover:text-white transition-colors bg-amber-50 hover:bg-amber-500 p-0.5 px-1 rounded border border-amber-200 shadow-sm shrink-0 mr-0.5 text-[11px] leading-none font-black" title="إجراءات سريعة: الحالة / حذف / حظر">⚡</button>` : ''}
                                         <button onclick="openQuickProfile('${req.requesterRefId || req.requesterPhone || ''}')" class="text-indigo-500 hover:text-white transition-colors bg-indigo-50 hover:bg-indigo-500 p-0.5 rounded border border-indigo-100 shadow-sm shrink-0 mr-0.5" title="عرض بطاقة العميل"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
                                     </div>
                                 </div>
@@ -1265,6 +1266,7 @@
                                     <div class="flex items-center gap-0.5 bg-white inline-flex p-0.5 px-1.5 rounded border border-amber-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate ml-1">جوال: ${req.targetPhone || '-'}</span>
                                         ${req.targetPhone ? `<a href="https://wa.me/${String(req.targetPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.targetRefId ? `<button onclick="openQuickActions('${req.reqId}','target')" class="text-amber-600 hover:text-white transition-colors bg-amber-50 hover:bg-amber-500 p-0.5 px-1 rounded border border-amber-200 shadow-sm shrink-0 mr-0.5 text-[11px] leading-none font-black" title="إجراءات سريعة: الحالة / حذف / حظر">⚡</button>` : ''}
                                         <button onclick="openQuickProfile('${req.targetRefId || req.targetPhone || ''}')" class="text-indigo-500 hover:text-white transition-colors bg-indigo-50 hover:bg-indigo-500 p-0.5 rounded border border-indigo-100 shadow-sm shrink-0 mr-0.5" title="عرض بطاقة العميل"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
                                     </div>
                                 </div>
@@ -2055,6 +2057,236 @@
         function cancelAdminAction(actionId) {
             pendingAdminActions = pendingAdminActions.filter(a => a.id !== actionId);
             savePendingActions(); renderTable();
+        }
+
+<!-- ======================================================== -->
+<!-- 🔴🔴🔴 القسم 22: الإجراءات السريعة على ملف الطرف (حالة / حذف / حظر) بلا إطار منبثق 🔴🔴🔴 -->
+<!-- ======================================================== -->
+        // 🟢 [2026-10-11] كان تغيير الحالة أو الحذف أو الحظر يمرّ بفتح admin_search.html في إطار (تحميل صفحة كاملة + بحث في الخادم) ثم الانتظار حتى يرد الخادم.
+        // الآن زر ⚡ بجانب بطاقة كل طرف يفتح لوحة فورية من بيانات اللوحة نفسها (بلا أي طلب)، والتنفيذ تفاؤلي: الواجهة تتغيّر لحظة الضغط والطلب يعمل بالخلفية،
+        // وعند رفض الخادم أو انقطاعه تُعاد الحالة السابقة وتظهر نافذة صريحة. الحذف والحظر يطلبان ضغطة تأكيد ثانية. الحظر يستخدم opId فلا يتكرر عند إعادة المحاولة.
+        let qaInflight = 0;
+        let qaCtx = null;
+        let qaBanInfoPromise = null;
+        let qaDeleteArmed = false;
+        const QA_STATUS_BTNS = [
+            ['نشط', 'bg-emerald-50 text-emerald-700 border-emerald-200', '✅'], ['نشر', 'bg-cyan-50 text-cyan-700 border-cyan-200', '📣'],
+            ['جديد', 'bg-blue-50 text-blue-700 border-blue-200', '⭐'], ['قيد المراجعة', 'bg-orange-50 text-orange-700 border-orange-200', '⏳'],
+            ['خامل', 'bg-slate-50 text-slate-700 border-slate-200', '🌙'], ['تم الزواج', 'bg-yellow-50 text-yellow-700 border-yellow-200', '💍']
+        ];
+
+        function qaEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function qaDigits(s) { return String(s || '').replace(/\D/g, ''); }
+
+        function qaToast(text, kind, sticky) {
+            let box = document.getElementById('qaToasts');
+            if (!box) {
+                box = document.createElement('div'); box.id = 'qaToasts';
+                box.className = 'fixed bottom-4 left-4 right-4 sm:right-auto sm:w-96 z-[300] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(box);
+            }
+            const el = document.createElement('div');
+            const color = kind === 'error' ? 'bg-rose-600' : kind === 'ok' ? 'bg-emerald-600' : 'bg-slate-800';
+            el.className = color + ' text-white text-xs font-bold px-3 py-2.5 rounded-xl shadow-xl pointer-events-auto';
+            el.textContent = text;
+            box.appendChild(el);
+            const api = {
+                set(t, k) { el.textContent = t; el.className = (k === 'error' ? 'bg-rose-600' : k === 'ok' ? 'bg-emerald-600' : 'bg-slate-800') + ' text-white text-xs font-bold px-3 py-2.5 rounded-xl shadow-xl pointer-events-auto'; setTimeout(api.remove, k === 'error' ? 8000 : 4500); },
+                remove() { if (el.parentNode) el.parentNode.removeChild(el); }
+            };
+            if (!sticky) setTimeout(api.remove, 4500);
+            return api;
+        }
+
+        // يُرسل الإجراء بالخلفية؛ يُرجع {ok, message}. محاولة ثانية تلقائية عند انقطاع الاتصال فقط (الإجراءات هنا متكافئة التنفيذ).
+        async function qaPost(payload, timeoutMs) {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), timeoutMs || 60000);
+                try {
+                    const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctrl.signal });
+                    const txt = await res.text();
+                    let data; try { data = JSON.parse(txt); } catch (e) { return { ok: false, message: 'ردّ غير صالح من الخادم (قد يكون مزدحماً). قد يكون الإجراء نُفّذ، حدّث وتحقق.' }; }
+                    return { ok: !!data.success, message: data.message || '', data: data };
+                } catch (e) {
+                    if (e.name === 'AbortError') return { ok: false, message: 'تأخر الخادم. قد يكون الإجراء نُفّذ، حدّث وتحقق قبل إعادة المحاولة.' };
+                    if (attempt === 1) return { ok: false, message: 'فشل الاتصال بالخادم.' };
+                } finally { clearTimeout(timer); }
+            }
+        }
+
+        // يطبّق تغييراً محلياً فورياً على كل الطلبات المرتبطة بالملف (أو الجوال) ويعيد دالة التراجع
+        function qaPatchLocal(refId, phone, patch) {
+            const undo = [];
+            const ph = qaDigits(phone);
+            allRequests.forEach(r => {
+                if (String(r.requesterRefId) === String(refId)) { undo.push([r, 'requesterProfileStatus', r.requesterProfileStatus]); if (patch.status !== undefined) r.requesterProfileStatus = patch.status; }
+                if (String(r.targetRefId) === String(refId)) { undo.push([r, 'targetProfileStatus', r.targetProfileStatus]); if (patch.status !== undefined) r.targetProfileStatus = patch.status; }
+                if (patch.banned !== undefined && ph) {
+                    if (qaDigits(r.requesterPhone) === ph) { undo.push([r, 'requesterBanned', r.requesterBanned]); r.requesterBanned = patch.banned; }
+                    if (qaDigits(r.targetPhone) === ph) { undo.push([r, 'targetBanned', r.targetBanned]); r.targetBanned = patch.banned; }
+                }
+            });
+            renderTable();
+            return () => { undo.reverse().forEach(u => { u[0][u[1]] = u[2]; }); renderTable(); };
+        }
+
+        // تشغيل إجراء بالخلفية: تفاؤل فوري ← طلب ← نجاح (مزامنة صامتة) أو فشل (تراجع + نافذة)
+        async function qaRun(label, payload, undo, timeoutMs) {
+            qaInflight++;
+            const t = qaToast('⏳ ' + label + '...', 'info', true);
+            const r = await qaPost(payload, timeoutMs);
+            qaInflight--;
+            if (r.ok) {
+                t.set('✔ ' + (r.message || label), 'ok');
+                fetchData(true);
+            } else {
+                t.remove();
+                if (undo) undo();
+                if (!handleAuthError(r.message)) await showMsgModal('⚠️ لم يُنفَّذ: ' + label, r.message || 'تعذر تنفيذ الإجراء.');
+                fetchData(true);
+            }
+        }
+
+        function qaCloseModal() {
+            const m = document.getElementById('qaModal'); if (m) m.remove();
+            qaCtx = null; qaBanInfoPromise = null; qaDeleteArmed = false;
+        }
+
+        function qaShell(innerHtml) {
+            let m = document.getElementById('qaModal');
+            if (!m) {
+                m = document.createElement('div'); m.id = 'qaModal';
+                m.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[260] flex items-center justify-center p-3 fade-in';
+                m.addEventListener('click', e => { if (e.target === m) qaCloseModal(); });
+                document.body.appendChild(m);
+            }
+            m.innerHTML = `<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">${innerHtml}</div>`;
+        }
+
+        function openQuickActions(reqId, side) {
+            const req = allRequests.find(r => String(r.reqId) === String(reqId));
+            if (!req) return;
+            const isReq = side === 'requester';
+            qaCtx = {
+                reqId: reqId, side: side,
+                refId: isReq ? req.requesterRefId : req.targetRefId,
+                phone: isReq ? req.requesterPhone : req.targetPhone,
+                summary: isReq ? req.requesterData : req.targetData,
+                getStatus: () => (isReq ? req.requesterProfileStatus : req.targetProfileStatus) || 'نشط',
+                getBanned: () => !!(isReq ? req.requesterBanned : req.targetBanned)
+            };
+            if (!qaCtx.refId) return;
+            qaDeleteArmed = false;
+            // تحميل مسبق بالخلفية لبيانات الحظر (الباقات + العائلة + الحظر القائم) فتكون جاهزة حين يطلبها الأدمن
+            qaBanInfoPromise = qaPost({ action: 'adminGetBanInfo', refId: qaCtx.refId, adminToken: state.adminToken }, 45000);
+            qaRenderMain();
+        }
+
+        function qaRenderMain() {
+            const c = qaCtx; if (!c) return;
+            const cur = c.getStatus();
+            const btns = QA_STATUS_BTNS.map(b => `<button onclick="qaSetStatus('${b[0]}')" ${cur === b[0] ? 'disabled' : ''} class="${b[1]} border rounded-xl py-2.5 text-[11px] font-black flex flex-col items-center gap-0.5 ${cur === b[0] ? 'opacity-40 ring-2 ring-slate-400' : 'active:scale-95 hover:shadow'}"><span class="text-base leading-none">${b[2]}</span>${b[0]}</button>`).join('');
+            qaShell(`
+                <div class="bg-amber-500 px-4 py-3 flex items-center justify-between"><h3 class="text-white font-black text-sm">⚡ إجراءات سريعة — ملف #${qaEsc(c.refId)}</h3><button onclick="qaCloseModal()" class="text-white/80 hover:text-white text-lg leading-none">✕</button></div>
+                <div class="p-4">
+                    <p class="text-[11px] font-bold text-slate-600 leading-relaxed mb-1">${qaEsc(c.summary || '-')}</p>
+                    <p class="text-[11px] font-black mb-3 text-slate-500">الحالة الحالية: <span class="text-slate-800">${qaEsc(cur)}</span>${c.getBanned() ? ' <span class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">🚫 محظور</span>' : ''}</p>
+                    <div class="grid grid-cols-3 gap-2 mb-3">${btns}</div>
+                    <button id="qaDelBtn" onclick="qaDelete()" ${cur === 'محذوف' ? 'disabled' : ''} class="w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl py-2.5 text-xs font-black mb-1 ${cur === 'محذوف' ? 'opacity-40' : ''}">🗑️ حذف الملف (بلا التزامات)</button>
+                    <label class="flex items-center justify-center gap-2 text-[11px] font-bold text-slate-600 mb-3 cursor-pointer"><input type="checkbox" id="qaNotify" checked class="w-4 h-4 accent-red-600"> إرسال واتساب للعميل بأن ملفه حُذف</label>
+                    <button onclick="qaOpenBan()" class="w-full bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-2.5 text-xs font-black">🚫 ${c.getBanned() ? 'الحساب محظور: عرض أو رفع الحظر' : 'حظر الحساب (بشرط للعودة)'}</button>
+                    <button onclick="qaCloseModal(); openQuickProfile('${qaEsc(c.refId)}')" class="w-full mt-3 text-[11px] font-bold text-indigo-600 hover:underline">عرض البطاقة الكاملة (الرصيد، الباقات، التعديل)</button>
+                </div>`);
+        }
+
+        function qaSetStatus(status) {
+            const c = qaCtx; if (!c) return;
+            const undo = qaPatchLocal(c.refId, c.phone, { status: status });
+            const label = 'تغيير حالة #' + c.refId + ' إلى ' + status;
+            const payload = { action: 'adminSoftDeleteProfile', refId: c.refId, newStatus: status, notify: false, adminToken: state.adminToken };
+            qaCloseModal();
+            qaRun(label, payload, undo, 60000);
+        }
+
+        function qaDelete() {
+            const c = qaCtx; if (!c) return;
+            const btn = document.getElementById('qaDelBtn');
+            if (!qaDeleteArmed) {
+                qaDeleteArmed = true;
+                btn.textContent = '⚠️ اضغط مرة أخرى لتأكيد الحذف';
+                btn.className = 'w-full bg-red-600 text-white border border-red-700 rounded-xl py-2.5 text-xs font-black mb-1 animate-pulse';
+                setTimeout(() => { if (qaDeleteArmed && document.getElementById('qaDelBtn')) { qaDeleteArmed = false; qaRenderMain(); } }, 4000);
+                return;
+            }
+            const notifyEl = document.getElementById('qaNotify');
+            const notify = !!(notifyEl && notifyEl.checked);
+            const undo = qaPatchLocal(c.refId, c.phone, { status: 'محذوف' });
+            const payload = { action: 'adminSoftDeleteProfile', refId: c.refId, newStatus: 'محذوف', notify: notify, adminToken: state.adminToken };
+            const label = 'حذف الملف #' + c.refId;
+            qaCloseModal();
+            qaRun(label, payload, undo, 90000);
+        }
+
+        async function qaOpenBan() {
+            const c = qaCtx; if (!c) return;
+            qaShell(`<div class="bg-rose-600 px-4 py-3"><h3 class="text-white font-black text-sm">🚫 حظر الحساب — ملف #${qaEsc(c.refId)}</h3></div><div class="p-8 text-center text-xs font-bold text-slate-500 animate-pulse">جارٍ تحميل بيانات الحظر...</div>`);
+            const ctx = c; const r = await qaBanInfoPromise;
+            if (qaCtx !== ctx) return; // أُغلقت النافذة أثناء التحميل
+            if (!r || !r.ok) { qaShell(`<div class="p-6 text-center"><p class="text-sm font-bold text-rose-600 mb-3">تعذر التحميل: ${qaEsc(r && r.message)}</p><button onclick="qaRenderMain()" class="bg-slate-100 px-4 py-2 rounded-xl text-xs font-bold">رجوع</button></div>`); return; }
+            const info = r.data; ctx.banInfo = info;
+            const head = `<p class="text-xs font-black text-slate-800 text-center">الجوال <span dir="ltr">${qaEsc(info.phone)}</span></p><p class="text-[11px] font-bold text-slate-500 mb-3 text-center">${qaEsc(info.summary || '')}</p>`;
+            const family = (info.family || []).length > 1 ? `<div class="bg-slate-50 border border-slate-200 rounded-xl p-2 mb-3"><p class="text-[10px] font-black text-slate-500 mb-1">ملفات هذا الجوال (يشملها الحظر كلها):</p>${info.family.map(f => `<div class="text-[11px] font-bold text-slate-700 flex justify-between gap-2"><span class="truncate">#${qaEsc(f.refId)} ${qaEsc(f.relation || '')}</span><span class="text-slate-400 shrink-0">${qaEsc(f.status)}</span></div>`).join('')}</div>` : '';
+            if (info.ban) {
+                qaShell(`<div class="bg-rose-600 px-4 py-3 flex justify-between"><h3 class="text-white font-black text-sm">🚫 الحساب محظور</h3><button onclick="qaRenderMain()" class="text-white/80 text-lg leading-none">✕</button></div><div class="p-4">${head}${family}
+                    <div class="bg-rose-50 border border-rose-200 rounded-xl p-3 mb-3 text-center"><p class="text-[10px] font-bold text-rose-500">منذ ${qaEsc(info.ban.date)} · الملف المخالف #${qaEsc(info.ban.refId)}</p><p class="text-xs font-black text-rose-700 mt-1">شرط الرفع: ${qaEsc(info.ban.condText)}</p></div>
+                    <input id="qaUnbanNote" type="text" placeholder="ملاحظة الرفع (مثلاً: سدّد خارج المنصة)" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-2">
+                    <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 mb-3"><input id="qaUnbanNotify" type="checkbox" checked class="w-4 h-4 accent-emerald-600"> إرسال واتساب بإعادة التفعيل</label>
+                    <button onclick="qaSubmitUnban()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-3 text-xs font-black">رفع الحظر</button></div>`);
+                return;
+            }
+            const opts = (info.packages || []).map(p => `<option value="${qaEsc(p.id)}" ${p.id === info.suggestedPackageId ? 'selected' : ''}>${qaEsc(p.name)} (${qaEsc(p.price)} ريال)</option>`).join('');
+            qaShell(`<div class="bg-rose-600 px-4 py-3 flex justify-between"><h3 class="text-white font-black text-sm">🚫 حظر الحساب</h3><button onclick="qaRenderMain()" class="text-white/80 text-lg leading-none">✕</button></div><div class="p-4">${head}${family}
+                <label class="block text-[11px] font-black text-slate-700 mb-1">سبب الحظر (داخلي، لا يراه العميل)</label>
+                <textarea id="qaBanReason" rows="2" placeholder="مثلاً: تزوّج ولم يسدّد رسوم التوفيق" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3"></textarea>
+                <p class="text-[11px] font-black text-slate-700 mb-1">شرط العودة (يظهر للعميل)</p>
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1"><input type="radio" name="qaCond" value="package" ${opts ? 'checked' : 'disabled'} class="w-4 h-4 accent-rose-600"> الاشتراك في باقة</label>
+                <select id="qaBanPkg" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3">${opts}</select>
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1"><input type="radio" name="qaCond" value="custom" ${opts ? '' : 'checked'} class="w-4 h-4 accent-rose-600"> شرط آخر (مبلغ أو مطلوب)</label>
+                <input id="qaBanCustom" type="text" placeholder="مثلاً: سداد رسوم التوفيق 3000 ريال" onfocus="document.querySelector('input[name=qaCond][value=custom]').checked = true" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold mb-3">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 mb-3"><input id="qaBanNotify" type="checkbox" checked class="w-4 h-4 accent-rose-600"> إرسال واتساب للعميل بالحظر وشرط العودة</label>
+                <button id="qaBanBtn" onclick="qaSubmitBan()" class="w-full bg-rose-600 hover:bg-rose-700 text-white rounded-xl py-3 text-xs font-black">تأكيد الحظر</button></div>`);
+        }
+
+        function qaSubmitBan() {
+            const c = qaCtx; if (!c || !c.banInfo) return;
+            const info = c.banInfo;
+            const condType = (document.querySelector('input[name=qaCond]:checked') || {}).value || 'custom';
+            const custom = document.getElementById('qaBanCustom').value.trim();
+            if (condType === 'custom' && !custom) { qaToast('اكتب شرط العودة', 'error'); return; }
+            const btn = document.getElementById('qaBanBtn');
+            if (btn.dataset.armed !== '1') { // ضغطة تأكيد ثانية
+                btn.dataset.armed = '1'; btn.textContent = '⚠️ اضغط مرة أخرى لتأكيد الحظر'; btn.classList.add('animate-pulse');
+                setTimeout(() => { if (btn.isConnected) { btn.dataset.armed = '0'; btn.textContent = 'تأكيد الحظر'; btn.classList.remove('animate-pulse'); } }, 4000);
+                return;
+            }
+            const payload = {
+                action: 'adminBanAccount', refId: info.refId, reason: document.getElementById('qaBanReason').value.trim(), condType: condType,
+                packageId: document.getElementById('qaBanPkg').value, condText: custom, notify: document.getElementById('qaBanNotify').checked,
+                opId: 'ban_' + Date.now() + '_' + Math.floor(Math.random() * 100000), adminToken: state.adminToken
+            };
+            const undo = qaPatchLocal(c.refId, info.phone, { banned: true });
+            qaCloseModal();
+            qaRun('حظر الحساب ' + info.phone, payload, undo, 90000);
+        }
+
+        function qaSubmitUnban() {
+            const c = qaCtx; if (!c || !c.banInfo) return;
+            const info = c.banInfo;
+            const payload = { action: 'adminUnbanAccount', phone: info.phone, note: document.getElementById('qaUnbanNote').value.trim(), notify: document.getElementById('qaUnbanNotify').checked, adminToken: state.adminToken };
+            const undo = qaPatchLocal(c.refId, info.phone, { banned: false });
+            qaCloseModal();
+            qaRun('رفع الحظر عن ' + info.phone, payload, undo, 90000);
         }
 
         // ==========================================
