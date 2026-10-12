@@ -1024,7 +1024,7 @@
                 
                 // 🟢 الفحص للنزاعات والحالات المعلقة
                 if (isClosed) {
-                    let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : "مغلق / مؤرشف");
+                    let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : (s.includes('تأخر في الرد') ? "مغلق - تأخر في الرد ⏰" : "مغلق / مؤرشف"));
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
                 } else if (deletedSideText(req)) {
                     statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">${deletedSideIcon(req)} ${deletedSideText(req)} - راجعها</span>`;
@@ -1039,7 +1039,11 @@
                 } else if (req.hasRequestedContact) {
                     statusBadge = `<span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-200 animate-pulse shrink-0 whitespace-nowrap">طلب تواصل</span>`;
                 } else if (s.includes('يوجد رد') || s.includes('اعتماد') || s.includes('بانتظار اعتماد الإدارة')) {
-                    statusBadge = `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
+                    // 🔄 [القسم 31] طلب أُعيد فتحه: الرسالة الأخيرة طلب إعادة فتح من أحد الطرفين (مبررات + نقاط خُصمت) ← ينبّه الأدمن أنها ليست رداً عادياً
+                    let isReopenMsg = (req.reopenCount > 0) && (req.message || '').split('---').pop().includes('طلب إعادة فتح المحادثة');
+                    statusBadge = isReopenMsg
+                        ? `<span class="bg-indigo-100 text-indigo-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-indigo-300 animate-pulse shrink-0 whitespace-nowrap">🔄 إعادة فتح - يتطلب الاعتماد</span>`
+                        : `<span class="bg-sky-100 text-sky-800 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-200 animate-pulse shrink-0 whitespace-nowrap">يتطلب الاعتماد</span>`;
                 } else if (s.includes('قائمة الانتظار')) {
                     // 🟢 الشارة نفسها تفتح نافذة الدور (رقم الدور ظاهر عليها)
                     let qn = (s.match(/رقم\s*(\d+)/) || [])[1];
