@@ -783,6 +783,10 @@
                     <button onclick="actionBanAccount('${refId}')" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-black transition-all text-xs shadow-sm flex items-center justify-center gap-2"><i class="fas fa-ban text-base"></i> ${isBannedNow ? 'الحساب محظور: عرض الحظر أو رفعه' : 'حظر الحساب (لم يسدّد أو متلاعب، بشرط للعودة)'}</button>
                     <p class="text-center text-[10px] text-slate-400 font-bold mt-2">الحظر يشمل رقم الجوال بكل ملفاته، ولا يغيّر حالة الملف.</p>
                 </div>
+                <div class="pt-4 mt-4 border-t border-slate-100">
+                    <button onclick="actionChangePhone('${refId}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-black transition-all text-xs shadow-sm flex items-center justify-center gap-2"><i class="fas fa-mobile-screen-button text-base"></i> تغيير رقم الجوال (ينقل الحساب بكل ما يتبعه)</button>
+                    <p class="text-center text-[10px] text-slate-400 font-bold mt-2">الملفات والرصيد والمراسلات والمفضلات تنتقل للرقم الجديد معاً.</p>
+                </div>
             `;
             openModal('تغيير الحالة', html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm text-sm">إلغاء</button>`, 'p-4 w-full');
         };
@@ -846,6 +850,53 @@
             } catch (e) {
                 document.getElementById('modal-body').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-8">تعذر التحميل: ${escPkg(e.message)}</p>`;
             }
+        };
+
+        // 🟢 تغيير رقم الجوال (القسم 30 في الخادم): معاينة (dryRun) بما سيُنقل ثم تأكيد. المطابقة في الخادم بالرقم المرجعي لكل ملفات الحساب.
+        window.actionChangePhone = function(refId) {
+            const prof = (state.searchResults || []).find(p => p.refId === refId) || {};
+            window.chPhoneState = { refId: refId, previewed: false, newPhone: '' };
+            openModal('تغيير رقم الجوال', `
+                <p class="text-xs font-black text-slate-800 mb-1 text-center">الملف #${escPkg(refId)} · الجوال الحالي <span class="font-mono dir-ltr">${escPkg(prof.phone || '')}</span></p>
+                <label class="block text-[11px] font-black text-slate-700 mb-1 mt-3">الرقم الجديد (بمفتاح الدولة أو 05xxxxxxxx)</label>
+                <input type="tel" id="chph-new" dir="ltr" placeholder="966500000000" oninput="window.chPhoneState.previewed=false; document.getElementById('chph-go').disabled=true; document.getElementById('chph-preview').innerHTML=''" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold font-mono mb-3">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer mb-1"><input type="checkbox" id="chph-rotate" checked class="w-4 h-4 accent-indigo-600"> إلغاء الرابط السحري القديم (موصى به إن كان الرقم القديم مغلقاً أو ضائعاً)</label>
+                <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer mb-3"><input type="checkbox" id="chph-notify" checked class="w-4 h-4 accent-indigo-600"> إرسال واتساب تأكيد للرقم الجديد (يتحقق أنه يعمل)</label>
+                <div id="chph-preview"></div>
+                <p class="text-[10px] text-slate-400 font-bold leading-relaxed">يُنقل كل ملفات هذا الجوال (لوحة العائلة). تُخرَج أي جلسة مفتوحة على الرقم القديم تلقائياً. لا يُنقل لرقم مسجَّل لملف آخر ولا من/إلى رقم محظور.</p>`,
+                `<button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm">إلغاء</button><button onclick="previewChangePhone(this)" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-black text-sm">معاينة</button><button id="chph-go" disabled onclick="submitChangePhone(this)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white py-3 rounded-xl font-black text-sm">تأكيد النقل</button>`, 'p-4 w-full');
+        };
+
+        window.previewChangePhone = async function(btn) {
+            const st = window.chPhoneState; if (!st) return;
+            const newPhone = document.getElementById('chph-new').value.trim();
+            if (!newPhone) return showToast('اكتب الرقم الجديد', 'error');
+            setBtnLoading(btn, true, '');
+            try {
+                const res = await apiCall({ action: 'adminChangePhone', refId: st.refId, newPhone: newPhone, dryRun: true, adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
+                const c = res.counts || {};
+                st.previewed = true; st.newPhone = newPhone;
+                document.getElementById('chph-preview').innerHTML = `<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-3 text-[11px] font-bold text-indigo-900 leading-relaxed">
+                    <p class="font-black mb-1">من <span class="font-mono dir-ltr">${escPkg(res.oldPhone)}</span> إلى <span class="font-mono dir-ltr">${escPkg(res.newPhone)}</span></p>
+                    الملفات: ${c.profiles} (${(res.family || []).map(f => '#' + escPkg(f.refId)).join('، ')})<br>
+                    صفوف الرصيد: ${c.wallet} · المفضلات: ${c.favorites}<br>
+                    طلبات المراسلة: ${c.requests} (المفتوحة منها ${c.openRequests}) · طلبات باقات معلّقة: ${c.pendingPackageRequests}</div>`;
+                document.getElementById('chph-go').disabled = false;
+            } catch (e) { showToast(e.message, 'error'); } finally { setBtnLoading(btn, false, 'معاينة'); }
+        };
+
+        window.submitChangePhone = async function(btn) {
+            const st = window.chPhoneState; if (!st || !st.previewed) return;
+            if (!confirm('تأكيد نقل الحساب إلى الرقم الجديد؟')) return;
+            setBtnLoading(btn, true, '');
+            try {
+                const opId = 'chph_' + Date.now() + '_' + Math.floor(Math.random() * 100000); // يمنع التنفيذ المزدوج عند إعادة apiCall للمحاولة
+                const res = await apiCall({ action: 'adminChangePhone', refId: st.refId, newPhone: st.newPhone, dryRun: false, notify: document.getElementById('chph-notify').checked, rotateToken: document.getElementById('chph-rotate').checked, opId: opId, adminToken: state.adminToken }, 1, SLOW_ACTION_TIMEOUT);
+                showToast(res.message || 'تم تغيير الرقم');
+                const oldDigits = String((state.searchResults.find(p => p.refId === st.refId) || {}).phone || '').replace(/\D/g, '');
+                if (res.newPhone) state.searchResults.forEach(p => { if (oldDigits && String(p.phone || '').replace(/\D/g, '') === oldDigits) { p.phone = res.newPhone; p.waLink = 'https://wa.me/' + res.newPhone; } });
+                closeModal(); renderResults();
+            } catch (e) { showToast(e.message, 'error'); setBtnLoading(btn, false, 'تأكيد النقل'); }
         };
 
         function markPhoneBanState(phone, banned, condText) {
