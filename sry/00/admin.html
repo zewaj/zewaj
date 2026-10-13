@@ -858,7 +858,7 @@
 
                 if (isClosed || (s.includes('مرحلة التعارف') && !s.includes('نزاع') && !s.includes('تأكيد'))) {
                     // لا تفعل شيئاً في العدادات للطلبات المغلقة أو في التعارف المستقر
-                } else if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(r)) {
+                } else if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(r) || r.delayPending) {
                     actionNeeded++; // 🟢 التعديل: النزاعات والحالات المعلقة وملفات الطرف المحذوفة تزيد عداد الأكشن الإداري
                 } else if (r.hasRequestedContact) {
                     // 🟢 "طلب تواصل" فئة مستقلة (وميض أزرق): لا تُحسب في "بانتظار العملاء" (للمراسلات العادية فقط) ولا في "تتطلب تدخل" (تبدأ بعد موافقة المرأة)
@@ -952,7 +952,7 @@
                 let matchesStatus = false;
                 
                 if (currentFilterType === 'active') matchesStatus = !isClosed && !s.includes('مرحلة التعارف');
-                else if (currentFilterType === 'action') matchesStatus = !isClosed && (deletedSideText(req) !== '' || (req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
+                else if (currentFilterType === 'action') matchesStatus = !isClosed && (deletedSideText(req) !== '' || req.delayPending || (req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
                 else if (currentFilterType === 'waiting') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && !req.hasRequestedContact && (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
                 else if (currentFilterType === 'acquaintance') matchesStatus = s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد'); // 🟢 يظهر في قائمة التعارف والأكشن
@@ -975,7 +975,7 @@
                 
                 if (isClosed) return 8;
                 // 🟢 إعطاء أولوية قصوى للنزاعات والطلبات المعلقة وما حُذف ملف أحد طرفيه
-                if (s.includes('يوجد نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(req)) return 1;
+                if (s.includes('يوجد نزاع') || s.includes('بانتظار تأكيد') || deletedSideText(req) || req.delayPending) return 1;
                 if ((req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) return 2;
 
                 if (s.includes('مرحلة التعارف')) return 7;
@@ -1028,6 +1028,8 @@
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
                 } else if (deletedSideText(req)) {
                     statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">${deletedSideIcon(req)} ${deletedSideText(req)} - راجعها</span>`;
+                } else if (req.delayPending) {
+                    statusBadge = `<span class="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-amber-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">⏰ تأخر ${req.delayDays} أيام - بانتظار قرارك</span>`;
                 } else if (s.includes('يوجد نزاع')) {
                     statusBadge = `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-700 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخلاً</span>`;
                 } else if (s.includes('بانتظار تأكيد')) {
@@ -1139,6 +1141,19 @@
                     let chatThread = parseUnifiedChat(req.message, req.reqId);
                     
                     let actionButtonHTML = '';
+                    // ⏰ [القسم 31] تأخر رُفع للإدارة: لا إغلاق ولا خصم قبل قرارك (الرد قد يكون وصلك عبر الواتساب)
+                    let delayBannerHtml = '';
+                    if (req.delayPending && !isClosed) {
+                        const who = req.delayerIsFirst ? 'صاحب الطلب (الطرف الأول)' : 'المستلم (الطرف الثاني)';
+                        delayBannerHtml = `
+                        <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-3 shadow-sm">
+                            <p class="text-xs font-bold text-amber-800 text-center leading-relaxed mb-2">⏰ ${who} لم يردّ منذ ${req.delayDays} أيام رغم التنبيه. تحقق أولاً من الواتساب: هل وصلك ردّه؟ لا إغلاق ولا خصم قبل قرارك.</p>
+                            <div class="flex flex-col sm:flex-row gap-2 w-full">
+                                <button onclick="resolveDelay('${req.reqId}', 'close')" class="flex-1 py-2.5 text-[11px] font-extrabold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl transition-all shadow-sm">❌ التأخر منهم - أغلق الطلب</button>
+                                <button onclick="resolveDelay('${req.reqId}', 'extend')" class="flex-1 py-2.5 text-[11px] font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition-all shadow-sm">✅ التأخر مني أو وصل ردّهم - مدّد المهلة</button>
+                            </div>
+                        </div>`;
+                    }
                     let queueButton = '';
                     // 🟢 [2026-10-09] الزر يظهر للمنتظر في الدور، وكذلك للمحادثة الجارية إن كان على ملف الطرف الثاني منتظرون (ليُعرف من بعده)
                     let targetIdProxy = req.targetRefId || req.targetPhone;
@@ -1288,7 +1303,7 @@
                     </div>
                     
                     <div class="shrink-0 p-1.5 sm:p-2 bg-white border-t border-slate-200 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style="padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);">
-                        ${actionButtonHTML}
+                        ${delayBannerHtml}${actionButtonHTML}
                     </div>
                     `;
                 } else {
@@ -1888,6 +1903,36 @@
             });
             savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
             btn.disabled = false;
+        }
+
+        // ⏰ [القسم 31 في الخادم] قرار الأدمن في طلب متأخر: close = إغلاق بسبب التأخر (+ استرداد وإشعار)، extend = لا إغلاق ولا خصم وتبدأ المهلة من جديد
+        async function resolveDelay(reqId, decision) {
+            const req = allRequests.find(r => r.reqId === reqId);
+            if (!req) return;
+            const isClose = decision === 'close';
+            const ok = await showMsgModal(
+                isClose ? 'إغلاق الطلب بسبب التأخر' : 'تمديد المهلة',
+                isClose ? 'سيُغلق الطلب ويصل الطرفين واتساب، وتُردّ النقاط لصاحب الطلب إن كان المستلم لم يردّ إطلاقاً.\n\nهل تأكدت أن الرد لم يصلك عبر الواتساب؟'
+                        : 'لن يُغلق شيء ولن يُخصم شيء، وتبدأ مهلة التأخر من جديد. هل تريد المتابعة؟',
+                'confirm');
+            if (!ok) return;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'adminResolveDelay', adminToken: state.adminToken, reqId: reqId, decision: decision, rowHint: req.rowIndex }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                let result; try { result = JSON.parse(await res.text()); } catch (e) { throw new Error('استجابة السيرفر غير صالحة.'); }
+                scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
+                await showMsgModal(result.success ? 'تم' : 'تنبيه', result.message || (result.success ? 'تم التنفيذ.' : 'تعذر تنفيذ القرار.'));
+                await fetchData(true, reqId);
+            } catch (e) {
+                if (e.name === 'AbortError') await showMsgModal('تأخير', 'تأخر استجابة السيرفر. قد يكون القرار نُفّذ، حدّث الصفحة وتحقق قبل إعادة المحاولة.');
+                else await showMsgModal('خطأ', 'فشل الاتصال بالسيرفر.');
+            }
         }
 
         // 🟢 تنفيذ إجراء بالنيابة عن العميل. requestDirect/approveDirect/reject تعالجها adminActOnBehalf في الخادم.
