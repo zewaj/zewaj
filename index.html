@@ -996,6 +996,7 @@
             if (data.action === 'requireLogin') {
                 // الطلب قد يأتي من نافذة الباقات نفسها (زائر ضغط اشترك): نغلقها ليظهر الدخول فوق الصفحة
                 closePackagesModal();
+                rememberLoginRef(data.refId);
                 openLoginModal();
             }
 
@@ -1030,18 +1031,25 @@
             if (data.action === 'authSuccess') {
                 const phone = localStorage.getItem('verified_user_phone');
                 const destination = sessionStorage.getItem('intended_destination');
-                
-                if (phone) {
+                sessionStorage.removeItem('intended_destination');
+                const wasOnRegister = () => String(window.currentActivePage || '').includes('register.html');
+
+                if (phone && destination) {
+                    // عودة فورية للصفحة التي طُلب منها الدخول (دون انتظار الخادم)، والرصيد يتحدث في الخلفية
+                    updateAuthUI();
+                    if (destination === 'smart.html') handleSmartNavigation();
+                    else loadIframe(destination);
+                    fetchGlobalWalletBalance(phone, true).then(() => updateAuthUI());
+                } else if (phone) {
                     // 🟢 إضافة التحديث الإجباري لكسر كاش السيرفر
                     fetchGlobalWalletBalance(phone, true).then(() => {
                         updateAuthUI();
-                        if (!destination) {
-                            showHomePage(); 
-                        }
+                        // لا نُخرج المستخدم لو غادر صفحة التسجيل أثناء انتظار الرد (كان يُرجَع للرئيسية بعد ثوانٍ وهو في البحث)
+                        if (wasOnRegister()) showHomePage();
                     });
                 } else {
                     updateAuthUI();
-                    if (!destination) showHomePage();
+                    if (wasOnRegister()) showHomePage();
                 }
             }
 
@@ -1398,12 +1406,7 @@
             }
 
             if (phone) {
-                const destination = sessionStorage.getItem('intended_destination');
-                if (destination) {
-                    sessionStorage.removeItem('intended_destination');
-                    if (destination === 'smart.html') setTimeout(handleSmartNavigation, 100);
-                    else if (destination !== '') setTimeout(() => loadIframe(destination), 100);
-                }
+                // الوجهة المحفوظة تُستهلك في معالج authSuccess وحده (كانت تُستهلك هنا أيضاً فيسبق أحدهما الآخر)
                 fetchGlobalWalletBalance(phone);
             }
             
@@ -1816,7 +1819,17 @@
             setTimeout(() => m.classList.add('hidden'), 300);
         }
 
+        // الملف الذي كان الزائر يهمّ بالتفاعل معه (تواصل/مفضلة) قبل أن يُطلب منه الدخول؛ صالح 5 دقائق فقط كي لا يتسرب لدخول لاحق
+        function rememberLoginRef(refId) {
+            if (!refId) return;
+            window.loginReturnRef = { id: String(refId), at: Date.now() };
+        }
+
         function goToLogin(destination) {
+            const lr = window.loginReturnRef;
+            window.loginReturnRef = null;
+            // بعد الدخول يعود الزائر لنفس الملف في البحث لا لصفحة بحث فارغة
+            if (lr && Date.now() - lr.at < 300000) destination = 'search.html?refId=' + encodeURIComponent(lr.id);
             sessionStorage.setItem('intended_destination', destination);
             closeLoginModal(); 
             loadIframe('register.html');
@@ -2047,8 +2060,8 @@
         async function toggleFavorite(btn, refId) { 
             const userPhone = localStorage.getItem('verified_user_phone');
             const activeProfileRefId = localStorage.getItem('active_profile_refid');
-            if (!userPhone) { if (typeof openLoginModal === 'function') openLoginModal(); return; }
-            
+            if (!userPhone) { rememberLoginRef(refId); if (typeof openLoginModal === 'function') openLoginModal(); return; }
+
             const isActive = btn.classList.contains('active');
             let cachedFavs = JSON.parse(localStorage.getItem('cached_favorites') || '[]');
             
@@ -2163,7 +2176,7 @@
 
         function openMasterContactModal(refId, isDirectContact, isSpecialCondition, hasPreviousContact) {
             const phone = localStorage.getItem('verified_user_phone');
-            if (!phone) { closeUnifiedProfileModal(); openLoginModal(); return; }
+            if (!phone) { rememberLoginRef(refId); closeUnifiedProfileModal(); openLoginModal(); return; }
             window.feePledgeAccepted = false;
 
             const userStatus = localStorage.getItem('active_profile_status') || window.userStatusParam || '';
@@ -2524,8 +2537,8 @@
         async function toggleGlobalFavorite(btn, refId) { 
             const phone = localStorage.getItem('verified_user_phone'); 
             const reqRefId = localStorage.getItem('active_profile_refid'); 
-            if(!phone) { openLoginModal(); return; } 
-            
+            if(!phone) { rememberLoginRef(refId); openLoginModal(); return; }
+
             const isActive = btn.classList.contains('active'); 
             let cachedFavs = [];
             try { cachedFavs = JSON.parse(localStorage.getItem('cached_favorites') || '[]'); } catch(e) {}
