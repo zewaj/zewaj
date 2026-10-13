@@ -504,9 +504,13 @@
     </div> <!-- إغلاق حاوية الـ max-w-5xl -->
 
     <!-- 🟢 إضافة سهم النزول المتحرك هنا في أسفل الـ Hero Section -->
-    <div class="absolute bottom-2 md:bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce cursor-pointer text-slate-300 hover:text-indigo-500 transition-colors z-20" onclick="document.getElementById('appScrollContainer').scrollBy({top: window.innerHeight * 0.6, behavior: 'smooth'})" title="التمرير للأسفل">
-        <!-- السهم المزدوج الافتراضي (يمكنك استبداله بأي من الخيارات الخمسة) -->
-        <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path></svg>
+    <style>
+        @keyframes sheetNudge { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .sheet-cue-arrow { display:inline-block; animation: sheetNudge 1.4s ease-in-out infinite; }
+    </style>
+    <div class="absolute bottom-0 left-0 right-0 z-20 cursor-pointer bg-white border-t border-slate-200 rounded-t-[22px] shadow-[0_-6px_18px_rgba(79,70,229,0.08)] flex flex-col items-center pt-2 pb-3 gap-1.5" onclick="document.getElementById('dashboardSection').scrollIntoView({behavior: 'smooth'})" title="استعرض الأقسام">
+        <span class="w-10 h-1 rounded-full bg-indigo-500"></span>
+        <span class="text-[12px] md:text-sm font-bold text-slate-500 flex items-center gap-1.5"><svg class="sheet-cue-arrow w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>اسحب لاستعراض الأقسام</span>
     </div>
 
     </section>
