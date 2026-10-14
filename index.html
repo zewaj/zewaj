@@ -638,7 +638,7 @@
     <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <!-- Modals -->
     <div id="loginRequiredModal" class="fixed inset-0 z-[170] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
-        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto shadow-2xl transform scale-95 transition-transform duration-300 text-center flex flex-col gap-2">
+        <div class="max-h-[92dvh] overflow-y-auto bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto shadow-2xl transform scale-95 transition-transform duration-300 text-center flex flex-col gap-2">
             <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm border border-indigo-100">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
@@ -690,7 +690,7 @@
 
     <!-- 🟢 شاشة إيقاف الحساب (حظر مشروط): تغطي المنصة كلها عدا نافذة الباقات، حتى يستوفي العميل شرط العودة -->
     <div id="banOverlay" class="fixed inset-0 z-[205] hidden items-center justify-center bg-slate-900/80 backdrop-blur-sm px-4">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3">
+        <div class="max-h-[92dvh] overflow-y-auto bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3">
             <div class="text-4xl">🚫</div>
             <h3 class="text-lg font-black text-slate-800">حسابكم موقوف</h3>
             <p class="text-sm text-slate-600 font-bold leading-relaxed">تم إيقاف حسابكم في المنصة لعدم الالتزام بشروط المنصة والتعهد.</p>
@@ -720,7 +720,7 @@
 
     <!-- 🟢 بطاقة تعريف العميل الجديد بالباقات (مرة واحدة لكل حساب) -->
     <div id="packagesIntroModal" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3 transform scale-95 transition-transform duration-300">
+        <div class="max-h-[92dvh] overflow-y-auto bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center flex flex-col gap-3 transform scale-95 transition-transform duration-300">
             <div class="text-4xl">🎁</div>
             <h3 class="text-lg font-black text-slate-800">أهلاً بك في المنصة</h3>
             <p id="packagesIntroText" class="text-sm text-slate-600 font-medium leading-relaxed"></p>
