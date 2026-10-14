@@ -173,7 +173,7 @@
 <!-- ✂️ ---------- [ القسم رقم 11 ]: نافذة إرسال رسالة / تعديل (Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="replyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] hidden flex items-center justify-center p-4 fade-in">
-        <div id="replyModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-x-hidden overflow-y-auto max-h-[92dvh]">
+        <div id="replyModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-x-hidden overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
             <div id="replyModalHeaderBg" class="absolute top-0 left-0 right-0 h-16 bg-indigo-50 border-b border-indigo-100 -z-10"></div>
             <button type="button" onclick="closeReplyModal()" class="absolute top-3 left-3 text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -188,7 +188,7 @@
             
             <div id="quotaWarning" class="hidden mb-4 text-center p-2 rounded-lg bg-rose-50 border border-rose-200 shadow-sm"></div>
             
-            <div class="flex gap-2">
+            <div class="flex gap-2 sticky bottom-0 bg-white pt-2">
                 <button id="replySubmitBtn" type="button" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2">
                     <span>تأكيد الإرسال</span>
                 </button>
@@ -200,15 +200,15 @@
 <!-- ✂️ ---------- [ القسم رقم 12 ]: نافذة تأكيد الإجراء (Confirm Action Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="confirmActionModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[300] hidden flex items-center justify-center p-4 fade-in">
-        <div id="confirmActionBox" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center relative max-h-[92dvh] overflow-y-auto">
+        <div id="confirmActionBox" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
             <div class="w-14 h-14 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
             <h3 class="text-lg font-bold text-slate-800 mb-2">تأكيد الإجراء</h3>
             <p id="confirmActionText" class="text-xs text-slate-600 mb-6 leading-relaxed font-medium whitespace-pre-wrap">جاري الحساب...</p>
-            <div class="flex gap-2 sticky bottom-0 bg-white pt-2">
-                <button type="button" id="confirmActionYesBtn" onclick="executeConfirmAction()" class="flex-[1.6] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">نعم، متأكد</button>
-                <button type="button" onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">تراجع</button>
+            <div class="flex gap-2 sticky bottom-0 bg-white pt-2 pb-1">
+                <button type="button" id="confirmActionYesBtn" onclick="executeConfirmAction()" class="flex-[1.6] bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 min-h-[44px] rounded-xl transition-colors text-sm shadow-md">نعم، متأكد</button>
+                <button type="button" onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 min-h-[44px] rounded-xl transition-colors text-sm shadow-md">تراجع</button>
             </div>
         </div>
     </div>
@@ -217,7 +217,7 @@
 <!-- ✂️ ---------- [ القسم رقم 12-ب ]: نافذة إعادة فتح محادثة مغلقة ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="reopenModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[260] hidden flex items-center justify-center p-4 fade-in">
-        <div id="reopenModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto max-h-[92dvh]">
+        <div id="reopenModalBox" class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
             <button type="button" onclick="closeReopenModal()" class="absolute top-3 left-3 text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1 shadow-sm">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -226,7 +226,7 @@
             <p id="reopenMinLine" class="text-[11px] text-slate-500 mb-3 font-medium leading-relaxed"></p>
             <textarea id="reopenMessage" rows="5" maxlength="1000" class="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm mb-3 text-right bg-slate-50" placeholder="اكتب هنا سبب رغبتك في إعادة فتح المحادثة..."></textarea>
             <div id="reopenWarn" class="hidden mb-3 text-center p-2 rounded-lg bg-rose-50 border border-rose-200 text-[11px] text-rose-700 font-bold"></div>
-            <button id="reopenSubmitBtn" type="button" onclick="submitReopen()" class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2"><span>إرسال طلب إعادة الفتح</span></button>
+            <button id="reopenSubmitBtn" type="button" onclick="submitReopen()" class="sticky bottom-0 w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2"><span>إرسال طلب إعادة الفتح</span></button>
         </div>
     </div>
 
@@ -234,11 +234,11 @@
 <!-- ✂️ ---------- [ القسم رقم 13 ]: نافذة التنبيهات العامة (Alert Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[350] hidden flex items-center justify-center p-4 fade-in">
-        <div id="msgModalBox" class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl transform transition-all text-center relative">
+        <div id="msgModalBox" class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl transform transition-all text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
             <h3 id="msgModalTitle" class="text-lg font-bold text-slate-800 mb-2">تنبيه</h3>
             <p id="msgModalText" class="text-xs text-slate-600 mb-6 leading-relaxed font-medium whitespace-pre-wrap"></p>
             <button type="button" id="msgModalPkgBtn" onclick="closeModal(); window.parent.postMessage({ action: 'openPackages', reason: 'nobalance' }, '*')" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl transition-colors text-sm shadow-md mb-2">💎 اطلع على الباقات</button>
-            <button type="button" onclick="closeModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">حسناً فهمت</button>
+            <button type="button" onclick="closeModal()" class="sticky bottom-0 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">حسناً فهمت</button>
         </div>
     </div>
 
@@ -1109,7 +1109,6 @@
             document.getElementById('msgModalBody').innerText = msg;
             const m = document.getElementById('msgModal');
             m.classList.remove('hidden');
-            m.style.marginTop = Math.max(20, windowLastInteractionY - 100) + 'px';
         }
 
         function closeMsgModal() { document.getElementById('msgModal').classList.add('hidden'); }
@@ -1194,7 +1193,6 @@
             const ta = document.getElementById('reopenMessage'); ta.value = '';
             document.getElementById('reopenWarn').classList.add('hidden');
             const modalBox = document.getElementById('reopenModalBox');
-            modalBox.style.marginTop = Math.max(20, windowLastInteractionY - 200) + 'px';
             document.getElementById('reopenModal').classList.remove('hidden');
         };
         window.closeReopenModal = function() { document.getElementById('reopenModal').classList.add('hidden'); window.currentReopen = null; };
@@ -1276,7 +1274,6 @@
                 pb.innerHTML = buildFeePledgeHtml(false);
                 msgInput.parentNode.insertBefore(pb, msgInput.nextSibling);
                 const subBtn = document.getElementById('replySubmitBtn'); if (subBtn) subBtn.innerHTML = '<span>أتعهد وأوافق على التبادل</span>';
-                setTimeout(() => { const rb = document.getElementById('replyModalBox'); if (rb) rb.style.marginTop = '0px'; }, 0);
             } else if (outcomeReply) {
                 // 🟢 نافذة الزواج / تأكيد الإنهاء / تأكيد الزواج (نصوص ثابتة تطابق ما يسجله الخادم)
                 msgInput.style.display = 'block';
@@ -1305,8 +1302,6 @@
                 if (radioContainer) radioContainer.style.display = 'none';
             }
             
-            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
-            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
             document.getElementById('replyModal').classList.remove('hidden');
             
             document.getElementById('replySubmitBtn').onclick = submitReply;
@@ -1325,8 +1320,6 @@
             let radioContainer = document.getElementById('rejectionRadios'); if (radioContainer) radioContainer.style.display = 'none';
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
             
-            let targetY = windowLastInteractionY - 200; if(targetY < 20) targetY = 20;
-            document.getElementById('replyModalBox').style.marginTop = targetY + 'px';
             document.getElementById('replyModal').classList.remove('hidden');
             document.getElementById('replySubmitBtn').onclick = submitEdit;
         }
@@ -1355,8 +1348,6 @@
             window.pendingConfirmAction = function() { window.sendDirectContactRequest(reqId); };
 
             const modalBox = document.getElementById('confirmActionBox');
-            let safeY = Math.max(20, windowLastInteractionY - 150);
-            modalBox.style.marginTop = safeY + 'px';
             document.getElementById('confirmActionModal').classList.remove('hidden');
         };
 
@@ -1485,8 +1476,6 @@
             document.getElementById('quotaWarning').classList.add('hidden'); 
             
             const modalBox = document.getElementById('replyModalBox');
-            let safeY = Math.max(20, windowLastInteractionY - 200);
-            modalBox.style.marginTop = safeY + 'px';
             document.getElementById('replyModal').classList.remove('hidden');
         }
 
@@ -1500,8 +1489,6 @@
             document.getElementById('msgModalPkgBtn').classList.toggle('hidden', !(offerPackages && window.self !== window.top));
             
             const modalBox = document.getElementById('msgModalBox');
-            let safeY = Math.max(20, windowLastInteractionY - 150);
-            modalBox.style.marginTop = safeY + 'px';
             
             document.getElementById('msgModal').classList.remove('hidden'); 
         }
@@ -1722,8 +1709,6 @@
             textEl.innerHTML = `تأكيد الإلغاء<br><br><strong class="text-rose-600 block bg-rose-50 border border-rose-200 p-2 rounded-lg mt-2">هل أنت متأكد من رغبتك في الانسحاب من قائمة الانتظار واسترجاع النقاط؟</strong>`;
             
             const modalBox = document.getElementById('confirmActionBox');
-            let safeY = Math.max(20, windowLastInteractionY - 150);
-            modalBox.style.marginTop = safeY + 'px';
             document.getElementById('confirmActionModal').classList.remove('hidden');
 
             window.pendingConfirmAction = async function() {
