@@ -1013,7 +1013,10 @@
             // activity.html تطلب مزامنة شاملة بعد أي تعديل (رد، مفضلة، تحديث يدوي)
             if (data.action === 'forceGlobalSync') {
                 const phone = localStorage.getItem('verified_user_phone');
-                if (phone) { fetchGlobalWalletBalance(phone, true); }
+                // 🟢 [2026-10-15] بلا forceRefresh: activity.html ترسلها بعد أن تجلب بياناتها الطازجة بنفسها (الخادم يمسح كاش المستخدم عند أي كتابة،
+                // فطلبها يبني الكاش من جديد)، فكان الإجبار هنا يتخطى ذلك الكاش ويعيد بناء كل شيء مرة ثانية (~10–20 ث) بعد كل رسالة أو مفضلة.
+                window.__noSyncUntil = 0; // إجراء حقيقي من العميل: لا تُتخطى هذه المزامنة بمهلة ما بعد فتح الرابط السحري
+                if (phone) { fetchGlobalWalletBalance(phone, false); }
             }
 
             // activity.html تبلغ بعدم وجود رسائل تتطلب رداً: نخفي الشارات فقط (الأعداد تأتي من المزامنة)

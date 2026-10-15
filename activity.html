@@ -516,7 +516,7 @@
             let avatarSvg = getAvatarSvg(isFemale);
             let actionDate = req.lastActionDate || req.date;
             let relativeTime = timeAgo(actionDate);
-            let isIncoming = !!req.senderRefId; 
+            let isIncoming = !!req.senderRefId || (!!req.requesterRefId && !req.targetRefId); // 🟢 [2026-10-15] الوارد يحمل requesterRefId لا senderRefId، فكان الضغط على الاسم لا يفعل شيئاً 
             let clickParams = isIncoming ? `'${req.requesterRefId || req.reqId || req.senderRefId}', true` : `'${req.targetRefId}'`;
 
             return `
@@ -1429,8 +1429,8 @@
             const opId = 'ext_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
             showToast('⏳ جاري التمديد...');
             try {
-                const res = await fetchWithRetry(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'extendChat', phone: phoneParam, requesterRefId: refIdParam, reqId: reqId, opId: opId }) });
-                const result = JSON.parse(await res.text());
+                const txt = await fetchWithRetry(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'extendChat', phone: phoneParam, requesterRefId: refIdParam, reqId: reqId, opId: opId }) });
+                const result = JSON.parse(txt);
                 if (result && result.forceLogout) { handleForceLogout(result.message); return; }
                 if (result && result.banned) { handleAccountBanned(result); return; }
                 if (result && result.success) {
@@ -1581,19 +1581,24 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 22 ]: دوال الاتصال بالسيرفر (Network) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-        async function fetchWithRetry(url, options, maxRetries = 2) {
+        // 🟢 [2026-10-15] كانت 3 محاولات × 45 ث (حتى ~2.3 دقيقة قبل ظهور الخطأ)، وردّ الخادم المزدحم (صفحة HTML من Google بدل JSON) لا يُكتشف
+        // فيظهر للعميل "Unexpected token <" كفشل فوري. صار: محاولة ثانية واحدة بعد 2–4 ث عشوائية (لا ترتد كل الأجهزة معاً)،
+        // ويُعدّ رد HTML ازدحاماً فيُعاد مرة واحدة. بعد انتهاء المهلة يكون الخادم غالباً قد أكمل وبنى كاش المزامنة، فالمحاولة الثانية سريعة.
+        async function fetchWithRetry(url, options, maxRetries = 1) {
             for (let i = 0; i <= maxRetries; i++) {
                 const controller = new AbortController(); 
-                const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 ثانية لتجنب الخطأ الوهمي
+                const timeoutId = setTimeout(() => controller.abort(), 45000);
                 options.signal = controller.signal;
                 try { 
                     const res = await fetch(url, options); 
+                    const text = await res.text();
                     clearTimeout(timeoutId); 
-                    return await res.text(); 
+                    if (/^\s*</.test(text)) { const busy = new Error('SERVER_BUSY'); busy.serverBusy = true; throw busy; }
+                    return text; 
                 } catch (e) { 
                     clearTimeout(timeoutId); 
-                    if (i === maxRetries) throw e; 
-                    await new Promise(r => setTimeout(r, 1500)); 
+                    if (i === maxRetries) { if (e && e.name === 'AbortError') e.serverBusy = true; throw e; }
+                    await new Promise(r => setTimeout(r, 2000 + Math.floor(Math.random() * 2000))); 
                 }
             }
         }
@@ -1768,7 +1773,7 @@
             event.stopPropagation(); if (!phoneParam || !refIdParam) return;
             const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50', 'pointer-events-none');
             try {
-                await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) });
+                await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) }, 0); // بلا إعادة محاولة: عملية قلب حالة
                 fetchData(true).finally(() => { if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); });
             } catch(e) { if(card) card.classList.remove('opacity-50', 'pointer-events-none'); showMsgModal("خطأ", "تعذر الحذف."); }
         }
@@ -1880,7 +1885,10 @@
                 } 
                 else showErrorState("خطأ في جلب البيانات من السيرفر.");
             } catch (e) { 
-                if(!isSilent) showErrorState("تفاصيل الخطأ: " + e.message); 
+                // 🟢 إن كانت هناك بيانات محفوظة تبقى ظاهرة ويُكتفى بتنبيه صغير، ولا تُستبدل الصفحة بشاشة خطأ
+                const busyMsg = (e && e.serverBusy) ? "الخادم مزدحم حالياً، حاول بعد لحظات." : "تعذر الاتصال بالخادم، تحقق من الشبكة.";
+                if (localStorage.getItem('master_activity_cache')) { if (!isSilent) loadFromCentralCache(true); showToast("⚠️ " + busyMsg + " (تُعرض آخر بيانات محفوظة)"); }
+                else if (!isSilent) showErrorState(busyMsg + '<br><button type="button" onclick="showSkeletonLoader(); fetchData(false);" class="mt-4 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md">🔄 إعادة المحاولة</button>');
             } 
             finally { 
                 isFetching = false; 
