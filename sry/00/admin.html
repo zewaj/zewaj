@@ -1147,7 +1147,7 @@
                         const who = req.delayerIsFirst ? 'صاحب الطلب (الطرف الأول)' : 'المستلم (الطرف الثاني)';
                         delayBannerHtml = `
                         <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-3 shadow-sm">
-                            <p class="text-xs font-bold text-amber-800 text-center leading-relaxed mb-2">⏰ ${who} لم يردّ منذ ${req.delayDays} أيام رغم التنبيه. تحقق أولاً من الواتساب: هل وصلك ردّه؟ لا إغلاق ولا خصم قبل قرارك.</p>
+                            <p class="text-xs font-bold text-amber-800 text-center leading-relaxed mb-2">⏰ ${who} لم يردّ منذ ${req.delayDays} أيام رغم التنبيه. تحقق أولاً من الواتساب: هل وصلك ردّه؟ <span class="font-medium text-amber-700">إن لم تقرر يُغلق آلياً بعد 4 أيام من آخر حركة ويُحسب تحذيراً.</span></p>
                             <div class="flex flex-col sm:flex-row gap-2 w-full">
                                 <button onclick="resolveDelay('${req.reqId}', 'close')" class="flex-1 py-2.5 text-[11px] font-extrabold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-300 rounded-xl transition-all shadow-sm">❌ التأخر منهم - أغلق الطلب</button>
                                 <button onclick="resolveDelay('${req.reqId}', 'extend')" class="flex-1 py-2.5 text-[11px] font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-xl transition-all shadow-sm">✅ التأخر مني أو وصل ردّهم - مدّد المهلة</button>
@@ -1267,6 +1267,7 @@
                                     <div class="flex items-center gap-0.5 bg-white inline-flex p-0.5 px-1.5 rounded border border-blue-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate ml-1">جوال: ${req.requesterPhone || '-'}</span>
                                         ${req.requesterPhone ? `<a href="https://wa.me/${String(req.requesterPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.requesterPhone ? `<button onclick="sendGotReplyNotice('${String(req.requesterPhone).replace(/[^0-9]/g, '')}', allRequests.find(r => r.reqId === '${req.reqId}').requesterData)" class="text-emerald-600 hover:text-white transition-colors bg-emerald-50 hover:bg-emerald-500 p-0.5 px-1 rounded border border-emerald-200 shadow-sm shrink-0 mr-0.5 text-[10px] leading-none font-black" title="رسالة جاهزة: وصل ردّك (لمن ردّ عبر الواتساب) مع تذكير بالرابط">✅</button>` : ''}
                                         ${req.requesterRefId ? `<button onclick="openQuickActions('${req.reqId}','requester')" class="text-amber-600 hover:text-white transition-colors bg-amber-50 hover:bg-amber-500 p-0.5 px-1 rounded border border-amber-200 shadow-sm shrink-0 mr-0.5 text-[11px] leading-none font-black" title="إجراءات سريعة: الحالة / حذف / حظر">⚡</button>` : ''}
                                         <button onclick="openQuickProfile('${req.requesterRefId || req.requesterPhone || ''}')" class="text-indigo-500 hover:text-white transition-colors bg-indigo-50 hover:bg-indigo-500 p-0.5 rounded border border-indigo-100 shadow-sm shrink-0 mr-0.5" title="عرض بطاقة العميل"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
                                     </div>
@@ -1285,6 +1286,7 @@
                                     <div class="flex items-center gap-0.5 bg-white inline-flex p-0.5 px-1.5 rounded border border-amber-100 shadow-sm shrink-0">
                                         <span class="text-[9px] text-slate-600 font-bold truncate ml-1">جوال: ${req.targetPhone || '-'}</span>
                                         ${req.targetPhone ? `<a href="https://wa.me/${String(req.targetPhone).replace(/[^0-9]/g, '')}" target="_blank" class="text-emerald-500 hover:text-emerald-600 transition-colors bg-emerald-50 p-0.5 rounded border border-emerald-100 shadow-sm shrink-0" title="مراسلة واتساب مباشرة"><svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+                                        ${req.targetPhone ? `<button onclick="sendGotReplyNotice('${String(req.targetPhone).replace(/[^0-9]/g, '')}', allRequests.find(r => r.reqId === '${req.reqId}').targetData)" class="text-emerald-600 hover:text-white transition-colors bg-emerald-50 hover:bg-emerald-500 p-0.5 px-1 rounded border border-emerald-200 shadow-sm shrink-0 mr-0.5 text-[10px] leading-none font-black" title="رسالة جاهزة: وصل ردّك (لمن ردّ عبر الواتساب) مع تذكير بالرابط">✅</button>` : ''}
                                         ${req.targetRefId ? `<button onclick="openQuickActions('${req.reqId}','target')" class="text-amber-600 hover:text-white transition-colors bg-amber-50 hover:bg-amber-500 p-0.5 px-1 rounded border border-amber-200 shadow-sm shrink-0 mr-0.5 text-[11px] leading-none font-black" title="إجراءات سريعة: الحالة / حذف / حظر">⚡</button>` : ''}
                                         <button onclick="openQuickProfile('${req.targetRefId || req.targetPhone || ''}')" class="text-indigo-500 hover:text-white transition-colors bg-indigo-50 hover:bg-indigo-500 p-0.5 rounded border border-indigo-100 shadow-sm shrink-0 mr-0.5" title="عرض بطاقة العميل"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
                                     </div>
@@ -1440,8 +1442,7 @@
                     waMessage += `*الطرف الآخر 👤:* (${senderDataInfo || 'بيانات غير متوفرة'})\n*أرسل لك:*\n\n`;
                     let boldText = newText.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
                     waMessage += `${boldText}\n\n`;
-                    waMessage += `_للرد عبر المنصة:_\n${magicLinkToSend}\n\n`;
-                    waMessage += `_أو يمكنك الرد مباشرة هنا في الواتساب._`;
+                    waMessage += waReplyLinkBlock(magicLinkToSend);
 
                     // استدعاء النافذة الخضراء بنجاح الآن
                     let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
@@ -1547,6 +1548,19 @@
         function waRecipientLine(unified) {
             const u = String(unified || '').trim();
             return u ? `📌 *هذه الرسالة خاصة بالملف:* ${u}\n\n` : '';
+        }
+
+        // 🟢 [2026-10-16] تشجيع الرد عبر الرابط: سطر صغير مائل (أقل وضوحاً من نص الرسالة نفسها). حُذفت عبارة "أو يمكنك الرد مباشرة هنا في الواتساب".
+        // السبب الصادق: الرد عبر الرابط يُسجَّل فوراً، ورد الواتساب يُنقل يدوياً وقد لا يُحسب قبل الإغلاق الآلي (4 أيام).
+        const WA_LINK_NOTE = '_الرد عبر الرابط هو المعتمد ويصل فوراً، أما الرد هنا فيتأخر لأنه يُنقل يدوياً._';
+        function waReplyLinkBlock(link) { return `👈 للرد اضغط هنا:\n${link}\n\n${WA_LINK_NOTE}`; }
+
+        // ✅ رسالة جاهزة يرسلها الأدمن لمن ردّ عبر الواتساب بعد أن ينقل ردّه للمنصة (تذكير لطيف بالرابط)
+        function sendGotReplyNotice(phone, unified) {
+            const p = String(phone || '').replace(/[^0-9]/g, '');
+            if (!p) return;
+            const msg = waRecipientLine(unified) + '*وصل ردّك وتم تسجيله ✅*\n\n_للمرة القادمة: الرد عبر الرابط يصل للطرف الآخر أسرع، ويحميك من الإغلاق الآلي للمحادثة._';
+            window.open(`https://wa.me/${p}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         // 🟢 [2026-10-09] نافذة الدور. تُبنى من allRequests الموجودة في الصفحة (لا طلب خادم للعرض):
@@ -1781,7 +1795,7 @@
 
                         let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waRecipientLine(actionType === 'msgTarget' ? req.targetData : req.requesterData)}${waIntro}\n\n*رسالة إدارية موجهة لك ✉️:*\n\n`;
                         let boldAdminMessage = adminMessage.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
-                        waFullMsg += `${boldAdminMessage}\n\n_للرد عبر المنصة:_\n${magicLinkToSend}\n\n_أو يمكنك الرد مباشرة هنا في الواتساب._`;
+                        waFullMsg += `${boldAdminMessage}\n\n${waReplyLinkBlock(magicLinkToSend)}`;
                         craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
                     }
                     
@@ -1905,27 +1919,78 @@
             btn.disabled = false;
         }
 
-        // ⏰ [القسم 31 في الخادم] قرار الأدمن في طلب متأخر: close = إغلاق بسبب التأخر (+ استرداد وإشعار)، extend = لا إغلاق ولا خصم وتبدأ المهلة من جديد
-        async function resolveDelay(reqId, decision) {
-            const req = allRequests.find(r => r.reqId === reqId);
-            if (!req) return;
-            const isClose = decision === 'close';
-            const ok = await showMsgModal(
-                isClose ? 'إغلاق الطلب بسبب التأخر' : 'تمديد المهلة',
-                isClose ? 'سيُغلق الطلب ويصل الطرفين واتساب، وتُردّ النقاط لصاحب الطلب إن كان المستلم لم يردّ إطلاقاً.\n\nهل تأكدت أن الرد لم يصلك عبر الواتساب؟'
-                        : 'لن يُغلق شيء ولن يُخصم شيء، وتبدأ مهلة التأخر من جديد. هل تريد المتابعة؟',
-                'confirm');
-            if (!ok) return;
+        // ⏰ [القسم 31 في الخادم] قرار الأدمن في طلب متأخر: extend = لا إغلاق ولا تحذير وتبدأ المهلة من جديد،
+        // close = نافذة (openDelayCloseModal) تعرض رقم التحذير القادم وتعويض المنتظر ومعاينة الرسائل، مع خصم نقاط اختياري وحظر مشروط اختياري.
+        function dlEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        async function adminDelayCall(body) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
             try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminResolveDelay', adminToken: state.adminToken, reqId: reqId, decision: decision, rowHint: req.rowIndex }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                let result; try { result = JSON.parse(await res.text()); } catch (e) { throw new Error('استجابة السيرفر غير صالحة.'); }
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ adminToken: state.adminToken }, body)), signal: controller.signal });
+                return JSON.parse(await res.text());
+            } finally { clearTimeout(timeoutId); }
+        }
+
+        async function openDelayCloseModal(req) {
+            const old = document.getElementById('delayCloseModal'); if (old) old.remove();
+            const wrap = document.createElement('div');
+            wrap.id = 'delayCloseModal';
+            wrap.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[400] flex items-center justify-center p-4';
+            wrap.innerHTML = `<div class="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl text-right max-h-[92dvh] overflow-y-auto" dir="rtl"><p class="text-sm font-bold text-slate-500 text-center animate-pulse">⏳ جاري تحميل سجل التأخر...</p></div>`;
+            document.body.appendChild(wrap);
+            let info;
+            try { info = await adminDelayCall({ action: 'adminGetDelayInfo', reqId: req.reqId, rowHint: req.rowIndex }); }
+            catch (e) { info = { success: false, message: e.name === 'AbortError' ? 'تأخر الخادم، حاول مجدداً.' : 'فشل الاتصال بالخادم.' }; }
+            if (!info || !info.success) { wrap.remove(); await showMsgModal('تنبيه', (info && info.message) || 'تعذر تحميل البيانات.'); return; }
+
+            const compTxt = c => c.kind === 'full' ? `إرجاع كامل (${c.amount} نقاط)` : (c.kind === 'consolation' ? `ترضية (${c.amount} نقاط)` : 'لا تعويض');
+            const box = wrap.firstElementChild;
+            box.innerHTML = `
+                <h3 class="text-base font-black text-slate-800 mb-3 text-center">إغلاق الطلب بسبب التأخر</h3>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-bold leading-relaxed mb-3">
+                    المتأخر: ${dlEsc(info.delayerSide)} — ${dlEsc(info.delayerUnified)}<br>
+                    تأخراته المسجّلة خلال ${info.windowDays} يوماً: <b>${info.total}</b> (منها آلية: ${info.auto})<br>
+                    هذا سيكون: <b class="text-rose-700">تحذير ${dlEsc(info.levelWord)}</b> ${info.neverReplied ? '— لم يردّ إطلاقاً' : '— ردّ سابقاً ثم توقف (يرى الطرف الآخر «عدم توافق»)'}
+                    ${info.alreadyBanned ? '<br><span class="text-rose-700">⚠️ الحساب محظور مسبقاً.</span>' : ''}
+                </div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">خصم نقاط من المتأخر (اختياري)</label>
+                <input id="dlDeduct" type="number" min="0" value="0" class="w-full p-2 border border-slate-300 rounded-lg text-sm mb-3 text-center">
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1 cursor-pointer">
+                    <input id="dlBan" type="checkbox" class="w-4 h-4" ${info.suggestBan && !info.alreadyBanned ? 'checked' : ''} ${info.alreadyBanned ? 'disabled' : ''}>
+                    حظر الحساب بشرط الباقة الثالثة ${info.suggestBan ? '<span class="text-rose-600">(مقترح من التحذير الثالث)</span>' : ''}
+                </label>
+                <p id="dlComp" class="text-[11px] text-slate-500 mb-3">تعويض الطرف المنتظر: ${compTxt(info.suggestBan && !info.alreadyBanned ? info.compBan : info.compNoBan)}</p>
+                <details class="mb-2"><summary class="text-xs font-bold text-indigo-700 cursor-pointer">معاينة رسالة المتأخر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-lg p-2 mt-1 font-sans">${dlEsc(info.previewWarning)}</pre></details>
+                <details class="mb-4"><summary class="text-xs font-bold text-indigo-700 cursor-pointer">معاينة رسالة الطرف المنتظر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-lg p-2 mt-1 font-sans">${dlEsc(info.previewWaiting)}</pre></details>
+                <div class="flex gap-2">
+                    <button id="dlGo" class="flex-[1.6] bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-sm">إغلاق وتطبيق</button>
+                    <button id="dlCancel" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">تراجع</button>
+                </div>`;
+            const banEl = box.querySelector('#dlBan');
+            banEl.addEventListener('change', () => { box.querySelector('#dlComp').textContent = 'تعويض الطرف المنتظر: ' + compTxt(banEl.checked ? info.compBan : info.compNoBan); });
+            box.querySelector('#dlCancel').onclick = () => wrap.remove();
+            box.querySelector('#dlGo').onclick = async () => {
+                const btn = box.querySelector('#dlGo'); btn.disabled = true; btn.textContent = 'جاري التنفيذ...';
+                const deduct = Math.max(0, parseInt(box.querySelector('#dlDeduct').value, 10) || 0);
+                await submitDelayDecision(req, 'close', { deduct: deduct, ban: banEl.checked && !banEl.disabled });
+                wrap.remove();
+            };
+        }
+
+        async function resolveDelay(reqId, decision) {
+            const req = allRequests.find(r => r.reqId === reqId);
+            if (!req) return;
+            if (decision === 'close') return openDelayCloseModal(req);
+            const ok = await showMsgModal('تمديد المهلة', 'لن يُغلق شيء ولن يُسجَّل تحذير، وتبدأ مهلة التأخر من جديد. هل تريد المتابعة؟', 'confirm');
+            if (!ok) return;
+            await submitDelayDecision(req, 'extend', {});
+        }
+
+        async function submitDelayDecision(req, decision, extra) {
+            const reqId = req.reqId;
+            try {
+                const result = await adminDelayCall(Object.assign({ action: 'adminResolveDelay', reqId: reqId, decision: decision, rowHint: req.rowIndex }, extra || {}));
                 scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
                 await showMsgModal(result.success ? 'تم' : 'تنبيه', result.message || (result.success ? 'تم التنفيذ.' : 'تعذر تنفيذ القرار.'));
                 await fetchData(true, reqId);
@@ -2047,7 +2112,7 @@
                                     let magicLinkToSend = act.type === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
                                     if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
                                     let waIntro = act.type === 'msgTarget' ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
-                                    waFullMsg += waRecipientLine(act.type === 'msgTarget' ? req.targetData : req.requesterData) + waIntro + "\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"\n\nللرد عبر المنصة يرجى الدخول للرابط التالي:\n" + magicLinkToSend + "\n\nأو يمكنك الرد مباشرة هنا في الواتساب.";
+                                    waFullMsg += waRecipientLine(act.type === 'msgTarget' ? req.targetData : req.requesterData) + waIntro + "\n\nرسالة إدارية موجهة لك:\n\n*" + act.text + "*\n\n" + waReplyLinkBlock(magicLinkToSend);
                                 }
                                 else if (act.type === 'closeChat') {
                                     targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
