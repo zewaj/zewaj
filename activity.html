@@ -738,13 +738,13 @@
                 });
                 pendingForReq = validPending;
 
-                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending');
+                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying');
 
                 if (pendingForReq.length > 0) {
                     let pendingHtml = '';
                     pendingForReq.forEach(p => {
-                        let icon = p.state === 'sending' 
-                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">جاري الإرسال</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
+                        let icon = (p.state === 'sending' || p.state === 'verifying')
+                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">${p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال'}</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
                             : `<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction('${p.id}')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>`;
                         
                         let bgClass = p.state === 'failed' ? 'bg-rose-50 border-rose-300 border-2 shadow-sm' : 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
@@ -972,13 +972,13 @@
                 });
                 pendingForReq = validPending;
 
-                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending');
+                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying');
 
                 if (pendingForReq.length > 0) {
                     let pendingHtml = '';
                     pendingForReq.forEach(p => {
-                        let icon = p.state === 'sending' 
-                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">جاري الإرسال</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
+                        let icon = (p.state === 'sending' || p.state === 'verifying')
+                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">${p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال'}</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
                             : `<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction('${p.id}')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>`;
                         
                         let bgClass = p.state === 'failed' ? 'bg-rose-50 border-rose-300 border-2 shadow-sm' : 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
@@ -1633,45 +1633,112 @@
             window.savePendingActions(acts.filter(a => a.id !== id)); 
         };
 
-        window.processPendingAction = async function(actionId) {
-            let acts = (typeof window.getPendingActions === 'function') ? window.getPendingActions() : (JSON.parse(localStorage.getItem('pending_actions_' + (typeof phoneParam !== 'undefined' ? phoneParam : '') + '_' + (typeof refIdParam !== 'undefined' ? refIdParam : ''))) || []);
-            let act = acts.find(a => a.id === actionId);
-            if(!act || act.state === 'failed') return;
+        // 🟢 [2026-10-16] الإرسال المضمون: كانت 4 أخطاء تجعل العميل يرى "فشل الإرسال" ورسالته وصلت فعلاً، فيعيدها فتتكرر:
+        //   (1) لا مهلة للطلب أصلاً (يعلق دقائق على شبكة الجوال)؛ (2) التحقق "هل وصلت؟" كان يبحث في myReqsDataStore برقم الطلب
+        //   والمخزن مفهرس بالرقم المرجعي للطرف الآخر، فالنتيجة دائماً "لم تصل"؛ (3) fetchData تُرجع فوراً بلا شيء إن كانت مزامنة أخرى
+        //   تعمل (isFetching)؛ (4) رسالة كانت "قيد الإرسال" عند إغلاق الصفحة تبقى تدور للأبد. الآن: مهلة 35 ث، وأي انقطاع يُعرض
+        //   "نتأكد من وصولها…" لا "فشل"، ونقرأ المحادثة من الخادم مباشرة مرتين، ولا نعيد الإرسال إلا إن تأكدنا أنها لم تصل (بنفس tempId).
+        function findReqById(reqId) {
+            const all = Object.values(window.myReqsDataStore || {}).concat(Object.values(window.myIncomingReqsDataStore || {}));
+            return all.find(r => r && r.reqId === reqId) || null;
+        }
+        function normMsg(s) { return String(s || '').replace(/\[[^\]]*\]:?/g, '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim(); }
+        // قراءة مباشرة للمزامنة (لا تمر بـ fetchData حتى لا يمنعها isFetching)، ترجع هل ظهر نص الإجراء في المحادثة
+        async function verifyActionLanded(act, waitMs) {
+            if (waitMs) await new Promise(r => setTimeout(r, waitMs));
             try {
-                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(act.payload) });
-                const resText = await res.text(); let result = JSON.parse(resText);
+                const txt = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam }) }, 0);
+                const result = JSON.parse(txt);
+                if (!result || !result.success) return false;
+                localStorage.setItem('master_activity_cache', txt);
+                const req = (result.outgoingRequests || []).concat(result.incomingRequests || []).find(r => r.reqId === act.reqId);
+                if (!req) return false;
+                const st = req.status || '';
+                if (act.type === 'cancel') return st.indexOf('قائمة الانتظار') === -1;
+                if (act.type === 'طلب تواصل مباشر') return req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE';
+                if (act.type === 'موافقة تبادل أرقام') return req.finalApprovalGiven === true || String(req.finalApprovalGiven).toUpperCase() === 'TRUE';
+                if ((act.type || '').includes('اعتذار') && /مغلق|مرفوض/.test(st)) return true;
+                return !!(act.text && normMsg(req.message).indexOf(normMsg(act.text)) !== -1);
+            } catch (e) { return false; }
+        }
 
-                // 🟢 الملف المحذوف: لا يُعاد إرسال الإجراء ولا يُعلَّم "فشل"، بل يُخرَج العضو بالقوة
-                if (result && result.forceLogout) { window.removePendingAction(actionId); handleForceLogout(result.message); return; }
-                if (result && result.banned) { window.removePendingAction(actionId); handleAccountBanned(result); return; }
+        window.processPendingAction = async function(actionId) {
+            let act = window.getPendingActions().find(a => a.id === actionId);
+            if(!act || act.state === 'failed') return;
+            act.tries = (act.tries || 0) + 1;
+            window.updatePendingActionState(actionId, 'sending', '');
+            let result = null, netErr = null;
+            const started = Date.now();
+            { const acts0 = window.getPendingActions(); const a0 = acts0.find(x => x.id === actionId); if (a0) { a0.lastStart = started; window.savePendingActions(acts0); } act.lastStart = started; }
+            const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 35000);
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(act.payload), signal: controller.signal });
+                const resText = await res.text();
+                if (/^\s*</.test(resText)) { netErr = new Error('SERVER_BUSY'); netErr.serverBusy = true; } // صفحة HTML من Google: الطلب لم يُنفَّذ
+                else result = JSON.parse(resText);
+            } catch (e) { netErr = e; }
+            finally { clearTimeout(timer); }
 
-                if (result.success === false || result.success === undefined) throw new Error(result.error || result.message || "مرفوض من السيرفر");
-                
-                window.removePendingAction(actionId); 
+            const done = () => {
+                window.removePendingAction(actionId);
                 fetchData(true).finally(() => { if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); });
-            } catch(e) {
-                // 🟢 تحقق: هل وصلت العملية فعلاً للسيرفر رغم انقطاع الاتصال؟
-                // (Apps Script يكمل تنفيذه بالخلفية حتى لو المتصفح فقد الاتصال بالرد)
-                try {
-                    await fetchData(true);
-                    let verifyReq = (window.myReqsDataStore && window.myReqsDataStore[act.reqId]) || (window.myIncomingReqsDataStore && window.myIncomingReqsDataStore[act.reqId]);
-                    let landedOnServer = !!(verifyReq && verifyReq.message && act.text && verifyReq.message.indexOf(act.text) !== -1);
-                    if (landedOnServer) {
-                        window.removePendingAction(actionId);
-                        if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
-                        return;
-                    }
-                } catch (verifyErr) { /* تجاهل خطأ التحقق نفسه، نكمل لتعليم الفشل أدناه */ }
+            };
+            const saveTries = () => { const acts = window.getPendingActions(); const a = acts.find(x => x.id === actionId); if (a) { a.tries = act.tries; window.savePendingActions(acts); } };
+            saveTries();
 
-                window.updatePendingActionState(actionId, 'failed', e.message); 
-                if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); 
+            if (result) {
+                // 🟢 الملف المحذوف: لا يُعاد إرسال الإجراء ولا يُعلَّم "فشل"، بل يُخرَج العضو بالقوة
+                if (result.forceLogout) { window.removePendingAction(actionId); handleForceLogout(result.message); return; }
+                if (result.banned) { window.removePendingAction(actionId); handleAccountBanned(result); return; }
+                if (result.success) return done();
+                const m = result.error || result.message || "مرفوض من السيرفر";
+                // "النظام مشغول" = لم يُحجز القفل ولم يُكتب شيء: إعادة صامتة بعد ثوانٍ
+                if (/مشغول/.test(m) && act.tries < 3) { await new Promise(r => setTimeout(r, 2500 + Math.random() * 2500)); return window.processPendingAction(actionId); }
+                // "متتالية" / "مغلق": غالباً وصلت محاولة سابقة
+                if (/متتالية|مغلق/.test(m) && await verifyActionLanded(act, 0)) return done();
+                window.updatePendingActionState(actionId, 'failed', m);
+                if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+                return;
             }
+            // انقطاع أو مهلة أو ازدحام: لا "فشل" قبل التأكد
+            window.updatePendingActionState(actionId, 'verifying', '');
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+            if (netErr && netErr.serverBusy) {
+                if (act.tries < 3) { await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000)); return window.processPendingAction(actionId); }
+            } else if (Date.now() - started < 3000) {
+                // فشل خلال أقل من 3 ث = الطلب لم يغادر الجهاز (لا إنترنت): نعيده عند عودة الاتصال
+                if (!navigator.onLine) await new Promise(r => window.addEventListener('online', r, { once: true }));
+                if (act.tries < 3) { await new Promise(r => setTimeout(r, 1500)); return window.processPendingAction(actionId); }
+            } else {
+                // الطلب ربما ما زال ينفَّذ على الخادم: لا إعادة قبل مضي 45 ث على بدء المحاولة (انتظار القفل 10 ث + التنفيذ)،
+                // فلا تتكرر الرسالة حتى مع خادم لا يعرف tempId بعد
+                if (await verifyActionLanded(act, 3000) || await verifyActionLanded(act, 6000)) return done();
+                const left = 45000 - (Date.now() - started);
+                if (left > 0 && await verifyActionLanded(act, left)) return done();
+                if (act.tries < 2) return window.processPendingAction(actionId); // تأكدنا أنه لم يصل: إعادة واحدة بنفس tempId
+            }
+            window.updatePendingActionState(actionId, 'failed', netErr && netErr.serverBusy ? 'الخادم مزدحم جداً الآن' : 'تعذر الاتصال بالخادم، تحقق من الإنترنت');
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
         };
 
         window.retryPendingAction = function(actionId) {
+            const acts = window.getPendingActions(); const a = acts.find(x => x.id === actionId); if (a) { a.tries = 0; window.savePendingActions(acts); }
             window.updatePendingActionState(actionId, 'sending', '');
-            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); 
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
             setTimeout(() => window.processPendingAction(actionId), 500);
+        };
+
+        // 🟢 إجراء بقي "قيد الإرسال" لأن الصفحة أُغلقت أثناءه: يُستكمل عند الفتح التالي (تحقق أولاً، ثم إرسال بنفس tempId)
+        window.resumeStalePendingActions = async function() {
+            if (window.__resumedPending) return; window.__resumedPending = true;
+            const stale = window.getPendingActions().filter(a => (a.state === 'sending' || a.state === 'verifying') && Date.now() - (a.timestamp || 0) > 4000);
+            for (const a of stale) {
+                window.updatePendingActionState(a.id, 'verifying', '');
+                if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+                const left = 45000 - (Date.now() - (a.lastStart || a.timestamp || 0)); // المحاولة السابقة قد تكون ما زالت تعمل على الخادم
+                if (await verifyActionLanded(a, 0) || (left > 0 && await verifyActionLanded(a, left))) { window.removePendingAction(a.id); if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); }
+                else window.processPendingAction(a.id);
+            }
         };
 
         window.isSubmittingAction = false;
@@ -1682,11 +1749,12 @@
             // 🟢 موافقة المرأة على تبادل الأرقام: لا تُرسل قبل اختيار مربع التعهد
             if (currentReplyType === 'موافقة تبادل أرقام' && !ensureFeePledge()) return;
 
-            let req = window.myReqsDataStore[currentReplyReqId] || window.myIncomingReqsDataStore[currentReplyReqId];
+            // 🟢 [2026-10-16] المخزنان مفهرسان بالرقم المرجعي للطرف الآخر لا برقم الطلب، فكان هذا الفحص لا يجد الطلب أبداً
+            let req = findReqById(currentReplyReqId);
             if (req) {
                 let originalChunks = (req.message || "").split('---').map(c => c.trim()).filter(Boolean);
                 let realLastChunk = originalChunks.length > 0 ? originalChunks[originalChunks.length - 1] : "";
-                let isIncomingCard = !!window.myIncomingReqsDataStore[currentReplyReqId];
+                let isIncomingCard = Object.values(window.myIncomingReqsDataStore || {}).includes(req);
                 
                 let isRealLastFromMe = isIncomingCard ? 
                     (realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]')) : 
@@ -1741,11 +1809,12 @@
                 state: 'sending', payload: payloadObj, timestamp: Date.now()
             };
 
+            if (window.getPendingActions().some(a => a.reqId === currentReplyReqId && a.state !== 'failed')) { closeReplyModal(); showToast("⏳ رسالتك السابقة ما زالت قيد الإرسال"); return; }
             window.addPendingAction(pendingRecord);
             closeReplyModal();
             if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
             setTimeout(scrollToBottomChats, 50); 
-            showToast("⏳ جاري الإرسال...");
+            showToast("⏳ جاري الإرسال... لا تحتاج لإعادة الإرسال");
 
             window.processPendingAction(actionId);
         }
@@ -1848,16 +1917,22 @@
                     }
 
                     if (window.highlightedReqId) {
+                        // 🟢 [2026-10-16] رابط الواتساب يحمل رقم الطلب (focus): نفتح التبويب الذي فيه الطلب ونمرّر إليه ونُبرزه
+                        const fid = window.highlightedReqId;
+                        if ((result.incomingRequests || []).some(r => r.reqId === fid)) switchReqTab('incoming');
+                        else if ((result.outgoingRequests || []).some(r => r.reqId === fid)) switchReqTab('outgoing');
                         setTimeout(() => {
-                            const card = document.getElementById(`card-${window.highlightedReqId}`);
-                            if (card) { 
+                            const card = document.getElementById(`card-${fid}`);
+                            if (card) {
+                                const arch = card.closest('#outgoingArchive, #incomingArchive'); if (arch) arch.classList.remove('hidden');
                                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                card.classList.add('highlight-flash'); 
-                                setTimeout(() => card.classList.remove('highlight-flash'), 4000); 
+                                card.classList.add('highlight-flash');
+                                setTimeout(() => card.classList.remove('highlight-flash'), 4000);
+                                window.highlightedReqId = null; // يبقى إن لم تُرسم البطاقة بعد (كاش قديم) فيُطبَّق مع التحديث التالي
                             }
-                            window.highlightedReqId = null;
-                        }, 200); 
+                        }, 200);
                     }
+                    if (typeof window.resumeStalePendingActions === 'function') setTimeout(window.resumeStalePendingActions, 600);
                     const banner = document.getElementById('syncBanner'); if(banner) banner.classList.replace('opacity-100', 'opacity-0');
                 } else { 
                     // إذا كان الكاش فارغاً، اطبع الهيكل واضرب السيرفر فوراً باستقلالية تامة
@@ -1992,6 +2067,7 @@
                 phoneParam = localStorage.getItem('verified_user_phone') || "";
                 refIdParam = localStorage.getItem('active_profile_refid') || "";
                 tabParam = urlParams.get('tab') || 'requests'; window.userStatusParam = urlParams.get('status') || '';
+                const focusParam = urlParams.get('focus'); if (focusParam && /^[A-Za-z0-9_-]{3,40}$/.test(focusParam)) window.highlightedReqId = focusParam;
                 
                 if (localStorage.getItem('is_client_mode') === 'true' || localStorage.getItem('magic_session') === '1') {
                     let dispName = localStorage.getItem('magic_session_name') || 'عميلنا العزيز';

@@ -19,7 +19,11 @@
             try { token = new URLSearchParams(location.search).get('token'); } catch (e) {}
             if (!token || !/^[A-Za-z0-9]{8,64}$/.test(token)) return;
             var boot = window.__magicBoot = { busy: true, token: token };
-            document.documentElement.classList.add('magic-boot');
+            // 🟢 [2026-10-16] رقم الطلب في الرابط (&r=REQ-...) يفتح المراسلات على تلك المحادثة مباشرة
+            try { var fr = new URLSearchParams(location.search).get('r'); if (fr && /^[A-Za-z0-9_-]{3,40}$/.test(fr)) boot.focus = fr; } catch (e) {}
+            // 🟢 [2026-10-16] زائر عائد بنفس الرابط على نفس الجهاز: تُعرض مراسلاته المحفوظة فوراً (بلا شاشة انتظار) والتحديث يجري بالخلفية
+            try { boot.instant = localStorage.getItem('magic_tok') === token && !!localStorage.getItem('master_activity_cache') && !!localStorage.getItem('verified_user_phone'); } catch (e) { boot.instant = false; }
+            if (!boot.instant) document.documentElement.classList.add('magic-boot');
             var URL_GAS = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
             function call(payload) {
                 var controller = new AbortController();
@@ -819,8 +823,52 @@
             fetchShowcaseData(); fetchLiveStats();
             if (dest === 'login') loadIframe('register.html');
         }
+        // نقل بيانات الرد (verifyTokenAndSync) لمفاتيح التخزين بلا مسح؛ تستعمله المسارات الثلاثة أدناه
+        function applyMagicSyncData(r, id, dispName) {
+            const digits = String(id.phone || '').replace(/[^0-9]/g, '');
+            localStorage.setItem('verified_user_phone', '+' + digits);
+            localStorage.setItem('active_profile_refid', id.refId);
+            localStorage.setItem('active_profile_uid', id.refId);
+            localStorage.setItem('verified_user_name', id.name || 'عضونا الكريم');
+            localStorage.setItem('verified_user_gender', id.gender || '');
+            localStorage.setItem('active_profile_status', r.profileStatus || 'نشط');
+            localStorage.setItem('magic_session', '1');
+            localStorage.setItem('magic_session_name', dispName);
+            localStorage.setItem('magic_tok', window.__magicBoot.token);
+            localStorage.setItem('cached_wallet_balance', r.walletBalance || 0);
+            window.userPointsBalance = r.walletBalance || 0;
+            localStorage.setItem('cached_free_external', r.freeExternalContacts || 0);
+            localStorage.setItem('cached_special_package', r.hasSpecialPackage ? '1' : '0');
+            if (r.currentUserMarriageType !== undefined) localStorage.setItem('verified_user_mType', r.currentUserMarriageType);
+            if (r.config) localStorage.setItem('platform_config', JSON.stringify(r.config));
+            if (r.favorites) localStorage.setItem('cached_favorites', JSON.stringify(r.favorites.map(f => f.refId)));
+            if (r.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(r.contactedIds));
+            localStorage.setItem('master_activity_cache', JSON.stringify(r));
+        }
+        // 🟢 [2026-10-16] الزائر العائد: نفتح مراسلاته من ذاكرة الجهاز فوراً، ثم نستبدلها بالحديثة حين يصل رد الخادم
+        async function runMagicBootInstant(boot) {
+            history.replaceState({}, '', window.location.pathname);
+            sessionStorage.setItem('unreadPopupShown', 'true');
+            updateAuthUI(); updateWalletDisplay();
+            loadIframe('activity.html?tab=requests' + (boot.focus ? '&focus=' + encodeURIComponent(boot.focus) : ''));
+            const res = await boot.promise;
+            boot.busy = false;
+            const r = (res && res.ok) ? (res.data || {}) : null;
+            if (!r) { showToast('⚠️ تعذر تحديث مراسلاتك الآن، تُعرض آخر نسخة محفوظة.'); return; }
+            if (r.forceLogout || r.banned || !r.success || !r.magicIdentity) { document.documentElement.classList.add('magic-boot'); showMagicBootFailure(r.message, false); return; }
+            const id = r.magicIdentity; delete r.magicIdentity;
+            const prev = (localStorage.getItem('verified_user_phone') || '').replace(/[^0-9]/g, '');
+            if (prev !== String(id.phone || '').replace(/[^0-9]/g, '')) { localStorage.removeItem('magic_tok'); location.reload(); return; } // لا يحدث عادةً (نفس التوكن = نفس الملف)
+            applyMagicSyncData(r, id, id.unifiedName || id.name || ('ملف #' + id.refId));
+            window.__noSyncUntil = Date.now() + 20000;
+            updateWalletDisplay();
+            const f = document.getElementById('appIframe');
+            if (f && f.contentWindow) f.contentWindow.postMessage({ action: 'reRenderFromCache', data: r }, '*');
+            setTimeout(() => { fetchShowcaseData(); fetchLiveStats(); }, 3000);
+        }
         async function runMagicBoot() {
             const boot = window.__magicBoot;
+            if (boot.instant) return runMagicBootInstant(boot);
             // 🟢 رسائل انتظار متدرجة: الفتح البارد قد يتجاوز 30 ثانية (بطء الخادم الفعلي)، والصمت الطويل يدفع العميل لتحديث الصفحة فتبدأ الدورة من جديد.
             // الرسائل تطمئنه وتطلب منه الانتظار؛ تتوقف عند وصول النتيجة (نجاحاً أو فشلاً).
             const stages = [
@@ -847,27 +895,15 @@
             delete r.magicIdentity;
 
             // تبديل هوية كامل: لا يبقى أي أثر لمستخدم سابق على نفس الجهاز
+            // 🟢 [2026-10-16] عدا رسائل نفس العميل التي لم يتأكد وصولها بعد (طابورا pending_actions_ و qr_out_): كان المسح يُضيعها بصمت
+            const samePerson = (localStorage.getItem('verified_user_phone') || '').replace(/[^0-9]/g, '') === digits;
+            const keep = {};
+            if (samePerson) Object.keys(localStorage).forEach(k => { if (k.indexOf('pending_actions_') === 0 || k.indexOf('qr_') === 0) keep[k] = localStorage.getItem(k); });
             localStorage.clear(); sessionStorage.clear();
-            localStorage.setItem('verified_user_phone', '+' + digits);
-            localStorage.setItem('active_profile_refid', id.refId);
-            localStorage.setItem('active_profile_uid', id.refId);
-            localStorage.setItem('verified_user_name', id.name || 'عضونا الكريم');
-            localStorage.setItem('verified_user_gender', id.gender || '');
-            localStorage.setItem('active_profile_status', r.profileStatus || 'نشط');
+            Object.keys(keep).forEach(k => localStorage.setItem(k, keep[k]));
             // جلسة الرابط السحري: تقبل المراسلات والتصفح، وتحجب تعديل/حذف/إضافة الملفات (register.html تطلب دخولاً كاملاً برمز التحقق)
-            localStorage.setItem('magic_session', '1');
-            localStorage.setItem('magic_session_name', dispName);
+            applyMagicSyncData(r, id, dispName);
             sessionStorage.setItem('unreadPopupShown', 'true'); // المراسلات مفتوحة أمامه أصلاً
-
-            localStorage.setItem('cached_wallet_balance', r.walletBalance || 0);
-            window.userPointsBalance = r.walletBalance || 0;
-            localStorage.setItem('cached_free_external', r.freeExternalContacts || 0);
-            localStorage.setItem('cached_special_package', r.hasSpecialPackage ? '1' : '0');
-            if (r.currentUserMarriageType !== undefined) localStorage.setItem('verified_user_mType', r.currentUserMarriageType);
-            if (r.config) localStorage.setItem('platform_config', JSON.stringify(r.config));
-            if (r.favorites) localStorage.setItem('cached_favorites', JSON.stringify(r.favorites.map(f => f.refId)));
-            if (r.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(r.contactedIds));
-            localStorage.setItem('master_activity_cache', JSON.stringify(r));
 
             window.__noSyncUntil = Date.now() + 20000; // أي مزامنة تلقائية (updateAuthUI/loadIframe) تتخطى: البيانات وصلت للتو
             boot.busy = false;
@@ -875,7 +911,7 @@
             updateAuthUI();
             updateWalletDisplay();
             document.documentElement.classList.remove('magic-boot');
-            loadIframe('activity.html?tab=requests');
+            loadIframe('activity.html?tab=requests' + (boot.focus ? '&focus=' + encodeURIComponent(boot.focus) : ''));
             setTimeout(() => { fetchShowcaseData(); fetchLiveStats(); }, 3000);
         }
 
@@ -912,6 +948,9 @@
                     if (directOpenParam === 'search' && directOpenRefId) {
                         directTargetUrl += (directTargetUrl.includes('?') ? '&' : '?') + 'refId=' + encodeURIComponent(directOpenRefId);
                     }
+                    // 🟢 [2026-10-16] من صفحة الرد السريع: index.html?open=requests&focus=REQ-... يفتح المراسلات على المحادثة نفسها
+                    const directFocus = new URLSearchParams(window.location.search).get('focus');
+                    if (directOpenParam === 'requests' && directFocus && /^[A-Za-z0-9_-]{3,40}$/.test(directFocus)) directTargetUrl += '&focus=' + encodeURIComponent(directFocus);
                     loadIframe(directTargetUrl);
                 }
             }

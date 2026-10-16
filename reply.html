@@ -1,0 +1,575 @@
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 1 ]: إعدادات الصفحة والـ Head ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f766e">
+    <title>الرد على الرسالة - منصة أبو العنود</title>
+    <!-- 🟢 [2026-10-16] صفحة "الرد السريع": رابط الواتساب يفتح محادثة واحدة فقط (reply.html?token=...&r=REQ-...) بدل كل المراسلات.
+         صفحة مستقلة خفيفة (بلا Tailwind ولا أي سكربت خارجي)، تبدأ طلب البيانات في أول سطر، وتعرض آخر نسخة محفوظة على الجهاز فوراً.
+         الإرسال بطابور محفوظ: الرسالة لا تضيع ولا تتكرر، ولا تُعرض "فشل" قبل التأكد من أنها لم تصل فعلاً. -->
+    <script>
+        (function () {
+            var p = new URLSearchParams(location.search);
+            var LIVE = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+            var isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+            window.QR_API = (isLocal && p.get('api')) ? p.get('api') : LIVE; // تجاوز الخادم مسموح للاختبار المحلي فقط
+            var tok = p.get('token'), reqId = (p.get('r') || '').trim();
+            try { if (!tok) tok = localStorage.getItem('qr_tok'); } catch (e) {}
+            if (!tok || !/^[A-Za-z0-9]{8,64}$/.test(tok)) tok = null;
+            if (!reqId || !/^[A-Za-z0-9_-]{3,40}$/.test(reqId)) reqId = null;
+            // رابط بلا رقم طلب (روابط قديمة): المسار المعتاد لكل المراسلات
+            if (tok && !reqId) { location.replace('index.html?token=' + encodeURIComponent(tok)); window.__qrRedirect = true; return; }
+            window.__qr = { tok: tok, reqId: reqId, t0: performance.now() };
+            if (!tok) return;
+            // الطلب يبدأ قبل رسم أي شيء
+            window.__qr.first = qrFetchThread(tok, reqId);
+        })();
+        function qrPost(payload, timeoutMs) {
+            var c = new AbortController(); var t = setTimeout(function () { c.abort(); }, timeoutMs || 30000);
+            return fetch(window.QR_API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: c.signal })
+                .then(function (r) { return r.text(); })
+                .then(function (txt) {
+                    clearTimeout(t);
+                    if (/^\s*</.test(txt)) { var e = new Error('SERVER_BUSY'); e.busy = true; throw e; } // صفحة HTML من Google = امتلاء مقاعد التنفيذ
+                    return JSON.parse(txt);
+                }, function (err) { clearTimeout(t); err.network = true; err.timeout = (err.name === 'AbortError'); throw err; });
+        }
+        // getThread (جديد في الخادم: صف واحد)، ومع خادم لم يُحدَّث بعد نرجع لـ verifyTokenAndSync ونأخذ المحادثة منها
+        function qrFetchThread(tok, reqId) {
+            return qrPost({ action: 'getThread', token: tok, reqId: reqId }, 30000).then(function (d) {
+                if (d && d.success === false && d.message === 'إجراء غير معروف') {
+                    return qrPost({ action: 'verifyTokenAndSync', token: tok }, 45000).then(function (s) {
+                        if (!s || !s.success || !s.magicIdentity) return s;
+                        var id = s.magicIdentity, th = null;
+                        (s.outgoingRequests || []).forEach(function (q) { if (q.reqId === reqId) th = { req: q, role: 'first' }; });
+                        (s.incomingRequests || []).forEach(function (q) { if (q.reqId === reqId) th = { req: q, role: 'second' }; });
+                        var out = { success: true, identity: id, walletBalance: s.walletBalance, config: s.config, fullSync: s };
+                        if (!th) { out.success = false; out.code = 'NO_THREAD'; out.message = 'لم نجد هذه المحادثة في حسابك.'; return out; }
+                        var q = th.req;
+                        out.thread = { reqId: q.reqId, role: th.role, status: q.status, message: q.message, lastActionDate: q.lastActionDate, date: q.date,
+                            remainingMessages: q.remainingMessages, hasRequestedContact: q.hasRequestedContact, finalApprovalGiven: q.finalApprovalGiven,
+                            otherName: th.role === 'first' ? (q.targetData || ('ملف #' + q.targetRefId)) : (q.requesterData || ('ملف #' + q.requesterRefId)),
+                            otherGender: th.role === 'first' ? q.targetGender : q.requesterGender, myName: id.unifiedName };
+                        return out;
+                    });
+                }
+                return d;
+            });
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 2 ]: التنسيقات (CSS) ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <style>
+        :root { --teal: #0f766e; --teal-d: #115e59; --mine: #d9fdd3; --bg: #efeae2; --ink: #111b21; --sub: #667781; --line: #e2e8f0; --rose: #be123c; --amber: #b45309; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; height: 100%; }
+        body { font-family: 'Tajawal', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        button { font-family: inherit; cursor: pointer; }
+        .hdr { background: var(--teal); color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,.15); z-index: 2; }
+        .hdr .av { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .hdr .who { flex: 1; min-width: 0; }
+        .hdr .nm { font-weight: 800; font-size: 14.5px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .hdr .st { font-size: 11.5px; opacity: .9; margin-top: 1px; }
+        .hdr .ic { background: rgba(255,255,255,.14); border: 0; color: #fff; border-radius: 12px; padding: 7px 10px; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+        .sync { position: fixed; top: calc(70px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: #fff; color: var(--sub); font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 99px; box-shadow: 0 1px 4px rgba(0,0,0,.12); z-index: 3; display: none; }
+        .chat { flex: 1; overflow-y: auto; padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 6px; overscroll-behavior: contain; }
+        .day { align-self: center; background: #fff; color: var(--sub); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; margin: 4px 0; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
+        .b { max-width: 84%; padding: 7px 10px 5px; border-radius: 10px; font-size: 14.5px; line-height: 1.75; white-space: pre-wrap; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,.08); position: relative; }
+        .b.other { align-self: flex-start; background: #fff; border-top-right-radius: 3px; }
+        .b.mine { align-self: flex-end; background: var(--mine); border-top-left-radius: 3px; }
+        .b.admin { align-self: center; background: #e0f2fe; color: #075985; font-size: 13.5px; text-align: center; max-width: 92%; }
+        .b .lb { font-size: 11px; font-weight: 800; color: var(--teal); margin-bottom: 1px; }
+        .b.admin .lb { color: #0369a1; }
+        .b .meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 11px; color: var(--sub); margin-top: 2px; white-space: nowrap; }
+        .tick { width: 16px; height: 16px; flex-shrink: 0; }
+        .b.sending { opacity: .92; }
+        .b.failed { background: #fff1f2; border: 1px solid #fecdd3; }
+        .note { align-self: center; max-width: 92%; text-align: center; font-size: 12.5px; font-weight: 700; color: #92400e; background: #fef3c7; border-radius: 10px; padding: 8px 12px; line-height: 1.7; }
+        .note.ok { color: #065f46; background: #d1fae5; }
+        .note.gray { color: #475569; background: #f1f5f9; }
+        .dock { flex-shrink: 0; background: #f0f2f5; padding: 8px 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); border-top: 1px solid #e5e7eb; }
+        .chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+        .chips::-webkit-scrollbar { display: none; }
+        .chip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; white-space: nowrap; color: #334155; }
+        .chip.rose { color: var(--rose); border-color: #fecdd3; }
+        .chip.green { color: #047857; border-color: #a7f3d0; }
+        .row { display: flex; align-items: flex-end; gap: 8px; }
+        .row textarea { flex: 1; resize: none; border: 0; border-radius: 22px; padding: 10px 14px; font-family: inherit; font-size: 15px; line-height: 1.6; max-height: 140px; min-height: 44px; outline: none; background: #fff; color: var(--ink); }
+        .send { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+        .send:disabled { background: #94a3b8; }
+        .hint { font-size: 11.5px; color: var(--sub); text-align: center; padding: 4px 6px 0; line-height: 1.6; }
+        .big { display: flex; gap: 8px; }
+        .big button { flex: 1; border: 0; border-radius: 14px; padding: 13px 8px; font-size: 14.5px; font-weight: 800; }
+        .btn-g { background: var(--teal); color: #fff; }
+        .btn-r { background: #fff; color: var(--rose); border: 1.5px solid #fecdd3 !important; }
+        .btn-w { background: #fff; color: var(--teal-d); border: 1.5px solid #99f6e4 !important; }
+        .waitbar { text-align: center; font-size: 13px; font-weight: 700; color: #334155; padding: 6px 4px 2px; line-height: 1.7; }
+        .sheet { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: none; align-items: flex-end; z-index: 10; }
+        .sheet.on { display: flex; }
+        .sheet .box { background: #fff; width: 100%; max-height: 86dvh; border-radius: 18px 18px 0 0; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
+        .sheet h3 { margin: 0; padding: 14px 16px 6px; font-size: 15.5px; font-weight: 800; }
+        .sheet .sc { overflow-y: auto; padding: 4px 14px 10px; display: flex; flex-direction: column; gap: 7px; }
+        .sheet label { display: flex; gap: 9px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 11px; font-size: 13.5px; line-height: 1.6; }
+        .sheet label input { margin-top: 4px; accent-color: var(--rose); }
+        .sheet .ft { display: flex; gap: 8px; padding: 10px 14px 14px; border-top: 1px solid #f1f5f9; }
+        .sheet .ft button { flex: 1; border: 0; border-radius: 12px; padding: 12px; font-weight: 800; font-size: 14px; }
+        .done { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: none; align-items: center; justify-content: center; z-index: 12; padding: 20px; }
+        .done.on { display: flex; }
+        .done .card { background: #fff; border-radius: 20px; padding: 22px 18px 16px; width: 100%; max-width: 380px; text-align: center; }
+        .done .big-ic { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; background: #d1fae5; display: flex; align-items: center; justify-content: center; }
+        .done h2 { margin: 0 0 6px; font-size: 18px; font-weight: 800; color: #065f46; }
+        .done p { margin: 0 0 16px; font-size: 13.5px; color: #475569; line-height: 1.8; }
+        .done .col { display: flex; flex-direction: column; gap: 8px; }
+        .done .col button { border: 0; border-radius: 14px; padding: 13px; font-size: 14.5px; font-weight: 800; }
+        .boot { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; color: #334155; }
+        .spin { width: 40px; height: 40px; border: 4px solid #99f6e4; border-top-color: var(--teal); border-radius: 50%; animation: sp .9s linear infinite; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .sk { background: linear-gradient(90deg, #f8fafc 25%, #e2e8f0 50%, #f8fafc 75%); background-size: 200% 100%; animation: sh 1.4s infinite; border-radius: 10px; }
+        @keyframes sh { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .toast { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 99px; z-index: 20; display: none; max-width: 90%; text-align: center; }
+    </style>
+</head>
+<body>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 3 ]: هيكل الصفحة ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <div class="hdr">
+        <div class="av" id="hAv">💬</div>
+        <div class="who"><div class="nm" id="hName">محادثتك مع الطرف الآخر</div><div class="st" id="hSub">جاري فتح المحادثة…</div></div>
+        <button class="ic" type="button" onclick="goAll()">كل مراسلاتي</button>
+    </div>
+    <div class="sync" id="syncPill">جاري التحديث…</div>
+    <div class="chat" id="chat">
+        <div class="boot" id="boot">
+            <div class="sk" style="width:70%;height:44px;align-self:flex-start"></div>
+            <div class="sk" style="width:55%;height:60px;align-self:flex-end"></div>
+            <div class="sk" style="width:65%;height:40px;align-self:flex-start"></div>
+            <p id="bootTxt" style="font-weight:700;font-size:13px;margin:8px 0 0">نفتح محادثتك…</p>
+        </div>
+    </div>
+    <div class="dock" id="dock" style="display:none"></div>
+
+    <div class="sheet" id="rejSheet" onclick="if(event.target===this)closeSheet()">
+        <div class="box">
+            <h3>اختر سبب الاعتذار</h3>
+            <div style="font-size:12px;color:#64748b;padding:0 16px 6px;line-height:1.7">يصل الاعتذار للطرف الآخر بأسلوب لطيف، وتُغلق المحادثة.</div>
+            <div class="sc" id="rejList"></div>
+            <div class="ft"><button type="button" style="background:#f1f5f9;color:#334155" onclick="closeSheet()">رجوع</button><button type="button" style="background:var(--rose);color:#fff" onclick="sendReject()">إرسال الاعتذار</button></div>
+        </div>
+    </div>
+
+    <div class="done" id="doneBox">
+        <div class="card">
+            <div class="big-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div>
+            <h2 id="doneTitle">تم إرسال ردّك ✓</h2>
+            <p id="doneText">وصلت رسالتك للإدارة، وستصل للطرف الآخر بعد المراجعة. سنبلغك على الواتساب عند وصول الرد.</p>
+            <div class="col">
+                <button type="button" class="btn-g" onclick="goAll()">📋 عرض كل مراسلاتي</button>
+                <button type="button" class="btn-w" onclick="goHome()">🏠 الصفحة الرئيسية</button>
+                <button type="button" style="background:transparent;color:#64748b;font-size:13px;padding:8px" onclick="closeDone()">البقاء في هذه المحادثة</button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 4 ]: الحالة والتخزين المحلي ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <script>
+        const Q = window.__qr || {};
+        const S = { identity: null, thread: null, fresh: false, compose: null };
+        const perf = window.__qrPerf = { snapshotPaint: null, livePaint: null, sendClick: null, sendAck: null, ackKind: null };
+        const now = () => Math.round(performance.now() - (Q.t0 || 0));
+
+        function ls(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return null; } }
+        const snapKey = () => 'qr_snap_' + Q.reqId, outKey = () => 'qr_out_' + Q.reqId;
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function norm(s) { return String(s || '').replace(/\[[^\]]*\]:?/g, '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim(); }
+        function toast(t, ms) { const el = document.getElementById('toast'); el.innerText = t; el.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', ms || 2600); }
+        function isFemaleG(g) { g = g || ''; return g.includes('أنثى') || g.includes('انثى') || g.includes('نساء'); }
+
+        // أسباب الاعتذار: نفس قائمتَي activity.html (REJECT_REASONS_MEN/WOMEN) — عدّلها في الملفين معاً
+        const REJECT_REASONS_MEN = ['البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.', 'لا أرغب بوجود أبناء من زواج سابق.', 'فارق العمر غير مناسب لي.', 'منطقة السكن غير مناسبة لي.', 'أبحث عن بكر.', 'أرغب بزواج غير معلن (مسيار).', 'أرغب بزوجة من نفس جنسيتي.', 'لا أقبل بعمل المرأة.', 'أبحث عن زوجة ملتزمة بالحجاب.', 'أبحث عن تكافؤ نسب معين.'];
+        const REJECT_REASONS_WOMEN = ['البيانات والمواصفات العامة غير متوافقة مع ما أبحث عنه.', 'لا أقبل بالتعدد، وأبحث عن شخص غير متزوج.', 'لا أرغب بوجود أبناء من زواج سابق.', 'فارق العمر غير مناسب لي.', 'منطقة السكن غير مناسبة لي.', 'أرغب بزواج بظروف خاصة.', 'أبحث عن زواج معلن فقط.', 'أرغب بالزواج من سعودي فقط، أو من نفس جنسيتي.', 'الوضع المادي أو الشروط غير مناسبة لي.', 'أبحث عن تكافؤ نسب معين.'];
+        const INITIAL_TEMPLATE = 'نعم مبدئياً البيانات مناسبة لنا، ولدينا الاستفسارات التالية:\n\n';
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 5 ]: قراءة المحادثة (الوسوم وحالة الطلب) ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        // يحلّل نص المحادثة من الخادم (رسائل مفصولة بـ --- وكل رسالة مسبوقة بوسم) ويحدد ما يُعرض وما يُتاح للعميل.
+        function analyze(th) {
+            const role = th.role; // first = صاحب الطلب، second = المطلوب
+            const st = th.status || '';
+            const chunks = (th.message || '').split('---').map(c => c.trim()).filter(Boolean);
+            const fromFirst = c => c.includes('[من الطرف الأول]') || c.includes('[من الطالب]');
+            const fromSecond = c => c.includes('[من الطرف الثاني]') || c.includes('[من المطلوب]');
+            const adminTo = c => (c.includes('[من الإدارة للمبادر]') || c.includes('[من الإدارة للطالب]') || c.includes('[من الإدارة للطرف الأول]')) ? 'first'
+                : (c.includes('[من الإدارة للمتلقي]') || c.includes('[من الإدارة للمطلوب]') || c.includes('[من الإدارة للطرف الثاني]')) ? 'second'
+                : c.includes('[من الإدارة]') ? 'all' : null;
+            const isMineC = c => role === 'first' ? fromFirst(c) : fromSecond(c);
+            const isOtherC = c => role === 'first' ? fromSecond(c) : fromFirst(c);
+            const pendingAdmin = st.includes('اعتماد');
+            const last = chunks[chunks.length - 1] || '';
+            const items = [];
+            let hiddenOther = false;
+            chunks.forEach((c, i) => {
+                const to = adminTo(c);
+                if (to && !isMineC(c) && !isOtherC(c)) { if (to === 'all' || to === role) items.push({ who: 'admin', text: c.replace(/\[[^\]]*\]:?/g, '').trim() }); return; }
+                // رسالة الطرف الآخر الأخيرة وهي عند الإدارة: لا تُعرض قبل الاعتماد (نفس سلوك activity.html)
+                if (i === chunks.length - 1 && pendingAdmin && isOtherC(c)) { hiddenOther = true; return; }
+                items.push({ who: isMineC(c) ? 'me' : 'other', text: c.replace(/\[[^\]]*\]:?/g, '').trim(), edited: c.includes('[تعديل الإدارة]') });
+            });
+            const closed = /مغلق|مرفوض|رفض|ملغى|مكتمل/.test(st);
+            const lastIsMine = isMineC(last);
+            const lastIsOther = isOtherC(last);
+            const isFirstMsg = chunks.length === 1;
+            const autoMsg = isFirstMsg || /تواصل مباشر|تبادل الأرقام|أوافق على|أعتذر،|طلب إعادة فتح المحادثة/.test(last);
+            return {
+                role, st, chunks, items, hiddenOther, pendingAdmin, closed, lastIsMine, lastIsOther, isFirstMsg,
+                editable: lastIsMine && !autoMsg && !last.includes('[تعديل الإدارة]') && st.includes('بانتظار') && !st.includes('معلق'),
+                queued: st.includes('قائمة الانتظار'),
+                payment: st.includes('بانتظار الدفع') || st.includes('موافقة تبادل') || st.includes('موافقة نهائية') || th.finalApprovalGiven === true || String(th.finalApprovalGiven).toUpperCase() === 'TRUE',
+                acquaint: st.includes('تسليم الأرقام') || st.includes('مرحلة التعارف'),
+                outcome: st.includes('بانتظار تأكيد الطرف الآخر') || st.includes('نزاع'),
+                quotaOut: role === 'first' && (parseInt(th.remainingMessages) || 0) <= 0,
+                directAsked: th.hasRequestedContact === true || String(th.hasRequestedContact).toUpperCase() === 'TRUE' || chunks.some(c => c.includes('طلب تواصل مباشر وتبادل')),
+                iAmMale: S.identity ? !isFemaleG(S.identity.gender) : !isFemaleG(th.otherGender === 'ذكر' ? 'أنثى' : 'ذكر')
+            };
+        }
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 6 ]: الرسم (الفقاعات وشريط الكتابة) ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        const TICK1 = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#8696a0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+        const TICK2 = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#53bdeb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l4 4L16 7M9 15l2 2L22 7"/></svg>';
+        const CLOCK = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="#8696a0" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
+        function render() {
+            const th = S.thread; if (!th) return;
+            const A = analyze(th);
+            const ob = ls(outKey());
+            // إن ظهر نص الرسالة المعلّقة في المحادثة القادمة من الخادم فقد وصلت: تُحذف من الطابور ولا تُعرض مرتين
+            if (ob && ob.text && A.items.some(it => it.who === 'me' && norm(it.text).includes(norm(ob.text)))) ls(outKey(), null);
+            const pend = ls(outKey());
+
+            document.getElementById('hName').innerText = th.otherName || 'الطرف الآخر';
+            document.getElementById('hAv').innerText = isFemaleG(th.otherGender) ? '👩' : '👤';
+            document.getElementById('hSub').innerText = statusLine(A, pend);
+
+            const chat = document.getElementById('chat');
+            let h = '<div class="day">🔒 محادثة خاصة عبر الوسيط · رقم الطلب ' + esc(th.reqId) + '</div>';
+            const myLastIdx = (() => { let k = -1; A.items.forEach((it, i) => { if (it.who === 'me') k = i; }); return k; })();
+            A.items.forEach((it, i) => {
+                if (it.who === 'admin') { h += '<div class="b admin"><div class="lb">الإدارة</div>' + esc(it.text) + '</div>'; return; }
+                const mine = it.who === 'me';
+                let meta = '';
+                if (mine) {
+                    const delivered = i !== myLastIdx || !A.pendingAdmin; // ما بعد الاعتماد وصل الطرف الآخر
+                    meta = '<div class="meta">' + (i === myLastIdx && !pend ? (delivered ? 'وصلت للطرف الآخر' : 'وصلت للإدارة · قيد المراجعة') : '') + (delivered ? TICK2 : TICK1) + '</div>';
+                }
+                h += '<div class="b ' + (mine ? 'mine' : 'other') + '">' + (mine ? '' : '<div class="lb">الطرف الآخر</div>') + esc(it.text) + (it.edited ? '<div class="meta">✏️ عدّلتها الإدارة</div>' : '') + meta + '</div>';
+            });
+            if (A.hiddenOther) h += '<div class="note">✉️ الطرف الآخر أرسل رداً جديداً، والإدارة تراجعه الآن. سيظهر هنا فور اعتماده، ونبلغك على الواتساب.</div>';
+            if (pend) {
+                const lbl = pend.state === 'failed' ? '' : (pend.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال…');
+                h += '<div class="b mine ' + (pend.state === 'failed' ? 'failed' : 'sending') + '">' + esc(pend.text) +
+                    '<div class="meta">' + lbl + (pend.state === 'failed' ? '' : CLOCK) + '</div>' +
+                    (pend.state === 'failed' ? '<div style="font-size:12px;color:#be123c;font-weight:700;margin-top:4px;white-space:normal">لم تصل الرسالة: ' + esc(pend.err || 'تعذر الاتصال') + '</div><div style="display:flex;gap:6px;margin-top:6px"><button type="button" class="chip green" onclick="retrySend()">🔁 إعادة الإرسال</button><button type="button" class="chip" onclick="dropPending()">حذف</button></div>' : '') + '</div>';
+            }
+            if (A.closed) h += '<div class="note gray">🔒 ' + esc(closedNote(A.st)) + '</div>';
+            chat.innerHTML = h;
+            chat.scrollTop = chat.scrollHeight;
+            renderDock(A, pend);
+        }
+
+        function statusLine(A, pend) {
+            if (pend) return pend.state === 'failed' ? 'لم تصل رسالتك الأخيرة' : 'جاري إرسال رسالتك…';
+            if (A.closed) return 'المحادثة مغلقة';
+            if (A.acquaint) return 'تم تسليم الأرقام · مرحلة التعارف';
+            if (A.payment) return 'تمت الموافقة · لدى الإدارة';
+            if (A.hiddenOther) return 'وصل رد جديد · قيد مراجعة الإدارة';
+            if (A.lastIsMine) return A.pendingAdmin ? 'رسالتك لدى الإدارة للمراجعة' : 'بانتظار رد الطرف الآخر';
+            return 'بانتظار ردّك';
+        }
+        function closedNote(s) {
+            if (s.includes('تم الزواج')) return 'أُغلق الطلب: تم الزواج، بارك الله لكما.';
+            if (s.includes('إنهاء التعارف')) return 'أُغلق الطلب: انتهى التعارف لعدم التوفيق.';
+            if (s.includes('تأخر في الرد')) return 'أُغلق الطلب لتأخر الرد.';
+            if (s.includes('اعتذار') || s.includes('مرفوض')) return 'أُغلق الطلب: تم الاعتذار.';
+            if (s.includes('ملغى')) return 'أُغلق الطلب: تم إلغاؤه.';
+            return 'تم إغلاق المحادثة.';
+        }
+
+        function renderDock(A, pend) {
+            const d = document.getElementById('dock'); d.style.display = 'block';
+            const fullBtn = (t) => '<button type="button" class="chip" onclick="goAll(true)">' + t + '</button>';
+            if (pend) { d.innerHTML = '<div class="waitbar">' + (pend.state === 'failed' ? 'اضغط «إعادة الإرسال» على الرسالة، أو عدّلها بالحذف ثم الكتابة من جديد.' : '⏳ نرسل رسالتك الآن، لا تحتاج لإعادة الإرسال أو تحديث الصفحة.') + '</div>'; return; }
+            if (A.closed) { d.innerHTML = '<div class="big"><button type="button" class="btn-w" onclick="goAll(true)">📋 خيارات هذه المحادثة (إعادة الفتح)</button></div>'; return; }
+            if (A.outcome || A.acquaint || A.payment || A.queued) {
+                const t = A.acquaint ? '📞 أنتم في مرحلة التعارف. لإبلاغنا بالنتيجة (تم الزواج / عدم التوفيق):' : A.payment ? '🎉 تمت الموافقة، والطلب لدى الإدارة لاستكمال الإجراءات.' : A.queued ? '⏳ طلبك في قائمة الانتظار.' : '⚖️ بانتظار تأكيد نتيجة التعارف.';
+                d.innerHTML = '<div class="waitbar">' + t + '</div><div class="big" style="margin-top:6px"><button type="button" class="btn-w" onclick="goAll(true)">فتح الطلب في صفحة المراسلات</button></div>'; return;
+            }
+            if (A.hiddenOther) { d.innerHTML = '<div class="waitbar">سيظهر رد الطرف الآخر هنا بعد مراجعة الإدارة.</div>'; return; }
+            if (A.lastIsMine) {
+                d.innerHTML = '<div class="waitbar">' + (A.pendingAdmin ? '✓ رسالتك وصلت للإدارة، وستصل للطرف الآخر بعد المراجعة.' : '✓✓ رسالتك وصلت للطرف الآخر، بانتظار ردّه.') + '</div>' +
+                    (A.editable ? '<div class="big" style="margin-top:6px"><button type="button" class="btn-w" onclick="startEdit()">✏️ تعديل رسالتي</button></div>' : '');
+                return;
+            }
+            // دوري في الرد
+            if (A.role === 'second' && A.isFirstMsg && !S.compose) {
+                d.innerHTML = '<div class="waitbar" style="padding-bottom:8px">الطرف الآخر يرغب بالتقدّم لكم. ما ردّكم؟</div><div class="big"><button type="button" class="btn-g" onclick="startCompose(\'موافقة مبدئية\')">👍 موافقة مبدئية</button><button type="button" class="btn-r" onclick="openReject()">❌ اعتذار بلطف</button></div>';
+                return;
+            }
+            if (A.quotaOut && !S.compose) { d.innerHTML = '<div class="waitbar">انتهت رسائلك المتاحة في هذه المحادثة.</div><div class="big" style="margin-top:6px"><button type="button" class="btn-w" onclick="goAll(true)">🔓 تمديد المحادثة</button></div>'; return; }
+            const type = S.compose ? S.compose.type : (A.role === 'second' ? 'رد على الطلب' : 'رسالة متابعة');
+            let chips = '';
+            if (!S.compose || S.compose.type !== 'تعديل') {
+                if (A.iAmMale && !A.directAsked) chips += fullBtn('📞 طلب تواصل مباشر');
+                if (!A.iAmMale && A.directAsked) chips += '<button type="button" class="chip green" onclick="goAll(true)">✨ موافقة تبادل أرقام</button>';
+                chips += '<button type="button" class="chip rose" onclick="openReject()">❌ إنهاء واعتذار</button>';
+            } else chips += '<button type="button" class="chip" onclick="cancelCompose()">إلغاء التعديل</button>';
+            const keep = document.getElementById('msg') ? document.getElementById('msg').value : (S.compose && S.compose.text) || '';
+            d.innerHTML = '<div class="chips">' + chips + '</div>' +
+                '<div class="row"><textarea id="msg" rows="1" placeholder="اكتب ردّك هنا…" oninput="grow(this)"></textarea>' +
+                '<button type="button" class="send" id="sendBtn" onclick="sendText()" aria-label="إرسال"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" style="transform:scaleX(-1)"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg></button></div>' +
+                (A.role === 'first' ? '<div class="hint">متبقٍ لك ' + (parseInt(S.thread.remainingMessages) || 0) + ' رسائل في هذه المحادثة · تصل رسالتك للطرف الآخر بعد مراجعة الإدارة</div>' : '<div class="hint">تصل رسالتك للطرف الآخر بعد مراجعة الإدارة</div>');
+            const ta = document.getElementById('msg'); ta.value = keep; grow(ta);
+            S.composeType = type;
+        }
+        function grow(el) { el.style.height = 'auto'; el.style.height = Math.min(140, el.scrollHeight) + 'px'; }
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 7 ]: الإرسال المضمون (بلا ضياع وبلا تكرار) ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        // المبدأ: الرسالة تُحفظ على الجهاز قبل الإرسال بمعرّف ثابت (tempId). أي انقطاع أو مهلة لا يعني "فشل" — قد تكون وصلت
+        // (Apps Script يكمل التنفيذ حتى لو انقطع الرد). نتحقق من المحادثة نفسها أولاً، ولا نعيد الإرسال إلا إن تأكدنا أنها لم تصل.
+        // إعادة الإرسال تحمل نفس tempId، فالخادم المحدَّث يرجع نفس النتيجة بلا كتابة ثانية.
+        function startCompose(type) { S.compose = { type: type, text: type === 'موافقة مبدئية' ? INITIAL_TEMPLATE : '' }; render(); setTimeout(() => { const t = document.getElementById('msg'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }, 50); }
+        function cancelCompose() { S.compose = null; render(); }
+        function startEdit() {
+            const A = analyze(S.thread); const mine = A.items.filter(i => i.who === 'me'); const lastMine = mine[mine.length - 1];
+            S.compose = { type: 'تعديل', text: lastMine ? lastMine.text : '' }; render();
+            setTimeout(() => { const t = document.getElementById('msg'); if (t) t.focus(); }, 50);
+        }
+        function sendText() {
+            const ta = document.getElementById('msg'); if (!ta) return;
+            const text = ta.value.trim();
+            if (text.length < 10) { toast('اكتب رداً واضحاً لا يقل عن 10 أحرف'); return; }
+            if (S.compose && S.compose.type === 'موافقة مبدئية' && norm(text) === norm(INITIAL_TEMPLATE)) { toast('اكتب استفساراتكم بعد عبارة الموافقة'); return; }
+            const type = S.compose ? S.compose.type : S.composeType;
+            if (type === 'تعديل') enqueue({ kind: 'edit', text: text, payload: { action: 'editPendingReply', reqId: Q.reqId, newMsg: text } });
+            else enqueue({ kind: 'reply', text: text, payload: { action: 'replyToRequest', reqId: Q.reqId, replyType: type, replyMessage: text } });
+        }
+        function openReject() {
+            const list = isFemaleG(S.identity && S.identity.gender) ? REJECT_REASONS_WOMEN : REJECT_REASONS_MEN;
+            document.getElementById('rejList').innerHTML = list.map((t, i) => '<label><input type="radio" name="rr" value="أعتذر، ' + esc(t) + '"' + (i === 0 ? ' checked' : '') + '><span>' + esc(t) + '</span></label>').join('');
+            document.getElementById('rejSheet').classList.add('on');
+        }
+        function closeSheet() { document.getElementById('rejSheet').classList.remove('on'); }
+        function sendReject() {
+            const r = document.querySelector('input[name="rr"]:checked'); if (!r) return;
+            closeSheet();
+            enqueue({ kind: 'reject', text: r.value, payload: { action: 'replyToRequest', reqId: Q.reqId, replyType: 'اعتذار', replyMessage: r.value } });
+        }
+        function enqueue(o) {
+            if (ls(outKey())) { toast('رسالتك السابقة ما زالت قيد الإرسال'); return; }
+            const id = 'qr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            const rec = { id: id, kind: o.kind, text: o.text, state: 'sending', at: Date.now(), tries: 0, payload: Object.assign({}, o.payload, { phone: S.identity.phone, requesterRefId: S.identity.refId, tempId: id }) };
+            ls(outKey(), rec);
+            S.compose = null;
+            perf.sendClick = now(); perf.sendAck = null;
+            render();
+            deliver(rec);
+        }
+        async function deliver(rec) {
+            rec.tries++; rec.state = 'sending'; ls(outKey(), rec); render();
+            let res = null, unknown = null;
+            const started = Date.now(); rec.lastStart = started; ls(outKey(), rec);
+            // الرد تأخر؟ بعد 12 ث نقرأ المحادثة نفسها (getThread خفيف ولا يحجز القفل): إن ظهرت الرسالة نكتفي ولا ننتظر الرد الضائع
+            let settled = false;
+            const probe = (async () => {
+                await sleep(12000);
+                for (let k = 0; k < 3 && !settled; k++) { if (await verify(rec, 0)) return true; await sleep(8000); }
+                return new Promise(() => {}); // لا نتيجة: يبقى السباق للطلب الأصلي
+            })();
+            const sent = qrPost(rec.payload, 35000).then(v => ({ v }), e => ({ e }));
+            const first = await Promise.race([sent, probe.then(() => ({ landed: true }))]);
+            settled = true;
+            if (first.landed) return delivered(rec, { message: '' }, true);
+            res = first.v || null; unknown = first.e || null;
+            if (res && res.forceLogout) { ls(outKey(), null); return fatal(res.message || 'تم إيقاف هذا الملف.'); }
+            if (res && res.banned) { ls(outKey(), null); return fatal(res.message || 'حسابكم موقوف.'); }
+            if (res && res.success) return delivered(rec, res);
+            if (res && !res.success) {
+                // "النظام مشغول" = القفل لم يُحجز ولم يُكتب شيء: إعادة واحدة صامتة بعد ثوانٍ
+                if (/مشغول/.test(res.message || '') && rec.tries < 3) { await sleep(2500 + Math.random() * 2500); return deliver(rec); }
+                // "رسائل متتالية" أو "مغلق": غالباً وصلت المحاولة السابقة؛ نتأكد من المحادثة
+                if (/متتالية|مغلق/.test(res.message || '')) { const ok = await verify(rec, 0); if (ok) return delivered(rec, { message: '' }, true); }
+                return failed(rec, res.message || 'رفض الخادم الرسالة');
+            }
+            // انقطاع/مهلة/ازدحام: لا نقول "فشل" بعد
+            rec.state = 'verifying'; ls(outKey(), rec); render();
+            if (unknown && unknown.busy) { // رد HTML: الخادم رفض التنفيذ قبل البدء، فالإعادة آمنة
+                if (rec.tries < 3) { await sleep(3000 + Math.random() * 3000); return deliver(rec); }
+                return failed(rec, 'الخادم مزدحم جداً الآن');
+            }
+            // فشل خلال أقل من 3 ث = الطلب لم يغادر الجهاز (لا إنترنت): نعيده عند عودة الاتصال
+            if (Date.now() - started < 3000) {
+                if (!navigator.onLine) await new Promise(r => window.addEventListener('online', r, { once: true }));
+                if (rec.tries < 3) { await sleep(1500); return deliver(rec); }
+                return failed(rec, 'لا يوجد اتصال بالإنترنت');
+            }
+            // الطلب ربما ما زال ينفَّذ على الخادم: نتحقق ثم لا نعيد الإرسال إلا بعد مضي 45 ث على بدء المحاولة
+            // (أقصى ما ينتظره الخادم للقفل 10 ث + التنفيذ)؛ فلا تتكرر الرسالة حتى مع خادم لا يعرف tempId بعد.
+            if (await verify(rec, 3000) || await verify(rec, 6000)) return delivered(rec, { message: '' }, true);
+            if (await waitSafeResend(rec)) return delivered(rec, { message: '' }, true);
+            if (rec.tries < 2) return deliver(rec); // تأكدنا أنها لم تصل: إعادة واحدة تلقائية بنفس tempId
+            return failed(rec, 'تعذر الاتصال بالخادم، تحقق من الإنترنت');
+        }
+        // ينتظر حتى تمضي 45 ث على بدء آخر محاولة ثم يتحقق مرة أخيرة؛ true = وصلت
+        async function waitSafeResend(rec) {
+            const left = 45000 - (Date.now() - (rec.lastStart || 0));
+            if (left > 0) { await sleep(left); return verify(rec, 0); }
+            return false;
+        }
+        async function verify(rec, waitMs) {
+            if (waitMs) await sleep(waitMs);
+            try {
+                const d = await qrFetchThread(Q.tok, Q.reqId);
+                if (!d || !d.success || !d.thread) return false;
+                S.thread = d.thread; saveSnap(d);
+                const A = analyze(d.thread);
+                return A.items.some(it => it.who === 'me' && norm(it.text).includes(norm(rec.text))) || (rec.kind === 'reject' && A.closed);
+            } catch (e) { return false; }
+        }
+        function delivered(rec, res, verified) {
+            perf.sendAck = now(); perf.ackKind = verified ? 'verified' : 'direct';
+            ls(outKey(), null);
+            // نحدّث المحادثة محلياً فوراً (بلا انتظار طلب جديد)، ثم نجلب النسخة الحقيقية بالخلفية
+            if (!verified && S.thread) {
+                const tag = S.thread.role === 'first' ? '[من الطرف الأول]: ' : '[من الطرف الثاني]: ';
+                if (rec.kind === 'edit') { const cs = S.thread.message.split('---').map(c => c.trim()).filter(Boolean); cs[cs.length - 1] = tag + rec.text; S.thread.message = cs.join('\n\n---\n\n'); }
+                else { S.thread.message = (S.thread.message ? S.thread.message + '\n\n---\n\n' : '') + tag + rec.text; S.thread.status = rec.kind === 'reject' ? 'مغلق - مرفوض وتم الاعتذار' : 'بانتظار اعتماد الإدارة'; }
+                if (S.thread.role === 'first' && rec.kind === 'reply') S.thread.remainingMessages = Math.max(0, (parseInt(S.thread.remainingMessages) || 0) - 1);
+                saveSnap({ identity: S.identity, thread: S.thread });
+            }
+            render();
+            if (rec.kind === 'reject') { document.getElementById('doneTitle').innerText = 'تم إرسال الاعتذار ✓'; document.getElementById('doneText').innerText = 'وصل اعتذارك بأسلوب لطيف، وأُغلقت المحادثة. شكراً لوضوحك.'; }
+            else if (rec.kind === 'edit') { document.getElementById('doneTitle').innerText = 'تم تعديل رسالتك ✓'; document.getElementById('doneText').innerText = 'وصل التعديل للإدارة قبل اعتماد الرسالة.'; }
+            else { document.getElementById('doneTitle').innerText = 'تم إرسال ردّك ✓'; document.getElementById('doneText').innerText = 'وصلت رسالتك للإدارة، وستصل للطرف الآخر بعد المراجعة. سنبلغك على الواتساب عند وصول الرد.'; }
+            document.getElementById('doneBox').classList.add('on');
+            if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) {}
+        }
+        function failed(rec, msg) { rec.state = 'failed'; rec.err = msg; ls(outKey(), rec); render(); }
+        function retrySend() { const rec = ls(outKey()); if (rec) { rec.tries = 0; deliver(rec); } }
+        function dropPending() { const rec = ls(outKey()); ls(outKey(), null); if (rec) S.compose = { type: rec.kind === 'edit' ? 'تعديل' : (S.composeType || 'رد على الطلب'), text: rec.kind === 'reject' ? '' : rec.text }; render(); }
+        function closeDone() { document.getElementById('doneBox').classList.remove('on'); }
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 8 ]: الجلسة والتنقل لبقية الموقع ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        function saveSnap(d) { ls(snapKey(), { tok: Q.tok, at: Date.now(), identity: d.identity || S.identity, thread: d.thread }); }
+        // نفس مفاتيح الدخول التي يكتبها runMagicBoot في index.html، فيفتح "كل مراسلاتي" بلا تحقق جديد من الرابط
+        function adoptSession(d) {
+            const id = d.identity; if (!id) return;
+            const digits = String(id.phone || '').replace(/[^0-9]/g, '');
+            let prev = null; try { prev = localStorage.getItem('verified_user_phone'); } catch (e) {}
+            if (prev && prev.replace(/[^0-9]/g, '') !== digits) {
+                // مستخدم آخر على نفس الجهاز: يُمسح كل شيء عدا مسودات/طابور الرد السريع لهذا الطلب
+                const keepOut = ls(outKey());
+                try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+                if (keepOut) ls(outKey(), keepOut);
+            }
+            try {
+                localStorage.setItem('qr_tok', Q.tok);
+                localStorage.setItem('verified_user_phone', '+' + digits);
+                localStorage.setItem('active_profile_refid', id.refId);
+                localStorage.setItem('active_profile_uid', id.refId);
+                localStorage.setItem('verified_user_name', id.name || 'عضونا الكريم');
+                localStorage.setItem('verified_user_gender', id.gender || '');
+                localStorage.setItem('magic_session', '1');
+                localStorage.setItem('magic_session_name', id.unifiedName || id.name || '');
+                if (d.walletBalance !== undefined) localStorage.setItem('cached_wallet_balance', d.walletBalance || 0);
+                if (d.config) localStorage.setItem('platform_config', JSON.stringify(d.config));
+                if (d.fullSync) { const s = Object.assign({}, d.fullSync); delete s.magicIdentity; localStorage.setItem('master_activity_cache', JSON.stringify(s)); }
+            } catch (e) {}
+        }
+        function goAll(focus) {
+            try { if (focus) sessionStorage.setItem('focus_req', Q.reqId); } catch (e) {}
+            if (S.identity) location.href = 'index.html?open=requests' + (focus ? '&focus=' + encodeURIComponent(Q.reqId) : '');
+            else if (Q.tok) location.href = 'index.html?token=' + encodeURIComponent(Q.tok);
+            else location.href = 'index.html';
+        }
+        function goHome() { location.href = 'index.html'; }
+        function fatal(msg) {
+            document.getElementById('dock').style.display = 'none';
+            document.getElementById('chat').innerHTML = '<div class="boot"><div style="font-size:40px">🔒</div><p style="font-weight:800;font-size:15px;margin:0">' + esc(msg) + '</p><button type="button" class="chip" onclick="goHome()">الصفحة الرئيسية</button></div>';
+            document.getElementById('hSub').innerText = '';
+        }
+
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// ✂️ ---------- [ القسم رقم 9 ]: البدء ---------- ✂️
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+        (async function boot() {
+            if (window.__qrRedirect) return;
+            if (!Q.tok || !Q.reqId) { fatal('الرابط غير مكتمل. افتح الرسالة من الواتساب مجدداً، أو ادخل من الصفحة الرئيسية.'); return; }
+            try { history.replaceState({}, '', location.pathname + '?r=' + encodeURIComponent(Q.reqId) + (new URLSearchParams(location.search).get('api') ? '&api=' + encodeURIComponent(new URLSearchParams(location.search).get('api')) : '')); } catch (e) {}
+
+            // 1) فوري: آخر نسخة محفوظة على هذا الجهاز لنفس الرابط
+            const snap = ls(snapKey());
+            if (snap && snap.tok === Q.tok && snap.thread) {
+                S.identity = snap.identity; S.thread = snap.thread; render(); perf.snapshotPaint = now();
+                document.getElementById('syncPill').style.display = 'block';
+            }
+            // 2) رسائل طمأنة متدرجة أثناء الانتظار البارد
+            const stages = [[6000, 'نجهّز محادثتك بأمان…'], [14000, 'الخادم مشغول قليلاً، لحظات ونعرض المحادثة 🌿'], [26000, 'يأخذ وقتاً أطول من المعتاد. لا تحدّث الصفحة.']];
+            const timers = stages.map(([ms, t]) => setTimeout(() => { const b = document.getElementById('bootTxt'); if (b) b.innerText = t; }, ms));
+
+            let d = null, err = null;
+            try { d = await Q.first; }
+            catch (e) { err = e; if (!e.busy) { await sleep(2000 + Math.random() * 2000); try { d = await qrFetchThread(Q.tok, Q.reqId); err = null; } catch (e2) { err = e2; } } }
+            timers.forEach(clearTimeout);
+            document.getElementById('syncPill').style.display = 'none';
+
+            if (err || !d) {
+                if (S.thread) { toast('⚠️ تعذر التحديث، تُعرض آخر نسخة محفوظة', 4000); return resumeOutbox(); }
+                return fatal(err && err.busy ? 'الخادم مزدحم حالياً، أعد فتح الرابط بعد لحظات.' : 'تعذر الاتصال، تحقق من الإنترنت ثم أعد فتح الرابط.');
+            }
+            if (d.forceLogout || d.banned) return fatal(d.message || 'هذا الرابط غير متاح.');
+            if (!d.success) {
+                if (d.code === 'NO_THREAD') { if (d.identity) { S.identity = d.identity; adoptSession(d); } return fatal('لم نجد هذه المحادثة في حسابك. اضغط «كل مراسلاتي» بالأعلى.'); }
+                return fatal(d.message || 'الرابط غير صالح أو منتهي الصلاحية.');
+            }
+            S.identity = d.identity; S.thread = d.thread; S.fresh = true;
+            adoptSession(d); saveSnap(d);
+            render(); perf.livePaint = now();
+            resumeOutbox();
+            // تحديث خفيف عند العودة للصفحة (الإدارة قد تكون مرّرت رداً)
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !ls(outKey())) refreshQuiet(); });
+        })();
+        // رسالة كانت قيد الإرسال عند إغلاق الصفحة: نكمل من حيث توقفنا (تحقق أولاً ثم إرسال)
+        async function resumeOutbox() {
+            const rec = ls(outKey()); if (!rec || rec.state === 'failed') return;
+            rec.state = 'verifying'; ls(outKey(), rec); render();
+            if (await verify(rec, 0)) { ls(outKey(), null); render(); toast('✓ رسالتك السابقة وصلت'); return; }
+            if (await waitSafeResend(rec)) { ls(outKey(), null); render(); toast('✓ رسالتك السابقة وصلت'); return; } // المحاولة السابقة قد تكون ما زالت تعمل على الخادم
+            deliver(rec);
+        }
+        let lastQuiet = Date.now();
+        async function refreshQuiet() {
+            if (Date.now() - lastQuiet < 30000) return; lastQuiet = Date.now();
+            try { const d = await qrFetchThread(Q.tok, Q.reqId); if (d && d.success && d.thread && !ls(outKey())) { S.thread = d.thread; saveSnap(d); render(); } } catch (e) {}
+        }
+    </script>
+</body>
+</html>
