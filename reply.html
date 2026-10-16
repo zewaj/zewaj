@@ -23,7 +23,7 @@
             if (!reqId || !/^[A-Za-z0-9_-]{3,40}$/.test(reqId)) reqId = null;
             // رابط بلا رقم طلب (روابط قديمة): المسار المعتاد لكل المراسلات
             if (tok && !reqId) { location.replace('index.html?token=' + encodeURIComponent(tok)); window.__qrRedirect = true; return; }
-            window.__qr = { tok: tok, reqId: reqId, t0: performance.now() };
+            window.__qr = { tok: tok, reqId: reqId, t0: performance.now(), diag: p.get('diag') === '1' };
             if (!tok) return;
             // الطلب يبدأ قبل رسم أي شيء
             window.__qr.first = qrFetchThread(tok, reqId);
@@ -40,7 +40,8 @@
         }
         // getThread (جديد في الخادم: صف واحد)، ومع خادم لم يُحدَّث بعد نرجع لـ verifyTokenAndSync ونأخذ المحادثة منها
         function qrFetchThread(tok, reqId) {
-            return qrPost({ action: 'getThread', token: tok, reqId: reqId }, 30000).then(function (d) {
+            // مهلة 45 ث: أول طلب بعد نشر نسخة جديدة من الخادم أو بعد سكون طويل قد يتجاوز 30 ث، وقطعه ثم إعادته كان يضاعف الانتظار
+            return qrPost({ action: 'getThread', token: tok, reqId: reqId, perf: !!(window.__qr && window.__qr.diag) }, 45000).then(function (d) {
                 if (d && d.success === false && d.message === 'إجراء غير معروف') {
                     return qrPost({ action: 'verifyTokenAndSync', token: tok }, 45000).then(function (s) {
                         if (!s || !s.success || !s.magicIdentity) return s;
@@ -553,6 +554,7 @@
             S.identity = d.identity; S.thread = d.thread; S.fresh = true;
             adoptSession(d); saveSnap(d);
             render(); perf.livePaint = now();
+            if (Q.diag) toast('⏱ ' + (perf.livePaint / 1000).toFixed(1) + ' ث · ' + (d.source || 'sync') + ' · ' + JSON.stringify(d.perf || {}), 20000);
             resumeOutbox();
             // تحديث خفيف عند العودة للصفحة (الإدارة قد تكون مرّرت رداً)
             document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !ls(outKey())) refreshQuiet(); });
