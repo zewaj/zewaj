@@ -163,6 +163,7 @@
                         <span class="text-xl font-extrabold text-slate-700">ذكر</span>
                     </div>
                 </div>
+                <div class="saved-host max-w-xl mx-auto"></div>
             </div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -218,7 +219,8 @@
 <!-- 🟥🟥🟥🟥 [ القسم رقم 5: نموذج البحث - مكان الإقامة (Location Fields) ] 🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
             <form id="manualSearchForm" class="hidden bg-white p-6 sm:p-10 rounded-3xl shadow-sm border border-slate-200 mb-6 fade-in">
-                
+                <div class="saved-host mb-5"></div>
+
                 <div class="mb-5 bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
                     <h3 class="text-sm font-bold text-slate-700 mb-4 border-b border-slate-200 pb-2">مكان الإقامة <span class="text-xs font-normal text-slate-400">(يمكنك اختيار المجموعتين معاً)</span></h3>
                     <div class="flex items-center gap-6 mb-4">
@@ -345,7 +347,21 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥 [ القسم رقم 8: نموذج البحث - أزرار البحث والمسح (Form Actions) ] 🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-                <div class="mt-8 flex flex-row items-center gap-3">
+                <div class="mt-8 mb-3">
+                    <button type="button" id="saveSearchToggleBtn" onclick="openSaveSearchPanel()" class="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-4 py-2 rounded-full flex items-center gap-1.5 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                        <span>حفظ هذا البحث</span>
+                    </button>
+                    <div id="saveSearchPanel" class="hidden mt-3 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                        <div class="flex gap-2">
+                            <input type="text" id="saveSearchName" maxlength="28" placeholder="اسم البحث، مثال: مطلقة من الرياض" class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-indigo-100" onkeydown="if(event.key==='Enter'){event.preventDefault(); confirmSaveSearch();}">
+                            <button type="button" onclick="confirmSaveSearch()" class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primaryHover text-white font-bold text-sm shrink-0">حفظ</button>
+                            <button type="button" onclick="closeSaveSearchPanel()" class="px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-500 font-bold text-sm shrink-0">إلغاء</button>
+                        </div>
+                        <p id="saveSearchMsg" class="hidden text-xs font-bold text-rose-600 mt-2 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="flex flex-row items-center gap-3">
                     <button type="button" onclick="clearAllFilters()" class="w-14 h-14 shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-2xl transition-colors duration-300 flex justify-center items-center shadow-sm border border-rose-100" title="مسح الخيارات">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
@@ -1230,6 +1246,141 @@
                 createCustomMultiSelect('manual_residenceCountry', serverDropdowns.residenceCountries || []);
             }
         }
+
+/* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
+/* 🟥🟥🟥🟥 [ القسم رقم 17-أ: السكربت - عمليات البحث المحفوظة (3 خانات لكل عميل على جهازه) ] 🟥🟥🟥🟥 */
+/* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
+        const SAVED_SEARCH_MAX = 3;
+        const SAVED_PLAIN_FIELDS = ['manual_originType', 'manual_hasChildren', 'manual_ageFrom', 'manual_ageTo', 'manual_heightFrom', 'manual_heightTo', 'manual_weightFrom', 'manual_weightTo'];
+
+        function savedSearchKey() {
+            const ph = (localStorage.getItem('verified_user_phone') || 'guest').replace(/[^0-9a-zA-Z]/g, '') || 'guest';
+            return 'saved_searches_v1_' + ph;
+        }
+        function loadSavedSearches() {
+            try { const a = JSON.parse(localStorage.getItem(savedSearchKey()) || '[]'); return Array.isArray(a) ? a.slice(0, SAVED_SEARCH_MAX) : []; } catch (e) { return []; }
+        }
+        function writeSavedSearches(list) {
+            try { localStorage.setItem(savedSearchKey(), JSON.stringify(list)); return true; } catch (e) { return false; }
+        }
+        function escSaved(t) { return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        function captureCurrentSearch() {
+            const multi = {};
+            Object.keys(multiSelectInstances).forEach(k => {
+                const inst = multiSelectInstances[k];
+                const v = inst && inst.getSelected ? inst.getSelected() : [];
+                if (v.length) multi[k] = v;
+            });
+            const plain = {};
+            SAVED_PLAIN_FIELDS.forEach(id => { const el = document.getElementById(id); if (el && String(el.value).trim() !== '') plain[id] = String(el.value).trim(); });
+            return {
+                gender: activeGenderTarget,
+                inside: document.getElementById('loc_inside_ksa').checked,
+                outside: document.getElementById('loc_outside_ksa').checked,
+                multi: multi,
+                plain: plain
+            };
+        }
+
+        function suggestSearchName(cap) {
+            const bits = [cap.gender === 'أنثى' ? 'نساء' : 'رجال'];
+            const first = k => (cap.multi[k] && cap.multi[k][0]) || '';
+            const ms = first('manual_maritalStatus'), rg = first('manual_region') || first('manual_city');
+            if (ms) bits.push(ms);
+            if (rg) bits.push(rg);
+            return bits.join(' - ').slice(0, 28);
+        }
+
+        function renderSavedSearches() {
+            const list = loadSavedSearches();
+            document.querySelectorAll('.saved-host').forEach(host => {
+                if (!list.length) { host.innerHTML = ''; return; }
+                host.innerHTML = `
+                    <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-3">
+                        <p class="text-[11px] font-bold text-indigo-500 mb-2">عمليات بحثك المحفوظة (${list.length} من ${SAVED_SEARCH_MAX}) - اضغط على أي منها لتشغيل البحث فوراً</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${list.map(s => `
+                                <div class="flex items-stretch bg-white border border-indigo-100 rounded-xl overflow-hidden shadow-sm">
+                                    <button type="button" onclick="applySavedSearch('${escSaved(s.id)}')" class="px-3 py-2 text-xs font-bold text-slate-700 hover:bg-indigo-50 flex items-center gap-1.5 transition-colors">
+                                        <span class="w-2 h-2 rounded-full ${s.gender === 'أنثى' ? 'bg-pink-400' : 'bg-blue-400'}"></span>${escSaved(s.name)}
+                                    </button>
+                                    <button type="button" onclick="deleteSavedSearch('${escSaved(s.id)}')" title="حذف" class="px-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 border-r border-indigo-100 transition-colors">✕</button>
+                                </div>`).join('')}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function openSaveSearchPanel() {
+            if (!activeGenderTarget) return;
+            const panel = document.getElementById('saveSearchPanel');
+            const input = document.getElementById('saveSearchName');
+            document.getElementById('saveSearchMsg').classList.add('hidden');
+            input.value = suggestSearchName(captureCurrentSearch());
+            panel.classList.remove('hidden');
+            input.focus(); input.select();
+        }
+        function closeSaveSearchPanel() { document.getElementById('saveSearchPanel').classList.add('hidden'); }
+
+        function confirmSaveSearch() {
+            const msg = document.getElementById('saveSearchMsg');
+            const name = document.getElementById('saveSearchName').value.trim();
+            if (!name) { msg.textContent = 'اكتب اسماً للبحث أولاً.'; msg.classList.remove('hidden'); return; }
+            const list = loadSavedSearches();
+            const sameIdx = list.findIndex(s => s.name === name);
+            if (sameIdx === -1 && list.length >= SAVED_SEARCH_MAX) {
+                msg.textContent = 'الخانات الثلاث ممتلئة. احذف إحدى عمليات البحث المحفوظة بعلامة ✕ ثم احفظ من جديد.';
+                msg.classList.remove('hidden'); return;
+            }
+            const cap = captureCurrentSearch();
+            const entry = Object.assign({ id: sameIdx > -1 ? list[sameIdx].id : 's' + Date.now(), name: name }, cap);
+            if (sameIdx > -1) list[sameIdx] = entry; else list.push(entry);
+            if (!writeSavedSearches(list)) { msg.textContent = 'تعذر الحفظ على جهازك (الذاكرة ممتلئة أو معطلة).'; msg.classList.remove('hidden'); return; }
+            closeSaveSearchPanel();
+            renderSavedSearches();
+            showSearchToast('تم حفظ البحث "' + name + '"');
+        }
+
+        function deleteSavedSearch(id) {
+            const list = loadSavedSearches();
+            const s = list.find(x => x.id === id);
+            if (!s || !confirm('حذف البحث المحفوظ "' + s.name + '"؟')) return;
+            writeSavedSearches(list.filter(x => x.id !== id));
+            renderSavedSearches();
+        }
+
+        function setSavedMulti(id, values) {
+            const menu = document.getElementById('menu_' + id);
+            if (!menu || !values) return;
+            menu.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                if (values.indexOf(cb.value) > -1) { cb.checked = true; cb.dispatchEvent(new Event('change')); }
+            });
+        }
+
+        function applySavedSearch(id) {
+            const s = loadSavedSearches().find(x => x.id === id);
+            if (!s) return;
+            if (!dropdownsReady) { showSearchToast('جاري تحميل القوائم، أعد المحاولة بعد لحظات.'); return; }
+            selectTargetGender(s.gender);
+            document.getElementById('loc_inside_ksa').checked = !!s.inside;
+            document.getElementById('loc_outside_ksa').checked = !!s.outside;
+            updateLocationFields();
+            const m = s.multi || {};
+            setSavedMulti('manual_region', m.manual_region);
+            setSavedMulti('manual_city', m.manual_city);
+            Object.keys(m).forEach(k => { if (k !== 'manual_region' && k !== 'manual_city') setSavedMulti(k, m[k]); });
+            Object.keys(s.plain || {}).forEach(k => { const el = document.getElementById(k); if (el) el.value = s.plain[k]; });
+            if (Object.keys(m).some(k => ['manual_nationality', 'manual_education', 'manual_job'].indexOf(k) > -1) || ['manual_hasChildren', 'manual_heightFrom', 'manual_heightTo', 'manual_weightFrom', 'manual_weightTo'].some(k => (s.plain || {})[k])) {
+                document.getElementById('advancedFilters').classList.remove('hidden');
+                document.getElementById('advancedIcon').classList.add('rotate-180');
+            }
+            setTimeout(() => {
+                const f = document.getElementById('manualSearchForm');
+                if (typeof f.requestSubmit === 'function') f.requestSubmit(); else f.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }, 250);
+        }
+        document.addEventListener('DOMContentLoaded', renderSavedSearches);
 
         function editGenderSelection() {
             clearAllFilters();
