@@ -1143,7 +1143,9 @@
                     let actionButtonHTML = '';
                     // ⏰ [القسم 31] تأخر رُفع للإدارة: لا إغلاق ولا خصم قبل قرارك (الرد قد يكون وصلك عبر الواتساب)
                     let delayBannerHtml = '';
-                    if (req.delayPending && !isClosed) {
+                    if (req.delayPending && !isClosed && window.delayBusy && window.delayBusy[req.reqId]) {
+                        delayBannerHtml = `<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-3 text-center text-xs font-bold text-indigo-700 flex items-center justify-center gap-2"><span class="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin"></span> جاري تنفيذ القرار في الخلفية — يمكنك متابعة عملك</div>`;
+                    } else if (req.delayPending && !isClosed) {
                         const who = req.delayerIsFirst ? 'صاحب الطلب (الطرف الأول)' : 'المستلم (الطرف الثاني)';
                         delayBannerHtml = `
                         <div class="bg-amber-50 border border-amber-300 rounded-xl p-3 mb-3 shadow-sm">
@@ -1936,72 +1938,164 @@
             } finally { clearTimeout(timeoutId); }
         }
 
+        // ═══ [2026-10-17] نافذة إغلاق التأخر: تصميم جديد + تنفيذ بالخلفية ═══
+        // كانت النافذة تنتظر ردّ الخادم داخلها (قد يتجاوز الدقيقة مع الحظر)، ونافذة النتيجة تظهر خلفها (z أقل) فتبقى "جاري التنفيذ" للأبد.
+        // الآن: تأكيد ← تُغلق النافذة فوراً ← يعمل القرار بالخلفية بشريط تقدم (qaToast) ← النتيجة إشعار؛ ولو انقطع الردّ نتحقق من حالة الطلب في اللوحة.
+        window.delayBusy = window.delayBusy || {};
+
+        function dlRandId() { return 'dl_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
+
+        // يُنفَّذ بالخلفية: لا ينتظره أي مربع حوار. extra = { deduct, ban }
+        async function delayRunBg(req, decision, extra) {
+            const reqId = req.reqId;
+            if (window.delayBusy[reqId]) return;
+            window.delayBusy[reqId] = true;
+            qaInflight++;
+            renderTable();
+            const label = decision === 'close' ? ('إغلاق الطلب ' + reqId + ' بسبب التأخر') : ('تمديد مهلة الطلب ' + reqId);
+            const t = qaToast('⏳ ' + label + ' (قد يستغرق دقيقة، يمكنك متابعة عملك)...', 'info', true);
+            const opId = dlRandId();
+            let ok = false, message = '';
+            try {
+                const payload = Object.assign({ action: 'adminResolveDelay', adminToken: state.adminToken, reqId: reqId, decision: decision, rowHint: req.rowIndex, opId: opId }, extra || {});
+                const r = await qaPost(payload, 150000);
+                ok = r.ok; message = r.message;
+                if (!ok) {
+                    // الردّ لم يصل أو رُفض: نتحقق من الحالة الفعلية قبل أن نقول "فشل" (الواتساب قد يكون وصل فعلاً)
+                    scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
+                    try { await fetchData(true); } catch (e) {}
+                    const now = allRequests.find(x => x.reqId === reqId);
+                    const settled = !now || !now.delayPending || /مغلق|ملغى/.test(now.status || '');
+                    if (settled && decision === 'close' && (!now || /مغلق|ملغى/.test(now.status || ''))) { ok = true; message = 'أُغلق الطلب (تأكدنا من حالته في الشيت رغم تأخر الردّ).'; }
+                    else if (settled && decision === 'extend' && now && !now.delayPending) { ok = true; message = 'مُدّدت المهلة (تأكدنا من حالتها في الشيت).'; }
+                }
+            } catch (e) {
+                message = 'تعذر الاتصال بالخادم.';
+            }
+            qaInflight--;
+            delete window.delayBusy[reqId];
+            scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
+            if (ok) {
+                t.set('✔ ' + (message || 'تم التنفيذ.'), 'ok');
+                setTimeout(t.remove, 9000);
+            } else {
+                t.remove();
+                if (!handleAuthError(message)) await showMsgModal('⚠️ لم يُنفَّذ: ' + label, (message || 'تعذر تنفيذ القرار.') + '\n\nلا يُعاد الإرسال تلقائياً. راجع حالة الطلب في اللوحة قبل إعادة المحاولة.');
+            }
+            try { await fetchData(true); } catch (e) {}
+            renderTable();
+        }
+
+        function delayCloseCloseModal() { const m = document.getElementById('delayCloseModal'); if (m) m.remove(); }
+
         async function openDelayCloseModal(req) {
-            const old = document.getElementById('delayCloseModal'); if (old) old.remove();
+            delayCloseCloseModal();
             const wrap = document.createElement('div');
             wrap.id = 'delayCloseModal';
-            wrap.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[400] flex items-center justify-center p-4';
-            wrap.innerHTML = `<div class="bg-white rounded-2xl p-5 max-w-md w-full shadow-2xl text-right max-h-[92dvh] overflow-y-auto" dir="rtl"><p class="text-sm font-bold text-slate-500 text-center animate-pulse">⏳ جاري تحميل سجل التأخر...</p></div>`;
+            wrap.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center sm:p-4';
+            wrap.addEventListener('click', e => { if (e.target === wrap) delayCloseCloseModal(); });
+            wrap.innerHTML = `<div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 text-center" dir="rtl"><div class="w-8 h-8 mx-auto mb-3 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div><p class="text-sm font-bold text-slate-500">جاري تحميل سجل التأخر...</p></div>`;
             document.body.appendChild(wrap);
             let info;
             try { info = await adminDelayCall({ action: 'adminGetDelayInfo', reqId: req.reqId, rowHint: req.rowIndex }); }
             catch (e) { info = { success: false, message: e.name === 'AbortError' ? 'تأخر الخادم، حاول مجدداً.' : 'فشل الاتصال بالخادم.' }; }
-            if (!info || !info.success) { wrap.remove(); await showMsgModal('تنبيه', (info && info.message) || 'تعذر تحميل البيانات.'); return; }
+            if (!info || !info.success) { delayCloseCloseModal(); await showMsgModal('تنبيه', (info && info.message) || 'تعذر تحميل البيانات.'); return; }
 
-            const compTxt = c => c.kind === 'full' ? `إرجاع كامل (${c.amount} نقاط)` : (c.kind === 'consolation' ? `ترضية (${c.amount} نقاط)` : 'لا تعويض');
-            const box = wrap.firstElementChild;
-            box.innerHTML = `
-                <h3 class="text-base font-black text-slate-800 mb-3 text-center">إغلاق الطلب بسبب التأخر</h3>
-                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-bold leading-relaxed mb-3">
-                    المتأخر: ${dlEsc(info.delayerSide)} — ${dlEsc(info.delayerUnified)}<br>
-                    تأخراته المسجّلة خلال ${info.windowDays} يوماً: <b>${info.total}</b> (منها آلية: ${info.auto})<br>
-                    هذا سيكون: <b class="text-rose-700">تحذير ${dlEsc(info.levelWord)}</b> ${info.neverReplied ? '— لم يردّ إطلاقاً' : '— ردّ سابقاً ثم توقف (يرى الطرف الآخر «عدم توافق»)'}
-                    ${info.alreadyBanned ? '<br><span class="text-rose-700">⚠️ الحساب محظور مسبقاً.</span>' : ''}
+            const lvlColors = { 1: 'bg-amber-100 text-amber-800 border-amber-300', 2: 'bg-orange-100 text-orange-800 border-orange-300' };
+            const lvlCls = lvlColors[info.level] || 'bg-rose-100 text-rose-800 border-rose-300';
+            const compTxt = c => c.kind === 'full' ? `إرجاع كامل (${c.amount} نقاط)` : (c.kind === 'consolation' ? `ترضية ${c.amount} نقاط` : 'بلا تعويض');
+            const state0 = { mode: (info.suggestBan && !info.alreadyBanned) ? 'ban' : 'warn', deduct: 0 };
+            const optCard = (id, icon, title, sub, disabled) => `
+                <button type="button" data-mode="${id}" ${disabled ? 'disabled' : ''} class="dl-opt group text-right rounded-2xl border-2 p-3 transition-all ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-indigo-300 active:scale-[.98]'} border-slate-200 bg-white">
+                    <div class="flex items-center gap-2"><span class="text-lg">${icon}</span><span class="text-[13px] font-black text-slate-800">${title}</span></div>
+                    <p class="text-[10.5px] font-medium text-slate-500 mt-1 leading-snug">${sub}</p>
+                </button>`;
+            wrap.firstElementChild.className = 'bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[94dvh] overflow-hidden';
+            wrap.firstElementChild.innerHTML = `
+                <div class="px-5 pt-5 pb-3 border-b border-slate-100">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">إغلاق الطلب بسبب التأخر</h3>
+                            <p class="text-[11px] font-bold text-slate-500 mt-0.5">${dlEsc(req.reqId)} · ${dlEsc(info.delayerSide)}</p>
+                        </div>
+                        <button type="button" id="dlX" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-black leading-none shrink-0">✕</button>
+                    </div>
+                    <p class="text-[11.5px] font-bold text-slate-700 mt-2 leading-snug">${dlEsc(info.delayerUnified)}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span class="text-[10.5px] font-black px-2 py-1 rounded-full border ${lvlCls}">تحذير ${dlEsc(info.levelWord)}</span>
+                        <span class="text-[10.5px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600">${info.total} تأخر خلال ${info.windowDays} يوماً${info.auto ? ` (آلي: ${info.auto})` : ''}</span>
+                        <span class="text-[10.5px] font-bold px-2 py-1 rounded-full ${info.neverReplied ? 'bg-sky-50 text-sky-700' : 'bg-violet-50 text-violet-700'}">${info.neverReplied ? 'لم يردّ إطلاقاً' : 'ردّ ثم توقف'}</span>
+                        ${info.alreadyBanned ? '<span class="text-[10.5px] font-black px-2 py-1 rounded-full bg-rose-600 text-white">محظور مسبقاً</span>' : ''}
+                    </div>
                 </div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">خصم نقاط من المتأخر (اختياري)</label>
-                <input id="dlDeduct" type="number" min="0" value="0" class="w-full p-2 border border-slate-300 rounded-lg text-sm mb-3 text-center">
-                <label class="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1 cursor-pointer">
-                    <input id="dlBan" type="checkbox" class="w-4 h-4" ${info.suggestBan && !info.alreadyBanned ? 'checked' : ''} ${info.alreadyBanned ? 'disabled' : ''}>
-                    حظر الحساب بشرط الباقة الثالثة ${info.suggestBan ? '<span class="text-rose-600">(مقترح من التحذير الثالث)</span>' : ''}
-                </label>
-                <p id="dlComp" class="text-[11px] text-slate-500 mb-3">تعويض الطرف المنتظر: ${compTxt(info.suggestBan && !info.alreadyBanned ? info.compBan : info.compNoBan)}</p>
-                <details class="mb-2"><summary class="text-xs font-bold text-indigo-700 cursor-pointer">معاينة رسالة المتأخر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-lg p-2 mt-1 font-sans">${dlEsc(info.previewWarning)}</pre></details>
-                <details class="mb-4"><summary class="text-xs font-bold text-indigo-700 cursor-pointer">معاينة رسالة الطرف المنتظر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-lg p-2 mt-1 font-sans">${dlEsc(info.previewWaiting)}</pre></details>
-                <div class="flex gap-2">
-                    <button id="dlGo" class="flex-[1.6] bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-sm">إغلاق وتطبيق</button>
-                    <button id="dlCancel" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-sm">تراجع</button>
+                <div class="px-5 py-4 overflow-y-auto flex-1">
+                    <p class="text-[11px] font-black text-slate-500 mb-2">اختر الإجراء</p>
+                    <div class="grid grid-cols-1 gap-2" id="dlOpts">
+                        ${optCard('warn', '⚠️', 'تحذير فقط', 'يُغلق الطلب ويصل المتأخر تحذير ' + dlEsc(info.levelWord), info.alreadyBanned)}
+                        ${optCard('deduct', '💎', 'تحذير + خصم نقاط', 'تحدد أنت عدد النقاط المخصومة من رصيده', info.alreadyBanned)}
+                        ${optCard('ban', '🚫', 'حظر الحساب', 'بشرط الاشتراك في الباقة الثالثة للعودة' + (info.suggestBan ? ' — <b class="text-rose-600">مقترح</b>' : ''), info.alreadyBanned)}
+                    </div>
+                    <div id="dlDeductBox" class="hidden mt-3 rounded-2xl bg-slate-50 border border-slate-200 p-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <button type="button" id="dlMinus" class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-xl font-black text-slate-600 active:scale-95">−</button>
+                            <div class="text-center"><input id="dlDeduct" type="number" inputmode="numeric" lang="en" dir="ltr" min="0" value="0" class="w-20 text-center text-2xl font-black bg-transparent outline-none text-indigo-700" style="font-family:system-ui,sans-serif"><p class="text-[10px] font-bold text-slate-400 -mt-1">نقاط</p></div>
+                            <button type="button" id="dlPlus" class="w-10 h-10 rounded-xl bg-white border border-slate-300 text-xl font-black text-slate-600 active:scale-95">+</button>
+                        </div>
+                        <div class="flex justify-center gap-1.5 mt-2">${[1, 2, 5, 10].map(n => `<button type="button" data-q="${n}" class="dl-q px-3 py-1 rounded-full bg-white border border-slate-300 text-[11px] font-black text-slate-600 active:scale-95">${n}</button>`).join('')}</div>
+                    </div>
+                    <div class="mt-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 p-3">
+                        <p class="text-[11px] font-black text-indigo-800 mb-1.5">ماذا سيحدث</p>
+                        <ul id="dlSummary" class="text-[11.5px] font-bold text-slate-700 space-y-1 leading-snug"></ul>
+                    </div>
+                    <details class="mt-3"><summary class="text-[11px] font-black text-indigo-700 cursor-pointer select-none">معاينة رسالة المتأخر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-xl p-2.5 mt-1.5 font-sans text-slate-700">${dlEsc(info.previewWarning)}</pre></details>
+                    <details class="mt-2"><summary class="text-[11px] font-black text-indigo-700 cursor-pointer select-none">معاينة رسالة الطرف المنتظر</summary><pre class="whitespace-pre-wrap text-[11px] bg-slate-50 border rounded-xl p-2.5 mt-1.5 font-sans text-slate-700">${dlEsc(info.previewWaiting)}</pre></details>
+                </div>
+                <div class="px-5 py-3 border-t border-slate-100 bg-white flex gap-2" style="padding-bottom:max(.75rem, env(safe-area-inset-bottom))">
+                    <button type="button" id="dlGo" class="flex-[1.7] bg-gradient-to-l from-rose-600 to-rose-500 text-white font-black py-3 rounded-2xl text-sm shadow-lg shadow-rose-200 active:scale-[.98] transition">تأكيد الإغلاق</button>
+                    <button type="button" id="dlCancel" class="flex-1 bg-slate-100 text-slate-700 font-black py-3 rounded-2xl text-sm active:scale-[.98] transition">تراجع</button>
                 </div>`;
-            const banEl = box.querySelector('#dlBan');
-            banEl.addEventListener('change', () => { box.querySelector('#dlComp').textContent = 'تعويض الطرف المنتظر: ' + compTxt(banEl.checked ? info.compBan : info.compNoBan); });
-            box.querySelector('#dlCancel').onclick = () => wrap.remove();
-            box.querySelector('#dlGo').onclick = async () => {
-                const btn = box.querySelector('#dlGo'); btn.disabled = true; btn.textContent = 'جاري التنفيذ...';
-                const deduct = Math.max(0, parseInt(box.querySelector('#dlDeduct').value, 10) || 0);
-                await submitDelayDecision(req, 'close', { deduct: deduct, ban: banEl.checked && !banEl.disabled });
-                wrap.remove();
+            const box = wrap.firstElementChild;
+            const $ = s => box.querySelector(s);
+            const render = () => {
+                box.querySelectorAll('.dl-opt').forEach(b => {
+                    const on = b.dataset.mode === state0.mode;
+                    b.classList.toggle('border-indigo-500', on); b.classList.toggle('bg-indigo-50', on); b.classList.toggle('shadow-md', on);
+                    b.classList.toggle('border-slate-200', !on); b.classList.toggle('bg-white', !on);
+                });
+                $('#dlDeductBox').classList.toggle('hidden', state0.mode !== 'deduct');
+                const items = ['يُغلق الطلب وتُحدَّث قائمة المراسلات'];
+                if (state0.mode === 'ban') items.push('<span class="text-rose-700">يُحظر الحساب بكل ملفاته بشرط الباقة الثالثة (500 ريال)</span>');
+                else {
+                    items.push('يصل المتأخر <b>تحذير ' + dlEsc(info.levelWord) + '</b> ويُسجَّل في سجل التأخر');
+                    if (state0.mode === 'deduct') items.push(state0.deduct > 0 ? 'يُخصم من رصيده <b>' + state0.deduct + ' نقاط</b>' : '<span class="text-slate-400">لم تحدد نقاطاً بعد (لن يُخصم شيء)</span>');
+                }
+                items.push('تعويض الطرف المنتظر: <b>' + compTxt(state0.mode === 'ban' ? info.compBan : info.compNoBan) + '</b>');
+                items.push('يصل الطرفين واتساب تلقائياً');
+                $('#dlSummary').innerHTML = items.map(x => '<li class="flex gap-1.5"><span class="text-indigo-400">•</span><span>' + x + '</span></li>').join('');
             };
+            box.querySelectorAll('.dl-opt').forEach(b => b.addEventListener('click', () => { if (b.disabled) return; state0.mode = b.dataset.mode; if (state0.mode !== 'deduct') state0.deduct = 0, $('#dlDeduct').value = 0; render(); }));
+            const setD = n => { state0.deduct = Math.max(0, parseInt(n, 10) || 0); $('#dlDeduct').value = state0.deduct; render(); };
+            $('#dlMinus').addEventListener('click', () => setD(state0.deduct - 1));
+            $('#dlPlus').addEventListener('click', () => setD(state0.deduct + 1));
+            $('#dlDeduct').addEventListener('input', e => setD(e.target.value));
+            box.querySelectorAll('.dl-q').forEach(b => b.addEventListener('click', () => setD(parseInt(b.dataset.q, 10))));
+            $('#dlCancel').addEventListener('click', delayCloseCloseModal);
+            $('#dlX').addEventListener('click', delayCloseCloseModal);
+            $('#dlGo').addEventListener('click', () => {
+                const extra = { deduct: state0.mode === 'deduct' ? state0.deduct : 0, ban: state0.mode === 'ban' };
+                delayCloseCloseModal();            // تُغلق النافذة فوراً: التنفيذ بالخلفية
+                delayRunBg(req, 'close', extra);
+            });
+            render();
         }
 
         async function resolveDelay(reqId, decision) {
             const req = allRequests.find(r => r.reqId === reqId);
-            if (!req) return;
+            if (!req || window.delayBusy[reqId]) return;
             if (decision === 'close') return openDelayCloseModal(req);
             const ok = await showMsgModal('تمديد المهلة', 'لن يُغلق شيء ولن يُسجَّل تحذير، وتبدأ مهلة التأخر من جديد. هل تريد المتابعة؟', 'confirm');
             if (!ok) return;
-            await submitDelayDecision(req, 'extend', {});
-        }
-
-        async function submitDelayDecision(req, decision, extra) {
-            const reqId = req.reqId;
-            try {
-                const result = await adminDelayCall(Object.assign({ action: 'adminResolveDelay', reqId: reqId, decision: decision, rowHint: req.rowIndex }, extra || {}));
-                scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
-                await showMsgModal(result.success ? 'تم' : 'تنبيه', result.message || (result.success ? 'تم التنفيذ.' : 'تعذر تنفيذ القرار.'));
-                await fetchData(true, reqId);
-            } catch (e) {
-                if (e.name === 'AbortError') await showMsgModal('تأخير', 'تأخر استجابة السيرفر. قد يكون القرار نُفّذ، حدّث الصفحة وتحقق قبل إعادة المحاولة.');
-                else await showMsgModal('خطأ', 'فشل الاتصال بالسيرفر.');
-            }
+            delayRunBg(req, 'extend', {});
         }
 
         // 🟢 تنفيذ إجراء بالنيابة عن العميل. requestDirect/approveDirect/reject تعالجها adminActOnBehalf في الخادم.
