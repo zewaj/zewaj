@@ -2266,10 +2266,13 @@
             window.currentContactIsDirect = isDirect;
 
             let activeRequestsCount = 0;
+            let maxActiveRequests = 3; // الحد الفعلي من الخادم (يشمل المحادثات الإضافية المدفوعة)
             try {
                 const cacheStr = localStorage.getItem('master_activity_cache');
                 if (cacheStr) {
                     const cacheData = JSON.parse(cacheStr);
+                    const mx = parseInt(cacheData.maxActiveRequests) || parseInt(cacheData.config && cacheData.config.MAX_ACTIVE_REQUESTS);
+                    if (mx > 0) maxActiveRequests = mx;
                     if (cacheData.outgoingRequests && Array.isArray(cacheData.outgoingRequests)) {
                         activeRequestsCount = cacheData.outgoingRequests.filter(req => {
                             const s = req.status || "";
@@ -2332,13 +2335,13 @@
                     <button id="mcmConfirmBtn" onclick="confirmMasterContactRequest()" class="flex-[1.6] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">أتعهد وأطلب التواصل</button>
                 `;
             } else {
-                if (activeRequestsCount >= 3) {
+                if (activeRequestsCount >= maxActiveRequests) {
                     contentArea.innerHTML = `
                         <h3 class="text-lg font-black text-slate-800 mb-1">الحد الأقصى للطلبات</h3>
                         <p class="text-sm text-slate-500 mb-3 leading-relaxed">عذراً، لديك حالياً (${activeRequestsCount}) طلبات تواصل معلقة.</p>
                         <div class="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm flex flex-col items-center text-center">
                             <svg class="w-10 h-10 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            <span class="text-[11px] font-bold text-red-700 leading-relaxed">لإرسال طلب جديد، يجب عليك مراجعة وإغلاق طلباتك الحالية لإتاحة الفرصة.</span>
+                            <span class="text-[11px] font-bold text-red-700 leading-relaxed">لإرسال طلب جديد، أغلق أحد طلباتك الحالية، أو أضف محادثات إضافية بالضغط على (+) في صفحة طلباتك.</span>
                         </div>
                     `;
                     actionButtons.innerHTML = `
@@ -2365,7 +2368,7 @@
                         
                         <div class="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3 text-right">
                             <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span class="text-[10px] sm:text-xs font-bold text-amber-700 leading-relaxed">الحد الأقصى المسموح به هو <span class="text-amber-900">3 طلبات نشطة</span> في نفس الوقت (لديك الآن ${activeRequestsCount}).</span>
+                            <span class="text-[10px] sm:text-xs font-bold text-amber-700 leading-relaxed">الحد الأقصى المسموح به هو <span class="text-amber-900">${maxActiveRequests} طلبات نشطة</span> في نفس الوقت (لديك الآن ${activeRequestsCount}).</span>
                         </div>
 
                         <div class="bg-rose-50 border border-rose-100 rounded-xl p-4 shadow-sm flex flex-col items-center">

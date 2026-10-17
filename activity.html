@@ -246,6 +246,21 @@
     </div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 12-ج ]: نافذة شراء محادثات إضافية ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <div id="slotsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[270] hidden flex items-center justify-center p-4 fade-in" onclick="if(event.target===this) closeSlotsModal()">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
+            <button type="button" onclick="closeSlotsModal()" class="absolute top-3 left-3 text-slate-400 hover:text-slate-600 transition-colors bg-white rounded-full p-1 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-lg font-bold text-slate-800 mb-1 mt-2">➕ محادثات إضافية</h3>
+            <p id="slotsIntro" class="text-[11px] text-slate-500 mb-4 font-medium leading-relaxed"></p>
+            <div id="slotsPlansList" class="flex flex-col gap-2.5 mb-2"></div>
+            <div id="slotsResult" class="hidden mt-3 text-center p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-800 font-bold leading-relaxed"></div>
+        </div>
+    </div>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 13 ]: نافذة التنبيهات العامة (Alert Modal) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="msgModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[350] hidden flex items-center justify-center p-4 fade-in">
@@ -639,10 +654,13 @@
             });
 
             let quotaBannerHtml = '';
-            if (activeCount >= 3) {
-                quotaBannerHtml = `<div class="mb-4 bg-rose-50 border border-rose-200 rounded-xl p-3 shadow-sm flex items-start gap-3 fade-in"><div class="text-rose-500 mt-0.5 shrink-0"><svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div><div><h4 class="font-bold text-rose-800 text-[13px]">الحد الأقصى للطلبات النشطة (3/3)</h4><p class="text-[11px] text-rose-600 font-medium mt-1 leading-relaxed">لقد وصلت للحد الأقصى للطلبات المتزامنة. يرجى إنهاء واعتذار عن الطلبات السابقة لتتمكن من إرسال طلبات جديدة.</p></div></div>`;
+            const maxActive = getMaxActiveRequests();
+            // زر "+" يظهر عند اكتمال الحد فقط، ويفتح نافذة شراء محادثات إضافية (إن وُجد صنف مفعّل في الشيت)
+            const plusBtnHtml = getSlotPlans().length ? `<button type="button" onclick="openSlotsModal()" class="shrink-0 w-9 h-9 min-h-[44px] min-w-[44px] rounded-full bg-rose-600 hover:bg-rose-700 text-white text-2xl font-black leading-none shadow-md active:scale-95 flex items-center justify-center" title="إضافة محادثات">+</button>` : '';
+            if (activeCount >= maxActive) {
+                quotaBannerHtml = `<div class="mb-4 bg-rose-50 border border-rose-200 rounded-xl p-3 shadow-sm flex items-start gap-3 fade-in"><div class="text-rose-500 mt-0.5 shrink-0"><svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></div><div class="flex-1"><h4 class="font-bold text-rose-800 text-[13px]">الحد الأقصى للطلبات النشطة (${maxActive}/${maxActive})</h4><p class="text-[11px] text-rose-600 font-medium mt-1 leading-relaxed">لقد وصلت للحد الأقصى للطلبات المتزامنة. أنهِ أو اعتذر عن طلب سابق، أو اضغط (+) لإضافة محادثات.</p></div>${plusBtnHtml}</div>`;
             } else {
-                quotaBannerHtml = `<div class="mb-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3 shadow-sm flex items-center justify-between fade-in"><div class="flex items-center gap-2"><div class="text-indigo-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><h4 class="font-bold text-indigo-800 text-xs">طلبات التواصل النشطة</h4></div><div class="bg-white px-3 py-1 rounded-lg border border-indigo-200 text-indigo-700 font-black text-xs shadow-sm">${activeCount} من 3</div></div>`;
+                quotaBannerHtml = `<div class="mb-4 bg-indigo-50 border border-indigo-100 rounded-xl p-3 shadow-sm flex items-center justify-between fade-in"><div class="flex items-center gap-2"><div class="text-indigo-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><h4 class="font-bold text-indigo-800 text-xs">طلبات التواصل النشطة</h4></div><div class="bg-white px-3 py-1 rounded-lg border border-indigo-200 text-indigo-700 font-black text-xs shadow-sm">${activeCount} من ${maxActive}</div></div>`;
             }
 
             let activeHtml = '';
@@ -1448,6 +1466,78 @@
             } catch (e) {
                 showMsgModal('تعذر التمديد', 'تعذر الاتصال بالخادم. تحقق من رصيدك وحدّث الصفحة قبل المحاولة مجدداً.');
             } finally { window.isExtendingChat = false; }
+        };
+
+        // 🟢 [2026-10-17] المحادثات الإضافية المدفوعة (القسم 33 في الخادم). الحد الفعلي = ما يرجعه الخادم (maxActiveRequests) وإلا MAX_ACTIVE_REQUESTS من الإعدادات وإلا 3.
+        // الأصناف (SLOT_PLAN_n_COUNT/PRICE/MONTHS) من platform_config أو من إعدادات آخر مزامنة. نسخة index.html لا تحتاجها (تعرض الحد الأقصى فقط).
+        function getMaxActiveRequests() {
+            try {
+                const c = JSON.parse(localStorage.getItem('master_activity_cache') || '{}');
+                const v = parseInt(c.maxActiveRequests);
+                if (v > 0) return v;
+                const m = parseInt(c.config && c.config.MAX_ACTIVE_REQUESTS);
+                if (m > 0) return m;
+            } catch (e) {}
+            return 3;
+        }
+        function getSlotPlans() {
+            let cfg = {};
+            try { cfg = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+            if (!cfg || cfg.SLOT_PLAN_1_COUNT === undefined) { try { cfg = (JSON.parse(localStorage.getItem('master_activity_cache') || '{}').config) || {}; } catch (e) {} }
+            const plans = [];
+            for (let i = 1; i <= 3; i++) {
+                const count = Math.floor(Number(cfg['SLOT_PLAN_' + i + '_COUNT']) || 0);
+                if (count <= 0) continue;
+                const months = Math.floor(Number(cfg['SLOT_PLAN_' + i + '_MONTHS']) || 0);
+                plans.push({ id: 'S' + i, count: count, price: Number(cfg['SLOT_PLAN_' + i + '_PRICE']) || 0, months: months > 0 ? months : 0 });
+            }
+            return plans;
+        }
+        function slotCountLabel(n) { return n === 1 ? 'محادثة واحدة' : (n === 2 ? 'محادثتان' : (n <= 10 ? n + ' محادثات' : n + ' محادثة')); }
+        function slotMonthsLabel(m) { return m <= 0 ? 'مفتوحة بلا انتهاء' : (m === 1 ? 'مدة شهر' : (m === 2 ? 'مدة شهرين' : 'مدة ' + m + (m <= 10 ? ' أشهر' : ' شهراً'))); }
+
+        window.openSlotsModal = function() {
+            const plans = getSlotPlans();
+            if (!plans.length) return;
+            const max = getMaxActiveRequests();
+            document.getElementById('slotsIntro').innerText = `الحد الحالي ${max} طلبات نشطة. اختر عدد المحادثات التي تريد إضافتها فوق الحد، وبعد السداد تُفعَّل لك.`;
+            document.getElementById('slotsResult').classList.add('hidden');
+            document.getElementById('slotsPlansList').innerHTML = plans.map(p => `
+                <button type="button" onclick="buySlotPlan('${p.id}')" class="w-full flex items-center justify-between gap-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl p-3 min-h-[56px] text-right transition-colors active:scale-[0.98]">
+                    <div><div class="text-sm font-black text-indigo-900">➕ ${slotCountLabel(p.count)} إضافية</div><div class="text-[11px] text-indigo-600 font-bold mt-0.5">${slotMonthsLabel(p.months)}</div></div>
+                    <div class="bg-white border border-indigo-200 rounded-lg px-3 py-1.5 text-indigo-700 font-black text-sm shadow-sm whitespace-nowrap">${p.price} ريال</div>
+                </button>`).join('');
+            document.getElementById('slotsModal').classList.remove('hidden');
+        };
+        window.closeSlotsModal = function() { document.getElementById('slotsModal').classList.add('hidden'); };
+
+        window.buySlotPlan = async function(planId) {
+            if (!phoneParam || !refIdParam || window.isBuyingSlots) return;
+            window.isBuyingSlots = true;
+            const list = document.getElementById('slotsPlansList');
+            list.style.opacity = '0.5'; list.style.pointerEvents = 'none';
+            try {
+                const txt = await fetchWithRetry(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'requestSlotPlan', phone: phoneParam, refId: refIdParam, planId: planId }) }, 0);
+                const result = JSON.parse(txt);
+                if (result && result.forceLogout) { handleForceLogout(result.message); return; }
+                if (result && result.banned) { handleAccountBanned(result); return; }
+                if (result && result.success) {
+                    const box = document.getElementById('slotsResult');
+                    box.innerHTML = `✅ ${result.message || 'تم تسجيل طلبك.'}<br><span class="text-[11px] font-medium text-emerald-700">${result.packageName || ''} — ${result.price} ريال. تُفعَّل المحادثات بعد تأكيد السداد من الإدارة.</span>`;
+                    box.classList.remove('hidden');
+                    list.classList.add('hidden');
+                } else {
+                    closeSlotsModal();
+                    showMsgModal('تعذر الطلب', (result && result.message) || 'تعذر تسجيل الطلب، حاول مرة أخرى.');
+                }
+            } catch (e) {
+                closeSlotsModal();
+                showMsgModal('تعذر الطلب', 'تعذر الاتصال بالخادم. إن وصلتك رسالة واتساب بالمبلغ فطلبك مسجَّل، وإلا حاول مرة أخرى.');
+            } finally {
+                window.isBuyingSlots = false;
+                list.style.opacity = ''; list.style.pointerEvents = '';
+                if (list.classList.contains('hidden')) setTimeout(() => list.classList.remove('hidden'), 400);
+            }
         };
 
         function closeConfirmModal() {
