@@ -1502,6 +1502,7 @@
             const max = getMaxActiveRequests();
             document.getElementById('slotsIntro').innerText = `الحد الحالي ${max} طلبات نشطة. اختر عدد المحادثات التي تريد إضافتها فوق الحد، وبعد السداد تُفعَّل لك.`;
             document.getElementById('slotsResult').classList.add('hidden');
+            document.getElementById('slotsPlansList').classList.remove('hidden');
             document.getElementById('slotsPlansList').innerHTML = plans.map(p => `
                 <button type="button" onclick="buySlotPlan('${p.id}')" class="w-full flex items-center justify-between gap-3 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl p-3 min-h-[56px] text-right transition-colors active:scale-[0.98]">
                     <div><div class="text-sm font-black text-indigo-900">➕ ${slotCountLabel(p.count)} إضافية</div><div class="text-[11px] text-indigo-600 font-bold mt-0.5">${slotMonthsLabel(p.months)}</div></div>
@@ -1535,8 +1536,7 @@
                 showMsgModal('تعذر الطلب', 'تعذر الاتصال بالخادم. إن وصلتك رسالة واتساب بالمبلغ فطلبك مسجَّل، وإلا حاول مرة أخرى.');
             } finally {
                 window.isBuyingSlots = false;
-                list.style.opacity = ''; list.style.pointerEvents = '';
-                if (list.classList.contains('hidden')) setTimeout(() => list.classList.remove('hidden'), 400);
+                list.style.opacity = ''; list.style.pointerEvents = ''; // تبقى القائمة مخفية بعد النجاح، وتظهر من جديد عند فتح النافذة (openSlotsModal)
             }
         };
 
