@@ -192,6 +192,7 @@
                 <button id="replySubmitBtn" type="button" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2">
                     <span>تأكيد الإرسال</span>
                 </button>
+                <button type="button" onclick="closeReplyModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition-colors text-sm shadow-md">تراجع</button>
             </div>
         </div>
     </div>
@@ -214,22 +215,7 @@
     </div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 12-أ ]: نافذة اختيار (تواصل مباشر / مزيد من الاستفسارات) ---------- ✂️ -->
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-    <div id="contactChoiceModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[290] hidden flex items-center justify-center p-4 fade-in" onclick="if(event.target===this) closeContactChoice()">
-        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
-            <h3 class="text-base font-black text-slate-800 mb-2">ماذا تريد الآن؟</h3>
-            <p class="text-[11px] text-slate-600 leading-relaxed font-medium mb-4">تبادل الأرقام يتم فقط عبر <strong>طلب التواصل المباشر</strong> ولا يُسمح بكتابة الأرقام داخل الرسائل. إن كانت لديك استفسارات أخرى فأرسلها برسالة.</p>
-            <div class="flex flex-col gap-2 sticky bottom-0 bg-white pt-2 pb-1">
-                <button type="button" onclick="contactChoiceDirect()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 min-h-[44px] rounded-xl text-sm shadow-md">📞 طلب تواصل وتبادل أرقام</button>
-                <button type="button" onclick="contactChoiceInquiry()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold py-3 min-h-[44px] rounded-xl text-sm">💬 لدي مزيد من الاستفسارات</button>
-                <button type="button" onclick="closeContactChoice()" class="w-full text-slate-500 font-bold py-2 text-xs">إغلاق</button>
-            </div>
-        </div>
-    </div>
-
-<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-<!-- ✂️ ---------- [ القسم رقم 12-أ-2 ]: نافذة اختيار نوع الموافقة المبدئية (مباشرة / مع استفسارات) ---------- ✂️ -->
+<!-- ✂️ ---------- [ القسم رقم 12-أ ]: نافذة اختيار نوع الموافقة المبدئية (مباشرة / مع استفسارات) ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="approveChoiceModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[290] hidden flex items-center justify-center p-4 fade-in" onclick="if(event.target===this) closeApproveChoice()">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
@@ -889,7 +875,7 @@
                         let hasDirectReqInThread = hasDirectRequest(req, originalChunks);
                         let contactBtn = '';
                         if (currentUserIsMale) {
-                            if (!hasDirectReqInThread) contactBtn = `<button type="button" onclick="event.stopPropagation(); openContactChoice('${req.reqId}', '${req.targetMarriageType || ''}', 'out')" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
+                            if (!hasDirectReqInThread) contactBtn = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
                         } else if (hasDirectReqInThread) {
                             contactBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
                         }
@@ -1113,7 +1099,7 @@
                             primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openApproveChoice('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
                         } else {
                             if (currentUserIsMale && !hasDirectReqInThread) {
-                                primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openContactChoice('${req.reqId}', '${req.requesterMarriageType || ''}', 'in')" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
+                                primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
                             } else if (!currentUserIsMale && hasDirectReqInThread) {
                                 primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
                             }
@@ -1332,6 +1318,8 @@
             const descEl = document.getElementById('replyModalDesc');
             if (descEl) descEl.innerText = (type === 'موافقة مبدئية مباشرة') ? 'تصل موافقتك للطرف الآخر فوراً في المنصة والواتساب.'
                 : (type === 'موافقة مبدئية') ? 'اكتب استفساراتك، وتراجعها الإدارة ثم تصل للطرف الآخر.'
+                : (type === 'موافقة تبادل أرقام') ? 'تصل موافقتك فوراً، وتتولى الإدارة تسليم الأرقام.'
+                : (type.includes('اعتذار')) ? 'يصل اعتذارك للطرف الآخر فوراً ويُغلق الطلب.'
                 : 'سيتم إرسال هذه الرسالة للطرف الآخر عبر الإدارة.';
             if (type === 'موافقة مبدئية مباشرة') document.getElementById('replyModalTitle').innerText = '✅ موافقة مبدئية على البيانات';
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
@@ -1484,27 +1472,6 @@
         window.closeApproveChoice = function() { document.getElementById('approveChoiceModal').classList.add('hidden'); };
         window.approveChoiceDirect = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية مباشرة', false, null); };
         window.approveChoiceInquiry = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية', false, null); };
-
-        // 🟢 [2026-10-14] نافذة الاختيار عند الضغط على "تواصل مباشر": طلب تبادل الأرقام (المسار الحالي) أو رجوع لكتابة استفسار برسالة عادية
-        window.contactChoiceCtx = null;
-        window.openContactChoice = function(reqId, mType, side) {
-            window.contactChoiceCtx = { reqId: reqId, mType: mType, side: side };
-            window.lastInteractedReqId = reqId;
-            document.getElementById('contactChoiceModal').classList.remove('hidden');
-        };
-        window.closeContactChoice = function() { document.getElementById('contactChoiceModal').classList.add('hidden'); };
-        window.contactChoiceDirect = function() {
-            const c = window.contactChoiceCtx; closeContactChoice(); if (!c) return;
-            window.promptDirectContact(c.reqId, c.mType);
-        };
-        window.contactChoiceInquiry = function() {
-            const c = window.contactChoiceCtx; closeContactChoice(); if (!c) return;
-            if (c.side === 'in') { openReplyModal(c.reqId, 'رد على الطلب', false, null); return; }
-            let found = null;
-            Object.keys(window.myReqsDataStore || {}).forEach(k => { const r = window.myReqsDataStore[k]; if (r && r.reqId === c.reqId) found = r; });
-            if (found && (parseInt(found.remainingMessages) || 0) <= 0) { showMsgModal('تمديد المحادثة', 'انتهت رسائلك في هذه المحادثة. اضغط زر "تمديد المحادثة" الظاهر في البطاقة لإضافة رسائل ثم أرسل استفسارك.'); return; }
-            openReplyModal(c.reqId, 'رسالة متابعة', false, null);
-        };
 
         // 🟢 [2026-10-14] تمديد المحادثة (لمن بدأ الطلب رجلاً أو امرأة، حين ينفد عدّاد رسائله): تأكيد ثم extendChat؛ opId يمنع الخصم المزدوج عند إعادة المحاولة
         window.promptExtendChat = function(reqId, cost) {
