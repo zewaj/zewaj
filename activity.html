@@ -229,6 +229,27 @@
     </div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- ✂️ ---------- [ القسم رقم 12-أ-2 ]: نافذة اختيار نوع الموافقة المبدئية (مباشرة / مع استفسارات) ---------- ✂️ -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <div id="approveChoiceModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[290] hidden flex items-center justify-center p-4 fade-in" onclick="if(event.target===this) closeApproveChoice()">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center relative overflow-y-auto" style="max-height:100%;overscroll-behavior:contain">
+            <h3 class="text-base font-black text-slate-800 mb-1">👍 الموافقة المبدئية</h3>
+            <p class="text-[11px] text-slate-500 leading-relaxed font-medium mb-4">اختر ما يناسبك:</p>
+            <div class="flex flex-col gap-2.5 sticky bottom-0 bg-white pt-1 pb-1">
+                <button type="button" onclick="approveChoiceDirect()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md px-3 py-3 min-h-[44px] text-right">
+                    <span class="block text-sm font-black">✅ نعم، موافق على البيانات</span>
+                    <span class="block text-[10px] font-medium opacity-90 mt-0.5">تصل موافقتك للطرف الآخر فوراً</span>
+                </button>
+                <button type="button" onclick="approveChoiceInquiry()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-xl px-3 py-3 min-h-[44px] text-right">
+                    <span class="block text-sm font-black">💬 موافق ولديّ استفسارات</span>
+                    <span class="block text-[10px] font-medium text-indigo-600 mt-0.5">تكتب استفساراتك، وتراجعها الإدارة قبل وصولها</span>
+                </button>
+                <button type="button" onclick="closeApproveChoice()" class="w-full text-slate-500 font-bold py-2 text-xs">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 12-ب ]: نافذة إعادة فتح محادثة مغلقة ---------- ✂️ -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <div id="reopenModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[260] hidden flex items-center justify-center p-4 fade-in">
@@ -575,7 +596,7 @@
         // كانت الفقاعة تبقى "جاري الإرسال" حتى تنتهي مزامنة كاملة (20 ث+) بعد وصول الرسالة فعلاً، فيظن العميل أنها لم تصل ويعيد الإرسال.
         const PEND_SPIN = '<svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
         function pendingIconHtml(p) {
-            if (p.state === 'sent') return '<span class="text-[10px] text-emerald-700 font-black ml-1">وصلت ✓ للإدارة</span><svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+            if (p.state === 'sent') return '<span class="text-[10px] text-emerald-700 font-black ml-1">وصلت ✓ ' + (/مباشرة|اعتذار|تواصل مباشر|تبادل أرقام/.test(p.type || '') ? 'للطرف الآخر' : 'للإدارة') + '</span><svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
             if (p.state === 'sending' || p.state === 'verifying') return '<span class="text-[10px] text-slate-500 font-bold ml-1">' + (p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال') + '</span>' + PEND_SPIN;
             return '<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction(\'' + p.id + '\')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>';
         }
@@ -765,7 +786,7 @@
                 
                 let isFirstMessage = (totalMessages === 1);
                 let isDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
-                let isUneditableAutoMsg = isFirstMessage || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('طلب إعادة فتح المحادثة');
+                let isUneditableAutoMsg = isFirstMessage || isDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('✅ موافقة مبدئية') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('طلب إعادة فتح المحادثة');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الأول]') || realLastChunk.includes('[من الطالب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
@@ -996,7 +1017,7 @@
                 let hasDirectReqInThread = hasDirectRequest(req, originalChunks);
                 let isLastChunkDirectReq = realLastChunk.includes('تواصل مباشر') || realLastChunk.includes('تبادل الأرقام');
                 
-                let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('طلب إعادة فتح المحادثة');
+                let isUneditableAutoMsg = isFirstMessage || isLastChunkDirectReq || realLastChunk.includes('أوافق على') || realLastChunk.includes('✅ موافقة مبدئية') || realLastChunk.includes('أعتذر،') || realLastChunk.includes('طلب إعادة فتح المحادثة');
 
                 let isRealLastFromMe = realLastChunk.includes('[من الطرف الثاني]') || realLastChunk.includes('[من المطلوب]');
                 let isEditedByAdmin = realLastChunk.includes('[تعديل الإدارة]');
@@ -1089,7 +1110,7 @@
                     } else {
                         let primaryBtnHtml = '';
                         if (isFirstMessage) {
-                            primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة مبدئية', false, event)" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
+                            primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openApproveChoice('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
                         } else {
                             if (currentUserIsMale && !hasDirectReqInThread) {
                                 primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openContactChoice('${req.reqId}', '${req.requesterMarriageType || ''}', 'in')" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
@@ -1308,6 +1329,11 @@
             document.getElementById('replyModalTitle').innerText = outcomeReply ? outcomeReply.title : (type === 'طلب تواصل مباشر') ? 'طلب تواصل مباشر وتبادل الأرقام' : (type === 'اعتذار بلطف' ? 'إرسال اعتذار للطرف الآخر' : (type === 'موافقة تبادل أرقام' ? 'تأكيد موافقة تبادل الأرقام' : (type === 'موافقة مبدئية' ? 'موافقة مبدئية واستفسارات' : (type === 'إنهاء التعارف' ? 'إنهاء مرحلة التعارف' : 'إرسال: ' + type))));
             
             const msgInput = document.getElementById('replyMessage');
+            const descEl = document.getElementById('replyModalDesc');
+            if (descEl) descEl.innerText = (type === 'موافقة مبدئية مباشرة') ? 'تصل موافقتك للطرف الآخر فوراً في المنصة والواتساب.'
+                : (type === 'موافقة مبدئية') ? 'اكتب استفساراتك، وتراجعها الإدارة ثم تصل للطرف الآخر.'
+                : 'سيتم إرسال هذه الرسالة للطرف الآخر عبر الإدارة.';
+            if (type === 'موافقة مبدئية مباشرة') document.getElementById('replyModalTitle').innerText = '✅ موافقة مبدئية على البيانات';
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
             // نظّف بقايا نافذة التعهد (موافقة تبادل الأرقام) وأعد نص الزر الافتراضي قبل بناء النافذة الجديدة
             const oldPledge = document.getElementById('replyPledgeBox'); if (oldPledge) oldPledge.remove();
@@ -1354,6 +1380,13 @@
                 msgInput.readOnly = true;
                 msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
                 if (radioContainer) radioContainer.style.display = 'none';
+            } else if (type === 'موافقة مبدئية مباشرة') {
+                msgInput.style.display = 'block';
+                msgInput.value = DIRECT_APPROVAL_TEXT;
+                msgInput.readOnly = true;
+                msgInput.classList.add('bg-slate-100', 'text-slate-500', 'cursor-not-allowed');
+                if (radioContainer) radioContainer.style.display = 'none';
+                const sb = document.getElementById('replySubmitBtn'); if (sb) sb.innerHTML = '<span>تأكيد الموافقة</span>';
             } else if (type === 'موافقة مبدئية') {
                 msgInput.style.display = 'block';
                 msgInput.value = "نعم مبدئياً البيانات مناسبة لنا، ولدينا الاستفسارات التالية:\n\n";
@@ -1439,6 +1472,18 @@
 
             window.processPendingAction(actionId);
         };
+
+        // 🟢 [2026-10-17] الموافقة المبدئية نوعان: مباشرة (نص ثابت يكتبه الخادم، تصل فوراً بلا مراجعة) أو مع استفسارات مكتوبة (تمرّ بالإدارة كما كانت).
+        // النص نفسه في الخادم (DIRECT_APPROVAL_TEXT في code_artifact.js): عدّلهما معاً. يُستعمل هنا للعرض وللتحقق من وصول الرسالة.
+        const DIRECT_APPROVAL_TEXT = '✅ موافقة مبدئية: نعم، البيانات مناسبة لنا ونرغب في إكمال التواصل.';
+        window.approveChoiceReqId = null;
+        window.openApproveChoice = function(reqId) {
+            window.approveChoiceReqId = reqId; window.lastInteractedReqId = reqId;
+            document.getElementById('approveChoiceModal').classList.remove('hidden');
+        };
+        window.closeApproveChoice = function() { document.getElementById('approveChoiceModal').classList.add('hidden'); };
+        window.approveChoiceDirect = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية مباشرة', false, null); };
+        window.approveChoiceInquiry = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية', false, null); };
 
         // 🟢 [2026-10-14] نافذة الاختيار عند الضغط على "تواصل مباشر": طلب تبادل الأرقام (المسار الحالي) أو رجوع لكتابة استفسار برسالة عادية
         window.contactChoiceCtx = null;
@@ -1915,7 +1960,8 @@
                 if (!msgInput) return;
                 msg = msgInput.value.trim();
                 
-                let isAutoMsg = currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة' || currentReplyType === 'إنهاء التعارف' || !!OUTCOME_REPLIES[currentReplyType];
+                if (currentReplyType === 'موافقة مبدئية مباشرة') msg = DIRECT_APPROVAL_TEXT; // الخادم يكتب النص الثابت نفسه ويتجاهل أي نص آخر
+                let isAutoMsg = currentReplyType === 'موافقة مبدئية مباشرة' || currentReplyType === 'موافقة تبادل أرقام' || currentReplyType === 'طلب تواصل مباشر' || currentReplyType === 'تمديد المحادثة' || currentReplyType === 'إنهاء التعارف' || !!OUTCOME_REPLIES[currentReplyType];
                 if (!isAutoMsg && msg.length < 10) { showToast("يرجى كتابة رد واضح لا يقل عن 10 أحرف."); return; }
             }
 
