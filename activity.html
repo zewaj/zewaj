@@ -571,6 +571,38 @@
             } catch(e) { return []; }
         };
 
+        // 🟢 [2026-10-17] حالات الإرسال التي يراها العميل: sending (جاري) ← verifying (نتأكد) ← sent (وصلت ✓ ونحدّث المحادثة) ← تظهر الرسالة الحقيقية.
+        // كانت الفقاعة تبقى "جاري الإرسال" حتى تنتهي مزامنة كاملة (20 ث+) بعد وصول الرسالة فعلاً، فيظن العميل أنها لم تصل ويعيد الإرسال.
+        const PEND_SPIN = '<svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+        function pendingIconHtml(p) {
+            if (p.state === 'sent') return '<span class="text-[10px] text-emerald-700 font-black ml-1">وصلت ✓ للإدارة</span><svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
+            if (p.state === 'sending' || p.state === 'verifying') return '<span class="text-[10px] text-slate-500 font-bold ml-1">' + (p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال') + '</span>' + PEND_SPIN;
+            return '<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction(\'' + p.id + '\')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>';
+        }
+        function pendingBgClass(p) {
+            if (p.state === 'failed') return 'bg-rose-50 border-rose-300 border-2 shadow-sm';
+            if (p.state === 'sent') return 'bg-[#dcf8c6] border-emerald-200 border shadow-sm';
+            return 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
+        }
+        // سطر طمأنة يتغير بمرور الوقت (يُحدَّث كل ثانية): الخادم قد يتأخر 10–30 ث، وقتها يجب أن يعرف العميل أن رسالته محفوظة
+        function pendingNoteText(p) {
+            if (p.state === 'sent' || p.state === 'failed') return '';
+            const sec = Math.floor((Date.now() - (p.timestamp || Date.now())) / 1000);
+            if (sec < 6) return '';
+            if (sec < 20) return 'رسالتك محفوظة وفي الطريق. لا تحتاج لإعادة الإرسال.';
+            return 'الخادم مشغول قليلاً، لكن رسالتك محفوظة وستصل. لا تُعِد إرسالها ولا تحدّث الصفحة.';
+        }
+        function pendingNoteHtml(p) { return '<div class="pend-note text-[10px] text-amber-700 font-bold leading-relaxed text-right" data-pid="' + p.id + '">' + pendingNoteText(p) + '</div>'; }
+        function tickPendingNotes() {
+            const acts = window.getPendingActions(); if (!acts.length) return;
+            document.querySelectorAll('.pend-note').forEach(el => { const a = acts.find(x => x.id === el.getAttribute('data-pid')); if (a) { const t = pendingNoteText(a); if (el.textContent !== t) el.textContent = t; } });
+        }
+        setInterval(tickPendingNotes, 1000);
+        function pendingActionAreaHtml(list) {
+            if (list.some(a => a.state === 'sent')) return '<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">✅ وصلت رسالتك. نُحدّث المحادثة الآن…</p></div>';
+            return '<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ نرسل رسالتك الآن… لا تحتاج لإعادة الإرسال</p></div>';
+        }
+
         function getMyProfileStatus() {
             try {
                 let rawUser = localStorage.getItem('currentUser');
@@ -756,22 +788,19 @@
                 });
                 pendingForReq = validPending;
 
-                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying');
+                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying' || a.state === 'sent');
 
                 if (pendingForReq.length > 0) {
                     let pendingHtml = '';
                     pendingForReq.forEach(p => {
-                        let icon = (p.state === 'sending' || p.state === 'verifying')
-                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">${p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال'}</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
-                            : `<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction('${p.id}')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>`;
-                        
-                        let bgClass = p.state === 'failed' ? 'bg-rose-50 border-rose-300 border-2 shadow-sm' : 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
+                        let icon = pendingIconHtml(p); let bgClass = pendingBgClass(p);
                         
                         pendingHtml += `
                         <div class="self-start min-w-[140px] max-w-[85%] ${bgClass} p-2 rounded-2xl rounded-tr-sm relative flex flex-col gap-1 text-right mt-1.5">
-                            <div class="flex items-center justify-between gap-2 mb-0.5"><span class="text-[9px] font-black text-emerald-700">أنا (قيد التنفيذ)</span></div>
+                            <div class="flex items-center justify-between gap-2 mb-0.5"><span class="text-[9px] font-black text-emerald-700">${p.state === 'sent' ? 'أنا' : 'أنا (قيد التنفيذ)'}</span></div>
                             <p class="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">${p.text}</p>
                             <div class="self-end mt-1 flex items-center justify-end">${icon}</div>
+                            ${pendingNoteHtml(p)}
                             ${p.state === 'failed' && p.error ? `<div class="text-[9px] text-rose-600 mt-1 font-bold bg-white p-1 rounded border border-rose-100">${p.error}</div>` : ''}
                         </div>`;
                     });
@@ -786,7 +815,7 @@
                 // 🟢 منطقة الإجراءات الجديدة (التعارف وإنهاء التعارف)
                 const outcomeUI = buildOutcomeUI(req.reqId, statusText, originalChunks, false);
                 if (isCurrentlySending) {
-                    actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
+                    actionAreaHtml = pendingActionAreaHtml(pendingForReq);
                 } else if (outcomeUI) {
                     actionAreaHtml = outcomeUI.html;
                 } else if (isAcquaintancePhase) {
@@ -990,22 +1019,19 @@
                 });
                 pendingForReq = validPending;
 
-                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying');
+                let isCurrentlySending = pendingForReq.some(a => a.state === 'sending' || a.state === 'verifying' || a.state === 'sent');
 
                 if (pendingForReq.length > 0) {
                     let pendingHtml = '';
                     pendingForReq.forEach(p => {
-                        let icon = (p.state === 'sending' || p.state === 'verifying')
-                            ? `<span class="text-[10px] text-slate-400 font-bold ml-1">${p.state === 'verifying' ? 'نتأكد من وصولها…' : 'جاري الإرسال'}</span><svg class="w-3.5 h-3.5 text-amber-500 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>` 
-                            : `<span class="text-[10px] text-rose-500 font-bold ml-1">فشل الإرسال</span><button type="button" onclick="event.stopPropagation(); retryPendingAction('${p.id}')" class="text-rose-500 animate-pulse hover:scale-110 transition-transform cursor-pointer" title="اضغط لإعادة الإرسال"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg></button>`;
-                        
-                        let bgClass = p.state === 'failed' ? 'bg-rose-50 border-rose-300 border-2 shadow-sm' : 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
+                        let icon = pendingIconHtml(p); let bgClass = pendingBgClass(p);
                         
                         pendingHtml += `
                         <div class="self-start min-w-[140px] max-w-[85%] ${bgClass} p-2 rounded-2xl rounded-tr-sm relative flex flex-col gap-1 text-right mt-1.5">
-                            <div class="flex items-center justify-between gap-2 mb-0.5"><span class="text-[9px] font-black text-emerald-700">أنا (قيد التنفيذ)</span></div>
+                            <div class="flex items-center justify-between gap-2 mb-0.5"><span class="text-[9px] font-black text-emerald-700">${p.state === 'sent' ? 'أنا' : 'أنا (قيد التنفيذ)'}</span></div>
                             <p class="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">${p.text}</p>
                             <div class="self-end mt-1 flex items-center justify-end">${icon}</div>
+                            ${pendingNoteHtml(p)}
                             ${p.state === 'failed' && p.error ? `<div class="text-[9px] text-rose-600 mt-1 font-bold bg-white p-1 rounded border border-rose-100">${p.error}</div>` : ''}
                         </div>`;
                     });
@@ -1020,7 +1046,7 @@
                 // 🟢 منطقة الإجراءات للوارد (بانتظار الدفع وإنهاء التعارف)
                 const outcomeUI = buildOutcomeUI(req.reqId, statusText, originalChunks, true);
                 if (isCurrentlySending) {
-                    actionAreaHtml = `<div class="bg-slate-50 p-3 border-t border-slate-100 text-center rounded-b-2xl"><p class="text-[10px] text-slate-600 font-bold animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</p></div>`;
+                    actionAreaHtml = pendingActionAreaHtml(pendingForReq);
                 } else if (outcomeUI) {
                     actionAreaHtml = outcomeUI.html;
                 } else if (isAcquaintancePhase) {
@@ -1394,7 +1420,7 @@
         // 🟢 إرسال طلب التواصل المباشر فوراً (الرسالة ثابتة من الخادم، ولا تُخصم نقاط: الرسوم بالريال بعد موافقة المرأة)
         window.sendDirectContactRequest = function(reqId) {
             if (!phoneParam || !reqId) return;
-            if (window.getPendingActions().some(a => a.reqId === reqId && a.state === 'sending')) return;
+            if (window.getPendingActions().some(a => a.reqId === reqId && a.state !== 'failed')) return;
             window.lastInteractedReqId = reqId;
 
             let actionId = 'msg_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
@@ -1769,9 +1795,11 @@
             } catch (e) { netErr = e; }
             finally { clearTimeout(timer); }
 
+            // 🟢 [2026-10-17] وصل الإرسال: نعرض "وصلت ✓" فوراً (قبل أي مزامنة) ثم نستبدلها بالمحادثة الحقيقية حين تصل
             const done = () => {
-                window.removePendingAction(actionId);
-                fetchData(true).finally(() => { if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); });
+                window.updatePendingActionState(actionId, 'sent', '');
+                if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+                window.settleSentAction(actionId, 0);
             };
             const saveTries = () => { const acts = window.getPendingActions(); const a = acts.find(x => x.id === actionId); if (a) { a.tries = act.tries; window.savePendingActions(acts); } };
             saveTries();
@@ -1811,6 +1839,21 @@
             if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
         };
 
+        // بعد "وصلت ✓": نجلب المحادثة الحقيقية (الكاش مُسح عند الكتابة فقد تأخذ 20 ث+) ولا نزيل الفقاعة إلا حين تظهر الرسالة في المحادثة،
+        // كي لا تعود أزرار الرد قبل أن تتحدث الحالة (فيعيد العميل الإرسال). سقف المحاولات 5 ثم نزيلها على أي حال.
+        window.settleSentAction = async function(actionId, n) {
+            const a = window.getPendingActions().find(x => x.id === actionId); if (!a) return;
+            let landed = false;
+            try { landed = await verifyActionLanded(a, 0); } catch (e) {}
+            if (landed || n >= 4) {
+                window.removePendingAction(actionId);
+                if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+                if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+                return;
+            }
+            setTimeout(() => window.settleSentAction(actionId, n + 1), 6000);
+        };
+
         window.retryPendingAction = function(actionId) {
             const acts = window.getPendingActions(); const a = acts.find(x => x.id === actionId); if (a) { a.tries = 0; window.savePendingActions(acts); }
             window.updatePendingActionState(actionId, 'sending', '');
@@ -1821,6 +1864,7 @@
         // 🟢 إجراء بقي "قيد الإرسال" لأن الصفحة أُغلقت أثناءه: يُستكمل عند الفتح التالي (تحقق أولاً، ثم إرسال بنفس tempId)
         window.resumeStalePendingActions = async function() {
             if (window.__resumedPending) return; window.__resumedPending = true;
+            window.getPendingActions().filter(a => a.state === 'sent').forEach(a => window.settleSentAction(a.id, 0));
             const stale = window.getPendingActions().filter(a => (a.state === 'sending' || a.state === 'verifying') && Date.now() - (a.timestamp || 0) > 4000);
             for (const a of stale) {
                 window.updatePendingActionState(a.id, 'verifying', '');
