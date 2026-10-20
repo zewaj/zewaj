@@ -133,6 +133,7 @@
             <!-- 🟢 الفلتر الجديد لمرحلة التعارف -->
             <button onclick="setFilter('acquaintance')" id="filter-acquaintance" class="filter-btn p-2.5 rounded-xl transition-all bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-100 shrink-0 relative" title="مرحلة التعارف بعد تسليم الأرقام">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                <span id="badgeCourtship" class="absolute -top-1.5 -right-1.5 bg-sky-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden" title="تعارف طويل بلا تحديث - تابعه">0</span>
             </button>
             <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
@@ -141,6 +142,15 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 <span id="badgeFailed" class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm">0</span>
             </button>
+        </div>
+        <!-- 🤝 [2026-10-20] تصفية مرحلة التعارف بمدة التعارف (تظهر فقط حين يكون فلتر التعارف مفعّلاً) -->
+        <div id="courtshipAgeBar" class="hidden bg-sky-50 rounded-2xl border border-sky-200 p-2 flex items-center gap-1.5 overflow-x-auto hide-scroll w-full">
+            <span class="text-[10px] font-extrabold text-sky-800 shrink-0 px-1">منذ تسليم الأرقام:</span>
+            <button type="button" onclick="setCourtshipAge('all')" data-cage="all" class="cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border">الكل</button>
+            <button type="button" onclick="setCourtshipAge('3')" data-cage="3" class="cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border">أقل من 3 أيام</button>
+            <button type="button" onclick="setCourtshipAge('7')" data-cage="7" class="cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border">7 أيام فأكثر</button>
+            <button type="button" onclick="setCourtshipAge('14')" data-cage="14" class="cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border">14 يوماً فأكثر</button>
+            <button type="button" onclick="setCourtshipAge('pending')" data-cage="pending" class="cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border">⏰ تعارف طويل - تابعه</button>
         </div>
     </div>
 
@@ -841,14 +851,65 @@
             return (req.requesterProfileStatus === 'محذوف' || req.targetProfileStatus === 'محذوف') ? '🗑️' : '🚫';
         }
 
+        // 🤝 [2026-10-20] مرحلة التعارف: عدد الأيام منذ تسليم الأرقام (من الخادم، وإلا آخر حركة لطلب غُيّرت حالته محلياً قبل التحديث)
+        let courtshipAge = 'all';
+        function courtshipDaysOf(req) {
+            if (typeof req.courtshipDays === 'number' && req.courtshipSince) return req.courtshipDays;
+            const ts = getTimestamp(req.lastActionDate || req.date);
+            return ts ? Math.max(0, Math.floor((Date.now() - ts) / 86400000)) : 0;
+        }
+        function courtshipDaysWord(d) {
+            if (d <= 0) return 'اليوم';
+            if (d === 1) return 'منذ يوم';
+            if (d === 2) return 'منذ يومين';
+            if (d <= 10) return 'منذ ' + d + ' أيام';
+            return 'منذ ' + d + ' يوماً';
+        }
+        function courtshipBadgeHtml(req) {
+            const d = courtshipDaysOf(req);
+            const checks = req.courtshipChecks || 0;
+            const tone = req.courtshipPending ? 'bg-amber-500 text-white border-amber-600 animate-pulse shadow-md'
+                : d >= 14 ? 'bg-amber-100 text-amber-800 border-amber-300'
+                : d >= 7 ? 'bg-sky-200 text-sky-900 border-sky-400'
+                : 'bg-sky-100 text-sky-700 border-sky-300';
+            const label = req.courtshipPending ? '⏰ تعارف ' + courtshipDaysWord(d) + ' - تابعه' : '💬 تعارف ' + courtshipDaysWord(d);
+            const mark = checks > 0 ? ' <span title="رسائل الاطمئنان المرسلة آلياً">' + (checks >= 2 ? '✉️✉️' : '✉️') + '</span>' : '';
+            return `<span class="${tone} text-[9px] font-bold px-1.5 py-0.5 rounded border shrink-0 whitespace-nowrap" title="تاريخ تسليم الأرقام: ${req.courtshipSince || 'غير مسجل (تقدير بآخر حركة)'}">${label}${mark}</span>`;
+        }
+        function setCourtshipAge(v) {
+            courtshipAge = v;
+            renderCourtshipAgeBar();
+            applyFilters();
+        }
+        function renderCourtshipAgeBar() {
+            const bar = document.getElementById('courtshipAgeBar');
+            if (!bar) return;
+            bar.classList.toggle('hidden', currentFilterType !== 'acquaintance');
+            bar.querySelectorAll('.cage-btn').forEach(b => {
+                const on = b.dataset.cage === courtshipAge;
+                b.className = 'cage-btn shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-lg border ' + (on ? 'bg-sky-600 text-white border-sky-700' : 'bg-white text-sky-700 border-sky-200 hover:bg-sky-100');
+            });
+        }
+        function courtshipAgeMatches(req) {
+            if (courtshipAge === 'all') return true;
+            if (!(req.status || '').includes('مرحلة التعارف')) return false;
+            const d = courtshipDaysOf(req);
+            if (courtshipAge === '3') return d < 3;
+            if (courtshipAge === '7') return d >= 7;
+            if (courtshipAge === '14') return d >= 14;
+            if (courtshipAge === 'pending') return !!req.courtshipPending;
+            return true;
+        }
+
         function updateDashboardStats() {
-            let pending = 0, actionNeeded = 0, unreadCount = 0;
+            let pending = 0, actionNeeded = 0, unreadCount = 0, courtshipPendingCount = 0;
             let failedCount = pendingAdminActions.filter(a => a.state === 'failed').length;
 
             allRequests.forEach(r => {
                 const s = r.status || '';
                 let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
                 
+                if (!isClosed && r.courtshipPending && s.includes('مرحلة التعارف')) courtshipPendingCount++;
                 let lastActionTs = getTimestamp(r.lastActionDate || r.date);
                 if (!isClosed && !s.includes('مرحلة التعارف')) {
                     if (!readRequestsCache[r.reqId] || lastActionTs > readRequestsCache[r.reqId]) {
@@ -886,6 +947,11 @@
                 if(pending > 0) badgeWaiting.classList.remove('hidden');
                 else badgeWaiting.classList.add('hidden');
             }
+            const badgeCourtship = document.getElementById('badgeCourtship');
+            if (badgeCourtship) {
+                badgeCourtship.innerText = courtshipPendingCount;
+                badgeCourtship.classList.toggle('hidden', courtshipPendingCount === 0);
+            }
             if (badgeUnread) {
                 badgeUnread.innerText = unreadCount;
                 if(unreadCount > 0) badgeUnread.classList.remove('hidden');
@@ -921,6 +987,7 @@
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-indigo-600 text-white shadow-sm border-transparent shrink-0 relative`;
                 }
             }
+            renderCourtshipAgeBar();
             applyFilters();
         }
 
@@ -955,7 +1022,7 @@
                 else if (currentFilterType === 'action') matchesStatus = !isClosed && (deletedSideText(req) !== '' || req.delayPending || (req.finalApprovalGiven && !s.includes('مرحلة التعارف')) || s === 'قيد الانتظار' || s.includes('يوجد رد') || s.includes('بانتظار اعتماد') || s.includes('اعتماد') || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('تأكيد'));
                 else if (currentFilterType === 'waiting') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && !req.hasRequestedContact && (s.includes('بانتظار الطرف الأول') || s.includes('بانتظار الطرف الثاني') || s.includes('الطالب') || s.includes('المطلوب') || s.includes('بانتظار رده') || s.includes('مقبول مبدئياً'));
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
-                else if (currentFilterType === 'acquaintance') matchesStatus = s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد'); // 🟢 يظهر في قائمة التعارف والأكشن
+                else if (currentFilterType === 'acquaintance') matchesStatus = (s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد')) && courtshipAgeMatches(req); // 🟢 يظهر في قائمة التعارف والأكشن (مع تصفية مدة التعارف)
                 else if (currentFilterType === 'contact') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && (req.hasRequestedContact || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع'));
                 else if (currentFilterType === 'archived') matchesStatus = isClosed; 
                 else if (currentFilterType === 'failed') matchesStatus = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'failed');
@@ -1003,6 +1070,8 @@
                 if (priorityA >= 1 && priorityA <= 4) {
                     return (dateA || Number.MAX_SAFE_INTEGER) - (dateB || Number.MAX_SAFE_INTEGER);
                 }
+                // مرحلة التعارف: الأقدم تسليماً للأرقام أولاً (هو الأولى بالمتابعة)
+                if (priorityA === 7) return courtshipDaysOf(b) - courtshipDaysOf(a);
                 return dateB - dateA;
             });
             
@@ -1035,7 +1104,7 @@
                 } else if (s.includes('بانتظار تأكيد')) {
                     statusBadge = `<span class="bg-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-orange-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ بانتظار تأكيد عدم التوفيق' : '⚠️ بانتظار تأكيد الزواج'}</span>`;
                 } else if (s.includes('مرحلة التعارف')) {
-                    statusBadge = `<span class="bg-sky-100 text-sky-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-sky-300 shrink-0 whitespace-nowrap">💬 في مرحلة التعارف</span>`;
+                    statusBadge = courtshipBadgeHtml(req);
                 } else if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) {
                     statusBadge = `<span class="bg-emerald-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-emerald-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">${req.freeContact === true ? '🎁 تدخلي فوراً (تواصل مجاني - سلّم الأرقام)' : '🚨 تدخلي فوراً (بانتظار الدفع)'}</span>`;
                 } else if (req.hasRequestedContact) {
@@ -1192,7 +1261,17 @@
                         actionButtonHTML = `
                         <div class="bg-sky-50 text-sky-700 p-2.5 text-xs font-bold text-center rounded-xl mb-3 border border-sky-200 shadow-sm leading-relaxed">
                             💬 الطرفان الآن في مرحلة التعارف خارج المنصة. (لا يزال الطلب يحجز كوتا لضمان عدم تشتيتهم بطلبات جديدة).
+                            <div class="mt-1.5 text-[11px] font-extrabold text-sky-900">📅 استلموا الأرقام ${courtshipDaysWord(courtshipDaysOf(req))}${req.courtshipSince ? ' (' + req.courtshipSince + ')' : ' (تقدير بآخر حركة)'} · رسائل الاطمئنان الآلية: ${req.courtshipChecks || 0} من 2${req.courtshipPending ? ' · ⏰ لم يحدّثوا الحالة، تابعهم يدوياً' : ''}${req.courtshipExtendUntil ? ' · ⏳ مُمدَّد حتى ' + req.courtshipExtendUntil : ''}</div>
                         </div>
+                        ${req.courtshipPending ? `
+                        <div class="bg-amber-50 border border-amber-300 rounded-xl p-2.5 mb-3">
+                            <div class="text-[11px] font-extrabold text-amber-900 mb-2 text-center">⏰ تجاوز الأسبوعين بلا تحديث. تابعهم، ثم مدّد المهلة أو سجّل النتيجة:</div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="courtshipExtend('${req.reqId}', 7)" class="py-2 text-[11px] font-extrabold rounded-lg bg-white border border-amber-400 text-amber-800 hover:bg-amber-100">+ أسبوع</button>
+                                <button onclick="courtshipExtend('${req.reqId}', 10)" class="py-2 text-[11px] font-extrabold rounded-lg bg-white border border-amber-400 text-amber-800 hover:bg-amber-100">+ 10 أيام</button>
+                                <button onclick="courtshipExtend('${req.reqId}', 14)" class="py-2 text-[11px] font-extrabold rounded-lg bg-white border border-amber-400 text-amber-800 hover:bg-amber-100">+ أسبوعان</button>
+                            </div>
+                        </div>` : ''}
                         <button onclick="openCloseChatModal('${req.reqId}')" class="w-full py-3 text-xs font-bold rounded-xl bg-slate-800 text-white hover:bg-slate-900 transition-colors flex justify-center items-center gap-2 shadow-md">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> 
                             <span>تسجيل النتيجة النهائية (زواج أو إنهاء) لإخلاء الكوتا</span>
@@ -1918,7 +1997,7 @@
             let actionId = 'act_' + Date.now();
             pendingAdminActions.push({
                 id: actionId, reqId: reqId, type: 'status_update', text: adminReply || "تحديث حالة", state: 'sending',
-                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: statusSelectVal, adminReply: payloadText, actionContext: '' },
+                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: statusSelectVal, adminReply: payloadText, actionContext: ((req.status || '').includes('مغلق') && !statusSelectVal.includes('مغلق')) ? 'adminReopen' : '' },
                 timestamp: Date.now()
             });
             savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
@@ -1982,6 +2061,27 @@
                 t.remove();
                 if (!handleAuthError(message)) await showMsgModal('⚠️ لم يُنفَّذ: ' + label, (message || 'تعذر تنفيذ القرار.') + '\n\nلا يُعاد الإرسال تلقائياً. راجع حالة الطلب في اللوحة قبل إعادة المحاولة.');
             }
+            try { await fetchData(true); } catch (e) {}
+            renderTable();
+        }
+
+        // 🤝 [2026-10-21] تمديد مهلة تعارف طويل (يُنفَّذ بالخلفية بنفس نمط delayRunBg؛ لا رسالة للعميلين)
+        async function courtshipExtend(reqId, days) {
+            const req = allRequests.find(x => x.reqId === reqId);
+            if (!req || window.delayBusy[reqId]) return;
+            window.delayBusy[reqId] = true;
+            qaInflight++;
+            const t = qaToast('⏳ تمديد تعارف ' + reqId + ' ' + days + ' يوماً...', 'info', true);
+            let ok = false, message = '';
+            try {
+                const r = await qaPost({ action: 'adminExtendCourtship', adminToken: state.adminToken, reqId: reqId, days: days, rowHint: req.rowIndex }, 60000);
+                ok = r.ok; message = r.message;
+            } catch (e) { message = 'تعذر الاتصال بالخادم.'; }
+            qaInflight--;
+            delete window.delayBusy[reqId];
+            scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
+            if (ok) { t.set('✔ ' + (message || 'تم التمديد.'), 'ok'); setTimeout(t.remove, 7000); }
+            else { t.remove(); if (!handleAuthError(message)) await showMsgModal('⚠️ لم يُنفَّذ التمديد', message || 'تعذر التمديد. حدّث اللوحة وأعد المحاولة.'); }
             try { await fetchData(true); } catch (e) {}
             renderTable();
         }
