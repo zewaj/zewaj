@@ -723,10 +723,32 @@
             safeCopyFromBase64(btnElement, encodeBase64(dataToCopy.join('\n\n-------------------\n\n')));
         };
         
+        // 🟢 [2026-10-21] تغيير الحالة يُنفَّذ في الخادم خلال ثوانٍ لكن الرد قد يتأخر (ازدحام Apps Script)، وكانت المهلة 20 ث مع إعادة محاولتين
+        // فتظهر "تأخر السيرفر" والحالة تغيّرت فعلاً ولا تتحدث الصفحة، وتتراكم نسخ متزامنة تزيد الازدحام. الآن: مهلة طويلة بلا إعادة تلقائية،
+        // وعند الانقطاع يُتحقق من حالة الملفات في الخادم قبل الحكم بالفشل (حتى لا يُعاد تنفيذ ما تم).
+        async function statusLanded(refIds, newStatus) {
+            try {
+                const res = await apiCall({ action: "adminAdvancedSearch", adminToken: state.adminToken, filters: { refId: refIds.join(' ') } }, 0, 45000);
+                const found = (res && res.results) || [];
+                return found.length > 0 && refIds.every(id => { const p = found.find(x => String(x.refId) === String(id)); return p && p.profileStatus === newStatus; });
+            } catch (e) { return false; }
+        }
+        async function applyStatusChange(refIds, newStatus, singleRefId, notifyDelete) {
+            const payload = singleRefId
+                ? { action: "adminSoftDeleteProfile", refId: singleRefId, newStatus: newStatus, notify: notifyDelete, adminToken: state.adminToken }
+                : { action: "adminBulkChangeStatus", refIds: refIds, newStatus: newStatus, adminToken: state.adminToken };
+            try {
+                return await apiCall(payload, 0, SLOW_ACTION_TIMEOUT);
+            } catch (e) {
+                if (await statusLanded(refIds, newStatus)) return { success: true, verified: true };
+                throw e;
+            }
+        }
+
         async function submitBulkChangeStatus(newStatus, btnElement) {
             setBtnLoading(btnElement, true, ''); const refIdsArray = Array.from(state.selectedIds);
             try {
-                await apiCall({ action: "adminBulkChangeStatus", refIds: refIdsArray, newStatus: newStatus, adminToken: state.adminToken });
+                await applyStatusChange(refIdsArray, newStatus, null, false);
                 showToast(`تم تغيير حالة ${refIdsArray.length} ملفات إلى: ${newStatus}`);
                 state.searchResults.forEach(p => { if (state.selectedIds.has(p.refId)) p.profileStatus = newStatus; });
                 clearSelection(); 
@@ -801,7 +823,7 @@
             const notifyDelete = newStatus === 'محذوف' && !!(notifyEl && notifyEl.checked);
             setBtnLoading(btnElement, true, '');
             try {
-                const delRes = await apiCall({ action: "adminSoftDeleteProfile", refId: refId, newStatus: newStatus, notify: notifyDelete, adminToken: state.adminToken }, 1, newStatus === 'محذوف' ? SLOW_ACTION_TIMEOUT : 20000);
+                const delRes = await applyStatusChange([refId], newStatus, refId, notifyDelete);
                 showToast((newStatus === 'محذوف' && delRes && delRes.message) ? delRes.message : `تم تغيير الحالة إلى: ${newStatus}`);
                 const profile = state.searchResults.find(p => p.refId === refId);
                 if (profile) profile.profileStatus = newStatus;
