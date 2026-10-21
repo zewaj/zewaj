@@ -9,6 +9,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>منصة الزواج - تسجيل / دخول</title>
+    <!-- 🟢 [2026-10-21] رابط إحالة يُفتح على هذه الصفحة مباشرة (register.html?ref=...): نفس حفظ index.html. المفتاح ref_by يُرسل مع التسجيل الجديد فقط. -->
+    <script>
+        (function () {
+            try {
+                var r = new URLSearchParams(location.search).get('ref');
+                if (!r || !/^[0-9]{3,8}$/.test(r)) return;
+                if (localStorage.getItem('active_profile_refid') === r) return;
+                localStorage.setItem('ref_by', JSON.stringify({ id: r, t: Date.now() }));
+            } catch (e) {}
+        })();
+    </script>
     <!-- 🟢 [2026-10-03] استثناء أمني لجلسة الرابط السحري (magic_session، تُضبط في index.html عند الدخول من رابط الواتساب): هذه الصفحة تعرض بيانات الملف كاملة
          (ومنها المعلومات السرية) وتسمح بالتعديل والحذف وإضافة الملفات وتبديل الرئيسي، فتتطلب دخولاً كاملاً برمز التحقق. أول سكربت في الصفحة: document.open() يقطع
          تحليل الصفحة فلا يُنفَّذ بقية الكود ولا يُطلب أي ملف من الخادم. تعديل الإدارة (mode=admin_edit) مستثنى لأنه بتوكن الإدارة لا بهوية العميل.
@@ -2624,6 +2635,13 @@ function closeTermsModal() {
                     if (digitError) { closeTermsModal(); showMsgModal("تنبيه قبل الحفظ", digitError); return; }
                 }
 
+                // 🟢 [2026-10-21] تسجيل جديد جاء عبر رابط إحالة (محفوظ على الجهاز 60 يوماً): يُرسل رقم المُحيل ليُسجَّل في ورقة الإحالات
+                if (!editInfoState && !isAdminMode) {
+                    try {
+                        const refBy = JSON.parse(localStorage.getItem('ref_by') || 'null');
+                        if (refBy && refBy.id && (Date.now() - (refBy.t || 0)) < 60 * 86400000) payloadData.referrerRefId = String(refBy.id);
+                    } catch (e) {}
+                }
                 const reqBody = { action: editInfoState ? "updateRegistration" : "saveRegistration", data: payloadData };
                 if(editInfoState) { reqBody.editInfo = editInfoState; if(isAdminMode) { reqBody.editInfo.isAdminBypass = true; reqBody.editInfo.adminToken = adminToken; } } 
                 else if (isAdminMode) { reqBody.adminBypass = { isAdminBypass: true, adminToken: adminToken }; }
@@ -2634,6 +2652,7 @@ function closeTermsModal() {
                 clearTimeout(timeoutId); const responseText = await res.text(); const result = JSON.parse(responseText);
 
                 if(result.success) {
+                    if (!editInfoState) { try { localStorage.removeItem('ref_by'); } catch (e) {} } // الإحالة سُجّلت مع الملف
                     closeTermsModal(); const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
                     const fa = document.getElementById('finalActionModal');
                     if (fa) {

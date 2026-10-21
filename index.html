@@ -10,6 +10,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>منصة أبو العنود للزواج</title>
+    <!-- 🟢 [2026-10-21] رابط الإحالة (index.html?ref=<رقم المُحيل>): يُحفظ 60 يوماً على الجهاز، وتقرؤه register.html عند التسجيل الجديد وترسله مع الملف.
+         لا يُحفظ إن كان صاحب الرابط هو نفسه المسجّل على هذا الجهاز (التحقق النهائي في الخادم). -->
+    <script>
+        (function () {
+            try {
+                var r = new URLSearchParams(location.search).get('ref');
+                if (!r || !/^[0-9]{3,8}$/.test(r)) return;
+                if (localStorage.getItem('active_profile_refid') === r) return;
+                localStorage.setItem('ref_by', JSON.stringify({ id: r, t: Date.now() }));
+            } catch (e) {}
+        })();
+    </script>
     <!-- 🟢 [2026-10-03] دخول الرابط السحري (index.html?token=...): يبدأ طلب verifyTokenAndSync (تحقق + مزامنة في طلب واحد) فوراً في أول الصفحة،
          قبل تحميل Tailwind والخطوط وباقي السكربتات، بدل انتظار تحميل activity.html كاملة ثم طلبين متتاليين. تعالج النتيجة runMagicBoot() لاحقاً. -->
     <script>

@@ -43,6 +43,7 @@
         <div id="guestBox"></div>
         <div id="statusBox"></div>
         <div id="pendingBox"></div>
+        <div id="referralBox"></div>
         <div id="packagesList" class="flex flex-col gap-3"></div>
         <div id="infoBox"></div>
     </div>
@@ -196,6 +197,71 @@
                 </div>`).join('');
         }
 
+        // 🟢 [2026-10-21] الباقة المجانية بالإحالة (القسم 34 في الخادم): الأعداد وأسماء الباقات من الشيت عبر pageData.referral
+        function referralUrl() {
+            const u = new URL('index.html', window.location.href);
+            return u.origin + u.pathname + '?ref=' + encodeURIComponent(refIdParam);
+        }
+        function referralShareText() {
+            return `السلام عليكم، أنصحك بمنصة أبو العنود للزواج (وسيط زواج موثوق). سجّل مجاناً عبر هذا الرابط:\n${referralUrl()}`;
+        }
+        function shareReferral() {
+            window.open('https://wa.me/?text=' + encodeURIComponent(referralShareText()), '_blank', 'noopener');
+        }
+        function copyReferral() {
+            const url = referralUrl();
+            const done = () => showToast('تم نسخ رابطك، شاركه مع من تعرف ✅');
+            const fallback = () => {
+                const ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); done(); } catch (e) { showToast(url); }
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, fallback); else fallback();
+        }
+        function referralBar(label, cur, target) {
+            const pct = Math.min(100, Math.round((cur / target) * 100));
+            return `
+                <div class="mb-2">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-1"><span>${label}</span><span class="text-emerald-700 font-black">${esc(Math.min(cur, target))} / ${esc(target)}</span></div>
+                    <div class="h-2 rounded-full bg-emerald-100 overflow-hidden"><div class="h-full rounded-full bg-emerald-500" style="width:${pct}%"></div></div>
+                </div>`;
+        }
+        function renderReferral() {
+            const box = document.getElementById('referralBox');
+            const rf = pageData && pageData.referral;
+            if (!rf || !rf.enabled) { box.innerHTML = ''; return; }
+            const hasReg = rf.regTarget > 0, hasPaid = rf.paidTarget > 0;
+            const paths = [];
+            if (hasReg) paths.push(`<b>${esc(rf.regTarget)}</b> أشخاص يسجّلون عن طريق رابطك ويعتمد الوسيط ملفاتهم`);
+            if (hasPaid) paths.push(`<b>${esc(rf.paidTarget)}</b> منهم يشتركون في باقة`);
+            const rule = hasReg
+                ?'<p class="text-[10px] text-slate-500 font-bold mt-1">ملاحظة: الرجل غير السعودي يُحتسب باشتراكه في باقة فقط.</p>' : '';
+            let state = '';
+            if (!isGuest) {
+                if (rf.rewardPending) {
+                    state = '<div class="bg-amber-50 border border-amber-200 rounded-xl p-2 text-center text-[11px] font-black text-amber-800 mb-2">🎉 استحققت الباقة المجانية، وهي بانتظار تفعيل الوسيط وتصلك رسالة تأكيد.</div>';
+                } else {
+                    state = (hasReg ? referralBar('تسجيلات معتمدة', rf.regCount, rf.regTarget) : '') + (hasPaid ? referralBar('مشتركون في باقة', rf.paidCount, rf.paidTarget) : '');
+                    if (rf.waiting > 0) state += `<p class="text-[10px] text-slate-500 font-bold mb-2">⏳ ${esc(rf.waiting)} من المسجّلين عن طريقك بانتظار اعتماد ملفاتهم.</p>`;
+                    if (rf.cooldownLeft > 0) state += `<p class="text-[10px] text-slate-500 font-bold mb-2">حصلت على مكافأة سابقة؛ المكافأة التالية بعد ${esc(rf.cooldownLeft)} يوماً، وإحالاتك الجديدة تُحفظ لك.</p>`;
+                }
+            }
+            const actions = isGuest
+                ? `<button type="button" onclick="guestSubscribe()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md">سجّل دخولك لتحصل على رابطك الخاص</button>`
+                : `<div class="flex gap-2">
+                        <button type="button" onclick="shareReferral()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md active:scale-95 transition-all">مشاركة عبر واتساب</button>
+                        <button type="button" onclick="copyReferral()" class="flex-1 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-700 font-black text-xs active:scale-95 transition-all">نسخ رابطي</button>
+                   </div>`;
+            box.innerHTML = `
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm mb-3 fade-in">
+                    <h2 class="text-sm font-black text-emerald-800 mb-1">🎁 احصل على <span class="text-emerald-600">${esc(rf.rewardName)}</span> مجاناً</h2>
+                    <p class="text-[11px] text-slate-700 font-bold leading-relaxed mb-2">شارك رابطك الخاص مع من تعرف، وتحصل على الباقة مجاناً عند ${paths.join(' <span class="text-emerald-700">أو</span> ')}. ${rf.cooldownDays > 0 ? `ويمكنك تكرارها بعد ${esc(rf.cooldownDays)} يوماً.` : ''}</p>
+                    ${rule}
+                    <div class="mt-2">${state}${actions}</div>
+                </div>`;
+        }
+
         function renderPackages() {
             const pr = pageData.pricing || {};
             const isMale = pageData.gender === 'ذكر';
@@ -286,7 +352,7 @@
             if (isModalMode) document.getElementById('pageTitleBox').classList.add('hidden');
             renderGuestBox();
             if (isGuest && !guestGender) {
-                document.getElementById('statusBox').innerHTML = ''; document.getElementById('pendingBox').innerHTML = ''; document.getElementById('infoBox').innerHTML = '';
+                document.getElementById('statusBox').innerHTML = ''; document.getElementById('pendingBox').innerHTML = ''; document.getElementById('infoBox').innerHTML = ''; document.getElementById('referralBox').innerHTML = '';
                 document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-500 font-bold py-8">اختر باقات الرجال أو باقات النساء لعرضها.</p>';
                 return;
             }
@@ -297,7 +363,7 @@
                     : { action: 'getUserPackages', phone: phoneParam, refId: refIdParam });
                 if (!res || res.success !== true) throw new Error((res && (res.error || res.message)) || 'تعذر التحميل');
                 pageData = res;
-                renderReason(); renderStatus(); renderPending(); renderPackages(); renderInfo();
+                renderReason(); renderStatus(); renderPending(); renderReferral(); renderPackages(); renderInfo();
             } catch (e) {
                 if (!silent) document.getElementById('packagesList').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-10">${esc(e.message || 'تعذر تحميل الباقات')}<br><button type="button" onclick="loadPage()" class="mt-3 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">إعادة المحاولة</button></p>`;
             }
