@@ -594,6 +594,10 @@
                     ? `<button onclick="actionBanAccount('${p.refId}')" class="bg-rose-600 hover:bg-rose-700 text-white border border-rose-700 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1 shadow-sm shrink-0" title="${escPkg(p.banCond || '')}"><i class="fas fa-ban"></i> محظور</button>`
                     : (p.pastBans ? `<span class="bg-slate-100 text-slate-600 border border-slate-300 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1 shadow-sm shrink-0" title="رُفع عنه الحظر سابقاً"><i class="fas fa-history"></i> سبق حظره${p.pastBans > 1 ? ' (' + p.pastBans + ')' : ''}</span>` : '');
 
+                // 🟢 [2026-10-21] ملف سجّل عبر رابط إحالة: يظهر رقم المُحيل (للإدارة فقط). الضغط يبحث عن ملف المُحيل.
+                const referredBadge = p.referredBy
+                    ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1 shadow-sm shrink-0" title="سجّل عن طريق رابط إحالة المشترك #${escPkg(p.referredBy)}"><i class="fas fa-gift"></i> عن طريق #${escPkg(p.referredBy)}</span>` : '';
+
                 const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
                 const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
                 const base64ShortBio = encodeBase64(decodedShortBio);
@@ -623,7 +627,7 @@
                                 ${statusBadge}
                                 ${marriageTypeBadge}
                                 ${walletBadge}
-                                ${banBadge}
+                                ${banBadge}${referredBadge}
                             </div>
                         </div>
 
@@ -1303,15 +1307,16 @@
                 const res = await apiCall({ action: 'adminGetPackageRequests', adminToken: state.adminToken });
                 const pending = res.pending || []; const recent = res.recent || [];
                 const b = document.getElementById('pkgreq-badge'); if (b) { b.innerText = pending.length; b.classList.toggle('hidden', pending.length === 0); }
+                const isRewardReq = r => String(r.packageName || '').indexOf('🎁') === 0; // مكافأة إحالة (باقة مجانية) لا تنتظر سداداً
                 const card = r => `
-                    <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm">
-                        <div class="flex items-center justify-between gap-2 mb-1"><b class="text-sm text-slate-800">${escPkg(r.packageName)}</b><span class="text-sm font-black text-indigo-600">${escPkg(r.price)} ريال</span></div>
+                    <div class="bg-white border ${isRewardReq(r) ? 'border-emerald-300' : 'border-slate-200'} rounded-2xl p-3 shadow-sm">
+                        <div class="flex items-center justify-between gap-2 mb-1"><b class="text-sm text-slate-800">${escPkg(r.packageName)}</b>${isRewardReq(r) ? '<span class="text-sm font-black text-emerald-600">مجانية</span>' : `<span class="text-sm font-black text-indigo-600">${escPkg(r.price)} ريال</span>`}</div>
                         <p class="text-[11px] text-slate-600 font-bold leading-snug">${escPkg(r.unified || ('ملف #' + r.refId))}</p>
                         <p class="text-[10px] text-slate-400 font-bold mt-0.5">#${escPkg(r.refId)} · ${escPkg(r.reqId)} · ${escPkg(r.date)}</p>
                         ${r.banned ? '<p class="text-[10px] font-black text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1 mt-1">🚫 حساب محظور: تفعيل الباقة المطلوبة (أو أغلى منها) يرفع الحظر تلقائياً</p>' : ''}
                         <div class="flex gap-2 mt-2">
                             <a href="${pkgWaLink(r.phone)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black flex items-center gap-1"><i class="fab fa-whatsapp"></i> واتساب</a>
-                            <button type="button" onclick="activatePackageRequest('${escPkg(r.reqId)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">✅ تم السداد ← تفعيل</button>
+                            <button type="button" onclick="activatePackageRequest('${escPkg(r.reqId)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">${isRewardReq(r) ? '🎁 تفعيل المكافأة' : '✅ تم السداد ← تفعيل'}</button>
                             <button type="button" onclick="cancelPackageRequest('${escPkg(r.reqId)}', this)" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-[11px] font-black">إلغاء</button>
                         </div>
                     </div>`;
