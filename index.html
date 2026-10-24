@@ -681,6 +681,20 @@
         </div>
     </div>
 
+    <!-- 🟢 [2026-10-24] نافذة تهنئة الاعتماد: تظهر مرة واحدة حين يتحول ملف العضو من "قيد المراجعة" إلى معتمد (noteStatusForApproval) -->
+    <div id="approvalCelebrationModal" class="fixed inset-0 z-[190] items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 px-4">
+        <div class="max-h-[92dvh] overflow-y-auto bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-auto shadow-2xl text-center flex flex-col gap-2">
+            <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-1 shadow-sm border border-emerald-100 text-4xl">🎉</div>
+            <h3 class="text-xl font-black text-emerald-700">تم اعتماد ملفك!</h3>
+            <p class="text-sm font-bold text-slate-500">ملفك رقم <span id="approvalCelebrationRef" class="text-indigo-700" dir="ltr"></span></p>
+            <p class="text-sm text-slate-600 leading-relaxed font-medium mt-1">ملفك الآن ظاهر للمرشحين، ويمكنك إرسال طلبات التواصل مباشرة، بلا حاجة لتسجيل الخروج والدخول.</p>
+            <div class="flex flex-col gap-2 mt-4">
+                <button onclick="closeApprovalCelebration(true)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">✨ تصفّح المرشحين لك</button>
+                <button onclick="closeApprovalCelebration(false)" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">حسناً</button>
+            </div>
+        </div>
+    </div>
+
     <div id="unifiedProfileModal" class="fixed inset-0 z-[180] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 p-4">
         <div class="bg-[#f8fafc] w-full max-w-lg max-h-[90vh] rounded-[2rem] flex flex-col shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 relative">
             <div class="p-4 sm:p-5 bg-white flex items-center justify-between border-b border-slate-100 shrink-0">
@@ -1276,8 +1290,45 @@
 
         // 🟢 تحدّث شارة حالة الملف ("قيد المراجعة" ← "نشط" مثلاً) فور وصول حالة جديدة من الخادم، بدل انتظار عودة المستخدم للرئيسية أو تسجيل خروج/دخول جديد.
         // مستقلة عمداً عن updateAuthUI() الثقيلة (تلك تستدعي fetchGlobalWalletBalance بنفسها، فاستدعاؤها من هنا كان سيسبب حلقة).
-        function updateStatusBadgeDisplay(status) {
+        function isPendingProfileStatus(status) {
+            const s = (status || '').toString();
+            return s.includes('مراجعة') || s.includes('انتظار') || s.includes('جديد');
+        }
+
+        // 🟢 [2026-10-24] تهنئة الاعتماد: نُعلِّم الملف حين نراه "قيد المراجعة"، فإن رأيناه بعدها معتمداً (من أي مسار: فحص دوري/مزامنة/صفحة فرعية)
+        // تظهر نافذة "تم اعتماد ملفك" مرة واحدة، فيتواصل فوراً بلا خروج ودخول. silent = لا نافذة (العميل في طريقه للتواصل أصلاً).
+        function noteStatusForApproval(status, silent) {
+            const refId = localStorage.getItem('active_profile_refid');
+            if (!status || !refId || refId === 'null' || refId === 'undefined') return;
+            const key = 'pending_seen_' + refId;
+            try {
+                if (isPendingProfileStatus(status)) { localStorage.setItem(key, '1'); return; }
+                if (status.includes('محذوف') || status.includes('تم الزواج')) { localStorage.removeItem(key); return; }
+                if (localStorage.getItem(key) === '1') {
+                    localStorage.removeItem(key);
+                    if (!silent) showApprovalCelebration(refId);
+                }
+            } catch (e) {}
+        }
+
+        function showApprovalCelebration(refId) {
+            const modal = document.getElementById('approvalCelebrationModal');
+            if (!modal) return;
+            const refEl = document.getElementById('approvalCelebrationRef');
+            if (refEl) refEl.innerText = '#' + refId;
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeApprovalCelebration(goSmart) {
+            const modal = document.getElementById('approvalCelebrationModal');
+            if (modal) { modal.classList.add('opacity-0'); setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300); }
+            if (goSmart) handleSmartNavigation();
+        }
+
+        function updateStatusBadgeDisplay(status, silent) {
             if (!status) return;
+            noteStatusForApproval(status, silent);
             const userStatusEl = document.getElementById('heroUserStatus');
             if (!userStatusEl) return;
             userStatusEl.innerText = status;
@@ -1524,6 +1575,7 @@
                     if (!name || name === 'null' || name === 'undefined' || name.trim() === '') { name = 'صاحب الحساب'; }
                     const shortName = name.split(' ')[0];
                     const displayStatus = userStatus || 'قيد المراجعة';
+                    if (userStatus) noteStatusForApproval(userStatus); // تهنئة الاعتماد إن تغيّرت الحالة من صفحة فرعية
 
                     if (userNameEl) userNameEl.innerText = shortName;
                     if (heroGreetingEl) heroGreetingEl.innerText = "مرحباً بك";
@@ -1702,6 +1754,8 @@
             if (res && res.success && res.profileStatus) { localStorage.setItem('active_profile_status', res.profileStatus); updateStatusBadgeDisplay(res.profileStatus); }
         }
         setInterval(() => { if (!document.hidden) checkMyProfileStatus(); }, 120000);
+        // 🟢 [2026-10-24] ما دام الملف قيد المراجعة نفحص كل 40 ثانية (قراءة مخبّأة رخيصة في الخادم) فتظهر تهنئة الاعتماد بسرعة
+        setInterval(() => { if (!document.hidden && isPendingProfileStatus(localStorage.getItem('active_profile_status'))) checkMyProfileStatus(); }, 40000);
         document.addEventListener('visibilitychange', () => { if (!document.hidden) checkMyProfileStatus(); });
         setTimeout(checkMyProfileStatus, 1500);
 
@@ -2255,8 +2309,26 @@
             window.feePledgeAccepted = false;
 
             const userStatus = localStorage.getItem('active_profile_status') || window.userStatusParam || '';
-            if (userStatus.includes('مراجعة') || userStatus.includes('انتظار') || userStatus.includes('جديد')) {
-                showToast("عفواً، ملفك قيد المراجعة من الإدارة. لا يمكنك إرسال طلبات تواصل حالياً.");
+            if (isPendingProfileStatus(userStatus)) {
+                // 🟢 [2026-10-24] الحالة المحفوظة قد تكون قديمة (اعتمدت الإدارة الملف للتو): نسأل الخادم حياً قبل الرفض، فلا حاجة لخروج ودخول
+                if (window.__statusRecheckBusy) return;
+                window.__statusRecheckBusy = true;
+                showToast("⏳ لحظات، نتحقق من حالة ملفك...");
+                fetchFromGAS({ action: 'getProfileStatus', phone: phone, requesterRefId: localStorage.getItem('active_profile_refid') || '' }).then(res => {
+                    window.__statusRecheckBusy = false;
+                    if (res && res.success && res.profileStatus) {
+                        localStorage.setItem('active_profile_status', res.profileStatus);
+                        window.userStatusParam = res.profileStatus;
+                        updateStatusBadgeDisplay(res.profileStatus, true);
+                        if (!isPendingProfileStatus(res.profileStatus)) {
+                            showToast("✅ تم اعتماد ملفك، يمكنك التواصل الآن");
+                            openMasterContactModal(refId, isDirectContact, isSpecialCondition, hasPreviousContact);
+                            return;
+                        }
+                    }
+                    if (res && (res.banned || res.forceLogout)) return; // fetchFromGAS تتولى شاشة الإيقاف/الإخراج
+                    showToast(res && res.success ? "عفواً، ملفك قيد المراجعة من الإدارة. سيُفعَّل التواصل فور اعتماده." : "تعذر التحقق الآن، حاول بعد قليل.");
+                }).catch(() => { window.__statusRecheckBusy = false; showToast("تعذر التحقق الآن، حاول بعد قليل."); });
                 return;
             }
 

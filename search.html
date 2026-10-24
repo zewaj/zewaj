@@ -2216,7 +2216,8 @@
                     profileStatus = window.top.fullDetails.profileStatus || '';
                 }
 
-                if (profileStatus === 'قيد المراجعة' || profileStatus === 'انتظار') {
+                // 🟢 [2026-10-24] داخل القشرة لا نرفض هنا بحالة محفوظة قد تكون قديمة: القشرة تتحقق من الخادم حياً قبل الرفض (اعتُمد الملف للتو)
+                if (window.self === window.top && (profileStatus === 'قيد المراجعة' || profileStatus === 'انتظار')) {
                     const toast = document.getElementById('customToast');
                     if (toast) {
                         document.getElementById('customToastText').innerText = "عفواً، ملفك حالياً قيد المراجعة من الإدارة. يمكنك استعراض المطابقات، وسيتم تفعيل خاصية طلب التواصل فور اعتماد ملفك.";
