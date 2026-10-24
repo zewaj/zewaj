@@ -90,6 +90,8 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- قوائم النموذج المشتركة مع التسجيل الجماعي للأسرة (sry/00/admin_batch_register.html) -->
+    <script src="form_options.js?v=2026-10-24c"></script>
     <style>
 /* 
 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
@@ -1223,6 +1225,7 @@ function closeTermsModal() {
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // 
         window.onload = () => { 
+            applySharedFixedOptions();
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'admin_edit' && urlParams.get('targetPhone')) {
                 adminToken = localStorage.getItem('adminToken');
@@ -1458,7 +1461,8 @@ function closeTermsModal() {
 // 🟥🟥🟥🟥🟥 القسم 28: جافاسكريبت - تهيئة القوائم المنسدلة وخيار "أخرى" 🟥🟥🟥🟥🟥
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // 
-        const fallbackDropdowns = {
+        // 🟢 [2026-10-24] المصدر الآن form_options.js (مشترك مع التسجيل الجماعي)؛ النسخة المكتوبة هنا احتياط فقط إن لم يُحمَّل الملف
+        const fallbackDropdowns = (window.FormOptions && window.FormOptions.FALLBACK) || {
             residenceCountries: ["السعودية", "الإمارات", "الكويت", "قطر", "البحرين", "عمان", "اليمن", "مصر", "الأردن", "سوريا", "لبنان", "فلسطين", "العراق", "السودان", "المغرب", "الجزائر", "تونس", "ليبيا", "تركيا", "باكستان", "الهند", "إندونيسيا", "ماليزيا", "الفلبين", "أمريكا", "أوروبا"],
             regionsData: {
                 "منطقة الرياض": ["الرياض", "الخرج", "المجمعة", "الدوادمي", "الزلفي", "وادي الدواسر", "عفيف", "شقراء", "القويعية", "حريملاء", "الأفلاج", "ضرماء"],
@@ -1556,6 +1560,36 @@ function closeTermsModal() {
                     }
                 } catch(e) {}
             } catch (e) {} finally { clearTimeout(timeoutId); }
+        }
+
+        // 🟢 [2026-10-24] القوائم الثابتة (ليست في ورقة خيارات_القوائم) تُملأ من form_options.js لتطابق صفحة التسجيل الجماعي.
+        // الخيارات المكتوبة في HTML تبقى احتياطاً فقط إن لم يُحمَّل الملف؛ أي تعديل على هذه القوائم يتم في form_options.js.
+        function applySharedFixedOptions() {
+            if (!window.FormOptions) return;
+            const FX = window.FormOptions.FIXED;
+            const fill = (id, placeholder, items, optional) => {
+                const el = document.getElementById(id); if (!el) return;
+                const cur = el.value;
+                el.innerHTML = `<option value="" ${optional ? '' : 'disabled '}selected>${placeholder}</option>` + items.map(it => { const [v, t] = Array.isArray(it) ? it : [it, it]; return `<option value="${v}">${t}</option>`; }).join('');
+                if (cur) el.value = cur;
+            };
+            fill('relation', '-- اختر الصلة --', FX.relations.map(r => [r, FX.relationLabels[r] || r]));
+            fill('originOutside', '-- حدد الأصول المعروفة بالخارج --', FX.outsideOrigins);
+            fill('acceptMarried', '-- تقبلين معدد؟ --', FX.acceptMarried);
+            fill('monthlyIncome', '-- حدد النطاق --', FX.monthlyIncome);
+            fill('hairLength', '-- اختر --', FX.hairLength);
+            fill('hairTexture', '-- اختر --', FX.hairTexture);
+            fill('bodyShape', '-- غير محدد --', FX.bodyShape, true);
+            fill('howHeard', '-- اختر الإجابة --', FX.howHeard);
+            // خانات الاشتراطات/الظروف الخاصة: نفس التنسيق الحالي (يُنسخ من أول خانة موجودة)
+            const rebuildChecks = (container, name, items) => {
+                if (!container) return; const sample = container.querySelector('label'); if (!sample) return;
+                const lblCls = sample.className, inCls = sample.querySelector('input').className;
+                container.innerHTML = items.map(([v, t]) => `<label class="${lblCls}"><input type="checkbox" name="${name}" value="${v}" class="${inCls}"> ${t}</label>`).join('');
+            };
+            const msw = document.getElementById('menSpecialSpecsWrapper');
+            rebuildChecks(msw ? msw.querySelector('.grid') : null, 'menSpecOpts', FX.menSpecialOpts);
+            rebuildChecks(document.getElementById('womenSpecialSpecsWrapper'), 'womenAltMarriage', FX.womenSpecialOpts);
         }
 
         function populateSharedDropdowns() {
@@ -1734,7 +1768,8 @@ function closeTermsModal() {
                 if(div) div.classList.remove('hidden'); 
                 if(sel) {
                     sel.innerHTML = '<option value="" disabled selected>-- اختر الحضانة --</option>';
-                    if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
+                    if(window.FormOptions) { const FXc = window.FormOptions.FIXED; sel.innerHTML += (s.includes('أرمل') ? FXc.custodyWidowed : FXc.custodyDivorced).map(c => `<option value="${c}">${c}</option>`).join(''); } // 🟢 من form_options.js
+                    else if(s.includes('أرمل')) { sel.innerHTML += `<option value="في حضانتي">في حضانتي</option><option value="مع الأقارب">مع الأقارب</option><option value="مستقلين">مستقلين</option>`; } else { sel.innerHTML += `<option value="في حضانة الأم">في حضانة الأم</option><option value="في حضانة الأب">في حضانة الأب</option><option value="مستقلين">مستقلين</option>`; }
                 }
             } else { if(div) div.classList.add('hidden'); }
             saveDraft();
@@ -1822,7 +1857,8 @@ function closeTermsModal() {
             const hijabIcon = `🧕`;
             const maskIcon = `😷`;
 
-            if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
+            if (window.FormOptions) { const st = window.FormOptions.smartTagsFor(!isMale, nat); myTags = st.my.slice(); partnerTags = st.partner.slice(); } // 🟢 من form_options.js
+            else if (isMale && isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "أملك سكن مستقل", "رجل أعمال", "محب للاستقرار", "الأم غير سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "قبيلية", "غير قبيلية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
             else if (isMale && !isSaudi) { myTags = ["محافظ / ملتزم", "مدخن", "رياضي", "مقيم نظامي", "مستثمر", "مواليد السعودية", "الأم سعودية"]; partnerTags = ["سعودية", "خليجية", "غير سعودية", "منقبة", "محجبة", "ربة منزل", "موظفة غير مختلط"]; }
             else if (!isMale && isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم غير سعودية", "موظفة مختلط", "منقبة", "محجبة", "كمامة"]; partnerTags = ["سعودي", "خليجي", "غير سعودي", "قبيلي", "غير قبيلي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
             else if (!isMale && !isSaudi) { myTags = ["محافظة / ملتزمة", "مدخنة", "أقود سيارة", "طباخة ماهرة", "الأم سعودية", "مواليد المملكة", "إقامة نظامية", "أم مواطن", "موظفة غير مختلط", "منقبة", "محجبة", "كمامة"]; partnerTags = ["خليجي", "سعودي", "غير مدخن", "سكن مستقل", "يسمح بالقيادة", "يسمح بالوظيفة", "أعزب", "بدون أبناء"]; }
