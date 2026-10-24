@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل أسرة دفعة واحدة</title>
+<script src="https://cdn.tailwindcss.com/3.4.5"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="../../form_options.js?v=2026-10-24c"></script>
+<style>
+  body { font-family: 'Tajawal', sans-serif; background:#f3f4f6; }
+  .inp { width:100%; padding:.55rem .7rem; border:1px solid #d1d5db; border-radius:.75rem; font-size:12px; background:#fff; outline:none; }
+  .inp:focus { box-shadow:0 0 0 2px #10b98155; border-color:#10b981; }
+  .inp.bad, .pill.bad button { border-color:#f87171; background:#fef2f2; }
+  .lbl { display:block; font-size:11px; font-weight:700; color:#374151; margin-bottom:.25rem; }
+  .lbl small { font-weight:400; color:#9ca3af; }
+  .pill { display:flex; gap:.35rem; }
+  .pill button { flex:1; padding:.45rem; border:1px solid #d1d5db; border-radius:.7rem; font-size:12px; font-weight:700; background:#fff; color:#4b5563; }
+  .pill button.on { background:#059669 !important; border-color:#059669; color:#fff; }
+  .inh { display:flex; align-items:center; gap:.4rem; padding:.45rem .6rem; border-radius:.7rem; background:#f9fafb; border:1px dashed #d1d5db; font-size:11px; color:#6b7280; }
+  .inh b { color:#374151; font-weight:700; }
+  .inh button { margin-inline-start:auto; font-size:10px; font-weight:700; color:#2563eb; white-space:nowrap; }
+  .ovr { border:1px solid #fcd34d; background:#fffbeb; border-radius:.8rem; padding:.6rem; }
+  .chip { display:flex; align-items:center; gap:.35rem; padding:.4rem .75rem; border-radius:999px; border:1px solid #e5e7eb; background:#fff; font-size:12px; font-weight:700; white-space:nowrap; color:#374151; }
+  .chip.active { background:#065f46; border-color:#065f46; color:#fff; }
+  .dot { width:8px; height:8px; border-radius:50%; }
+  .skin { padding:.35rem .7rem; border-radius:.5rem; font-size:10px; font-weight:700; border:2px solid transparent; box-shadow:0 1px 2px #0002; }
+  .skin.on { border-color:#059669; outline:2px solid #a7f3d0; }
+  .skins.bad { padding:.35rem; border:1px solid #f87171; border-radius:.7rem; background:#fef2f2; }
+  /* الجوال: بطاقة واحدة ظاهرة؛ الشاشة العريضة: كل البطاقات أعمدة متجاورة */
+  .member-card { display:none; }
+  .member-card.active { display:block; }
+  /* التنقل بالسحب: البطاقة تتبع الإصبع، والتالية تدخل من جهة السحب (RTL: التالي من اليسار) */
+  #cards { touch-action: pan-y; overflow-x: clip; }
+  .member-card.enter-next { animation: enterNext .28s cubic-bezier(.2,.8,.2,1); }
+  .member-card.enter-prev { animation: enterPrev .28s cubic-bezier(.2,.8,.2,1); }
+  .member-card.edge-bounce { animation: edgeBounce .35s ease; }
+  @keyframes enterNext { from { transform: translateX(-36px); opacity:.2; } to { transform:none; opacity:1; } }
+  @keyframes enterPrev { from { transform: translateX(36px); opacity:.2; } to { transform:none; opacity:1; } }
+  @keyframes edgeBounce { 30% { transform: translateX(10px); } 60% { transform: translateX(-6px); } }
+  .pager button { width:28px; height:28px; border-radius:999px; border:1px solid #e5e7eb; background:#fff; font-weight:800; color:#065f46; display:flex; align-items:center; justify-content:center; }
+  .pager button:disabled { opacity:.35; }
+  #swipeHint { transition: opacity .4s; }
+  @media (prefers-reduced-motion: reduce) { .member-card.enter-next, .member-card.enter-prev, .member-card.edge-bounce { animation:none; } }
+  @media (min-width:1024px) {
+    #cards { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(340px, 1fr); gap:1rem; overflow-x:auto; padding-bottom:.5rem; align-items:start; }
+    .member-card { display:block; }
+    .member-card.active { outline:2px solid #059669; }
+  }
+  .sec { font-size:11px; font-weight:800; color:#065f46; margin:.9rem 0 .5rem; display:flex; align-items:center; gap:.4rem; }
+  .sec::after { content:''; flex:1; height:1px; background:#d1fae5; }
+</style>
+</head>
+<body class="pb-28">
+<div id="noAuth" class="hidden fixed inset-0 z-50 bg-gray-100 flex items-center justify-center p-6">
+  <div class="bg-white rounded-2xl shadow p-6 text-center max-w-sm">
+    <div class="text-4xl mb-2">🔐</div><h2 class="font-extrabold text-gray-800 mb-1">هذه الصفحة للإدارة فقط</h2>
+    <p class="text-[12px] text-gray-500 mb-4">سجّل الدخول من لوحة الإدارة في هذا المتصفح أولاً ثم عد إلى هنا.</p>
+    <a href="admin.html" class="inline-block bg-emerald-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl">لوحة الإدارة</a>
+  </div>
+</div>
+<div id="draftBar" class="hidden max-w-6xl mx-auto px-4 mt-3">
+  <div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center gap-2 text-[12px] text-amber-900">
+    <span class="flex-1">📝 توجد مسودة أسرة لم تُحفظ (<span id="draftWhen"></span>).</span>
+    <button id="draftRestore" class="font-bold bg-amber-500 text-white px-3 py-1 rounded-lg">استعادتها</button>
+    <button id="draftDiscard" class="font-bold text-amber-700 px-2">تجاهل</button>
+  </div>
+</div>
+
+<header class="bg-gradient-to-l from-emerald-800 to-emerald-600 text-white px-4 py-4 shadow">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+    <div>
+      <h1 class="text-base font-extrabold">👨‍👩‍👧‍👦 تسجيل أسرة دفعة واحدة</h1>
+      <p class="text-[11px] text-emerald-100 mt-0.5">البيانات المشتركة تُكتب مرة، وكل فرد يرثها تلقائياً ما لم تفصله</p>
+    </div>
+    <div class="text-left shrink-0">
+      <div class="flex gap-1.5 justify-end">
+        <a href="admin_search.html" class="text-[11px] bg-white/15 hover:bg-white/25 font-bold px-2.5 py-1.5 rounded-lg">مركز البيانات</a>
+        <a href="admin.html" class="text-[11px] bg-white/15 hover:bg-white/25 font-bold px-2.5 py-1.5 rounded-lg">المراسلات</a>
+      </div>
+      <div id="listsSource" class="text-[10px] text-emerald-100 mt-1"></div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 mt-4 space-y-4">
+  <section class="bg-white rounded-2xl shadow-sm border border-gray-200">
+    <button id="sharedToggle" class="w-full flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <span class="flex items-center gap-2 text-sm font-bold text-gray-800"><span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center">1</span>بيانات العائلة المشتركة</span>
+      <span id="sharedSummary" class="text-[11px] text-gray-500 truncate max-w-[55%]"></span>
+    </button>
+    <div id="sharedBody" class="p-4"></div>
+  </section>
+
+  <section class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+      <h2 class="text-sm font-bold text-gray-800">أفراد الأسرة</h2>
+      <span id="memberCount" class="text-[11px] text-gray-500"></span>
+      <div id="pager" class="pager ms-auto flex items-center gap-1.5 text-[12px] font-bold text-gray-600"></div>
+    </div>
+    <div id="chips" class="flex gap-2 overflow-x-auto pb-2 mb-3"></div>
+    <div id="swipeHint" class="hidden lg:!hidden -mt-1 mb-3 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-1.5 text-center">👆 اسحب البطاقة يميناً للفرد التالي ويساراً للسابق</div>
+    <div id="cards"></div>
+  </section>
+</main>
+
+<div class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,.06)] z-30">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div id="footerStatus" class="text-[12px] font-bold text-gray-700 flex-1"></div>
+    <button id="reviewBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl">مراجعة وحفظ الأسرة</button>
+  </div>
+</div>
+
+<div id="reviewModal" class="fixed inset-0 bg-black/50 z-40 hidden items-end sm:items-center justify-center">
+  <div class="bg-white w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl max-h-[90dvh] flex flex-col">
+    <div class="px-4 py-3 border-b flex items-center justify-between">
+      <h3 class="font-extrabold text-gray-800">مراجعة قبل الحفظ</h3>
+      <button onclick="closeReview()" class="text-gray-400 text-xl leading-none">×</button>
+    </div>
+    <div id="reviewBody" class="p-4 overflow-y-auto space-y-3"></div>
+    <div class="p-3 border-t flex gap-2">
+      <button onclick="closeReview()" class="flex-1 py-2.5 rounded-xl border font-bold text-sm text-gray-600">رجوع للتعديل</button>
+      <button id="saveAllBtn" onclick="saveFamily()" class="flex-[2] py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm">حفظ الأسرة</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+const FO = window.FormOptions, FX = FO.FIXED;
+const ADMIN_TOKEN = (() => { try { return localStorage.getItem('adminToken') || ''; } catch (e) { return ''; } })();
+const MAX_MEMBERS = 8; // نفس BATCH_REGISTER_MAX في الخادم
+const DRAFT_KEY = 'admin_batch_register_draft';
+const DEFAULT_FEES = { menSpecialAdvance: 1000, menMatch: 3000, womenMatch: 2000, directFee: 150, directFeeSpecialWomen: 250 }; // نفس DEFAULT_PLATFORM_FEES في register.html
+let platformFees = DEFAULT_FEES;
+// خيار خاص بالتسجيل الجماعي فقط (لا يظهر في register.html) ومختار افتراضياً
+const FIELD_HOW_HEARD = 'تسجيل ميداني';
+const HOW_HEARD_OPTS = [[FIELD_HOW_HEARD, 'تسجيل ميداني (الوسيط مع الأسرة مباشرة)']].concat(FX.howHeard);
+// أسماء الحقول كما تظهر للأدمن، لعرض ما ينقص بالاسم بدل العدد
+const FIELD_NAMES = { phone:'رقم الجوال', tribal:'الانتماء القبلي', tribeName:'اسم القبيلة', familyName:'اسم العائلة', nationality:'الجنسية',
+  originLoc:'مكان الأصول', originIn:'منطقة الأصول', originOut:'الأصول خارج المملكة', resLoc:'مكان الإقامة', city:'المدينة', country:'دولة الإقامة',
+  howHeard:'كيف وصلت لصفحتنا', name:'الاسم', relation:'صلة القرابة', gender:'الجنس', marital:'الحالة الاجتماعية', mType:'نوع الزواج',
+  d:'يوم الميلاد', mo:'شهر الميلاد', y:'سنة الميلاد', height:'الطول', weight:'الوزن', skin:'لون البشرة', education:'التعليم', job:'الوظيفة',
+  customJob:'المسمى الوظيفي', partnerSpecs:'شروط الشريك', acceptMarried:'خيارات التعدد', income:'الدخل الشهري', custody:'حضانة الأبناء' };
+const fieldName = k => k.startsWith('own.') ? FIELD_NAMES[k.slice(4)] + ' (الخاص بالفرد)' : (FIELD_NAMES[k] || k);
+
+// مجموعات الحقول القابلة للوراثة: كل مجموعة تُفصل للفرد كاملة
+const GROUPS = {
+  phone:      { label:'الجوال',   fields:['cc','phone'] },
+  lineage:    { label:'النسب',    fields:['tribal','tribeName','familyName'] },
+  nationality:{ label:'الجنسية',  fields:['nationality'] },
+  origin:     { label:'الأصول',   fields:['originLoc','originIn','originOut'] },
+  residence:  { label:'الإقامة',  fields:['resLoc','city','country','worldCity'] },
+};
+
+// tribal يُحفظ "yes"/"no" والجنسية بصيغة المذكر، ويُحوَّلان لصيغة جنس كل فرد عند العرض والحفظ
+const state = {
+  shared: { cc:'+966', phone:'', tribal:'', tribeName:'', familyName:'', nationality:'', originLoc:'', originIn:'', originOut:'', resLoc:'', city:'', country:'', worldCity:'', howHeard:FIELD_HOW_HEARD },
+  members: [], active: 0, sharedOpen: true, showErrors: false,
+};
+let uid = 0;
+const PERSONAL_COPY = ['gender','marital','mType','acceptMarried','education','job','customJob','income','skin','cal'];
+function newMember(copyFrom) {
+  const m = { id: ++uid, overrides:{}, own:{}, name:'', relation:'', gender:'', marital:'', children:'', custody:'', mType:'', acceptMarried:'',
+    cal:'hijri', d:'', mo:'', y:'', height:'', weight:'', skin:'', hairLength:'', hairTexture:'', bodyShape:'',
+    education:'', job:'', customJob:'', income:'', partnerSpecs:'', additionalInfo:'', secretInfo:'', specialOpts:[], myTags:[], partnerTags:[] };
+  if (copyFrom) {
+    PERSONAL_COPY.forEach(k => m[k] = copyFrom[k]);
+    m.specialOpts = copyFrom.specialOpts.slice();
+    m.overrides = JSON.parse(JSON.stringify(copyFrom.overrides));
+    m.own = JSON.parse(JSON.stringify(copyFrom.own));
+  }
+  return m;
+}
+state.members.push(newMember(), newMember());
+
+// ================= أدوات =================
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const opts = (list, val, ph) => `<option value="">${ph || '-- اختر --'}</option>` + list.map(o => {
+  const [v, t] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${v===val?'selected':''}>${esc(t)}</option>`; }).join('');
+const isF = m => m.gender === 'أنثى';
+const groupOf = key => Object.keys(GROUPS).find(k => GROUPS[k].fields.includes(key));
+function eff(m, key) { const g = groupOf(key); return (g && m.overrides[g]) ? (m.own[key] ?? '') : state.shared[key]; }
+const accountOf = m => eff(m,'phone') ? eff(m,'cc') + eff(m,'phone') : '';
+function view(m) { const o = {}; Object.values(GROUPS).forEach(G => G.fields.forEach(f => o[f] = eff(m, f))); return o; }
+
+// صيغة الانتماء القبلي من قائمة الشيت بحسب الجنس (العنصر الذي لا يحوي "غير" = قبيلي)
+function tribalLabel(code, female) {
+  if (!code) return '';
+  const list = FO.tribal(female);
+  const yes = list.find(x => !x.includes('غير')) || (female ? 'قبيلية' : 'قبيلي');
+  const no = list.find(x => x.includes('غير')) || (female ? 'غير قبيلية' : 'غير قبيلي');
+  return code === 'yes' ? yes : no;
+}
+const natFor = (val, female) => female ? FO.genderize(val, true, 'maleNationalities', 'femaleNationalities') : val;
+const isSaudiNat = v => /سعودي/.test(v || '');
+function lineageText(o, female) {
+  if (!o.tribal) return '';
+  const lbl = female === undefined ? tribalLabel(o.tribal,false) + ' / ' + tribalLabel(o.tribal,true) : tribalLabel(o.tribal, female);
+  return [lbl, o.tribeName, o.familyName].filter(Boolean).join(' · ');
+}
+function residenceText(o) { return o.resLoc === 'خارج السعودية' ? [o.country, o.worldCity].filter(Boolean).join(' - ') : (o.city || ''); }
+function originText(o) { return o.originLoc === 'من داخل المملكة' ? (o.originIn || '') : (o.originOut || ''); }
+function natPairText(v) { return v ? v + ' / ' + FO.genderize(v, true, 'maleNationalities', 'femaleNationalities') : ''; }
+function groupText(g, o, female) {
+  if (g==='phone') return o.phone ? o.cc + ' ' + o.phone : '';
+  if (g==='lineage') return lineageText(o, female);
+  if (g==='nationality') return female === undefined ? natPairText(o.nationality) : natFor(o.nationality, female);
+  if (g==='origin') return originText(o);
+  if (g==='residence') return residenceText(o);
+}
+function ageOf(m) { if (!m.y) return ''; return FX.currentYear[m.cal] - (+m.y); }
+
+// ================= التحقق (نفس الحقول الإلزامية في register.html) =================
+function groupMissing(o, g) {
+  const miss = [];
+  if (g==='phone' && !(o.cc === '+966' ? /^5\d{8}$/ : /^\d{6,12}$/).test(o.phone || '')) miss.push('phone');
+  if (g==='lineage') { if (!o.tribal) miss.push('tribal'); else if (o.tribal==='yes' ? !o.tribeName : !o.familyName) miss.push(o.tribal==='yes'?'tribeName':'familyName'); }
+  if (g==='nationality' && !o.nationality) miss.push('nationality');
+  if (g==='origin') { if (!o.originLoc) miss.push('originLoc');
+    else if (o.originLoc==='من داخل المملكة') { if (!o.originIn) miss.push('originIn'); }
+    else if (!o.originOut) miss.push('originOut'); }
+  if (g==='residence') { if (!o.resLoc) miss.push('resLoc'); else if (o.resLoc==='داخل السعودية' ? !o.city : !o.country) miss.push(o.resLoc==='داخل السعودية'?'city':'country'); }
+  return miss;
+}
+function sharedMissing() { return Object.keys(GROUPS).flatMap(g => groupMissing(state.shared, g)).concat(state.shared.howHeard ? [] : ['howHeard']); }
+function memberMissing(m) {
+  const miss = [];
+  ['name','relation','gender','marital','mType','d','mo','y','height','weight','skin','education','job','partnerSpecs'].forEach(k => { if (!m[k]) miss.push(k); });
+  if (m.job === 'أخرى' && !m.customJob) miss.push('customJob');
+  if (isF(m) && !m.acceptMarried) miss.push('acceptMarried');
+  if (m.gender==='ذكر' && !m.income) miss.push('income');
+  if (needsCustody(m) && !m.custody) miss.push('custody');
+  Object.keys(GROUPS).forEach(g => { if (m.overrides[g]) groupMissing(m.own, g).forEach(f => miss.push('own.'+f)); });
+  return miss;
+}
+const needsCustody = m => (parseInt(m.children) || 0) > 0 && /مطلق|أرمل/.test(m.marital);
+function memberWarnings(m) {
+  const w = [], ph = accountOf(m);
+  const sameAcc = state.members.filter(x => accountOf(x) === ph);
+  if (m.relation==='أنا' && sameAcc.filter(x => x.relation==='أنا').length > 1) w.push('أكثر من فرد بصلة «أنا» على نفس الجوال');
+  ['أبي','أمي'].forEach(r => { if (m.relation===r && sameAcc.filter(x => x.relation===r).length > 1) w.push('صلة «' + r + '» مكررة على نفس الجوال'); });
+  if (m.overrides.phone && m.relation && m.relation!=='أنا') w.push('جواله مستقل: الأصل أن تكون صلته «أنا»');
+  if (m.relation==='أبي' && isF(m) || m.relation==='أمي' && m.gender==='ذكر' || /ابني|أخي/.test(m.relation) && isF(m) || /ابنتي|أختي/.test(m.relation) && m.gender==='ذكر') w.push('صلة القرابة لا تطابق الجنس');
+  return w;
+}
+
+// ================= حقول المجموعات (تُستعمل للمشترك وللفرد المفصول) =================
+function bad(o, k) { return state.showErrors && groupMissing(o, groupOf(k)).includes(k) ? 'bad' : ''; }
+function pills(scope, k, cur, items, o) {
+  return `<div class="pill ${bad(o,k)}">${items.map(([v,t]) => `<button type="button" class="${cur===v?'on':''}" data-set="${scope}" data-k="${k}" data-v="${esc(v)}">${esc(t)}</button>`).join('')}</div>`;
+}
+// female: undefined = المشترك (يعرض الصيغتين)
+function lineageFields(o, scope, female) {
+  const t = c => female === undefined ? tribalLabel(c,false) + ' / ' + tribalLabel(c,true) : tribalLabel(c, female);
+  return `<div><label class="lbl">الانتماء القبلي *</label>${pills(scope,'tribal',o.tribal,[['no',t('no')],['yes',t('yes')]],o)}</div>
+  ${o.tribal ? `<div class="grid grid-cols-2 gap-2">
+    ${o.tribal==='yes' ? `<div><label class="lbl">اسم القبيلة *</label><input class="inp ${bad(o,'tribeName')}" data-in="${scope}" data-k="tribeName" value="${esc(o.tribeName)}" placeholder="اكتب اسم القبيلة..."></div>` : ''}
+    <div class="${o.tribal==='yes'?'':'col-span-2'}"><label class="lbl">اسم العائلة ${o.tribal==='yes'?'<small>(اختياري)</small>':'*'} <small class="!text-emerald-600">(للوسيط فقط)</small></label><input class="inp ${bad(o,'familyName')}" data-in="${scope}" data-k="familyName" value="${esc(o.familyName)}" placeholder="اكتب اسم العائلة..."></div>
+  </div>` : ''}`;
+}
+function originFields(o, scope) {
+  const regions = Object.keys(FO.regions());
+  return `<div><label class="lbl">أين تقع أصول العائلة أو القبيلة؟ *</label>
+    ${pills(scope,'originLoc',o.originLoc,[['من داخل المملكة','من داخل المملكة'],['من خارج المملكة','من خارج المملكة']],o)}
+    ${o.originLoc==='من داخل المملكة' ? `<select class="inp mt-2 ${bad(o,'originIn')}" data-in="${scope}" data-k="originIn">${opts(regions,o.originIn,'-- حدد منطقة الأصول --')}</select>` : ''}
+    ${o.originLoc==='من خارج المملكة' ? `<select class="inp mt-2 ${bad(o,'originOut')}" data-in="${scope}" data-k="originOut">${opts(FX.outsideOrigins,o.originOut,'-- حدد الأصول المعروفة بالخارج --')}</select>` : ''}
+  </div>`;
+}
+function residenceFields(o, scope) {
+  const regions = FO.regions();
+  const cityOpts = '<option value="">-- اختر المدينة الحالية --</option>' + Object.keys(regions).map(r =>
+    `<optgroup label="${esc(r)}">${regions[r].map(c => FO.clean(c)).map(c => `<option ${c===o.city?'selected':''}>${esc(c)}</option>`).join('')}</optgroup>`).join('');
+  return `<div><label class="lbl">مكان الإقامة الحالية *</label>
+    ${pills(scope,'resLoc',o.resLoc,[['داخل السعودية','داخل السعودية'],['خارج السعودية','خارج السعودية']],o)}
+    ${o.resLoc==='داخل السعودية' ? `<select class="inp mt-2 ${bad(o,'city')}" data-in="${scope}" data-k="city">${cityOpts}</select>` : ''}
+    ${o.resLoc==='خارج السعودية' ? `<div class="grid grid-cols-2 gap-2 mt-2"><select class="inp ${bad(o,'country')}" data-in="${scope}" data-k="country">${opts(FO.countries().filter(c => c!=='السعودية'),o.country,'-- اختر دولة الإقامة --')}</select>
+      <input class="inp" data-in="${scope}" data-k="worldCity" value="${esc(o.worldCity)}" placeholder="المدينة (اختياري)"></div>` : ''}
+  </div>`;
+}
+function phoneField(o, scope) {
+  return `<div><label class="lbl">رقم الجوال (رقم التوثيق) *</label>
+    <div class="flex gap-2" dir="ltr"><select class="inp !w-[105px] shrink-0 bg-gray-50 font-mono" data-in="${scope}" data-k="cc">${FX.countryCodes.map(([v,t]) => `<option value="${v}" ${v===o.cc?'selected':''}>${t}</option>`).join('')}</select>
+    <input class="inp font-mono ${bad(o,'phone')}" inputmode="numeric" maxlength="12" data-in="${scope}" data-k="phone" value="${esc(o.phone)}" placeholder="5XXXXXXXX"></div></div>`;
+}
+function nationalityField(o, scope, female) {
+  const male = FO.nationalities(false);
+  const list = female === undefined ? male.map(v => [v, natPairText(v)]) : male.map(v => [v, natFor(v, female)]);
+  return `<div><label class="lbl">الجنسية *</label><select class="inp ${bad(o,'nationality')}" data-in="${scope}" data-k="nationality">${opts(list,o.nationality,'-- اختر الجنسية --')}</select></div>`;
+}
+const GROUP_FIELDS = { phone:phoneField, lineage:lineageFields, nationality:nationalityField, origin:originFields, residence:residenceFields };
+
+// ================= الرسم: المشترك =================
+function renderShared() {
+  const s = state.shared, body = document.getElementById('sharedBody');
+  body.style.display = state.sharedOpen ? '' : 'none';
+  body.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="space-y-3">
+        ${phoneField(s,'shared')}
+        <p class="text-[10px] text-gray-500 -mt-1">كل الأفراد على هذا الرقم يظهرون في لوحة عائلة واحدة. لفرد يريد رقماً مستقلاً اضغط «فصل» عند الجوال في بطاقته.</p>
+        <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2.5">${lineageFields(s,'shared')}</div>
+        ${nationalityField(s,'shared')}
+      </div>
+      <div class="space-y-3">
+        ${originFields(s,'shared')}
+        <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">${residenceFields(s,'shared')}</div>
+        <div><label class="lbl">كيف وصلت لصفحتنا؟ *</label><select class="inp ${state.showErrors && !s.howHeard ? 'bad':''}" data-in="shared" data-k="howHeard">${opts(HOW_HEARD_OPTS,s.howHeard,'-- اختر الإجابة --')}</select></div>
+      </div>
+    </div>
+    <p class="text-[10px] text-gray-400 mt-3">الانتماء القبلي والجنسية يُحفظان لكل فرد بصيغة جنسه تلقائياً (قبيلي/قبيلية، سعودي/سعودية).</p>`;
+  updateSharedSummary();
+}
+function updateSharedSummary() {
+  const s = state.shared;
+  const parts = [lineageText(s), residenceText(s), s.phone ? (s.cc === '+966' ? '0' + s.phone : s.cc + s.phone) : ''].filter(Boolean);
+  document.getElementById('sharedSummary').textContent = state.sharedOpen ? 'إخفاء ▲' : (parts.join(' · ') || 'اضغط للتعبئة') + ' ▼';
+}
+
+// ================= الرسم: بطاقات الأفراد =================
+function inheritedBlock(m, i) {
+  const female = m.gender ? isF(m) : undefined;
+  return Object.keys(GROUPS).map(g => {
+    if (m.overrides[g]) {
+      return `<div class="ovr space-y-2">
+        <div class="flex items-center text-[11px] font-bold text-amber-800">✂️ ${GROUPS[g].label} خاص بهذا الفرد
+          <button type="button" class="ms-auto text-[10px] text-blue-600" data-relink="${i}" data-g="${g}">↩︎ إرجاع للمشترك</button></div>
+        ${GROUP_FIELDS[g](m.own, 'own:'+i, female)}
+      </div>`;
+    }
+    const t = groupText(g, state.shared, female);
+    return `<div class="inh">🔗 <span>${GROUPS[g].label}:</span> <b>${t ? esc(t) : '<span class="text-red-400">لم يُعبأ في المشترك</span>'}</b>
+      <button type="button" data-unlink="${i}" data-g="${g}">فصل</button></div>`;
+  }).join('');
+}
+
+// الأزرار السريعة بحسب الجنس والجنسية الفعلية للفرد (نفس renderSmartTags في register.html)
+function tagsFor(m) { return FO.smartTagsFor(isF(m), natFor(eff(m,'nationality'), isF(m))); }
+function tagChips(m, i, key) {
+  const list = tagsFor(m)[key === 'myTags' ? 'my' : 'partner'];
+  return `<div class="flex flex-wrap gap-1 mb-2">${list.map(t => { const on = m[key].includes(t);
+    return `<button type="button" data-tog="${i}" data-k="${key}" data-v="${esc(t)}" class="px-2 py-1 rounded-full border text-[10px] font-bold ${on?'bg-emerald-600 border-emerald-600 text-white':'bg-white border-gray-300 text-gray-700'}">${FX.tagIcons[t]||''} ${esc(t)}</button>`; }).join('')}</div>`;
+}
+const selectedTags = (m, key) => m[key].filter(t => tagsFor(m)[key === 'myTags' ? 'my' : 'partner'].includes(t));
+function memberCard(m, i) {
+  const f = isF(m), e = state.showErrors ? memberMissing(m) : [];
+  const B = k => e.includes(k) ? 'bad' : '';
+  const cy = FX.currentYear[m.cal];
+  const years = Array.from({length:76}, (_,k) => String(cy - 15 - k));
+  const months = (m.cal==='hijri' ? FX.hijriMonths : FX.gregMonths).map((t,k) => [String(k+1), t]);
+  const age = ageOf(m), warns = memberWarnings(m);
+  const skins = FO.skins(f);
+  const jobs = FO.jobs(f).concat([['أخرى','+ أخرى (اكتب يدوياً)']]);
+  const relOpts = FX.relations.map(r => [r, FX.relationLabels[r] || r]);
+  const custody = /أرمل/.test(m.marital) ? FX.custodyWidowed : FX.custodyDivorced;
+  return `
+  <div class="member-card ${i===state.active?'active':''} bg-white border border-gray-200 rounded-2xl p-4" data-card="${i}">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="w-8 h-8 rounded-full ${f?'bg-pink-100 text-pink-700':m.gender?'bg-sky-100 text-sky-700':'bg-gray-100 text-gray-500'} flex items-center justify-center text-sm font-bold">${i+1}</span>
+      <div class="flex-1 min-w-0"><div class="mname font-bold text-sm text-gray-800 truncate">${esc(m.name) || 'فرد ' + (i+1)}</div>
+        <div class="text-[10px] text-gray-500">${[m.relation, age && age+' سنة', m.marital].filter(Boolean).map(esc).join(' · ') || 'لم تُعبأ بياناته بعد'}</div></div>
+      <button type="button" data-dup="${i}" class="text-[11px] font-bold text-gray-500 border rounded-lg px-2 py-1">⧉ نسخ</button>
+      ${state.members.length>1 ? `<button type="button" data-del="${i}" class="text-[11px] font-bold text-red-500 border border-red-200 rounded-lg px-2 py-1">🗑</button>` : ''}
+    </div>
+    ${warns.length ? `<div class="mb-3 text-[11px] bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-2">${warns.map(w=>'⚠️ '+esc(w)).join('<br>')}</div>` : ''}
+
+    <div class="sec">البيانات الأساسية</div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="lbl">الاسم الأول أو المستعار *</label><input class="inp ${B('name')}" data-m="${i}" data-k="name" value="${esc(m.name)}" placeholder="الاسم..."></div>
+        <div><label class="lbl">صلة القرابة *</label><select class="inp ${B('relation')}" data-m="${i}" data-k="relation" data-rerender="1">${opts(relOpts,m.relation,'-- اختر الصلة --')}</select></div>
+      </div>
+      <div><label class="lbl">تحديد الجنس *</label><div class="pill ${B('gender')}">${['ذكر','أنثى'].map(v=>`<button type="button" class="${m.gender===v?'on':''}" data-mset="${i}" data-k="gender" data-v="${v}">${v}</button>`).join('')}</div></div>
+    </div>
+
+    <div class="sec">من بيانات العائلة</div>
+    <div class="space-y-2">${inheritedBlock(m,i)}</div>
+
+    ${m.gender ? `
+    <div class="sec">الحالة الاجتماعية ونوع الزواج</div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="lbl">الحالة الاجتماعية *</label><select class="inp ${B('marital')}" data-m="${i}" data-k="marital" data-rerender="1">${opts(FO.marital(f),m.marital,'-- حدد الحالة --')}</select></div>
+        ${m.marital && !['أعزب','بكر'].includes(m.marital) ? `<div><label class="lbl">عدد الأبناء <small>(فارغ إن لم يوجد)</small></label><input class="inp" inputmode="numeric" data-m="${i}" data-k="children" data-rerender-blur="1" value="${esc(m.children)}"></div>` : ''}
+      </div>
+      ${needsCustody(m) ? `<div><label class="lbl">حالة حضانة الأبناء *</label><select class="inp ${B('custody')}" data-m="${i}" data-k="custody">${opts(custody,m.custody,'-- اختر الحضانة --')}</select></div>` : ''}
+      ${f ? `<div><label class="lbl">خيارات التعدد *</label><select class="inp ${B('acceptMarried')}" data-m="${i}" data-k="acceptMarried">${opts(FX.acceptMarried,m.acceptMarried)}</select></div>` : ''}
+      <div><label class="lbl">${f?'نوع الزواج المطلوب':'نوع الزواج المرغوب'} *</label><select class="inp ${B('mType')}" data-m="${i}" data-k="mType" data-rerender="1">${opts(FO.marriageTypes(f),m.mType,'-- اختر النوع --')}</select></div>
+      ${FO.isSpecialType(f, m.mType) ? `<div class="${f?'bg-pink-50/60 border-pink-200':'bg-gray-50 border-gray-200'} border rounded-xl p-2.5">
+        <p class="text-[10px] font-bold text-gray-600 mb-1.5">${f?'حددي الظروف الخاصة:':'حدد الاشتراطات الخاصة (سرية):'}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${FO.specialOpts(f).map(([v,t]) => `<label class="flex items-center gap-1.5 p-1.5 bg-white rounded-lg border ${f?'border-pink-200':'border-gray-200'} text-[11px] font-medium cursor-pointer">
+          <input type="checkbox" ${m.specialOpts.includes(v)?'checked':''} data-tog="${i}" data-k="specialOpts" data-v="${esc(v)}" class="w-3.5 h-3.5 ${f?'accent-pink-600':'accent-emerald-600'}"> ${esc(t)}</label>`).join('')}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="sec">المواصفات وتاريخ الميلاد</div>
+    <div class="space-y-3">
+      <div class="bg-gray-50 border rounded-xl p-2.5 space-y-2">
+        <div class="flex items-center gap-3 text-[11px] font-bold"><span class="text-gray-700">تاريخ الميلاد *</span>
+          ${[['hijri','هجري'],['greg','ميلادي']].map(([v,t])=>`<label class="flex items-center gap-1"><input type="radio" name="cal${m.id}" ${m.cal===v?'checked':''} data-mset="${i}" data-k="cal" data-v="${v}" class="accent-emerald-600">${t}</label>`).join('')}
+          ${age ? `<span class="ms-auto text-emerald-700">${age} سنة</span>` : ''}</div>
+        <div class="grid grid-cols-3 gap-2">
+          <select class="inp ${B('d')}" data-m="${i}" data-k="d">${opts(Array.from({length:31},(_,k)=>String(k+1)),m.d,'اليوم')}</select>
+          <select class="inp ${B('mo')}" data-m="${i}" data-k="mo">${opts(months,m.mo,'الشهر')}</select>
+          <select class="inp ${B('y')}" data-m="${i}" data-k="y" data-rerender="1">${opts(years,m.y,'السنة')}</select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="lbl">الطول *</label><input type="number" class="inp ${B('height')}" data-m="${i}" data-k="height" value="${esc(m.height)}" placeholder="سم"></div>
+        <div><label class="lbl">الوزن *</label><input type="number" class="inp ${B('weight')}" data-m="${i}" data-k="weight" value="${esc(m.weight)}" placeholder="كجم"></div>
+      </div>
+      <div><label class="lbl">لون البشرة *</label>
+        <div class="skins flex flex-wrap gap-1.5 ${B('skin')}">${skins.map((s,k)=>`<button type="button" class="skin ${m.skin===s?'on':''}" style="background:${FX.skinHex[k]||'#cbd5e1'};color:${FX.skinText[k]||'#1e293b'}" data-mset="${i}" data-k="skin" data-v="${esc(s)}">${esc(s)}</button>`).join('')}</div></div>
+      ${f ? `<div class="grid grid-cols-3 gap-2">
+        <div><label class="lbl">طول الشعر</label><select class="inp" data-m="${i}" data-k="hairLength">${opts(FX.hairLength,m.hairLength)}</select></div>
+        <div><label class="lbl">نوع الشعر</label><select class="inp" data-m="${i}" data-k="hairTexture">${opts(FX.hairTexture,m.hairTexture)}</select></div>
+        <div><label class="lbl">شكل الجسم</label><select class="inp" data-m="${i}" data-k="bodyShape">${opts(FX.bodyShape,m.bodyShape)}</select></div>
+      </div>` : ''}
+    </div>
+
+    <div class="sec">المؤهلات والاعتماد</div>
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="lbl">التعليم *</label><select class="inp ${B('education')}" data-m="${i}" data-k="education">${opts(FO.educations(),m.education,'-- اختر المؤهل --')}</select></div>
+        <div><label class="lbl">الوظيفة *</label><select class="inp ${B('job')}" data-m="${i}" data-k="job" data-rerender="1">${opts(jobs,m.job,'-- اختر الوظيفة --')}</select></div>
+      </div>
+      ${m.job==='أخرى' ? `<input class="inp ${B('customJob')}" data-m="${i}" data-k="customJob" value="${esc(m.customJob)}" placeholder="اكتب المسمى الوظيفي هنا...">` : ''}
+      ${!f ? `<div><label class="lbl">الدخل الشهري *</label><select class="inp ${B('income')}" data-m="${i}" data-k="income">${opts(FX.monthlyIncome,m.income)}</select></div>` : ''}
+      <div><label class="lbl">معلومات سرية (للإدارة فقط)</label><textarea rows="1" class="inp" data-m="${i}" data-k="secretInfo" placeholder="ظروف عائلية أو صحية خاصة...">${esc(m.secretInfo)}</textarea></div>
+      <div class="bg-blue-50/50 border border-blue-100 p-2.5 rounded-xl"><label class="lbl !text-blue-900">معلومات إضافية <small>(خيارات سريعة + حتى 120 حرفاً)</small></label>${tagChips(m, i, 'myTags')}<textarea rows="2" maxlength="120" class="inp" data-m="${i}" data-k="additionalInfo" placeholder="أو اكتب ما تود إضافته...">${esc(m.additionalInfo)}</textarea></div>
+      <div class="bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-xl"><label class="lbl !text-indigo-900">شروط الشريك المطلوب * <small>(خيارات سريعة + حتى 120 حرفاً)</small></label>${tagChips(m, i, 'partnerTags')}<textarea rows="2" maxlength="120" class="inp ${B('partnerSpecs')}" data-m="${i}" data-k="partnerSpecs" placeholder="اكتب الشروط هنا...">${esc(m.partnerSpecs)}</textarea></div>
+    </div>
+    ` : `<p class="text-[11px] text-gray-400 text-center py-4">اختر الجنس لتظهر بقية الحقول</p>`}
+
+    <div class="flex justify-between mt-4 lg:hidden">
+      <button type="button" data-go="${i-1}" class="text-xs font-bold text-gray-500 ${i===0?'invisible':''}">→ السابق</button>
+      ${i < state.members.length-1 ? `<button type="button" data-go="${i+1}" class="text-xs font-bold bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-lg">التالي ←</button>`
+        : `<button type="button" data-add="1" class="text-xs font-bold bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-lg">+ فرد آخر</button>`}
+    </div>
+  </div>`;
+}
+
+function memberDot(m) {
+  if (!(m.name || m.gender)) return '#d1d5db';
+  return memberMissing(m).length || memberWarnings(m).length ? '#f59e0b' : '#10b981';
+}
+function renderChips() {
+  document.getElementById('chips').innerHTML = state.members.map((m,i) =>
+    `<button type="button" class="chip ${i===state.active?'active':''}" data-go="${i}"><span class="dot" style="background:${memberDot(m)}"></span>${esc(m.name) || 'فرد '+(i+1)}${m.overrides.phone?' 📱':''}</button>`).join('')
+    + `<button type="button" class="chip !border-dashed text-emerald-700" data-add="1">+ إضافة فرد</button>`;
+  document.getElementById('memberCount').textContent = '(' + state.members.length + ')';
+  const n = state.members.length, a = state.active;
+  // RTL: السابق يمين (→) والتالي يسار (←)
+  document.getElementById('pager').innerHTML = n > 1 ? `<button type="button" data-go="${a-1}" ${a===0?'disabled':''} title="الفرد السابق">→</button>
+    <span class="min-w-[38px] text-center" dir="ltr">${a+1} / ${n}</span>
+    <button type="button" data-go="${a+1}" ${a===n-1?'disabled':''} title="الفرد التالي">←</button>` : '';
+  const chip = document.querySelectorAll('#chips .chip')[a]; chip && chip.scrollIntoView({block:'nearest', inline:'nearest'});
+}
+function renderCards() { document.getElementById('cards').innerHTML = state.members.map(memberCard).join(''); }
+function renderFooter() {
+  const ready = state.members.filter(m => !memberMissing(m).length).length;
+  const accounts = new Set(state.members.map(m => accountOf(m) || '?')).size;
+  document.getElementById('footerStatus').innerHTML =
+    `${state.members.length} أفراد · <span class="text-emerald-700">${ready} جاهز</span>` +
+    (state.members.length-ready ? ` · <span class="text-amber-600">${state.members.length-ready} ناقص</span>` : '') +
+    `<div class="text-[10px] text-gray-500 font-medium">${accounts > 1 ? accounts + ' حسابات جوال' : 'حساب جوال واحد'}${sharedMissing().length ? ' · بيانات العائلة ناقصة' : ''}</div>`;
+}
+function renderAll() { renderShared(); renderChips(); renderCards(); renderFooter(); }
+function refreshLight() { renderChips(); renderFooter(); }
+
+// ================= الأحداث =================
+const scopeObj = scope => scope === 'shared' ? state.shared : state.members[+scope.split(':')[1]].own;
+document.addEventListener('input', ev => {
+  const t = ev.target;
+  if (t.dataset.in) {
+    let v = t.value;
+    if (t.dataset.k==='phone') { v = v.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g,'').replace(/^0/,'').slice(0,12); t.value = v; }
+    scopeObj(t.dataset.in)[t.dataset.k] = v;
+    if (t.tagName === 'SELECT') { t.dataset.in === 'shared' && renderShared(); renderCards(); }
+    else if (t.dataset.in === 'shared') updateSharedSummary();
+    refreshLight();
+  } else if (t.dataset.m !== undefined) {
+    const m = state.members[+t.dataset.m]; m[t.dataset.k] = t.value;
+    if (t.dataset.k === 'job' && t.value !== 'أخرى') m.customJob = '';
+    if (t.dataset.k === 'mType' && !FO.isSpecialType(isF(m), t.value)) m.specialOpts = [];
+    if (t.dataset.rerender) renderCards();
+    else if (t.dataset.k === 'name') t.closest('.member-card').querySelector('.mname').textContent = t.value || 'فرد ' + (+t.dataset.m+1);
+    refreshLight();
+  }
+});
+// تحديث قيم 🔗 في البطاقات بعد مغادرة حقل نصي مشترك (لا أثناء الكتابة كي لا يضيع التركيز)
+document.addEventListener('change', ev => {
+  const t = ev.target;
+  if (t.dataset.in === 'shared' && t.tagName !== 'SELECT') renderCards();
+  if (t.dataset.rerenderBlur) renderCards();
+});
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('button, input[type=radio], input[type=checkbox]'); if (!b) return;
+  const d = b.dataset;
+  if (d.tog !== undefined) { const arr = state.members[+d.tog][d.k], at = arr.indexOf(d.v);
+    at > -1 ? arr.splice(at, 1) : arr.push(d.v); renderCards(); refreshLight(); return; }
+  if (d.set) { const o = scopeObj(d.set); o[d.k] = d.v;
+    if (d.set === 'shared') renderShared(); renderCards(); refreshLight(); return; }
+  if (d.mset !== undefined) { const m = state.members[+d.mset]; if (m[d.k] !== d.v) {
+      if (d.k==='gender') { // تحويل القيم المرتبطة بالجنس بدل مسحها حيث أمكن
+        ['marital','mType','acceptMarried','income','skin','job','customJob','custody','hairLength','hairTexture','bodyShape'].forEach(k => m[k] = '');
+        m.specialOpts = []; m.myTags = []; m.partnerTags = [];
+        if (m.overrides.nationality && m.own.nationality) m.own.nationality = FO.genderize(m.own.nationality, false, 'maleNationalities', 'femaleNationalities');
+      }
+      if (d.k==='cal') { m.y = ''; m.mo = ''; }
+      m[d.k] = d.v; }
+    renderCards(); refreshLight(); return; }
+  if (d.unlink !== undefined) { const m = state.members[+d.unlink];
+    m.overrides[d.g] = true;
+    GROUPS[d.g].fields.forEach(f => m.own[f] = d.g==='phone' ? (f==='cc' ? state.shared.cc : '') : state.shared[f]); // يبدأ من القيمة المشتركة ليُعدَّل الفرق فقط
+    if (d.g==='phone' && !m.relation) m.relation = 'أنا';
+    renderCards(); refreshLight(); return; }
+  if (d.relink !== undefined) { delete state.members[+d.relink].overrides[d.g]; renderCards(); refreshLight(); return; }
+  if (d.go !== undefined) { goTo(+d.go); return; }
+  if ((d.add || d.dup !== undefined) && state.members.length >= MAX_MEMBERS) { alert('الحد الأقصى ' + MAX_MEMBERS + ' أفراد في الدفعة الواحدة. احفظ هذه الأسرة ثم سجّل البقية في دفعة ثانية.'); return; }
+  if (d.add) { state.members.push(newMember()); state.active = state.members.length-1; renderChips(); renderCards(); renderFooter();
+    document.querySelector(`[data-card="${state.active}"]`).scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'}); return; }
+  if (d.dup !== undefined) { state.members.splice(+d.dup+1, 0, newMember(state.members[+d.dup])); state.active = +d.dup+1; renderChips(); renderCards(); renderFooter(); return; }
+  if (d.del !== undefined) { const m = state.members[+d.del];
+    if ((m.name || m.gender) && !confirm('حذف «' + (m.name || 'فرد ' + (+d.del+1)) + '» من الدفعة؟')) return;
+    state.members.splice(+d.del,1); state.active = Math.min(state.active, state.members.length-1); renderChips(); renderCards(); renderFooter(); return; }
+});
+// ================= التنقل بين الأفراد: أزرار، سحب باللمس، إصبعان على لوحة اللمس، أسهم لوحة المفاتيح =================
+// الاتجاه عربي (RTL) في كل الوسائل: السحب/الإصبعان نحو اليمين = الفرد التالي، نحو اليسار = السابق.
+const wideMQ = window.matchMedia('(min-width:1024px)');
+function goTo(i, opts) {
+  opts = opts || {};
+  const n = state.members.length, from = state.active;
+  if (i < 0 || i >= n || i === from) { // طرف القائمة: ارتداد خفيف بدل لا شيء
+    const c = document.querySelector(`[data-card="${from}"]`);
+    if (c && opts.gesture) { c.classList.remove('edge-bounce'); void c.offsetWidth; c.classList.add('edge-bounce'); }
+    return;
+  }
+  state.active = i; renderChips(); renderCards();
+  const card = document.querySelector(`[data-card="${i}"]`); if (!card) return;
+  if (!wideMQ.matches) {
+    card.classList.add(i > from ? 'enter-next' : 'enter-prev');
+    // إن كان المستخدم أسفل البطاقة الطويلة نعيده لرأس البطاقة الجديدة
+    if (card.getBoundingClientRect().top < 0) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    // تمرير أفقي نسبي (scrollBy) لأن scrollIntoView لا يتحرك داخل شبكة RTL بعد إعادة الرسم
+    const box = document.getElementById('cards'), b = box.getBoundingClientRect(), r = card.getBoundingClientRect();
+    box.scrollBy({ left: (r.left + r.width / 2) - (b.left + b.width / 2), behavior: 'smooth' });
+  }
+  if (opts.gesture && navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+}
+
+// 1) السحب باللمس (الجوال/التابلت): البطاقة تتبع الإصبع، وتُقفل وجهة الحركة أول 10px حتى لا يتعارض مع التمرير العمودي
+(function () {
+  const area = document.getElementById('cards');
+  let sw = null;
+  const reset = card => { if (!card) return; card.style.transition = 'transform .22s ease, opacity .22s ease'; card.style.transform = ''; card.style.opacity = '';
+    setTimeout(() => { card.style.transition = ''; }, 230); };
+  area.addEventListener('touchstart', e => {
+    if (wideMQ.matches || e.touches.length !== 1) { sw = null; return; }
+    const t = e.touches[0]; sw = { x: t.clientX, y: t.clientY, t: Date.now(), axis: null, dx: 0, card: null };
+  }, { passive: true });
+  area.addEventListener('touchmove', e => {
+    if (!sw) return;
+    if (e.touches.length !== 1) { reset(sw.card); sw = null; return; }
+    const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+    if (!sw.axis) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      sw.axis = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+      if (sw.axis === 'x') sw.card = document.querySelector(`[data-card="${state.active}"]`);
+    }
+    if (sw.axis !== 'x' || !sw.card) return;
+    e.preventDefault();
+    const n = state.members.length;
+    const blocked = (dx > 0 && state.active === n - 1) || (dx < 0 && state.active === 0); // لا فرد في تلك الجهة: مقاومة
+    const shown = blocked ? dx * 0.22 : dx;
+    sw.dx = dx;
+    sw.card.style.transition = 'none';
+    sw.card.style.transform = `translateX(${shown}px)`;
+    sw.card.style.opacity = String(1 - Math.min(Math.abs(shown) / 700, 0.3));
+  }, { passive: false });
+  const end = () => {
+    if (!sw) return;
+    const s = sw; sw = null;
+    if (s.axis !== 'x' || !s.card) return;
+    const speed = Math.abs(s.dx) / Math.max(1, Date.now() - s.t);
+    const commit = Math.abs(s.dx) > 70 || (speed > 0.45 && Math.abs(s.dx) > 25);
+    const target = state.active + (s.dx > 0 ? 1 : -1);
+    if (commit && target >= 0 && target < state.members.length) { s.card.style.transform = ''; s.card.style.opacity = ''; goTo(target, { gesture: true }); }
+    else reset(s.card);
+  };
+  area.addEventListener('touchend', end);
+  area.addEventListener('touchcancel', end);
+})();
+
+// 2) إصبعان على لوحة اللمس (أو عجلة أفقية): حركة واحدة = فرد واحد، ولا خطوة ثانية حتى يتوقف الزخم 220ms
+(function () {
+  const area = document.getElementById('cards').closest('section');
+  let acc = 0, consumed = false, quiet = null;
+  area.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || state.members.length < 2) return; // التمرير العمودي يبقى طبيعياً
+    e.preventDefault();
+    clearTimeout(quiet); quiet = setTimeout(() => { acc = 0; consumed = false; }, 220);
+    if (consumed) return;
+    acc += e.deltaX;
+    if (Math.abs(acc) < 50) return;
+    consumed = true;
+    goTo(state.active + (acc < 0 ? 1 : -1), { gesture: true }); // الإصبعان نحو اليمين يعطيان deltaX سالباً = التالي
+  }, { passive: false });
+})();
+
+// 3) أسهم لوحة المفاتيح (خارج حقول الكتابة فقط): ← التالي، → السابق
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.ctrlKey || e.metaKey || !document.getElementById('reviewModal').classList.contains('hidden')) return;
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(state.active + 1, { gesture: true }); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); goTo(state.active - 1, { gesture: true }); }
+});
+
+// تلميح السحب مرة واحدة على الجوال
+(function () {
+  let seen = false; try { seen = localStorage.getItem('batch_swipe_hint') === '1'; } catch (e) {}
+  if (seen || wideMQ.matches) return;
+  const h = document.getElementById('swipeHint');
+  const show = () => { if (state.members.length < 2) return; h.classList.remove('hidden');
+    setTimeout(() => { h.style.opacity = '0'; setTimeout(() => h.classList.add('hidden'), 400); }, 5000);
+    try { localStorage.setItem('batch_swipe_hint', '1'); } catch (e) {} };
+  setTimeout(show, 800);
+})();
+
+document.getElementById('sharedToggle').onclick =() => { state.sharedOpen = !state.sharedOpen; renderShared(); };
+
+// ================= بناء بيانات الفرد بنفس أسماء حقول saveRegistration =================
+// نفس دمج register.html: مواصفات الشكل للمرأة تُضاف أول "معلومات إضافية"
+function withLooks(m) {
+  const base = [selectedTags(m,'myTags').join('، '), m.additionalInfo.trim()].filter(Boolean).join(' | ');
+  if (!isF(m)) return base;
+  const p = []; if (m.hairLength || m.hairTexture) p.push(`الشعر: ${m.hairLength || ''} ${m.hairTexture ? '('+m.hairTexture+')' : ''}`.trim()); if (m.bodyShape) p.push(`الجسم: ${m.bodyShape}`);
+  if (!p.length) return base;
+  return base ? `[الشكل: ${p.join(' | ')}] - ` + base : `[الشكل: ${p.join(' | ')}]`;
+}
+// نفس buildPledgeRecord في register.html، مع بيان أن الإقرار أُخذ بواسطة الإدارة
+function pledgeFor(m) {
+  const fz = platformFees, male = m.gender === 'ذكر', special = male && m.mType === FX.specialMarriageType.male;
+  const feesTxt = male ? (special ? `باقة ${fz.menSpecialAdvance} + توفيق ${fz.menMatch}` : `تواصل مباشر ${fz.directFee}/${fz.directFeeSpecialWomen} + توفيق ${fz.menMatch}`) : `توفيق ${fz.womenMatch}`;
+  return `نعم موافق (تسجيل جماعي بواسطة الإدارة) | تعهد رسمي بالرسوم: ${feesTxt} ريال | ${new Date().toISOString().slice(0, 10)}`;
+}
+function buildPayload(m) {
+  const v = view(m), f = isF(m);
+  const residence = v.resLoc === 'داخل السعودية' ? v.city : (v.country + ' ' + v.worldCity);
+  return {
+    phone: v.cc + v.phone, name: m.name, relation: m.relation, gender: m.gender,
+    nationality: natFor(v.nationality, f), originType: tribalLabel(v.tribal, f), tribeName: v.tribal==='yes' ? v.tribeName : '', familyName: v.familyName,
+    roots: originText(v), residence, maritalStatus: m.marital, childrenCount: m.children || '0', childrenStatus: needsCustody(m) ? m.custody : '',
+    marriageType: m.mType, acceptMarried: f ? m.acceptMarried : '', birthDate: `${m.d}/${m.mo}/${m.y}|${m.cal==='hijri'?'هجري':'ميلادي'}`, age: ageOf(m),
+    height: m.height, weight: m.weight, skinColor: m.skin, education: m.education, job: m.job==='أخرى' ? m.customJob : m.job,
+    monthlyIncome: f ? '' : m.income, partnerSpecs: [selectedTags(m,'partnerTags').join('، '), m.partnerSpecs.trim()].filter(Boolean).join(' | '), additionalInfo: withLooks(m),
+    specialConditions: FO.isSpecialType(f, m.mType) ? m.specialOpts.join(' ، ') : '', secretInfo: m.secretInfo.trim() || 'لا يوجد', howHeard: state.shared.howHeard,
+    agreedToTerms: pledgeFor(m), autoBio: '#طلب_زواج_جديد'
+  };
+}
+
+// ================= المراجعة والحفظ =================
+document.getElementById('reviewBtn').onclick = () => {
+  state.showErrors = true; renderAll();
+  const sm = sharedMissing(), acc = {};
+  state.members.forEach((m,i) => { const p = accountOf(m) || '—'; (acc[p] = acc[p] || []).push(i); });
+  const blocking = sm.length || state.members.some(m => memberMissing(m).length);
+  document.getElementById('reviewBody').innerHTML =
+    (sm.length ? `<button type="button" onclick="goShared()" class="w-full text-right text-[12px] bg-red-50 border border-red-200 text-red-700 rounded-xl p-2.5">
+       ❗ <b>بيانات العائلة المشتركة ناقصة:</b> ${sm.map(fieldName).map(esc).join('، ')} <span class="underline text-[11px]">← اذهب إليها</span></button>` : '') +
+    Object.entries(acc).map(([p, idx]) => `
+      <div class="border rounded-xl overflow-hidden">
+        <div class="bg-gray-50 px-3 py-2 text-[11px] font-bold text-gray-700 flex items-center gap-2">📱 <span dir="ltr">${p==='—'?'بلا جوال':esc(p)}</span>
+          <span class="text-gray-400 font-medium">· لوحة عائلة واحدة (${idx.length})</span></div>
+        ${idx.map(i => { const m = state.members[i], P = buildPayload(m), miss = memberMissing(m), w = memberWarnings(m);
+          return `<button type="button" data-go="${i}" onclick="closeReview(); setTimeout(() => focusCardBad(${i}), 60)" class="w-full text-right px-3 py-2 border-t flex items-start gap-2 hover:bg-gray-50">
+            <span class="mt-0.5">${miss.length ? '🟠' : w.length ? '⚠️' : '✅'}</span>
+            <span class="flex-1 min-w-0"><span class="block text-[12px] font-bold text-gray-800">${esc(m.name)||'فرد '+(i+1)} <span class="text-gray-400 font-medium">(${esc(m.relation)||'؟'})</span></span>
+            <span class="block text-[11px] text-gray-500">${[P.gender, P.age && P.age+' سنة', P.maritalStatus, P.nationality, P.originType, P.tribeName || P.familyName, P.residence].filter(Boolean).map(esc).join(' · ')}</span>
+            ${miss.length ? `<span class="block text-[10px] text-amber-700"><b>ينقصه:</b> ${miss.map(fieldName).map(esc).join('، ')}</span>` : ''}
+            ${w.map(x=>`<span class="block text-[10px] text-amber-600">${esc(x)}</span>`).join('')}</span></button>`; }).join('')}
+      </div>`).join('') +
+    `<p class="text-[10px] text-gray-400">تُحفظ الأسرة بطلب واحد. الملفات تبدأ بحالة «جديد» وتُعتمد من مركز البيانات كالمعتاد، ونقاط الترحيب لأول ملف على كل جوال.</p>`;
+  const sb = document.getElementById('saveAllBtn');
+  sb.disabled = !!blocking; sb.className = 'flex-[2] py-2.5 rounded-xl font-bold text-sm ' + (blocking ? 'bg-gray-200 text-gray-400' : 'bg-emerald-600 text-white');
+  sb.textContent = blocking ? 'أكمل الحقول الناقصة أولاً' : 'حفظ الأسرة (' + state.members.length + ' ملفات)';
+  const md = document.getElementById('reviewModal'); md.classList.remove('hidden'); md.classList.add('flex');
+};
+// فتح قسم البيانات المشتركة والتمرير لأول حقل ناقص (كان القسم مطوياً فلا يُرى الحقل الأحمر)
+function focusCardBad(i) {
+  const card = document.querySelector(`[data-card="${i}"]`); if (!card) return;
+  const el = card.querySelector('.bad'); (el || card).scrollIntoView({behavior:'smooth', block:'center'}); el && el.focus && el.focus();
+}
+function goShared() {
+  closeReview(); state.sharedOpen = true; renderShared();
+  const el = document.querySelector('#sharedBody .bad'); (el || document.getElementById('sharedBody')).scrollIntoView({behavior:'smooth', block:'center'});
+  el && el.focus && el.focus();
+}
+function closeReview() { const md = document.getElementById('reviewModal'); md.classList.add('hidden'); md.classList.remove('flex'); }
+// ================= الحفظ الفعلي (adminBatchRegister، القسم 35 في الخادم) =================
+// opId ثابت لنفس الدفعة: إعادة المحاولة بعد انقطاع/مهلة لا تُكرر الحفظ (الخادم يُرجع النتيجة المحفوظة).
+let batchOpId = null, saving = false;
+async function saveFamily() {
+  if (saving) return;
+  if (!ADMIN_TOKEN) { document.getElementById('noAuth').classList.remove('hidden'); return; }
+  const payloads = state.members.map(buildPayload);
+  batchOpId = batchOpId || ('B' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7));
+  saving = true;
+  const sb = document.getElementById('saveAllBtn');
+  sb.disabled = true; sb.className = 'flex-[2] py-2.5 rounded-xl font-bold text-sm bg-gray-200 text-gray-500';
+  sb.textContent = 'جاري الحفظ… لا تغلق الصفحة';
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), 150000);
+  let res = null, netErr = '';
+  try {
+    const r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, signal: ctrl.signal,
+      body: JSON.stringify({ action: 'adminBatchRegister', adminToken: ADMIN_TOKEN, members: payloads, opId: batchOpId }) });
+    const txt = await r.text();
+    try { res = JSON.parse(txt); } catch (e) { netErr = 'الخادم مشغول (رد غير متوقع).'; }
+  } catch (e) { netErr = e.name === 'AbortError' ? 'لم يصل رد من الخادم خلال دقيقتين ونصف.' : 'تعذر الاتصال بالخادم.'; }
+  finally { clearTimeout(timer); saving = false; }
+
+  if (!res || !res.results) {
+    const msg = netErr || (res && res.message) || 'تعذر الحفظ.';
+    document.getElementById('reviewBody').insertAdjacentHTML('afterbegin',
+      `<div class="text-[12px] bg-red-50 border border-red-200 text-red-700 rounded-xl p-2.5">⚠️ ${esc(msg)}<br><span class="text-[11px]">اضغط «إعادة المحاولة»: إن كان الحفظ قد تم فعلاً فلن يتكرر.</span></div>`);
+    sb.disabled = false; sb.className = 'flex-[2] py-2.5 rounded-xl font-bold text-sm bg-amber-500 text-white'; sb.textContent = 'إعادة المحاولة';
+    return;
+  }
+  showResults(res, payloads);
+}
+function showResults(res, payloads) {
+  const failed = res.results.filter(r => !r.success);
+  if (!failed.length) clearDraft();
+  document.getElementById('reviewBody').innerHTML = `
+    <div class="text-center py-2"><div class="text-4xl mb-1">${failed.length ? '⚠️' : '✅'}</div>
+      <div class="font-extrabold text-gray-800">${esc(res.message || '')}</div></div>
+    ${res.results.map(r => { const p = payloads[r.index] || {};
+      return `<div class="border rounded-xl p-3 ${r.success ? '' : 'border-red-200 bg-red-50'}">
+        <div class="flex items-center gap-2"><b class="text-[13px] text-gray-800">${esc(r.name)}</b><span class="text-[11px] text-gray-400">(${esc(p.relation || '')})</span>
+          ${r.success ? `<span class="ms-auto font-mono font-bold text-emerald-700">#${esc(r.refId)}</span>` : `<span class="ms-auto text-[11px] text-red-600 font-bold">لم يُحفظ</span>`}</div>
+        ${r.duplicate ? `<div class="text-[11px] text-amber-700 mt-1">كان مسجلاً مسبقاً بنفس الجوال والاسم، فلم يُنشأ ملف جديد.</div>` : ''}
+        ${r.success ? `<div class="flex gap-2 mt-2">
+            <a href="admin_search.html?refId=${encodeURIComponent(r.refId)}&embed=true" target="_blank" class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">فتح البطاقة</a>
+            ${r.shortBio ? `<button type="button" class="text-[11px] font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-lg" data-copy="${esc(r.shortBio)}">نسخ النبذة</button>` : ''}</div>`
+          : `<div class="text-[11px] text-red-600 mt-1">${esc(r.message || '')}</div>`}
+      </div>`; }).join('')}
+    ${failed.length ? `<p class="text-[11px] text-gray-500">بقي في الصفحة الأفراد غير المحفوظين فقط؛ صحّحهم واحفظهم في دفعة جديدة.</p>` : ''}`;
+  const sb = document.getElementById('saveAllBtn');
+  sb.disabled = false; sb.className = 'flex-[2] py-2.5 rounded-xl font-bold text-sm bg-emerald-600 text-white';
+  if (failed.length) {
+    // إبقاء غير المحفوظين فقط لدفعة جديدة (بـ opId جديد)
+    const keep = new Set(failed.map(r => r.index));
+    state.members = state.members.filter((_, i) => keep.has(i)); state.active = 0; batchOpId = null; renderAll(); saveDraft();
+    sb.textContent = 'رجوع لتصحيح غير المحفوظين'; sb.onclick = closeReview;
+  } else {
+    sb.textContent = 'تسجيل أسرة جديدة'; sb.onclick = () => location.reload();
+  }
+}
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-copy]'); if (!b) return;
+  try { navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'نُسخت ✓'; } catch (e) {} });
+
+// ================= المسودة (على هذا الجهاز فقط) =================
+let draftTimer = null;
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), shared: state.shared, members: state.members, uid })); } catch (e) {} }, 400);
+}
+function clearDraft() { clearTimeout(draftTimer); try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+['input', 'click'].forEach(t => document.addEventListener(t, ev => { if (!saving && !ev.target.closest('#reviewModal, #draftBar')) saveDraft(); }));
+function offerDraft() {
+  let d = null; try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+  if (!d || !d.members || !d.members.some(m => m.name || m.gender)) return;
+  document.getElementById('draftWhen').textContent = new Date(d.at).toLocaleString('ar-SA');
+  document.getElementById('draftBar').classList.remove('hidden');
+  document.getElementById('draftRestore').onclick = () => {
+    state.shared = Object.assign({}, state.shared, d.shared); state.members = d.members; uid = d.uid || 100; state.active = 0; state.sharedOpen = true;
+    document.getElementById('draftBar').classList.add('hidden'); renderAll(); };
+  document.getElementById('draftDiscard').onclick = () => { clearDraft(); document.getElementById('draftBar').classList.add('hidden'); };
+}
+
+// ================= التشغيل: القوائم من الشيت (قراءة فقط) =================
+if (!ADMIN_TOKEN) document.getElementById('noAuth').classList.remove('hidden');
+renderAll();
+offerDraft();
+fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'getPublicConfig' }) })
+  .then(r => r.json()).then(r => { if (r && r.success && r.fees) platformFees = Object.assign({}, DEFAULT_FEES, r.fees); }).catch(() => {});
+document.getElementById('listsSource').textContent = 'القوائم: نسخة محفوظة… جاري التحديث من الشيت';
+FO.load(SCRIPT_URL).then(ok => {
+  document.getElementById('listsSource').textContent = ok ? 'القوائم: من الشيت مباشرة ✓' : 'القوائم: النسخة الاحتياطية (تعذر الخادم)';
+  if (ok) renderAll();
+});
+</script>
+</body>
+</html>
