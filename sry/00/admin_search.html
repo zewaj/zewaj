@@ -297,6 +297,19 @@
         // timeoutMs: الحذف والحظر يقرآن الورقتين وورقة الطلبات كاملة ويرسلان واتساب، فيتجاوزان 20 ثانية أحياناً (كان الإجراء يتم في الخادم
         // والواجهة تعرض "تأخر السيرفر"). تُمرَّر لهما مهلة أطول (SLOW_ACTION_TIMEOUT) بمحاولة إعادة واحدة.
         const SLOW_ACTION_TIMEOUT = 75000;
+        // 🟢 [2026-10-26] البحث وقائمة الانتظار: قيس الخادم 17–25 ث والمهلة كانت 20 ث مع إعادتين صامتتين، فكل إعادة تبدأ بحثاً ثقيلاً
+        // جديداً فوق الأول الذي ما زال يعمل (ثلاث عمليات متزامنة) ثم تظهر "تأخر السيرفر". الآن مهلة 60 ث بلا إعادة تلقائية.
+        const SEARCH_TIMEOUT = 60000;
+        const SEARCH_LOADER_HTML = '<div class="col-span-full py-10 flex flex-col items-center gap-3"><div class="loader border-indigo-600 border-t-transparent w-8 h-8 border-4"></div><p class="text-xs font-bold text-slate-500">جاري البحث… قد يستغرق حتى نصف دقيقة</p></div>';
+        // الجوال يُرسل بآخر 9 أرقام: المحفوظ "966…" فكان "05…" لا يطابق أبداً (يدعم الأرقام العربية وأكثر من رقم مفصول بمسافة أو فاصلة)
+        function normalizePhoneQuery(val) {
+            const last9 = p => { const d = p.replace(/\D/g, ''); return d.length > 9 ? d.slice(-9) : d; };
+            return val.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).split(/[,،\n]+/).flatMap(part => {
+                // المسافة تفصل أرقاماً فقط إن كانت كل قطعة رقماً كاملاً (7 أرقام فأكثر)، وإلا فهي رقم واحد مكتوب بمسافات
+                const pieces = part.trim().split(/\s+/).filter(Boolean);
+                return pieces.length > 1 && pieces.every(x => x.replace(/\D/g, '').length >= 7) ? pieces.map(last9) : [last9(part)];
+            }).filter(Boolean).join(' ');
+        }
         async function apiCall(payload, retries = 2, timeoutMs = 20000) {
             for (let attempt = 0; attempt <= retries; attempt++) {
                 const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -469,10 +482,10 @@
             
             els.filtersContainer.innerHTML = '';
             els.resultsTitle.innerHTML = `<i class="fas fa-folder-open text-indigo-500"></i> ملفات: ${status} <span id="dynamic-count" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono">جاري البحث...</span>`;
-            els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-8 h-8 border-4"></div></div>';
+            els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
             
             try {
-                const res = await apiCall({ action: "adminGetProfilesByStatus", status: status, adminToken: state.adminToken });
+                const res = await apiCall({ action: "adminGetProfilesByStatus", status: status, adminToken: state.adminToken }, 0, SEARCH_TIMEOUT);
                 state.searchResults = res.results || [];
                 renderResults();
             } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`; }
@@ -482,12 +495,12 @@
             clearSelection(); els.filtersContainer.classList.add('hidden');
             const val = els.searchInput.value.trim(); if (!val) return loadPendingProfiles();
             const isPhone = document.getElementById('search-type-phone').checked;
-            let payloadFilters = {}; if (isPhone) payloadFilters.phone = val; else payloadFilters.refId = val;
+            let payloadFilters = {}; if (isPhone) payloadFilters.phone = normalizePhoneQuery(val); else payloadFilters.refId = val;
             
             setBtnLoading(els.quickSearchBtn, true, ''); els.resultsTitle.innerHTML = `<i class="fas fa-search text-indigo-500"></i> نتائج البحث <span id="dynamic-count" class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono">0</span>`;
-            els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-8 h-8 border-4"></div></div>';
+            els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
             try {
-                const res = await apiCall({ action: "adminAdvancedSearch", adminToken: state.adminToken, filters: payloadFilters });
+                const res = await apiCall({ action: "adminAdvancedSearch", adminToken: state.adminToken, filters: payloadFilters }, 0, SEARCH_TIMEOUT);
                 state.searchResults = res.results || [];
                 state.activeFilters = new Set(state.searchResults.map(p => getStatusConfig(p.profileStatus).label)); 
                 renderResults();
@@ -498,13 +511,13 @@
         window.loadPendingProfiles = async function() {
             clearSelection(); els.searchInput.value = ''; 
             els.resultsTitle.innerHTML = `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة <span id="dynamic-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono transition-all">0</span>`;
-            els.resultsContainer.innerHTML = '<div class="col-span-full py-10 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-8 h-8 border-4"></div></div>';
+            els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
             
             state.viewingSpecialStatus = false;
             state.activeFilters = new Set(['جديد', 'قيد المراجعة', 'نشر']); 
 
             try {
-                const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken });
+                const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken }, 0, SEARCH_TIMEOUT);
                 state.searchResults = res.results || []; 
                 renderFiltersUI();
                 renderResults();
