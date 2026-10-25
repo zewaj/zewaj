@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>لوحة الإدارة</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Tajawal', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+  .tile { display:block; border-radius: 1rem; padding: .85rem; position: relative; transition: transform .15s; }
+  .tile:active { transform: scale(.97); }
+  .tile .num { font-size: 1.75rem; font-weight: 900; line-height: 1.1; }
+  .tile .chev { position:absolute; left:.8rem; top:.85rem; opacity:.55; font-size:.8rem; }
+  .wide { display:flex; align-items:center; gap:.75rem; border-radius: 1rem; padding: .8rem 1rem; transition: transform .15s; }
+  .wide:active { transform: scale(.98); }
+  .wide .num { font-size: 1.6rem; font-weight: 900; margin-inline-start: auto; }
+  .sk { color: transparent !important; background: #e2e8f0; border-radius: .5rem; min-width: 2.2rem; display:inline-block; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+</style>
+</head>
+<body class="min-h-[100dvh] text-slate-800">
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥 القسم 1: HTML - شاشة الدخول 🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<div id="loginView" class="hidden min-h-[100dvh] flex items-center justify-center p-6">
+  <form id="loginForm" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 w-full max-w-sm text-center">
+    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-lock"></i></div>
+    <h1 class="font-black text-lg mb-1">بوابة الإدارة</h1>
+    <p class="text-xs text-slate-500 mb-4">أدخل كلمة المرور للوصول إلى لوحة الإدارة.</p>
+    <input id="pwInput" type="password" autocomplete="current-password" class="w-full border border-slate-300 rounded-xl px-3 py-3 text-center outline-none focus:ring-2 focus:ring-indigo-400" placeholder="••••••••">
+    <p id="loginErr" class="hidden text-xs text-rose-600 font-bold mt-2"></p>
+    <button id="loginBtn" class="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl">تسجيل الدخول</button>
+  </form>
+</div>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥 القسم 2: HTML - الصفحة الرئيسية (ملخص اليوم) 🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<main id="homeView" class="hidden max-w-xl mx-auto px-4 pt-4 pb-10">
+  <header class="flex items-center justify-between mb-2">
+    <div>
+      <h1 class="font-black text-xl">لوحة الإدارة</h1>
+      <p id="subLine" class="text-[11px] text-slate-500 font-bold"></p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="refreshBtn" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-600 shadow-sm" title="تحديث" aria-label="تحديث"><i id="refreshIcon" class="fas fa-sync-alt"></i></button>
+      <button id="logoutBtn" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-rose-500 shadow-sm" title="تسجيل الخروج" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </header>
+
+  <div id="errBar" class="hidden mb-3 text-[12px] font-bold bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5"></div>
+
+  <p class="text-xs font-black text-slate-500 mt-4 mb-2">عاجل الآن</p>
+  <a href="admin.html?filter=action" class="wide bg-rose-50 text-rose-700 border border-rose-100 mb-2">
+    <i class="fas fa-bolt text-xl"></i>
+    <span><b class="block text-sm">تتطلب تدخلك فوراً</b><span class="text-[11px] opacity-80" id="actionSub">نزاع، رسائل تنتظر اعتمادك، دفع، تأخر</span></span>
+    <span class="num" data-k="action">0</span>
+  </a>
+  <a href="admin.html?filter=acquaintance" class="wide bg-emerald-50 text-emerald-700 border border-emerald-100">
+    <i class="fas fa-hand-holding-heart text-xl"></i>
+    <span><b class="block text-sm">تأكيد نتيجة التعارف</b><span class="text-[11px] opacity-80" id="outcomeSub">زواج أو عدم توفيق بانتظار التأكيد</span></span>
+    <span class="num" data-k="outcome">0</span>
+  </a>
+
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">التسجيلات</p>
+  <div class="grid grid-cols-2 gap-2.5">
+    <a href="admin_search.html" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
+      <i class="fas fa-chevron-left chev"></i>
+      <span class="num block" data-k="newToday">0</span>
+      <span class="text-xs font-bold">مسجلون جدد اليوم</span>
+      <span class="block text-[10px] opacity-75 mt-0.5" id="newTodaySub"></span>
+    </a>
+    <a href="admin_search.html" class="tile bg-amber-50 text-amber-800 border border-amber-100">
+      <i class="fas fa-chevron-left chev"></i>
+      <span class="num block" data-k="pending">0</span>
+      <span class="text-xs font-bold">ملفات تحتاج مراجعتك</span>
+    </a>
+  </div>
+
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">المراسلات</p>
+  <div class="grid grid-cols-2 gap-2.5">
+    <a href="admin.html" class="tile bg-indigo-50 text-indigo-800 border border-indigo-100">
+      <i class="fas fa-chevron-left chev"></i>
+      <span class="num block" data-k="active">0</span>
+      <span class="text-xs font-bold">مراسلات نشطة</span>
+    </a>
+    <a href="admin.html?filter=contact" class="tile bg-sky-50 text-sky-800 border border-sky-100">
+      <i class="fas fa-chevron-left chev"></i>
+      <span class="num block" data-k="contact">0</span>
+      <span class="text-xs font-bold">طلبات تواصل</span>
+    </a>
+  </div>
+  <div class="grid grid-cols-2 gap-2.5 mt-2.5">
+    <a href="admin_search.html?open=pkgreq" class="wide bg-white border border-slate-200 !p-3">
+      <i class="fas fa-gem text-amber-500"></i><span class="text-xs font-bold text-slate-600">طلبات الباقات</span>
+      <span class="num !text-xl text-slate-800" data-k="packages">0</span>
+    </a>
+    <a href="admin_search.html?open=bans" class="wide bg-white border border-slate-200 !p-3">
+      <i class="fas fa-ban text-rose-500"></i><span class="text-xs font-bold text-slate-600">المحظورون</span>
+      <span class="num !text-xl text-slate-800" data-k="bans">0</span>
+    </a>
+  </div>
+
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">الصفحات</p>
+  <div class="grid grid-cols-3 gap-2.5">
+    <a href="admin.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-comments text-xl text-indigo-600 block mb-1"></i><span class="text-xs font-bold">المراسلات</span></a>
+    <a href="admin_search.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-database text-xl text-slate-700 block mb-1"></i><span class="text-xs font-bold">مركز البيانات</span></a>
+    <a href="admin_batch_register.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-users text-xl text-emerald-600 block mb-1"></i><span class="text-xs font-bold">تسجيل أسرة</span></a>
+  </div>
+</main>
+
+<script>
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥 القسم 3: جافاسكريبت - جلب الملخص وعرضه 🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// كل الأرقام من adminGetHomeSummary (القسم 36 في الخادم) في نداء واحد. خادم لم يُحدَّث بعد ← احتياط بثلاثة نداءات قديمة
+// متوازية (بلا "مسجلون اليوم"). آخر ملخص يُحفظ على الجهاز فيُرسم فوراً ثم يُحدَّث.
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+const CACHE_KEY = 'admin_home_summary';
+let token = ''; try { token = localStorage.getItem('adminToken') || ''; } catch (e) {}
+let loading = false;
+
+async function post(body, timeoutMs = 60000) {
+  const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), signal: ctrl.signal });
+    return JSON.parse(await r.text());
+  } finally { clearTimeout(t); }
+}
+const isAuthError = res => res && !res.success && /مصرح|Token/i.test(res.message || '');
+
+// نفس شروط عدّادات admin.html (للاحتياط فقط حين لا يعرف الخادم adminGetHomeSummary)
+function countMessages(requests) {
+  const m = { active: 0, action: 0, contact: 0, outcome: 0, outcomeMarriage: 0, outcomeEnd: 0, dispute: 0 };
+  (requests || []).forEach(r => {
+    const s = r.status || '';
+    if (/مغلق|مكتمل|مرفوض|ملغى/.test(s)) return;
+    const court = s.includes('مرحلة التعارف');
+    const side = r.requesterProfileStatus === 'محذوف' || r.targetProfileStatus === 'محذوف' || r.requesterBanned || r.targetBanned;
+    if (!court) m.active++;
+    if (!court && (r.hasRequestedContact || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع'))) m.contact++;
+    if (s.includes('بانتظار تأكيد')) { m.outcome++; s.includes('للزواج') ? m.outcomeMarriage++ : m.outcomeEnd++; }
+    if (s.includes('نزاع')) m.dispute++;
+    if (court && !s.includes('نزاع') && !s.includes('تأكيد')) return;
+    if (r.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع') || s.includes('نزاع') || s.includes('بانتظار تأكيد') || side || r.delayPending) m.action++;
+    else if (s.includes('يوجد رد') || s.includes('اعتماد')) m.action++;
+  });
+  return m;
+}
+async function legacySummary() {
+  const [dash, pend, pkg] = await Promise.all([
+    post({ action: 'adminGetDashboard', adminToken: token }).catch(() => null),
+    post({ action: 'adminGetPendingProfiles', adminToken: token }).catch(() => null),
+    post({ action: 'adminGetPackageRequests', adminToken: token }).catch(() => null)
+  ]);
+  if ([dash, pend, pkg].some(isAuthError)) return { authError: true };
+  return { success: true, legacy: true, builtAt: Date.now(),
+    messages: dash && dash.success ? countMessages(dash.requests) : null,
+    profiles: pend && pend.success ? { pending: (pend.results || []).length, newToday: null } : null,
+    packages: pkg && pkg.success ? (pkg.pending || []).length : null, bans: null };
+}
+
+function setNum(k, v) {
+  document.querySelectorAll(`[data-k="${k}"]`).forEach(el => {
+    el.classList.toggle('sk', v === undefined);
+    el.textContent = v === undefined ? '0' : (v === null ? '—' : v);
+  });
+}
+function render(sum, fromCache) {
+  const m = sum.messages || {}, p = sum.profiles || {};
+  ['action', 'outcome', 'active', 'contact'].forEach(k => setNum(k, sum.messages ? m[k] : null));
+  setNum('pending', sum.profiles ? p.pending : null);
+  setNum('newToday', sum.profiles && p.newToday !== null && p.newToday !== undefined ? p.newToday : null);
+  setNum('packages', sum.packages === undefined ? null : sum.packages);
+  setNum('bans', sum.bans === undefined ? null : sum.bans);
+  document.getElementById('newTodaySub').textContent = p.newToday ? `رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0}` : (sum.legacy ? 'يظهر بعد تحديث السكريبت' : '');
+  document.getElementById('outcomeSub').textContent = sum.messages && m.outcome ? `زواج ${m.outcomeMarriage} · عدم توفيق ${m.outcomeEnd}` : 'زواج أو عدم توفيق بانتظار التأكيد';
+  document.getElementById('actionSub').textContent = sum.messages && m.dispute ? `منها ${m.dispute} نزاع` : 'نزاع، رسائل تنتظر اعتمادك، دفع، تأخر';
+  const d = new Date(sum.builtAt || Date.now());
+  const day = new Date().toLocaleDateString('ar-SA-u-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('subLine').textContent = `${day} · ${fromCache ? 'آخر نسخة محفوظة' : 'حُدِّث'} ${d.toLocaleTimeString('ar-SA', { hour: 'numeric', minute: '2-digit' })}`;
+}
+function showErr(msg) { const b = document.getElementById('errBar'); b.textContent = msg; b.classList.toggle('hidden', !msg); }
+
+async function load(force) {
+  if (loading) return; loading = true;
+  document.getElementById('refreshIcon').classList.add('fa-spin');
+  try {
+    let res = await post({ action: 'adminGetHomeSummary', adminToken: token, force: !!force });
+    if (isAuthError(res)) return logout('انتهت الجلسة أو تغيّرت كلمة المرور.');
+    if (!res || !res.success) res = await legacySummary(); // خادم قديم: "إجراء إداري غير معروف"
+    if (res.authError) return logout('انتهت الجلسة أو تغيّرت كلمة المرور.');
+    render(res, false); showErr(res.errors && res.errors.length ? 'بعض الأرقام لم تُحدَّث هذه المرة، اضغط تحديث.' : '');
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(res)); } catch (e) {}
+  } catch (e) {
+    showErr('تعذر الاتصال بالخادم. الأرقام الظاهرة من آخر تحديث.');
+  } finally { loading = false; document.getElementById('refreshIcon').classList.remove('fa-spin'); }
+}
+
+function showHome() {
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('homeView').classList.remove('hidden');
+  let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
+  if (cached) render(cached, true); else ['action','outcome','newToday','pending','active','contact','packages','bans'].forEach(k => setNum(k, undefined));
+  load(false);
+}
+function logout(msg) {
+  try { localStorage.removeItem('adminToken'); localStorage.removeItem(CACHE_KEY); } catch (e) {}
+  token = '';
+  document.getElementById('homeView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  const err = document.getElementById('loginErr'); err.textContent = msg || ''; err.classList.toggle('hidden', !msg);
+}
+
+document.getElementById('loginForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const pw = document.getElementById('pwInput').value.trim(); if (!pw) return;
+  const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
+  btn.disabled = true; btn.textContent = 'جاري التحقق…'; err.classList.add('hidden');
+  try {
+    const res = await post({ action: 'adminLogin', password: pw });
+    if (res && res.success && res.token) { token = res.token; try { localStorage.setItem('adminToken', token); } catch (e) {} showHome(); }
+    else { err.textContent = (res && res.message) || 'كلمة المرور غير صحيحة'; err.classList.remove('hidden'); }
+  } catch (e) { err.textContent = 'تعذر الاتصال بالخادم، حاول مرة أخرى.'; err.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
+};
+document.getElementById('refreshBtn').onclick = () => load(true);
+document.getElementById('logoutBtn').onclick = () => logout('');
+document.addEventListener('visibilitychange', () => { if (!document.hidden && token) load(false); });
+setInterval(() => { if (!document.hidden && token) load(false); }, 120000);
+
+if (token) showHome(); else logout('');
+</script>
+</body>
+</html>

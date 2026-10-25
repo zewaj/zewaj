@@ -107,9 +107,32 @@
                 <button onclick="fetchData(false)" id="refreshBtn" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-colors border border-slate-200" title="تحديث البيانات">
                     <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                 </button>
-                <button onclick="adminLogout()" class="shrink-0 bg-rose-50 hover:bg-rose-100 text-rose-600 p-2 rounded-xl transition-colors border border-rose-200" title="قفل / تسجيل خروج">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                </button>
+                <!-- 🟢 [2026-10-25] قائمة ⋮ (نفسها في admin_search.html): الباقات وتسجيل الأسرة والمحظورون والخروج -->
+                <div class="relative shrink-0">
+                    <button onclick="toggleAdminMenu(event)" id="admin-menu-btn" class="relative shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-colors border border-slate-200" title="المزيد" aria-label="المزيد" aria-haspopup="menu" aria-expanded="false">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        <span id="pkgreq-dot" class="hidden absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm">0</span>
+                    </button>
+                    <div id="admin-menu" role="menu" class="hidden absolute left-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-[60]">
+                        <a role="menuitem" href="admin_home.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-indigo-50 text-slate-700 text-sm font-bold">
+                            <span class="w-5 text-center">🏠</span><span class="flex-1 text-right">الرئيسية</span>
+                        </a>
+                        <a role="menuitem" href="admin_search.html?open=pkgreq" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 text-slate-700 text-sm font-bold">
+                            <span class="w-5 text-center">💎</span><span class="flex-1 text-right">طلبات الباقات</span>
+                            <span id="pkgreq-badge" class="hidden bg-rose-500 text-white text-[10px] font-bold min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center">0</span>
+                        </a>
+                        <a role="menuitem" href="admin_batch_register.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 text-slate-700 text-sm font-bold">
+                            <span class="w-5 text-center">👥</span><span class="flex-1 text-right">تسجيل أسرة</span>
+                        </a>
+                        <a role="menuitem" href="admin_search.html?open=bans" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose-50 text-slate-700 text-sm font-bold">
+                            <span class="w-5 text-center">🚫</span><span class="flex-1 text-right">الحسابات المحظورة</span>
+                        </a>
+                        <div class="h-px bg-slate-100 my-1"></div>
+                        <button role="menuitem" onclick="closeAdminMenu(); adminLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-red-600 text-sm font-bold">
+                            <span class="w-5 text-center">🔒</span><span class="flex-1 text-right">تسجيل الخروج</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -126,9 +149,10 @@
             <button onclick="setFilter('queue')" id="filter-queue" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="قائمة الانتظار">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             </button>
-            <button onclick="setFilter('waiting')" id="filter-waiting" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="بانتظار ردود العملاء">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span id="badgeWaiting" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+            <!-- 🟢 [2026-10-25] كان تبويب الساعة "بانتظار ردود العملاء" (قليل الاستعمال، والمراسلات كلها في التبويب الأول)؛ صار "طلبات التواصل" (فلتر contact الموجود) -->
+            <button onclick="setFilter('contact')" id="filter-contact" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="طلبات التواصل (طلب الرجل، موافقة تبادل الأرقام، بانتظار الدفع)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                <span id="badgeContact" class="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
             </button>
             <!-- 🟢 الفلتر الجديد لمرحلة التعارف -->
             <button onclick="setFilter('acquaintance')" id="filter-acquaintance" class="filter-btn p-2.5 rounded-xl transition-all bg-sky-50 text-sky-600 hover:bg-sky-100 border border-sky-100 shrink-0 relative" title="مرحلة التعارف بعد تسليم الأرقام">
@@ -422,6 +446,30 @@
             checkAuth();
         }
 
+        // 🟢 [2026-10-25] قائمة ⋮ في الرأس: تُغلق بالضغط خارجها أو بـ Esc
+        function toggleAdminMenu(ev) {
+            if (ev) ev.stopPropagation();
+            const m = document.getElementById('admin-menu'), open = m.classList.contains('hidden');
+            m.classList.toggle('hidden', !open);
+            document.getElementById('admin-menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        function closeAdminMenu() {
+            const m = document.getElementById('admin-menu'); if (m) m.classList.add('hidden');
+            const b = document.getElementById('admin-menu-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+        }
+        document.addEventListener('click', e => { if (!e.target.closest('#admin-menu')) closeAdminMenu(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAdminMenu(); });
+
+        // عدد طلبات الباقات المعلّقة على زر ⋮ وداخل القائمة (اختياري: الفشل يُتجاهل)
+        async function refreshMenuPkgBadge() {
+            if (!state.adminToken) return;
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminGetPackageRequests', adminToken: state.adminToken }) });
+                const n = ((JSON.parse(await res.text()) || {}).pending || []).length;
+                ['pkgreq-badge', 'pkgreq-dot'].forEach(id => { const b = document.getElementById(id); if (b) { b.innerText = n; b.classList.toggle('hidden', n === 0); } });
+            } catch (e) {}
+        }
+
         function handleAuthError(message) {
             if (message && (message.toLowerCase().includes('token') || message.includes('مصرح'))) {
                 adminLogout();
@@ -564,6 +612,10 @@
         window.onload = () => {
             if (!checkAuth()) return;
 
+            // 🟢 [2026-10-25] ?filter= من بطاقات admin_home.html (يُضبط قبل أول رسم فلا تومض القائمة الكاملة)
+            const urlFilter = new URLSearchParams(location.search).get('filter');
+            if (['action', 'contact', 'acquaintance', 'queue', 'archived'].includes(urlFilter)) setFilter(urlFilter);
+
             const cachedData = sessionStorage.getItem('admin_requests_cache');
             if (cachedData) {
                 try {
@@ -583,7 +635,8 @@
             }
             initSplitter();
             startAutoRefresh();
-            
+            setTimeout(refreshMenuPkgBadge, 1500); // بعد طلب اللوحة الأول حتى لا يتزاحما
+
             if(pendingAdminActions.some(a => a.state === 'sending')) {
                 processAdminQueue();
             }
@@ -902,13 +955,15 @@
         }
 
         function updateDashboardStats() {
-            let pending = 0, actionNeeded = 0, unreadCount = 0, courtshipPendingCount = 0;
+            let pending = 0, actionNeeded = 0, unreadCount = 0, courtshipPendingCount = 0, contactCount = 0;
             let failedCount = pendingAdminActions.filter(a => a.state === 'failed').length;
 
             allRequests.forEach(r => {
                 const s = r.status || '';
                 let isClosed = s.includes('مغلق') || s.includes('مكتمل') || s.includes('مرفوض') || s.includes('ملغى');
-                
+                // نفس شرط فلتر 'contact' في renderTable
+                if (!isClosed && !s.includes('مرحلة التعارف') && (r.hasRequestedContact || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع'))) contactCount++;
+
                 if (!isClosed && r.courtshipPending && s.includes('مرحلة التعارف')) courtshipPendingCount++;
                 let lastActionTs = getTimestamp(r.lastActionDate || r.date);
                 if (!isClosed && !s.includes('مرحلة التعارف')) {
@@ -946,6 +1001,11 @@
                 badgeWaiting.innerText = pending;
                 if(pending > 0) badgeWaiting.classList.remove('hidden');
                 else badgeWaiting.classList.add('hidden');
+            }
+            const badgeContact = document.getElementById('badgeContact');
+            if (badgeContact) {
+                badgeContact.innerText = contactCount;
+                badgeContact.classList.toggle('hidden', contactCount === 0);
             }
             const badgeCourtship = document.getElementById('badgeCourtship');
             if (badgeCourtship) {

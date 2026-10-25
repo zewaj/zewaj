@@ -71,23 +71,31 @@
                 </button>
             </div>
 
-            <div class="flex items-center gap-0.5 sm:gap-2 shrink-0">
-                <button onclick="openPackageRequests()" id="pkgreq-btn" class="relative w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-amber-50 text-slate-500 hover:text-amber-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="طلبات الباقات">
-                    <i class="fas fa-gem text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
-                    <span id="pkgreq-badge" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow">0</span>
+            <!-- 🟢 [2026-10-25] قائمة ⋮ (نفسها في admin.html): الرأس كان 7 عناصر فينضغط زر الانتظار على الجوال حتى يختفي رقمه -->
+            <div class="relative shrink-0">
+                <button onclick="toggleAdminMenu(event)" id="admin-menu-btn" class="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer shadow-sm" title="المزيد" aria-label="المزيد" aria-haspopup="menu" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v text-base sm:text-lg"></i>
+                    <span id="pkgreq-dot" class="hidden absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center shadow">0</span>
                 </button>
-                <a href="admin_batch_register.html" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="تسجيل أسرة دفعة واحدة">
-                    <i class="fas fa-users text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
-                </a>
-                <button onclick="openBansList()" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-rose-50 text-slate-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="الحسابات المحظورة">
-                    <i class="fas fa-ban text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
-                </button>
-                <button onclick="document.getElementById('smart-search-input').focus(); window.scrollTo({top: 0, behavior: 'smooth'});" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-slate-100 text-slate-500 hover:text-indigo-600 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="الذهاب للبحث">
-                    <i class="fas fa-search text-base sm:text-lg group-hover:scale-110 transition-transform"></i>
-                </button>
-                <button onclick="logout()" class="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer group shadow-sm" title="تسجيل الخروج">
-                    <i class="fas fa-sign-out-alt text-base sm:text-lg group-hover:-translate-x-1 transition-transform"></i>
-                </button>
+                <div id="admin-menu" role="menu" class="hidden absolute left-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-[60]">
+                    <a role="menuitem" href="admin_home.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-indigo-50 text-slate-700 text-sm font-bold">
+                        <i class="fas fa-home text-indigo-600 w-5 text-center"></i><span class="flex-1 text-right">الرئيسية</span>
+                    </a>
+                    <button role="menuitem" onclick="closeAdminMenu(); openPackageRequests()" id="pkgreq-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 text-slate-700 text-sm font-bold">
+                        <i class="fas fa-gem text-amber-500 w-5 text-center"></i><span class="flex-1 text-right">طلبات الباقات</span>
+                        <span id="pkgreq-badge" class="hidden bg-rose-500 text-white text-[10px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                    <a role="menuitem" href="admin_batch_register.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-50 text-slate-700 text-sm font-bold">
+                        <i class="fas fa-users text-emerald-600 w-5 text-center"></i><span class="flex-1 text-right">تسجيل أسرة</span>
+                    </a>
+                    <button role="menuitem" onclick="closeAdminMenu(); openBansList()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose-50 text-slate-700 text-sm font-bold">
+                        <i class="fas fa-ban text-rose-500 w-5 text-center"></i><span class="flex-1 text-right">الحسابات المحظورة</span>
+                    </button>
+                    <div class="h-px bg-slate-100 my-1"></div>
+                    <button role="menuitem" onclick="closeAdminMenu(); logout()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-red-600 text-sm font-bold">
+                        <i class="fas fa-sign-out-alt w-5 text-center"></i><span class="flex-1 text-right">تسجيل الخروج</span>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
@@ -361,8 +369,12 @@
                 } else {
                     // الوضع الطبيعي للإدارة
                     setTimeout(() => window.refreshPackageRequestsBadge && window.refreshPackageRequestsBadge(), 800);
-                    els.mainHeader.classList.remove('hidden'); 
-                    loadPendingProfiles(); 
+                    els.mainHeader.classList.remove('hidden');
+                    loadPendingProfiles();
+                    // ?open=pkgreq | bans: من قائمة ⋮ في admin.html (النافذتان مبنيتان هنا فقط)
+                    const openParam = urlParams.get('open');
+                    if (openParam === 'pkgreq') setTimeout(() => window.openPackageRequests(), 300);
+                    if (openParam === 'bans') setTimeout(() => window.openBansList(), 300);
                 }
             } 
             else { 
@@ -604,6 +616,7 @@
                 const cleanPhone = p.phone ? p.phone.toString().replace(/\D/g, '') : '';
                 const decodedShortBio = decodeFromHTML(p.shortBio || 'لا توجد نبذة مختصره.');
                 const base64ShortBio = encodeBase64(decodedShortBio);
+                const base64ShortBioLink = encodeBase64(decodedShortBio + buildProfileShareLink(p.refId)); // للنسخ والنشر فقط (رسالة صاحب الملف بلا رابط)
                 
                 const realName = p.name || 'بدون اسم';
                 const safeClientName = realName.replace(/'/g, "\\'"); 
@@ -659,7 +672,7 @@
                         </div>
                         <div class="flex gap-2">
                             <button onclick="showDetailedBio('${p.refId}')" class="flex-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-expand-arrows-alt"></i> النبذة المفصلة</button>
-                            <button onclick="safeCopyFromBase64(this, '${base64ShortBio}')" class="bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-3 rounded-lg flex items-center justify-center transition-colors shadow-sm shrink-0"><i class="far fa-copy"></i> <span class="text-[10px] font-bold ml-1">نسخ</span></button>
+                            <button onclick="safeCopyFromBase64(this, '${base64ShortBioLink}')" title="نسخ النبذة مع رابط الملف المباشر" class="bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 px-3 rounded-lg flex items-center justify-center transition-colors shadow-sm shrink-0"><i class="far fa-copy"></i> <span class="text-[10px] font-bold ml-1">نسخ</span></button>
                         </div>
                     </div>
                     
@@ -719,7 +732,7 @@
             state.searchResults.forEach(p => {
                 if (state.selectedIds.has(p.refId)) {
                     let bio = decodeFromHTML(p.shortBio || 'لا توجد نبذة');
-                    dataToCopy.push(`ملف #${p.refId}\n${bio}`);
+                    dataToCopy.push(`ملف #${p.refId}\n${bio}${buildProfileShareLink(p.refId)}`);
                 }
             });
             if (dataToCopy.length === 0) return showToast('لا توجد بيانات صالحة للنسخ', 'error');
@@ -777,11 +790,17 @@
             const rawText = decodeBase64(b64Text); const finalUrl = `https://api.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(rawText)}`; window.open(finalUrl, '_blank');
         };
 
+        // رابط الملف المباشر للمنصة العامة (نفس صيغة search.html وindex.html وsmart.html): يفتح البحث على هذا الرقم مباشرة.
+        // يُلحَق بنصوص النسخ والنشر فقط، لا بالنبذة المعروضة.
+        function buildProfileShareLink(refId) {
+            return `\n\nرابط الملف المباشر:\nhttps://zewaj.github.io/zewaj/index.html?open=search&refId=${encodeURIComponent(refId)}`;
+        }
+
         window.showDetailedBio = function(refId) {
             const profile = state.searchResults.find(p => p.refId === refId); if (!profile) return;
             const bioText = decodeFromHTML(profile.autoBio || 'لا توجد نبذة مفصلة.');
             const bodyHTML = `<div class="whitespace-pre-wrap text-sm leading-8 text-slate-700 font-medium bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100">${bioText}</div>`;
-            const footerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-colors">إغلاق</button><button onclick="safeCopyFromBase64(this, '${encodeBase64(bioText)}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold transition-colors"><i class="far fa-copy"></i> نسخ النبذة</button>`;
+            const footerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-colors">إغلاق</button><button onclick="safeCopyFromBase64(this, '${encodeBase64(bioText + buildProfileShareLink(refId))}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold transition-colors"><i class="far fa-copy"></i> نسخ النبذة</button>`;
             openModal(`النبذة المفصلة للملف #${refId}`, bodyHTML, footerHTML, 'p-4 w-full');
         };
 
@@ -1318,11 +1337,29 @@
             return d ? `https://wa.me/${d}` : '#';
         }
 
+        // شارة طلبات الباقات: داخل القائمة ⋮ وعلى زرها معاً
+        function setPkgBadge(n) {
+            ['pkgreq-badge', 'pkgreq-dot'].forEach(id => { const b = document.getElementById(id); if (b) { b.innerText = n; b.classList.toggle('hidden', n === 0); } });
+        }
+
+        // قائمة ⋮ في الرأس: تُغلق بالضغط خارجها أو بـ Esc
+        window.toggleAdminMenu = function(ev) {
+            if (ev) ev.stopPropagation();
+            const m = document.getElementById('admin-menu'), open = m.classList.contains('hidden');
+            m.classList.toggle('hidden', !open);
+            document.getElementById('admin-menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        window.closeAdminMenu = function() {
+            const m = document.getElementById('admin-menu'); if (m) m.classList.add('hidden');
+            const b = document.getElementById('admin-menu-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+        };
+        document.addEventListener('click', e => { if (!e.target.closest('#admin-menu')) closeAdminMenu(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAdminMenu(); });
+
         window.refreshPackageRequestsBadge = async function() {
             try {
                 const res = await apiCall({ action: 'adminGetPackageRequests', adminToken: state.adminToken });
-                const n = (res.pending || []).length; const b = document.getElementById('pkgreq-badge');
-                if (b) { b.innerText = n; b.classList.toggle('hidden', n === 0); }
+                setPkgBadge((res.pending || []).length);
             } catch (e) { /* الشارة اختيارية: نتجاهل الفشل */ }
         };
 
@@ -1331,7 +1368,7 @@
             try {
                 const res = await apiCall({ action: 'adminGetPackageRequests', adminToken: state.adminToken });
                 const pending = res.pending || []; const recent = res.recent || [];
-                const b = document.getElementById('pkgreq-badge'); if (b) { b.innerText = pending.length; b.classList.toggle('hidden', pending.length === 0); }
+                setPkgBadge(pending.length);
                 const isRewardReq = r => String(r.packageName || '').indexOf('🎁') === 0; // مكافأة إحالة (باقة مجانية) لا تنتظر سداداً
                 const card = r => `
                     <div class="bg-white border ${isRewardReq(r) ? 'border-emerald-300' : 'border-slate-200'} rounded-2xl p-3 shadow-sm">
@@ -1445,7 +1482,7 @@
 
                 const renderGroup = (arr, colorCode, tabTarget) => {
                     if(!arr.length) return '';
-                    let bulkText = "السلام عليكم، وجدنا هذه الملفات المناسبة لكم:\n\n"; arr.forEach(m => { bulkText += `ملف #${m.refId}\n${decodeFromHTML(m.shortBio || '')}\n\n`; });
+                    let bulkText = "السلام عليكم، وجدنا هذه الملفات المناسبة لكم:\n\n"; arr.forEach(m => { bulkText += `ملف #${m.refId}\n${decodeFromHTML(m.shortBio || '')}${buildProfileShareLink(m.refId)}\n\n`; });
                     let bulkBase64 = encodeBase64(bulkText); let myPhone = myP?.phone ? myP.phone.toString().replace(/\D/g, '') : '';
                     let bgColor = colorCode === 'emerald' ? 'bg-emerald-50' : (colorCode === 'amber' ? 'bg-amber-50' : 'bg-slate-50');
                     let borderColor = colorCode === 'emerald' ? 'border-emerald-200' : (colorCode === 'amber' ? 'border-amber-200' : 'border-slate-200');
