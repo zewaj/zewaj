@@ -2659,7 +2659,10 @@ function closeTermsModal() {
                     maritalStatus: getV('maritalStatus'), childrenCount: getV('childrenCount') || "0", childrenStatus: getV('custodyStatus'),
                     education: getV('education'), job: finalJob, height: getV('height'), weight: getV('weight'),
                     skinColor: getC('skinColor') || "غير محدد", marriageType: isMale ? getV('menMarriageType') : getV('womenMarriageType'),
-                    specialConditions: isMale ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، '),
+                    // 🟢 [2026-10-25] الخيارات الخاصة تُرسل فقط إن كان نوع الزواج المختار خاصاً (إخفاء القائمة لا يلغي تأشير مربعاتها، فكانت تُحفظ مع "تقليدي")
+                    specialConditions: isMale
+                        ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : "")
+                        : (getV('womenMarriageType') === "زواج بظروف خاصة" ? Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، ') : ""),
                     acceptMarried: !isMale ? getV('acceptMarried') : "", monthlyIncome: isMale ? getV('monthlyIncome') : "",
                     fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? `${platformFees.menSpecialAdvance} باقة + ${platformFees.menMatch} توفيق` : `${platformFees.directFee} / ${platformFees.directFeeSpecialWomen} تواصل مباشر + ${platformFees.menMatch} توفيق`) : `${platformFees.womenMatch} توفيق`,
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
