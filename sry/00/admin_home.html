@@ -96,7 +96,7 @@
     <span class="num" data-k="review">0</span>
   </a>
   <div class="grid grid-cols-2 gap-2.5 mt-2.5">
-    <a href="admin_search.html?show=جديد" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
+    <a href="admin_search.html" id="newTodayLink" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
       <i class="fas fa-chevron-left chev"></i>
       <span class="num block" data-k="newToday">0</span>
       <span class="text-xs font-bold">مسجلون جدد اليوم</span>
@@ -218,6 +218,10 @@ function render(sum, fromCache) {
   setNum('packages', sum.packages === undefined ? null : sum.packages, fl);
   setNum('bans', sum.bans === undefined ? null : sum.bans, fl);
   shownAt = sum.builtAt || Date.now();
+  // «مسجلون جدد اليوم» يفتح ملفات اليوم بأرقامها أياً كانت حالتها (newTodayRefs من الخادم r7)؛ قائمة «جديد» كانت تظهر
+  // فارغة حين تكون ملفات اليوم «نشر» أو معتمدة. خادم أقدم ← قائمة الانتظار كلها.
+  const todayRefs = Array.isArray(p.newTodayRefs) ? p.newTodayRefs : [];
+  document.getElementById('newTodayLink').href = todayRefs.length ? `admin_search.html?refs=${encodeURIComponent(todayRefs.join(','))}` : 'admin_search.html';
   document.getElementById('newTodaySub').textContent = p.newToday ? `رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0}` : (sum.legacy ? 'يظهر بعد تحديث السكريبت' : '');
   document.getElementById('outcomeSub').textContent = sum.messages && m.outcome ? `زواج ${m.outcomeMarriage} · عدم توفيق ${m.outcomeEnd}` : 'زواج أو عدم توفيق بانتظار التأكيد';
   document.getElementById('actionSub').textContent = sum.messages && m.dispute ? `منها ${m.dispute} نزاع` : 'نزاع، رسائل تنتظر اعتمادك، دفع، تأخر';

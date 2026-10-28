@@ -391,7 +391,15 @@
                     // الوضع الطبيعي للإدارة
                     setTimeout(() => window.refreshPackageRequestsBadge && window.refreshPackageRequestsBadge(), 800);
                     els.mainHeader.classList.remove('hidden');
-                    loadPendingProfiles(urlParams.get('show') || undefined, true);
+                    // ?refs=6105,6106: من «مسجلون جدد اليوم» في admin_home.html (ملفات اليوم بأرقامها أياً كانت حالتها)
+                    const refsParam = (urlParams.get('refs') || '').replace(/[^0-9,]/g, '');
+                    if (refsParam) {
+                        document.getElementById('search-type-ref').checked = true;
+                        els.searchInput.value = refsParam;
+                        performQuickSearch();
+                    } else {
+                        loadPendingProfiles(urlParams.get('show') || undefined, true);
+                    }
                     // ?open=pkgreq | bans: من قائمة ⋮ في admin.html (النافذتان مبنيتان هنا فقط)
                     const openParam = urlParams.get('open');
                     if (openParam === 'pkgreq') setTimeout(() => window.openPackageRequests(), 300);
@@ -1393,9 +1401,21 @@
         }
 
         // قائمة ⋮ في الرأس: تُغلق بالضغط خارجها أو بـ Esc
+        // 🟢 [2026-10-28] القائمة كانت تظهر خلف بطاقات الملفات على الجوال: هي داخل رأس لاصق ضبابي (sticky + backdrop-blur)،
+        // وSafari على الآيفون يرسم منطقة التمرير فوقه رغم z-index. صارت تُنقل إلى body بموضع ثابت تحت الزر، فوق كل شيء.
         window.toggleAdminMenu = function(ev) {
             if (ev) ev.stopPropagation();
             const m = document.getElementById('admin-menu'), open = m.classList.contains('hidden');
+            if (open) {
+                if (m.parentElement !== document.body) {
+                    document.body.appendChild(m);
+                    m.classList.remove('absolute', 'top-full', 'mt-2', 'left-0', 'z-[60]');
+                    m.classList.add('fixed', 'z-[90]');
+                }
+                const r = document.getElementById('admin-menu-btn').getBoundingClientRect();
+                m.style.top = (r.bottom + 8) + 'px';
+                m.style.left = Math.max(8, r.left) + 'px';
+            }
             m.classList.toggle('hidden', !open);
             document.getElementById('admin-menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
         };
