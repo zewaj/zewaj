@@ -75,17 +75,23 @@
   </a>
 
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">التسجيلات</p>
-  <div class="grid grid-cols-2 gap-2.5">
-    <a href="admin_search.html" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
+  <!-- ملف معتمد عدّل صاحبه نصاً حراً فعاد «قيد المراجعة» (أهم بند: كان ظاهراً وصار محجوباً حتى تعتمده) -->
+  <a href="admin_search.html?show=قيد%20المراجعة" class="wide bg-orange-50 text-orange-800 border border-orange-200">
+    <i class="fas fa-pen-to-square text-xl"></i>
+    <span><b class="block text-sm">ملفات تحتاج مراجعتك</b><span class="text-[11px] opacity-80">عدّلها أصحابها بعد اعتمادها، ومحجوبة حتى تعتمدها</span></span>
+    <span class="num" data-k="review">0</span>
+  </a>
+  <div class="grid grid-cols-2 gap-2.5 mt-2.5">
+    <a href="admin_search.html?show=جديد" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
       <i class="fas fa-chevron-left chev"></i>
       <span class="num block" data-k="newToday">0</span>
       <span class="text-xs font-bold">مسجلون جدد اليوم</span>
       <span class="block text-[10px] opacity-75 mt-0.5" id="newTodaySub"></span>
     </a>
-    <a href="admin_search.html" class="tile bg-amber-50 text-amber-800 border border-amber-100">
+    <a href="admin_search.html?show=نشر" class="tile bg-cyan-50 text-cyan-800 border border-cyan-100">
       <i class="fas fa-chevron-left chev"></i>
-      <span class="num block" data-k="pending">0</span>
-      <span class="text-xs font-bold">ملفات تحتاج مراجعتك</span>
+      <span class="num block" data-k="publish">0</span>
+      <span class="text-xs font-bold">ملفات نشر</span>
     </a>
   </div>
 
@@ -159,6 +165,13 @@ function countMessages(requests) {
   });
   return m;
 }
+// خادم قديم: نفس تقسيم adminGetHomeSummary من قائمة adminGetPendingProfiles (قيد المراجعة / نشر / جديد وانتظار)
+function splitPending(list) {
+  const p = { pending: list.length, review: 0, publish: 0, newAll: 0, newToday: null };
+  list.forEach(x => { const s = String(x.profileStatus || '').trim();
+    if (s === 'قيد المراجعة') p.review++; else if (s === 'نشر') p.publish++; else p.newAll++; });
+  return p;
+}
 async function legacySummary() {
   const [dash, pend, pkg] = await Promise.all([
     post({ action: 'adminGetDashboard', adminToken: token }).catch(() => null),
@@ -168,7 +181,7 @@ async function legacySummary() {
   if ([dash, pend, pkg].some(isAuthError)) return { authError: true };
   return { success: true, legacy: true, builtAt: Date.now(),
     messages: dash && dash.success ? countMessages(dash.requests) : null,
-    profiles: pend && pend.success ? { pending: (pend.results || []).length, newToday: null } : null,
+    profiles: pend && pend.success ? splitPending(pend.results || []) : null,
     packages: pkg && pkg.success ? (pkg.pending || []).length : null, bans: null };
 }
 
@@ -181,7 +194,9 @@ function setNum(k, v) {
 function render(sum, fromCache) {
   const m = sum.messages || {}, p = sum.profiles || {};
   ['action', 'outcome', 'active', 'contact'].forEach(k => setNum(k, sum.messages ? m[k] : null));
-  setNum('pending', sum.profiles ? p.pending : null);
+  // ملخص من خادم قبل 2026-10-28 لا يحمل review/publish ← "—" بدل صفر مضلل
+  setNum('review', sum.profiles && p.review !== undefined ? p.review : null);
+  setNum('publish', sum.profiles && p.publish !== undefined ? p.publish : null);
   setNum('newToday', sum.profiles && p.newToday !== null && p.newToday !== undefined ? p.newToday : null);
   setNum('packages', sum.packages === undefined ? null : sum.packages);
   setNum('bans', sum.bans === undefined ? null : sum.bans);
@@ -213,7 +228,7 @@ function showHome() {
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('homeView').classList.remove('hidden');
   let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
-  if (cached) render(cached, true); else ['action','outcome','newToday','pending','active','contact','packages','bans'].forEach(k => setNum(k, undefined));
+  if (cached) render(cached, true); else ['action','outcome','newToday','review','publish','active','contact','packages','bans'].forEach(k => setNum(k, undefined));
   load(false);
 }
 function logout(msg) {

@@ -391,7 +391,7 @@
                     // الوضع الطبيعي للإدارة
                     setTimeout(() => window.refreshPackageRequestsBadge && window.refreshPackageRequestsBadge(), 800);
                     els.mainHeader.classList.remove('hidden');
-                    loadPendingProfiles();
+                    loadPendingProfiles(urlParams.get('show') || undefined);
                     // ?open=pkgreq | bans: من قائمة ⋮ في admin.html (النافذتان مبنيتان هنا فقط)
                     const openParam = urlParams.get('open');
                     if (openParam === 'pkgreq') setTimeout(() => window.openPackageRequests(), 300);
@@ -508,13 +508,15 @@
             finally { setBtnLoading(els.quickSearchBtn, false, 'بحث <i class="fas fa-search text-xs hidden sm:inline"></i>'); }
         }
 
-        window.loadPendingProfiles = async function() {
-            clearSelection(); els.searchInput.value = ''; 
+        // onlyStatus (اختياري): يفتح القائمة على حالة واحدة (من بطاقات admin_home.html عبر ?show=)، والشرائح تبقى لتوسيعها
+        window.loadPendingProfiles = async function(onlyStatus) {
+            clearSelection(); els.searchInput.value = '';
             els.resultsTitle.innerHTML = `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة <span id="dynamic-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono transition-all">0</span>`;
             els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
             
             state.viewingSpecialStatus = false;
-            state.activeFilters = new Set(['جديد', 'قيد المراجعة', 'نشر']); 
+            const PENDING_STATUSES = ['جديد', 'قيد المراجعة', 'نشر'];
+            state.activeFilters = new Set(PENDING_STATUSES.includes(onlyStatus) ? [onlyStatus] : PENDING_STATUSES);
 
             try {
                 const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken }, 0, SEARCH_TIMEOUT);
