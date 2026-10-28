@@ -2212,39 +2212,11 @@
             const ok = await showMsgModal(m.title, m.info + '\n\nلا يمكن التراجع عنه بعد الإرسال. هل تريد المتابعة؟', 'confirm');
             if (!ok) return;
 
-            const btn = document.getElementById('btnSaveStatus');
-            const cancelBtn = document.getElementById('btnCancelStatus');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = "جاري التنفيذ..."; btn.disabled = true; cancelBtn.disabled = true;
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminActOnBehalf', adminToken: state.adminToken, reqId: req.reqId, rowHint: req.rowIndex, actionType: m.actionType, actingGender: m.actingGender || '', reason: reason }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch (e) { throw new Error("استجابة السيرفر غير صالحة."); }
-
-                if (result.success) {
-                    closeModal(); scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
-                    const sentTo = `${result.notified || ''}${result.notifiedName ? ' - ' + result.notifiedName : ''}${result.notifiedPhoneTail ? ' (' + result.notifiedPhoneTail + ')' : ''}`;
-                    await showMsgModal("تم التنفيذ", `${result.message || ''}\n\nأُرسل واتساب آلياً إلى: ${sentTo}`);
-                    await fetchData(true, req.reqId);
-                } else {
-                    await showMsgModal("تنبيه", result.message || "تعذر تنفيذ الإجراء.");
-                }
-            } catch (e) {
-                if (e.name === 'AbortError') await showMsgModal("تأخير", "تأخر استجابة السيرفر. قد يكون الإجراء نُفّذ، حدّث الصفحة وتحقق قبل إعادة المحاولة.");
-                else await showMsgModal("خطأ", "فشل الاتصال بالسيرفر.");
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false; cancelBtn.disabled = false;
-            }
+            // 🟢 [2026-10-28 r9] بالطابور الخلفي كبقية الإجراءات: لا حجز للنافذة ولا "قد يكون نُفّذ"؛ opId يمنع التنفيذ مرتين
+            // (خادم r9)، وانقطاع الردّ يُعاد بصمت ويُفحص هل وصل (تغيّرت حالة الطلب أو محادثته).
+            queueAdminAction(req, 'proxy', m.title, { action: 'adminActOnBehalf', adminToken: state.adminToken, reqId: req.reqId, rowHint: req.rowIndex, actionType: m.actionType, actingGender: m.actingGender || '', reason: reason });
+            closeModal(); scrollPositions = {}; sessionStorage.removeItem('admin_requests_cache');
+            renderTable(); processAdminQueue();
         }
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 21: طابور العمليات الخلفية ومعالجة الأخطاء 🔴🔴🔴 -->
@@ -2267,7 +2239,7 @@
             const opId = newAdminOpId();
             const act = {
                 id: 'act_' + Date.now() + '_' + Math.floor(Math.random() * 1000), reqId: req.reqId, type: type, text: text, state: 'sending',
-                opId: opId, before: { status: req.status || '', hadText: !!(text && req.message && req.message.indexOf(text) !== -1) },
+                opId: opId, before: { status: req.status || '', msgLen: (req.message || '').length, hadText: !!(text && req.message && req.message.indexOf(text) !== -1) },
                 payload: Object.assign({}, payload, { opId: opId }), timestamp: Date.now()
             };
             pendingAdminActions.push(act); savePendingActions();
@@ -2284,6 +2256,8 @@
                 if (!r) return null;
                 const want = act.payload && act.payload.newStatus;
                 const b = act.before || {};
+                // التدخل بالنيابة: الخادم هو من يحدد الحالة الجديدة، فيُعدّ واصلاً إن تغيّرت حالة الطلب أو طالت محادثته
+                if (act.type === 'proxy') return (r.status || '') !== b.status || (b.msgLen != null && (r.message || '').length > b.msgLen);
                 if (want && (r.status || '') === want && b.status !== want) return true;
                 if (act.text && act.text.length > 8 && !b.hadText && r.message && r.message.indexOf(act.text) !== -1) return true;
                 return false;
@@ -2300,6 +2274,12 @@
             pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
             savePendingActions();
             if (!result) return;
+            if (act.type === 'proxy') {
+                const sentTo = `${result.notified || ''}${result.notifiedName ? ' - ' + result.notifiedName : ''}${result.notifiedPhoneTail ? ' (' + result.notifiedPhoneTail + ')' : ''}`;
+                const tk = qaToast('✅ ' + (act.text || 'تم التنفيذ') + ' — #' + act.reqId + (sentTo ? ' · أُرسل واتساب آلياً إلى: ' + sentTo : ''), 'ok', true);
+                setTimeout(() => { if (tk && tk.remove) tk.remove(); }, 9000); // أطول من العادي: فيه من وصله الواتساب
+                return;
+            }
             // الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة، وتغيير الحالة من الترس صامت دائماً
             const serverAlreadyNotified = act.type === 'status_update' || (result.autoNotified && act.type === 'closeChat');
             if (result.waUrl) { showWaSuccessModal(result.waUrl, act.reqId); return; }
