@@ -27,9 +27,22 @@
   .wide .num { font-size: 1.6rem; font-weight: 900; margin-inline-start: auto; }
   .sk { color: transparent !important; background: #e2e8f0; border-radius: .5rem; min-width: 2.2rem; display:inline-block; animation: pulse 1.2s infinite; }
   @keyframes pulse { 50% { opacity: .5; } }
+  /* 🟢 [2026-10-28] حالة التحديث: شريط رفيع أعلى الصفحة + أرقام باهتة حين المعروض نسخة قديمة، ووميض للرقم الذي تغيّر */
+  #topBar { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 50; overflow: hidden; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #topBar.on { opacity: 1; }
+  #topBar::before { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; background: linear-gradient(90deg, transparent, #6366f1, transparent); animation: slide 1.1s linear infinite; }
+  @keyframes slide { from { right: -40%; } to { right: 100%; } }
+  body.stale .num { opacity: .35; transition: opacity .3s; }
+  .num { transition: opacity .3s; }
+  .num.bump { animation: bump .9s ease-out; }
+  @keyframes bump { 0% { transform: scale(1.25); color: #4f46e5; } 100% { transform: scale(1); } }
+  #statusChip.busy { color: #4f46e5; }
+  .ready-dot { position: absolute; top: .45rem; left: .45rem; width: .5rem; height: .5rem; border-radius: 9999px; background: #10b981; display: none; }
+  .ready-dot.on { display: block; }
 </style>
 </head>
 <body class="min-h-[100dvh] text-slate-800">
+<div id="topBar" aria-hidden="true"></div>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥 القسم 1: HTML - شاشة الدخول 🟥🟥🟥 -->
@@ -53,6 +66,7 @@
     <div>
       <h1 class="font-black text-xl">لوحة الإدارة</h1>
       <p id="subLine" class="text-[11px] text-slate-500 font-bold"></p>
+      <p id="statusChip" class="text-[11px] text-slate-400 font-bold" aria-live="polite"></p>
     </div>
     <div class="flex items-center gap-2">
       <button id="refreshBtn" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-600 shadow-sm" title="تحديث" aria-label="تحديث"><i id="refreshIcon" class="fas fa-sync-alt"></i></button>
@@ -121,8 +135,8 @@
 
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">الصفحات</p>
   <div class="grid grid-cols-3 gap-2.5">
-    <a href="admin.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-comments text-xl text-indigo-600 block mb-1"></i><span class="text-xs font-bold">المراسلات</span></a>
-    <a href="admin_search.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-database text-xl text-slate-700 block mb-1"></i><span class="text-xs font-bold">مركز البيانات</span></a>
+    <a href="admin.html" class="relative bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><span id="readyMsg" class="ready-dot" title="بياناتها جاهزة"></span><i class="fas fa-comments text-xl text-indigo-600 block mb-1"></i><span class="text-xs font-bold">المراسلات</span></a>
+    <a href="admin_search.html" class="relative bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><span id="readySearch" class="ready-dot" title="بياناتها جاهزة"></span><i class="fas fa-database text-xl text-slate-700 block mb-1"></i><span class="text-xs font-bold">مركز البيانات</span></a>
     <a href="admin_batch_register.html" class="bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><i class="fas fa-users text-xl text-emerald-600 block mb-1"></i><span class="text-xs font-bold">تسجيل أسرة</span></a>
   </div>
 </main>
@@ -185,21 +199,25 @@ async function legacySummary() {
     packages: pkg && pkg.success ? (pkg.pending || []).length : null, bans: null };
 }
 
-function setNum(k, v) {
+function setNum(k, v, flash) {
   document.querySelectorAll(`[data-k="${k}"]`).forEach(el => {
+    const txt = v === undefined ? '0' : (v === null ? '—' : String(v));
+    const changed = flash && !el.classList.contains('sk') && el.textContent !== txt;
     el.classList.toggle('sk', v === undefined);
-    el.textContent = v === undefined ? '0' : (v === null ? '—' : v);
+    el.textContent = txt;
+    if (changed) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   });
 }
 function render(sum, fromCache) {
-  const m = sum.messages || {}, p = sum.profiles || {};
-  ['action', 'outcome', 'active', 'contact'].forEach(k => setNum(k, sum.messages ? m[k] : null));
+  const m = sum.messages || {}, p = sum.profiles || {}, fl = !fromCache;
+  ['action', 'outcome', 'active', 'contact'].forEach(k => setNum(k, sum.messages ? m[k] : null, fl));
   // ملخص من خادم قبل 2026-10-28 لا يحمل review/publish ← "—" بدل صفر مضلل
-  setNum('review', sum.profiles && p.review !== undefined ? p.review : null);
-  setNum('publish', sum.profiles && p.publish !== undefined ? p.publish : null);
-  setNum('newToday', sum.profiles && p.newToday !== null && p.newToday !== undefined ? p.newToday : null);
-  setNum('packages', sum.packages === undefined ? null : sum.packages);
-  setNum('bans', sum.bans === undefined ? null : sum.bans);
+  setNum('review', sum.profiles && p.review !== undefined ? p.review : null, fl);
+  setNum('publish', sum.profiles && p.publish !== undefined ? p.publish : null, fl);
+  setNum('newToday', sum.profiles && p.newToday !== null && p.newToday !== undefined ? p.newToday : null, fl);
+  setNum('packages', sum.packages === undefined ? null : sum.packages, fl);
+  setNum('bans', sum.bans === undefined ? null : sum.bans, fl);
+  shownAt = sum.builtAt || Date.now();
   document.getElementById('newTodaySub').textContent = p.newToday ? `رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0}` : (sum.legacy ? 'يظهر بعد تحديث السكريبت' : '');
   document.getElementById('outcomeSub').textContent = sum.messages && m.outcome ? `زواج ${m.outcomeMarriage} · عدم توفيق ${m.outcomeEnd}` : 'زواج أو عدم توفيق بانتظار التأكيد';
   document.getElementById('actionSub').textContent = sum.messages && m.dispute ? `منها ${m.dispute} نزاع` : 'نزاع، رسائل تنتظر اعتمادك، دفع، تأخر';
@@ -209,9 +227,32 @@ function render(sum, fromCache) {
 }
 function showErr(msg) { const b = document.getElementById('errBar'); b.textContent = msg; b.classList.toggle('hidden', !msg); }
 
-async function load(force) {
+// 🟢 [2026-10-28] حالة التحديث الظاهرة: حين المعروض نسخة محفوظة (أول فتح، زر التحديث، أو العودة بعد غياب طويل)
+// تبهت الأرقام ويظهر شريط رفيع أعلى الصفحة وعمر النسخة، فلا يُظن أن الأرقام القديمة حالية. التحديث الدوري الصامت
+// (كل دقيقتين والأرقام حديثة) يكتفي بدوران أيقونة التحديث حتى لا تومض الصفحة كل مرة.
+const STALE_LOUD_MS = 10 * 60 * 1000;
+let shownAt = 0;
+function ago(ts) {
+  const min = Math.round((Date.now() - ts) / 60000);
+  if (min < 1) return 'قبل لحظات';
+  if (min < 60) return min === 1 ? 'قبل دقيقة' : min === 2 ? 'قبل دقيقتين' : `قبل ${min} ${min <= 10 ? 'دقائق' : 'دقيقة'}`;
+  const h = Math.round(min / 60);
+  return h === 1 ? 'قبل ساعة' : h === 2 ? 'قبل ساعتين' : `قبل ${h} ${h <= 10 ? 'ساعات' : 'ساعة'}`;
+}
+function setBusy(on, loud) {
+  document.getElementById('refreshIcon').classList.toggle('fa-spin', on);
+  document.getElementById('topBar').classList.toggle('on', on && loud);
+  document.body.classList.toggle('stale', on && loud && shownAt > 0);
+  const chip = document.getElementById('statusChip');
+  chip.classList.toggle('busy', on && loud);
+  chip.textContent = on && loud ? (shownAt ? `جاري التحديث… الأرقام الظاهرة من ${ago(shownAt)}` : 'جاري تحميل الأرقام…') : '';
+}
+
+async function load(force, loud) {
   if (loading) return; loading = true;
-  document.getElementById('refreshIcon').classList.add('fa-spin');
+  if (shownAt && Date.now() - shownAt > STALE_LOUD_MS) loud = true;
+  setBusy(true, !!loud);
+  let ok = false;
   try {
     let res = await post({ action: 'adminGetHomeSummary', adminToken: token, force: !!force });
     if (isAuthError(res)) return logout('انتهت الجلسة أو تغيّرت كلمة المرور.');
@@ -219,9 +260,42 @@ async function load(force) {
     if (res.authError) return logout('انتهت الجلسة أو تغيّرت كلمة المرور.');
     render(res, false); showErr(res.errors && res.errors.length ? 'بعض الأرقام لم تُحدَّث هذه المرة، اضغط تحديث.' : '');
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(res)); } catch (e) {}
+    ok = true;
   } catch (e) {
-    showErr('تعذر الاتصال بالخادم. الأرقام الظاهرة من آخر تحديث.');
-  } finally { loading = false; document.getElementById('refreshIcon').classList.remove('fa-spin'); }
+    showErr(shownAt ? `تعذر الاتصال بالخادم. الأرقام الظاهرة من ${ago(shownAt)}، اضغط تحديث.` : 'تعذر الاتصال بالخادم، اضغط تحديث.');
+  } finally { loading = false; setBusy(false); }
+  if (ok) setTimeout(prefetchPages, 300);
+}
+
+// 🟢 [2026-10-28] تحميل مسبق في الخلفية بعد وصول الأرقام: بيانات المراسلات (admin.html تقرأ admin_requests_cache وترسم منها
+// فوراً ثم تحدّث بصمت) ثم قائمة الانتظار لمركز البيانات (admin_pending_prefetch). واحداً بعد الآخر لا متوازيين، ومرة كل
+// PREFETCH_MAX_AGE فقط: بيانات المراسلات تُبنى على الخادم نحو 30 ث، فتكرارها مع كل تحديث دوري يبطئ الخادم على الجميع.
+// sessionStorage خاصة بالتبويب، والروابط تفتح في نفس التبويب فتجدها الصفحة التالية.
+const PREFETCH_MAX_AGE = 5 * 60 * 1000;
+const DASH_AT_KEY = 'admin_prefetch_dash_at', PENDING_KEY = 'admin_pending_prefetch';
+let prefetching = false;
+function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function ssSet(k, v) { try { sessionStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function dashAge() { return ssGet('admin_requests_cache') ? Date.now() - (parseInt(ssGet(DASH_AT_KEY)) || 0) : Infinity; }
+function pendingAge() { try { const at = (JSON.parse(ssGet(PENDING_KEY) || 'null') || {}).at; return at ? Date.now() - at : Infinity; } catch (e) { return Infinity; } }
+function markReady() {
+  document.getElementById('readyMsg').classList.toggle('on', dashAge() < PREFETCH_MAX_AGE * 2);
+  document.getElementById('readySearch').classList.toggle('on', pendingAge() < PREFETCH_MAX_AGE * 2);
+}
+async function prefetchPages() {
+  if (prefetching || !token || document.hidden) return; prefetching = true;
+  try {
+    if (dashAge() > PREFETCH_MAX_AGE) {
+      const d = await post({ action: 'adminGetDashboard', adminToken: token }, 90000).catch(() => null);
+      if (d && d.success && ssSet('admin_requests_cache', JSON.stringify(d))) ssSet(DASH_AT_KEY, String(Date.now()));
+      markReady();
+    }
+    if (pendingAge() > PREFETCH_MAX_AGE) {
+      const p = await post({ action: 'adminGetPendingProfiles', adminToken: token }, 60000).catch(() => null);
+      if (p && p.success) ssSet(PENDING_KEY, JSON.stringify({ at: Date.now(), results: p.results || [] }));
+      markReady();
+    }
+  } finally { prefetching = false; }
 }
 
 function showHome() {
@@ -229,10 +303,11 @@ function showHome() {
   document.getElementById('homeView').classList.remove('hidden');
   let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
   if (cached) render(cached, true); else ['action','outcome','newToday','review','publish','active','contact','packages','bans'].forEach(k => setNum(k, undefined));
-  load(false);
+  markReady();
+  load(false, true);
 }
 function logout(msg) {
-  try { localStorage.removeItem('adminToken'); localStorage.removeItem(CACHE_KEY); } catch (e) {}
+  try { localStorage.removeItem('adminToken'); localStorage.removeItem(CACHE_KEY); sessionStorage.removeItem(PENDING_KEY); sessionStorage.removeItem(DASH_AT_KEY); } catch (e) {}
   token = '';
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('loginView').classList.remove('hidden');
@@ -251,7 +326,7 @@ document.getElementById('loginForm').onsubmit = async ev => {
   } catch (e) { err.textContent = 'تعذر الاتصال بالخادم، حاول مرة أخرى.'; err.classList.remove('hidden'); }
   finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
 };
-document.getElementById('refreshBtn').onclick = () => load(true);
+document.getElementById('refreshBtn').onclick = () => load(true, true);
 document.getElementById('logoutBtn').onclick = () => logout('');
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) load(false); });
 setInterval(() => { if (!document.hidden && token) load(false); }, 120000);

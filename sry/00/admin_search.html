@@ -391,7 +391,7 @@
                     // الوضع الطبيعي للإدارة
                     setTimeout(() => window.refreshPackageRequestsBadge && window.refreshPackageRequestsBadge(), 800);
                     els.mainHeader.classList.remove('hidden');
-                    loadPendingProfiles(urlParams.get('show') || undefined);
+                    loadPendingProfiles(urlParams.get('show') || undefined, true);
                     // ?open=pkgreq | bans: من قائمة ⋮ في admin.html (النافذتان مبنيتان هنا فقط)
                     const openParam = urlParams.get('open');
                     if (openParam === 'pkgreq') setTimeout(() => window.openPackageRequests(), 300);
@@ -509,21 +509,48 @@
         }
 
         // onlyStatus (اختياري): يفتح القائمة على حالة واحدة (من بطاقات admin_home.html عبر ?show=)، والشرائح تبقى لتوسيعها
-        window.loadPendingProfiles = async function(onlyStatus) {
+        // useCache (أول فتح للصفحة فقط): 🟢 [2026-10-28] القائمة المحمّلة مسبقاً من admin_home.html (أو آخر فتح في نفس التبويب)
+        // تُرسم فوراً إن كان عمرها أقل من 10 دقائق، ثم تُستبدل بالحديثة حين تصل. لا تُستعمل بعد أي إجراء (قد تعرض ملفاً اعتُمد للتو).
+        const PENDING_PREFETCH_KEY = 'admin_pending_prefetch', PENDING_PREFETCH_MAX_AGE = 10 * 60 * 1000;
+        let pendingLoadSeq = 0;
+        window.loadPendingProfiles = async function(onlyStatus, useCache) {
+            const seq = ++pendingLoadSeq;
             clearSelection(); els.searchInput.value = '';
-            els.resultsTitle.innerHTML = `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة <span id="dynamic-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono transition-all">0</span>`;
-            els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
-            
+            const titleHtml = (busy) => `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة <span id="dynamic-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono transition-all">0</span>` + (busy ? ` <span id="pending-refreshing" class="text-[10px] font-bold text-slate-400 mr-1"><i class="fas fa-sync-alt fa-spin"></i> نُحدّث القائمة…</span>` : '');
+            els.resultsTitle.innerHTML = titleHtml(false);
+
             state.viewingSpecialStatus = false;
             const PENDING_STATUSES = ['جديد', 'قيد المراجعة', 'نشر'];
             state.activeFilters = new Set(PENDING_STATUSES.includes(onlyStatus) ? [onlyStatus] : PENDING_STATUSES);
 
+            let fromCache = false;
+            if (useCache) {
+                try {
+                    const c = JSON.parse(sessionStorage.getItem(PENDING_PREFETCH_KEY) || 'null');
+                    if (c && Array.isArray(c.results) && Date.now() - c.at < PENDING_PREFETCH_MAX_AGE) {
+                        state.searchResults = c.results; fromCache = true;
+                        els.resultsTitle.innerHTML = titleHtml(true);
+                        renderFiltersUI(); renderResults();
+                    }
+                } catch (e) {}
+            }
+            if (!fromCache) els.resultsContainer.innerHTML = SEARCH_LOADER_HTML;
+
+            // ما زلنا على قائمة الانتظار نفسها؟ (لم يبحث الأدمن ولم يفتح حالة أخرى أثناء الانتظار)
+            const stillHere = () => seq === pendingLoadSeq && !state.viewingSpecialStatus && !els.searchInput.value.trim();
             try {
                 const res = await apiCall({ action: "adminGetPendingProfiles", adminToken: state.adminToken }, 0, SEARCH_TIMEOUT);
-                state.searchResults = res.results || []; 
+                try { sessionStorage.setItem(PENDING_PREFETCH_KEY, JSON.stringify({ at: Date.now(), results: res.results || [] })); } catch (e) {}
+                if (!stillHere()) return;
+                if (fromCache) { const r = document.getElementById('pending-refreshing'); if (r) r.remove(); }
+                state.searchResults = res.results || [];
                 renderFiltersUI();
                 renderResults();
-            } catch (error) { els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`; }
+            } catch (error) {
+                if (!stillHere()) return;
+                if (fromCache) { const r = document.getElementById('pending-refreshing'); if (r) r.innerHTML = '<i class="fas fa-exclamation-triangle text-amber-500"></i> قائمة محفوظة، تعذر تحديثها'; return; }
+                els.resultsContainer.innerHTML = `<div class="col-span-full text-center text-red-500 text-sm font-bold py-10 bg-white rounded-2xl border border-red-100 shadow-sm">${error.message}</div>`;
+            }
         };
 
 //

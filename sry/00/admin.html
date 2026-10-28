@@ -682,6 +682,7 @@
 
                 if (result.success) {
                     sessionStorage.setItem('admin_requests_cache', JSON.stringify(result));
+                    sessionStorage.setItem('admin_prefetch_dash_at', String(Date.now())); // admin_home.html لا تعيد التحميل المسبق ما دامت النسخة حديثة
                     document.getElementById('statMen').innerText = result.stats.totalMen;
                     document.getElementById('statWomen').innerText = result.stats.totalWomen;
                     
