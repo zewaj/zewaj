@@ -469,7 +469,8 @@
 
         function updateDynamicCounter() {
             const count = state.searchResults.filter(p => state.activeFilters.has(getStatusConfig(p.profileStatus).label)).length;
-            els.pendingBadge.innerText = count;
+            // [2026-10-28] شارة «الانتظار» في الرأس = عدد قائمة الانتظار كلها فقط؛ كانت تنسخ عدد أي نتائج معروضة (بحث برقم ← 1)
+            if (state.onPendingList) els.pendingBadge.innerText = state.searchResults.length;
             const dynamicCountEl = document.getElementById('dynamic-count');
             if (dynamicCountEl) {
                 dynamicCountEl.innerText = count;
@@ -484,6 +485,7 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 //
         window.fetchByStatus = async function(status) {
+            state.onPendingList = false;
             clearSelection(); 
             state.viewingSpecialStatus = true; 
             state.activeFilters = new Set([status]); 
@@ -502,6 +504,7 @@
         async function performQuickSearch() {
             clearSelection(); els.filtersContainer.classList.add('hidden');
             const val = els.searchInput.value.trim(); if (!val) return loadPendingProfiles();
+            state.onPendingList = false;
             const isPhone = document.getElementById('search-type-phone').checked;
             let payloadFilters = {}; if (isPhone) payloadFilters.phone = normalizePhoneQuery(val); else payloadFilters.refId = val;
             
@@ -523,6 +526,7 @@
         let pendingLoadSeq = 0;
         window.loadPendingProfiles = async function(onlyStatus, useCache) {
             const seq = ++pendingLoadSeq;
+            state.onPendingList = true;
             clearSelection(); els.searchInput.value = '';
             const titleHtml = (busy) => `<i class="fas fa-clock text-amber-500"></i> طلبات بانتظار المراجعة <span id="dynamic-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] mr-2 shadow-sm font-mono transition-all">0</span>` + (busy ? ` <span id="pending-refreshing" class="text-[10px] font-bold text-slate-400 mr-1"><i class="fas fa-sync-alt fa-spin"></i> نُحدّث القائمة…</span>` : '');
             els.resultsTitle.innerHTML = titleHtml(false);
