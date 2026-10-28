@@ -873,7 +873,7 @@
                 myPending.forEach(p => {
                     let isFailed = p.state === 'failed';
                     let bgClass = isFailed ? 'bg-rose-50 border-rose-200' : 'bg-slate-100 border-dashed border-slate-300 opacity-80';
-                    let iconHTML = isFailed ? '❌ فشل الإرسال (اضغط لإعادة المحاولة)' : '<svg class="w-3 h-3 inline animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> جاري الإرسال في الخلفية...';
+                    let iconHTML = isFailed ? '❌ فشل الإرسال (اضغط لإعادة المحاولة)' : '<svg class="w-3 h-3 inline animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ' + (p.note ? p.note : 'جاري الإرسال في الخلفية...');
                     
                     html += `
                     <div class="self-center text-center max-w-[90%] my-1 fade-in">
@@ -1840,10 +1840,10 @@
         }
 
         async function executeAdminAction(reqId, actionType, chosenReason = null) {
-            if(isProcessingAction) return;
             const req = allRequests.find(r => r.reqId === reqId);
             if(!req) return;
-            
+            if (pendingAdminActions.some(a => a.reqId === reqId && a.state === 'sending')) return; // إجراء جارٍ على هذا الطلب: لا نكرره
+
             let adminMessage = "";
             let newStatus = "";
             let prefixTag = "";
@@ -1897,81 +1897,10 @@
                 finalActionContext = 'closeChatSuccess|' + customPhoneToShare.trim();
             }
 
-            if (!requiresWhatsapp) {
-                let actionId = 'act_' + Date.now();
-                pendingAdminActions.push({
-                    id: actionId, reqId: reqId, type: actionType, text: adminMessage, state: 'sending',
-                    payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext },
-                    timestamp: Date.now()
-                });
-                savePendingActions();
-                scrollPositions = {}; renderTable(); processAdminQueue();
-                return;
-            }
-
-            // تم إزالة الشاشة البيضاء (window.open) من هنا
-            isProcessingAction = true;
-            document.getElementById('refreshIcon').classList.add('sync-spin');
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
-                if(result.success) {
-                    scrollPositions = {}; 
-                    sessionStorage.removeItem('admin_requests_cache');
-                    
-                    let targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                    let craftedUrl = ""; // رابط الواتساب النهائي
-
-                    if (actionType === 'closeChatSuccess') {
-                        targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
-                        let womanSummary = getWomanSummary(req); // 🟢 نبذتها (رقم الملف، القبيلة، المنطقة، الحالة الاجتماعية) قبل رقم جوالها
-                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waRecipientLine(getManSummary(req))}تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*بيانات الطرف الآخر (المخطوبة/ولي الأمر):*\n👤 ${womanSummary || 'غير متوفرة'}\n\n*يسعدنا تزويدك برقم التواصل المعتمد:*\n📞 رقم الجوال: ${customPhoneToShare.trim()}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
-                        craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                    } else {
-                        let waIntro = actionType === 'msgTarget' 
-                            ? `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.requesterData || 'غير متوفرة'}` 
-                            : `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${req.targetData || 'غير متوفرة'}`;
-                        targetPhoneNum = String(actionType === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
-                        let magicLinkToSend = actionType === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                        if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-
-                        let waFullMsg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waRecipientLine(actionType === 'msgTarget' ? req.targetData : req.requesterData)}${waIntro}\n\n*رسالة إدارية موجهة لك ✉️:*\n\n`;
-                        let boldAdminMessage = adminMessage.split('\n').map(line => line.trim() !== '' ? `*${line.trim()}*` : '').join('\n');
-                        waFullMsg += `${boldAdminMessage}\n\n${waReplyLinkBlock(magicLinkToSend)}`;
-                        craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                    }
-                    
-                    // 🟢 التعديل: تفعيل النافذة الخضراء للواتساب
-                    if(craftedUrl) {
-                        showWaSuccessModal(craftedUrl, reqId);
-                    }
-
-                    await fetchData(true, reqId);
-                } else {
-                    await showMsgModal("تنبيه", result.message || "النظام مشغول حالياً. يرجى المحاولة مجدداً.");
-                }
-            } catch(e) {
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تأخير", "تأخر استجابة السيرفر بسبب الزحام.");
-                } else {
-                    await showMsgModal("خطأ", "فشل الاتصال بالسيرفر. تأكد من الإنترنت.");
-                }
-            } finally {
-                isProcessingAction = false;
-                document.getElementById('refreshIcon').classList.remove('sync-spin');
-            }
+            // 🟢 [2026-10-28 r9] كل الإجراءات (حتى ما يحتاج رابط واتساب) تمرّ بالطابور الخلفي: لا حجز للصفحة ولا نافذة "فشل" عند تأخر الردّ.
+            // رابط الواتساب يظهر عند وصول النتيجة (onAdminActDone).
+            queueAdminAction(req, actionType, adminMessage, { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: finalActionContext });
+            scrollPositions = {}; renderTable(); processAdminQueue();
         }
 
         function openModal(reqId, currentStatus) {
@@ -2063,13 +1992,8 @@
             }
 
             const btn = document.getElementById('btnSaveStatus'); btn.disabled = true;
-            let actionId = 'act_' + Date.now();
-            pendingAdminActions.push({
-                id: actionId, reqId: reqId, type: 'status_update', text: adminReply || "تحديث حالة", state: 'sending',
-                payload: { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: statusSelectVal, adminReply: payloadText, actionContext: ((req.status || '').includes('مغلق') && !statusSelectVal.includes('مغلق')) ? 'adminReopen' : '' },
-                timestamp: Date.now()
-            });
-            savePendingActions(); closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
+            queueAdminAction(req, 'status_update', adminReply || "تحديث حالة", { action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: statusSelectVal, adminReply: payloadText, actionContext: ((req.status || '').includes('مغلق') && !statusSelectVal.includes('مغلق')) ? 'adminReopen' : '' });
+            closeModal(); scrollPositions = {}; renderTable(); processAdminQueue();
             btn.disabled = false;
         }
 
@@ -2325,112 +2249,153 @@
 <!-- ======================================================== -->
 <!-- 🔴🔴🔴 القسم 21: طابور العمليات الخلفية ومعالجة الأخطاء 🔴🔴🔴 -->
 <!-- ======================================================== -->
-        async function processAdminQueue() {
-            if(isProcessingAction) return;
-            let acts = pendingAdminActions.filter(a => a.state === 'sending');
-            if(acts.length === 0) {
-                updateDashboardStats(); 
-                return;
-            }
+        // 🟢 [2026-10-28 r9] الطابور صار غير حاجب ومضمون التنفيذ مرة واحدة. العَرَض السابق: الإجراء يُنفَّذ على الخادم لكن الردّ يتأخر
+        // (الخادم يأخذ 10–40 ث) فينقطع الاتصال، تقول الصفحة "فشل"، يعيد الأدمن المحاولة فيجد "مغلق/يوجد رد سابق" لأنه نُفِّذ أصلاً.
+        // الآن: (1) لكل إجراء opId ثابت يُرسل مع كل محاولة، والخادم (r9) يرجع نتيجة المحاولة الأولى بدل التنفيذ مرتين؛
+        // (2) انقطاع الردّ لا يُعدّ فشلاً: تُعاد المحاولة بصمت بنفس opId (5 محاولات خلال ~دقيقتين) وتُفحص حالة الطلب في اللوحة؛
+        // (3) كل إجراء يعمل مستقلاً في الخلفية فلا تُحجز الصفحة ولا إجراء آخر، ولا نوافذ حاجبة (شريط صغير فقط)؛
+        // (4) الإجراء المحفوظ في الجهاز يُتحقَّق منه قبل إعادة إرساله إن أُغلقت الصفحة أثناءه.
+        const adminInflight = new Set();
+        const ADMIN_RETRY_SCHEDULE = [0, 6000, 15000, 30000, 60000]; // مهلات الانتظار قبل كل محاولة (بنفس opId)
+        const ADMIN_ATTEMPT_TIMEOUT = 75000;
+        const adminSleep = ms => new Promise(r => setTimeout(r, ms));
+        function newAdminOpId() { return 'adm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9); }
+        function actNeedsWa(act) { return act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess'; }
 
-            isProcessingAction = true;
+        // يُنشئ إجراءً للطابور بـ opId ولقطة "قبل" لمعرفة هل وصل لاحقاً
+        function queueAdminAction(req, type, text, payload) {
+            const opId = newAdminOpId();
+            const act = {
+                id: 'act_' + Date.now() + '_' + Math.floor(Math.random() * 1000), reqId: req.reqId, type: type, text: text, state: 'sending',
+                opId: opId, before: { status: req.status || '', hadText: !!(text && req.message && req.message.indexOf(text) !== -1) },
+                payload: Object.assign({}, payload, { opId: opId }), timestamp: Date.now()
+            };
+            pendingAdminActions.push(act); savePendingActions();
+            return act;
+        }
+
+        // هل وصل الإجراء الخادم؟ true/false/null(لا نعرف). قراءة مباشرة للّوحة بلا تحديث للواجهة.
+        async function adminLanded(act) {
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminGetDashboard', adminToken: state.adminToken }) });
+                const j = JSON.parse(await res.text());
+                if (!j || !j.success) return null;
+                const r = (j.requests || []).find(x => x.reqId === act.reqId);
+                if (!r) return null;
+                const want = act.payload && act.payload.newStatus;
+                const b = act.before || {};
+                if (want && (r.status || '') === want && b.status !== want) return true;
+                if (act.text && act.text.length > 8 && !b.hadText && r.message && r.message.indexOf(act.text) !== -1) return true;
+                return false;
+            } catch (e) { return null; }
+        }
+
+        function adminActSetNote(act, note) {
+            const a = pendingAdminActions.find(x => x.id === act.id);
+            if (a) a.note = note;
+        }
+
+        // نجاح الإجراء (أو اكتشاف أنه نُفِّذ): يُزال من الطابور ويُفتح رابط الواتساب إن لزم
+        function onAdminActDone(act, result) {
+            pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
+            savePendingActions();
+            if (!result) return;
+            // الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة، وتغيير الحالة من الترس صامت دائماً
+            const serverAlreadyNotified = act.type === 'status_update' || (result.autoNotified && act.type === 'closeChat');
+            if (result.waUrl) { showWaSuccessModal(result.waUrl, act.reqId); return; }
+            if (serverAlreadyNotified) return;
+            if (actNeedsWa(act) || act.type === 'closeChat') {
+                const url = buildActWaUrl(act, result);
+                if (url) showWaSuccessModal(url, act.reqId);
+            }
+        }
+
+        // رابط واتساب الرسالة الإدارية (نفس نصوص الإرسال المباشر القديم)
+        function buildActWaUrl(act, result) {
+            const req = allRequests.find(r => r.reqId === act.reqId);
+            if (!req) return '';
+            let phone = '', msg = '';
+            if (act.type === 'closeChatSuccess') {
+                const customPhone = ((act.payload.actionContext || '').split('|')[1] || '').trim();
+                phone = getManPhone(req); // الرقم يُسلَّم للرجل دائماً
+                const womanSummary = getWomanSummary(req);
+                msg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waRecipientLine(getManSummary(req))}تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\n*بيانات الطرف الآخر (المخطوبة/ولي الأمر):*\n👤 ${womanSummary || 'غير متوفرة'}\n\n*يسعدنا تزويدك برقم التواصل المعتمد:*\n📞 رقم الجوال: ${customPhone}\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران 💍.`;
+            } else if (act.type === 'msgTarget' || act.type === 'msgStudent') {
+                const toTarget = act.type === 'msgTarget';
+                phone = String(toTarget ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
+                let magic = toTarget ? result.targetMagicLink : result.requesterMagicLink;
+                if (!magic) magic = `https://zewaj.github.io/zewaj/activity.html?phone=${phone}`;
+                const intro = `*بخصوص طلب التوفيق رقم:* (${req.reqId})\n*نبذة عن الطرف الآخر:* ${(toTarget ? req.requesterData : req.targetData) || 'غير متوفرة'}`;
+                const bold = (act.text || '').split('\n').map(l => l.trim() !== '' ? `*${l.trim()}*` : '').join('\n');
+                msg = `مرحباً بك من إدارة أبو العنود 🌹\n\n${waRecipientLine(toTarget ? req.targetData : req.requesterData)}${intro}\n\n*رسالة إدارية موجهة لك ✉️:*\n\n${bold}\n\n${waReplyLinkBlock(magic)}`;
+            } else if (act.type === 'closeChat') {
+                phone = String(req.requesterPhone).replace(/[^0-9]/g, '');
+                msg = "مرحباً بك من إدارة منصة أبو العنود\n\n" + waRecipientLine(req.requesterData) + "بخصوص طلبكم مع الطرف الآخر 👤: (" + (req.targetData || 'غير متوفرة') + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
+            }
+            return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : '';
+        }
+
+        function onAdminActFailed(act, msg) {
+            const a = pendingAdminActions.find(x => x.id === act.id);
+            if (a) { a.state = 'failed'; a.errorMsg = msg; a.note = ''; }
+            savePendingActions();
+            qaToast('الطلب #' + act.reqId + ': ' + msg + ' — تجده في فلتر «فاشلة» لإعادة المحاولة.', 'error');
+        }
+
+        // تشغيل إجراء واحد في الخلفية، مستقلاً عن غيره
+        async function runAdminAct(act) {
+            if (adminInflight.has(act.id)) return;
+            adminInflight.add(act.id); isProcessingAction = true;
             document.getElementById('refreshIcon').classList.add('sync-spin');
-            const failedNow = []; // إجراءات رفضها الخادم في هذه الدورة: تُعرض صراحةً بعد الانتهاء حتى لا تُكتشف بعد أيام
-
-            for(let i=0; i<acts.length; i++) {
-                let act = acts[i];
-                try {
-                    const res = await fetch(SCRIPT_URL, {
-                        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(act.payload)
-                    });
-                    const textRes = await res.text();
-                    let result;
-                    try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة غير صالحة"); }
-
-                    if(result.success) {
-                        pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
-                        savePendingActions();
-
-                        // 🟢 الخادم أرسل بنفسه رسالة الاعتذار للعميل (مع الترضية) فلا نفتح رسالة يدوية مكررة،
-                        // إلا إن كتب الأدمن رداً خاصاً في نافذة الحالة فيبقى الإرسال اليدوي لأنه يحمل نصه.
-                        // وتغيير الحالة من الترس (status_update) صامت دائماً، والملاحظة المرافقة مخفية تُسجَّل في المحادثة فقط ولا تُرسل واتساب.
-                        let isPlainStatusUpdate = (act.type === 'status_update');
-                        let serverAlreadyNotified = isPlainStatusUpdate || (result.autoNotified && act.type === 'closeChat');
-                        if (result.waUrl) {
-                            showWaSuccessModal(result.waUrl, act.reqId);
-                        } else if (serverAlreadyNotified) {
-                            // لا شيء: الإشعار التلقائي وصل
-                        } else if (act.type === 'msgStudent' || act.type === 'msgTarget' || act.type === 'closeChatSuccess' || act.type === 'closeChat') {
-                            
-                            const req = allRequests.find(r => r.reqId === act.reqId);
-                            if(req) {
-                                let waFullMsg = "مرحباً بك من إدارة منصة أبو العنود\n\n";
-                                let targetPhoneNum = "";
-                                
-                                if (act.type === 'closeChatSuccess') {
-                                    let customPhoneToShare = act.payload.actionContext.split('|')[1] || "";
-                                    targetPhoneNum = getManPhone(req); // 🟢 الرقم يُسلَّم للرجل دائماً (وليس للطرف الأول بالضرورة)
-                                    let womanSummary = getWomanSummary(req); // 🟢 نبذتها قبل رقم جوالها
-                                    waFullMsg += waRecipientLine(getManSummary(req)) + "تم تأكيد استلام الرسوم، شكراً لثقتك بنا.\n\nبيانات الطرف الآخر (المخطوبة/ولي الأمر):\n" + (womanSummary || 'غير متوفرة') + "\n\nيسعدنا تزويدك برقم التواصل المعتمد:\n\nرقم الجوال: " + customPhoneToShare + "\n\nنسأل الله أن يكتب لكم التوفيق والسعادة. يرجى إبلاغنا في حال إتمام عقد القران.";
-                                }
-                                else if (act.type === 'msgTarget' || act.type === 'msgStudent') {
-                                    targetPhoneNum = String(act.type === 'msgTarget' ? req.targetPhone : req.requesterPhone).replace(/[^0-9]/g, '');
-                                    let magicLinkToSend = act.type === 'msgTarget' ? result.targetMagicLink : result.requesterMagicLink;
-                                    if (!magicLinkToSend) magicLinkToSend = `https://zewaj.github.io/zewaj/activity.html?phone=${targetPhoneNum}`;
-                                    let waIntro = act.type === 'msgTarget' ? `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.requesterData || 'غير متوفرة'}` : `بخصوص طلب التوفيق رقم: (${req.reqId})\nنبذة عن الطرف الآخر: ${req.targetData || 'غير متوفرة'}`;
-                                    waFullMsg += waRecipientLine(act.type === 'msgTarget' ? req.targetData : req.requesterData) + waIntro + "\n\nرسالة إدارية موجهة لك:\n\n*" + act.text + "*\n\n" + waReplyLinkBlock(magicLinkToSend);
-                                }
-                                else if (act.type === 'closeChat') {
-                                    targetPhoneNum = String(req.requesterPhone).replace(/[^0-9]/g, '');
-                                    waFullMsg += waRecipientLine(req.requesterData) + "بخصوص طلبكم مع الطرف الآخر 👤: (" + (req.targetData || 'غير متوفرة') + ")\n\nرسالة إدارية موجهة لك:\n\n\"" + act.text + "\"";
-                                }
-
-                                if(targetPhoneNum) {
-                                    let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waFullMsg)}`;
-                                    showWaSuccessModal(craftedUrl, act.reqId);
-                                }
-                            }
-                        }
-
-                    } else {
-                        let errAct = pendingAdminActions.find(a => a.id === act.id);
-                        if(errAct) { errAct.state = 'failed'; errAct.errorMsg = result.message || "النظام مشغول"; }
-                        savePendingActions();
-                        failedNow.push('الطلب #' + act.reqId + ': ' + (result.message || 'النظام مشغول'));
-                    }
-                } catch (e) {
-                    // 🟢 تحقق: هل وصلت العملية فعلاً للسيرفر رغم انقطاع الاتصال؟
-                    try {
-                        await fetchData(true);
-                        let verifyReq = allRequests.find(r => r.reqId === act.reqId);
-                        let landedOnServer = !!(verifyReq && verifyReq.message && act.text && verifyReq.message.indexOf(act.text) !== -1);
-                        if (landedOnServer) {
-                            pendingAdminActions = pendingAdminActions.filter(a => a.id !== act.id);
-                            savePendingActions();
-                            continue;
-                        }
-                    } catch (verifyErr) { /* تجاهل خطأ التحقق نفسه، نكمل لتعليم الفشل أدناه */ }
-
-                    let errAct = pendingAdminActions.find(a => a.id === act.id);
-                    if(errAct) { errAct.state = 'failed'; errAct.errorMsg = "خطأ في الاتصال بالخادم"; }
-                    savePendingActions();
-                    failedNow.push('الطلب #' + act.reqId + ': خطأ في الاتصال بالخادم');
+            try {
+                // أُرسل سابقاً (أُغلقت الصفحة أثناءه أو إعادة محاولة): افحص أولاً هل نُفِّذ. إجراءات الواتساب تُعاد بنفس opId فيرجع الخادم نتيجتها الأصلية.
+                if (act.sentAt && !actNeedsWa(act)) {
+                    if (await adminLanded(act) === true) { onAdminActDone(act, null); qaToast('الطلب #' + act.reqId + ': تبيّن أن الإجراء نُفِّذ سابقاً.', 'ok'); await fetchData(true); return; }
                 }
-            }
+                let unknown = false;
+                for (let i = 0; i < ADMIN_RETRY_SCHEDULE.length; i++) {
+                    if (ADMIN_RETRY_SCHEDULE[i]) await adminSleep(ADMIN_RETRY_SCHEDULE[i]);
+                    if (!pendingAdminActions.some(a => a.id === act.id)) return; // أُلغي من المستخدم
+                    act.sentAt = Date.now(); savePendingActions();
+                    let result = null;
+                    const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), ADMIN_ATTEMPT_TIMEOUT);
+                    try {
+                        const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(act.payload), signal: ctrl.signal });
+                        const txt = await res.text();
+                        try { result = JSON.parse(txt); } catch (e) { result = null; } // صفحة HTML من Google = ازدحام، لم يُنفَّذ شيء غالباً
+                    } catch (e) { result = null; }
+                    clearTimeout(timer);
 
-            isProcessingAction = false;
-            document.getElementById('refreshIcon').classList.remove('sync-spin');
-            await fetchData(true);
-            if (failedNow.length) {
-                await showMsgModal("⚠️ لم يُحفظ الإجراء", failedNow.join('\n') + '\n\nلم يُنفَّذ شيء في الشيت. يمكنك إعادة المحاولة من فلتر «فاشلة».');
+                    if (result && result.success) { onAdminActDone(act, result); await fetchData(true); return; }
+                    if (result && !result.pending && result.success === false) {
+                        // رفض صريح من الخادم. إن سبقه انقطاع فلعل المحاولة الأولى نجحت (خادم قديم بلا opId ← يرفض الثانية كـ"مغلق")
+                        if (unknown && !actNeedsWa(act) && await adminLanded(act) === true) { onAdminActDone(act, null); qaToast('الطلب #' + act.reqId + ': تم التنفيذ.', 'ok'); await fetchData(true); return; }
+                        onAdminActFailed(act, result.message || 'رفض الخادم الإجراء'); await fetchData(true); return;
+                    }
+                    // لا ردّ مفهوم (انقطاع/مهلة/ازدحام/قيد التنفيذ): ليس فشلاً. افحص هل وصل ثم أعد المحاولة بصمت
+                    unknown = true;
+                    adminActSetNote(act, 'نتأكد من وصوله…'); renderTable();
+                    if (!actNeedsWa(act) && await adminLanded(act) === true) { onAdminActDone(act, null); qaToast('الطلب #' + act.reqId + ': تم التنفيذ.', 'ok'); await fetchData(true); return; }
+                }
+                onAdminActFailed(act, 'لم نتأكد من وصوله بعد عدة محاولات');
+                await fetchData(true);
+            } finally {
+                adminInflight.delete(act.id);
+                if (!adminInflight.size) { isProcessingAction = false; document.getElementById('refreshIcon').classList.remove('sync-spin'); }
+                renderTable();
             }
+        }
+
+        function processAdminQueue() {
+            const acts = pendingAdminActions.filter(a => a.state === 'sending' && !adminInflight.has(a.id));
+            if (!acts.length && !adminInflight.size) { updateDashboardStats(); return; }
+            acts.forEach(a => { runAdminAct(a); });
         }
 
         function retryAdminAction(actionId) {
             let act = pendingAdminActions.find(a => a.id === actionId);
-            if(act) {
-                act.state = 'sending'; act.errorMsg = '';
+            if (act) {
+                act.state = 'sending'; act.errorMsg = ''; act.note = '';
                 savePendingActions(); renderTable(); processAdminQueue();
             }
         }
