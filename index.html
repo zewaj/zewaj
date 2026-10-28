@@ -893,6 +893,17 @@
             if (r.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(r.contactedIds));
             localStorage.setItem('master_activity_cache', JSON.stringify(r));
         }
+        // 🟢 [2026-10-28] رد الخادم قد يكون نسخة محفوظة أقدم مما على الجهاز (رسالة أرسلها العميل للتو ولم تصل الكاش بعد).
+        // لكل طلب: إن كانت محادثة الجهاز أطول وتبدأ بمحادثة الخادم (أي أحدث منها) نُبقيها، وإلا نأخذ نسخة الخادم.
+        function keepNewerThreads(r, prev) {
+            try {
+                if (!prev || !r) return;
+                ['outgoingRequests', 'incomingRequests'].forEach(k => {
+                    const old = {}; (prev[k] || []).forEach(x => { if (x && x.reqId) old[x.reqId] = x; });
+                    r[k] = (r[k] || []).map(x => { const o = x && old[x.reqId]; return (o && typeof o.message === 'string' && typeof x.message === 'string' && o.message.length > x.message.length && o.message.indexOf(x.message) === 0) ? o : x; });
+                });
+            } catch (e) {}
+        }
         // 🟢 [2026-10-16] الزائر العائد: نفتح مراسلاته من ذاكرة الجهاز فوراً، ثم نستبدلها بالحديثة حين يصل رد الخادم
         async function runMagicBootInstant(boot) {
             history.replaceState({}, '', window.location.pathname);
@@ -907,6 +918,7 @@
             const id = r.magicIdentity; delete r.magicIdentity;
             const prev = (localStorage.getItem('verified_user_phone') || '').replace(/[^0-9]/g, '');
             if (prev !== String(id.phone || '').replace(/[^0-9]/g, '')) { localStorage.removeItem('magic_tok'); location.reload(); return; } // لا يحدث عادةً (نفس التوكن = نفس الملف)
+            try { keepNewerThreads(r, JSON.parse(localStorage.getItem('master_activity_cache') || 'null')); } catch (e) {}
             applyMagicSyncData(r, id, id.unifiedName || id.name || ('ملف #' + id.refId));
             window.__noSyncUntil = Date.now() + 20000;
             updateWalletDisplay();
@@ -945,6 +957,7 @@
             // تبديل هوية كامل: لا يبقى أي أثر لمستخدم سابق على نفس الجهاز
             // 🟢 [2026-10-16] عدا رسائل نفس العميل التي لم يتأكد وصولها بعد (طابورا pending_actions_ و qr_out_): كان المسح يُضيعها بصمت
             const samePerson = (localStorage.getItem('verified_user_phone') || '').replace(/[^0-9]/g, '') === digits;
+            if (samePerson) { try { keepNewerThreads(r, JSON.parse(localStorage.getItem('master_activity_cache') || 'null')); } catch (e) {} }
             const keep = {};
             Object.keys(localStorage).forEach(k => { if (k.indexOf('saved_searches_v1_') === 0 || (samePerson && (k.indexOf('pending_actions_') === 0 || k.indexOf('qr_') === 0))) keep[k] = localStorage.getItem(k); });
             localStorage.clear(); sessionStorage.clear();

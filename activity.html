@@ -592,12 +592,14 @@
             return 'bg-[#dcf8c6]/60 border-emerald-100 border border-dashed opacity-80';
         }
         // سطر طمأنة يتغير بمرور الوقت (يُحدَّث كل ثانية): الخادم قد يتأخر 10–30 ث، وقتها يجب أن يعرف العميل أن رسالته محفوظة
+        // [2026-10-28] الوقت من بدء آخر محاولة لا من إنشاء الرسالة: رسالة قديمة عند فتح الصفحة كانت تُظهر "الخادم مشغول" فوراً (حتى بعد ساعات)
         function pendingNoteText(p) {
             if (p.state === 'sent' || p.state === 'failed') return '';
-            const sec = Math.floor((Date.now() - (p.timestamp || Date.now())) / 1000);
+            if (Date.now() - (p.timestamp || Date.now()) > 120000) return 'نتحقق من وصول رسالتك…';
+            const sec = Math.floor((Date.now() - (p.lastStart || p.timestamp || Date.now())) / 1000);
             if (sec < 6) return '';
             if (sec < 20) return 'رسالتك محفوظة وفي الطريق. لا تحتاج لإعادة الإرسال.';
-            return 'الخادم مشغول قليلاً، لكن رسالتك محفوظة وستصل. لا تُعِد إرسالها ولا تحدّث الصفحة.';
+            return 'الخادم بطيء قليلاً، ورسالتك محفوظة وستصل. لا تحتاج لإعادة إرسالها.';
         }
         function pendingNoteHtml(p) { return '<div class="pend-note text-[10px] text-amber-700 font-bold leading-relaxed text-right" data-pid="' + p.id + '">' + pendingNoteText(p) + '</div>'; }
         function tickPendingNotes() {
@@ -788,9 +790,8 @@
                 
                 let validPending = [];
                 pendingForReq.forEach(p => {
-                    let cleanPendingText = p.text.trim().replace(/\.+$/, '');
-                    let isAlreadyInServer = originalChunks.some(chunk => chunk.includes(cleanPendingText));
-                    if (isAlreadyInServer) { window.removePendingAction(p.id); } 
+                    // [2026-10-28] نفس فحص "هل وصلت؟" المستعمل في التحقق (بالحالة أو بالنص)؛ كان النص الفارغ يطابق أي محادثة، والإجراء بلا نص لا يطابق أبداً
+                    if (actLandedIn(p, req)) { window.removePendingAction(p.id); } 
                     else { validPending.push(p); }
                 });
                 pendingForReq = validPending;
@@ -1019,9 +1020,8 @@
                 
                 let validPending = [];
                 pendingForReq.forEach(p => {
-                    let cleanPendingText = p.text.trim().replace(/\.+$/, '');
-                    let isAlreadyInServer = originalChunks.some(chunk => chunk.includes(cleanPendingText));
-                    if (isAlreadyInServer) { window.removePendingAction(p.id); } 
+                    // [2026-10-28] نفس فحص "هل وصلت؟" المستعمل في التحقق (بالحالة أو بالنص)؛ كان النص الفارغ يطابق أي محادثة، والإجراء بلا نص لا يطابق أبداً
+                    if (actLandedIn(p, req)) { window.removePendingAction(p.id); } 
                     else { validPending.push(p); }
                 });
                 pendingForReq = validPending;
@@ -1771,23 +1771,31 @@
             return all.find(r => r && r.reqId === reqId) || null;
         }
         function normMsg(s) { return String(s || '').replace(/\[[^\]]*\]:?/g, '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim(); }
-        // قراءة مباشرة للمزامنة (لا تمر بـ fetchData حتى لا يمنعها isFetching)، ترجع هل ظهر نص الإجراء في المحادثة
+        // هل يظهر أثر الإجراء في هذا الطلب؟ (بالحالة للإجراءات الثابتة، وبالنص للرسائل). يستعمله الرسم والتحقق معاً
+        function actLandedIn(act, req) {
+            if (!act || !req) return false;
+            const st = req.status || '';
+            if (act.type === 'cancel') return st.indexOf('قائمة الانتظار') === -1;
+            if (act.type === 'طلب تواصل مباشر') return req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE';
+            if (act.type === 'موافقة تبادل أرقام') return req.finalApprovalGiven === true || String(req.finalApprovalGiven).toUpperCase() === 'TRUE';
+            if ((act.type || '').includes('اعتذار') && /مغلق|مرفوض/.test(st)) return true;
+            const t = normMsg(act.text);
+            return !!(t && normMsg(req.message).indexOf(t) !== -1);
+        }
+        // قراءة مباشرة للمزامنة (لا تمر بـ fetchData حتى لا يمنعها isFetching).
+        // [2026-10-28] ترجع true (وصلت) أو false (الخادم ردّ ولم تصل) أو null (لم نستطع السؤال: انقطاع/ازدحام)؛ كان الانقطاع يُعدّ "لم تصل" فيتحول لفشل.
+        // forceRefresh: تتجاوز كاش المزامنة في الخادم، فقد يكون حُفظ قبل الكتابة (نسخة لا تحوي الرسالة).
         async function verifyActionLanded(act, waitMs) {
             if (waitMs) await new Promise(r => setTimeout(r, waitMs));
             try {
-                const txt = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam }) }, 0);
+                const txt = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam, forceRefresh: true }) }, 0);
                 const result = JSON.parse(txt);
-                if (!result || !result.success) return false;
+                if (!result || !result.success) return null;
                 localStorage.setItem('master_activity_cache', txt);
                 const req = (result.outgoingRequests || []).concat(result.incomingRequests || []).find(r => r.reqId === act.reqId);
                 if (!req) return false;
-                const st = req.status || '';
-                if (act.type === 'cancel') return st.indexOf('قائمة الانتظار') === -1;
-                if (act.type === 'طلب تواصل مباشر') return req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE';
-                if (act.type === 'موافقة تبادل أرقام') return req.finalApprovalGiven === true || String(req.finalApprovalGiven).toUpperCase() === 'TRUE';
-                if ((act.type || '').includes('اعتذار') && /مغلق|مرفوض/.test(st)) return true;
-                return !!(act.text && normMsg(req.message).indexOf(normMsg(act.text)) !== -1);
-            } catch (e) { return false; }
+                return actLandedIn(act, req);
+            } catch (e) { return null; }
         }
 
         window.processPendingAction = async function(actionId) {
@@ -1842,9 +1850,11 @@
             } else {
                 // الطلب ربما ما زال ينفَّذ على الخادم: لا إعادة قبل مضي 45 ث على بدء المحاولة (انتظار القفل 10 ث + التنفيذ)،
                 // فلا تتكرر الرسالة حتى مع خادم لا يعرف tempId بعد
-                if (await verifyActionLanded(act, 3000) || await verifyActionLanded(act, 6000)) return done();
+                let last = await verifyActionLanded(act, 3000); if (last) return done();
+                last = await verifyActionLanded(act, 6000); if (last) return done();
                 const left = 45000 - (Date.now() - started);
-                if (left > 0 && await verifyActionLanded(act, left)) return done();
+                if (left > 0) { last = await verifyActionLanded(act, left); if (last) return done(); }
+                if (last === null) return window.recheckPendingAction(actionId, 0); // لم نستطع السؤال: لا "فشل"، نعيد السؤال لاحقاً
                 if (act.tries < 2) return window.processPendingAction(actionId); // تأكدنا أنه لم يصل: إعادة واحدة بنفس tempId
             }
             window.updatePendingActionState(actionId, 'failed', netErr && netErr.serverBusy ? 'الخادم مزدحم جداً الآن' : 'تعذر الاتصال بالخادم، تحقق من الإنترنت');
@@ -1866,6 +1876,16 @@
             setTimeout(() => window.settleSentAction(actionId, n + 1), 6000);
         };
 
+        // [2026-10-28] لم نستطع التأكد (انقطاع أثناء السؤال): نسأل كل 15 ث حتى دقيقتين، والحالة تبقى "نتأكد من وصولها" لا "فشل"
+        window.recheckPendingAction = async function(actionId, n) {
+            const a = window.getPendingActions().find(x => x.id === actionId); if (!a) return;
+            const v = await verifyActionLanded(a, 15000);
+            if (v) { window.updatePendingActionState(actionId, 'sent', ''); if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); return window.settleSentAction(actionId, 0); }
+            if (v === null && n < 7) return window.recheckPendingAction(actionId, n + 1);
+            window.updatePendingActionState(actionId, 'failed', v === false ? 'لم تصل رسالتك، اضغط لإعادة الإرسال' : 'تعذر التأكد من وصولها، اضغط لإعادة المحاولة');
+            if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
+        };
+
         window.retryPendingAction = function(actionId) {
             const acts = window.getPendingActions(); const a = acts.find(x => x.id === actionId); if (a) { a.tries = 0; window.savePendingActions(acts); }
             window.updatePendingActionState(actionId, 'sending', '');
@@ -1882,8 +1902,16 @@
                 window.updatePendingActionState(a.id, 'verifying', '');
                 if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true);
                 const left = 45000 - (Date.now() - (a.lastStart || a.timestamp || 0)); // المحاولة السابقة قد تكون ما زالت تعمل على الخادم
-                if (await verifyActionLanded(a, 0) || (left > 0 && await verifyActionLanded(a, left))) { window.removePendingAction(a.id); if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); }
+                let v = await verifyActionLanded(a, 0);
+                if (!v && left > 0) v = await verifyActionLanded(a, left);
+                if (v) { window.removePendingAction(a.id); if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); }
+                else if (v === null) window.recheckPendingAction(a.id, 0);
                 else window.processPendingAction(a.id);
+            }
+            // [2026-10-28] الفاشلة كانت تبقى على الجهاز للأبد (حتى لو وصلت فعلاً): نتحقق منها عند كل فتح، ونحذف الأقدم من 24 ساعة إن لم تصل
+            for (const a of window.getPendingActions().filter(x => x.state === 'failed')) {
+                const v = await verifyActionLanded(a, 0);
+                if (v || (v === false && Date.now() - (a.timestamp || 0) > 86400000)) { window.removePendingAction(a.id); if(typeof loadFromCentralCache === 'function') loadFromCentralCache(true); }
             }
         };
 
