@@ -187,8 +187,11 @@
     }
 
     function tick() {
+        // نُسقط العناصر التي أُزيلت من الصفحة (الهياكل تُستبدل بـinnerHTML عند وصول البيانات)
+        bound = bound.filter(function (rec) { return rec.host.isConnected; });
         bound.forEach(function (rec) {
-            if (!rec.host.isConnected || rec.host.offsetParent === null) return; // مخفي: لا نعمل شيئاً
+            // getClientRects بدل offsetParent: الأخير يرجع null لعناصر position:fixed (شاشة فتح الرابط السحري)
+            if (!rec.host.getClientRects().length) return; // مخفي: لا نعمل شيئاً
             rec.i++;
             rec.textEl.classList.add("out");
             setTimeout(function () { show(rec, rec.i); rec.textEl.classList.remove("out"); }, 450);

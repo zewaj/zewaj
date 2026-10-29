@@ -89,6 +89,7 @@
     <style>html.magic-boot #magicBootOverlay { display: flex !important; }</style>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="dhikr.js?v=2026-10-29b"></script>
 
     <style>
         html, body {
@@ -163,6 +164,7 @@
             <p id="magicBootTitle" style="font-weight:800; font-size:17px; color:#134e4a; margin:0 0 6px;">جاري فتح مساحتك الآمنة…</p>
             <p id="magicBootText" style="font-weight:500; font-size:13px; color:#64748b; margin:0; min-height:40px; line-height:1.9;">لحظات ونعرض لك مراسلاتك</p>
             <div id="magicBootBar" style="height:5px; background:#ccfbf1; border-radius:99px; overflow:hidden; margin:16px auto 0; max-width:240px;"><div style="height:100%; width:40%; background:#0d9488; border-radius:99px; animation:magicBar 1.6s ease-in-out infinite;"></div></div>
+            <div data-dhikr="long"></div>
             <p id="magicBootTip" style="font-weight:500; font-size:11px; color:#94a3b8; margin:14px 0 0; display:none;">🔒 رابطك خاص بك ومراسلاتك محفوظة. لا تحتاج لتحديث الصفحة.</p>
             <div id="magicBootActions" style="display:none; margin-top:20px; gap:10px; flex-direction:column;">
                 <button id="magicBootRetryBtn" onclick="location.reload()" style="background:#0d9488; color:#fff; font-weight:800; font-size:14px; border:0; border-radius:14px; padding:12px; cursor:pointer;">إعادة المحاولة</button>
@@ -696,6 +698,7 @@
             <h3 class="text-xl font-black text-emerald-700">تم اعتماد ملفك!</h3>
             <p class="text-sm font-bold text-slate-500">ملفك رقم <span id="approvalCelebrationRef" class="text-indigo-700" dir="ltr"></span></p>
             <p class="text-sm text-slate-600 leading-relaxed font-medium mt-1">ملفك الآن ظاهر للمرشحين، ويمكنك إرسال طلبات التواصل مباشرة، بلا حاجة لتسجيل الخروج والدخول.</p>
+            <p class="text-sm font-bold text-emerald-700 mt-1">بارك الله لك، ويسّر لك الخير حيث كان</p>
             <div class="flex flex-col gap-2 mt-4">
                 <button onclick="closeApprovalCelebration(true)" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">✨ تصفّح المرشحين لك</button>
                 <button onclick="closeApprovalCelebration(false)" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-colors text-sm border border-slate-200">حسناً</button>

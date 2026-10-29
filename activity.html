@@ -23,6 +23,7 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="dhikr.js?v=2026-10-29b"></script>
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
 <!-- ✂️ ---------- [ القسم رقم 2 ]: سكربت التهيئة المبكرة (Iframe) ---------- ✂️ -->
@@ -393,6 +394,7 @@
             
             const skeletonHtml = `
             ${headerText}
+            <div data-dhikr="long" class="mb-4"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">
                 ${Array(4).fill(0).map(() => `
                 <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-4 w-full flex flex-col h-[180px]">
@@ -421,6 +423,7 @@
             document.getElementById('favoritesList').innerHTML = skeletonHtml;
             document.getElementById('requestsList').innerHTML = skeletonHtml;
             document.getElementById('incomingRequestsList').innerHTML = skeletonHtml;
+            try { if (window.Dhikr) window.Dhikr.init(); } catch (e) {}
         }
 
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
@@ -1258,7 +1261,7 @@
         // 🟢 [2026-10-09] شريط أسفل بطاقة الطلب المغلق يذكر نتيجته، بدل رسالة الموافقة الخضراء القديمة التي كانت تبقى بعد الإغلاق.
         function closedNoteHtml(statusText, extraHtml) {
             const s = statusText || '';
-            if (s.includes('تم الزواج')) return `<div class="bg-emerald-50 p-2.5 border-t border-emerald-100 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">💍 أُغلق الطلب: تم الزواج، بارك الله لكما.</p></div>`;
+            if (s.includes('تم الزواج')) return `<div class="bg-emerald-50 p-2.5 border-t border-emerald-100 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">💍 أُغلق الطلب: تم الزواج. بارك الله لكما، وبارك عليكما، وجمع بينكما في خير.</p></div>`;
             let note = 'تم إغلاق المحادثة.';
             if (s.includes('إنهاء التعارف')) note = 'أُغلق الطلب: انتهى التعارف لعدم التوفيق.';
             else if (s.includes('تأخر في الرد')) note = 'أُغلق الطلب لتأخر الرد.';
