@@ -641,25 +641,60 @@
             document.querySelector('p').innerText = result.message || 'حسابكم موقوف. للاستفسار تواصلوا مع الوسيط.';
         }
 
-        function renderMyFavorites(favs) {
+        // 🟢 [2026-10-29] مفضلاتي:
+        //   (1) لا يُعاد الرسم إن لم يتغيّر المحتوى (كانت القائمة تُرسم من ذاكرة الجهاز ثم تُعاد عند وصول الخادم فتنتقل البطاقات تحت إصبع العميل ويُفتح ملف غير المقصود)،
+        //       ومؤشر "نُحدّث…" بجانب العنوان أثناء المزامنة؛
+        //   (2) شارة لكل ملف: غير متاح (محذوف/تم الزواج، من الحقل status في الخادم)، أو طلب مفتوح/تواصلتم سابقاً (من طلبات المزامنة نفسها)؛
+        //   (3) الإزالة فورية من الشاشة مع "تراجع" 5 ث، ثم تُرسل للخادم بوضع "إزالة فقط" (mode:'remove') فلا تعيد إضافة ملف أُزيل سابقاً.
+        window.__favPendingRemove = {};
+        window.__favLastResult = null;
+        function favEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function favUnavailableLabel(st) {
+            st = String(st || '');
+            if (st === '__missing' || st.indexOf('محذوف') !== -1) return 'لم يعد متاحاً';
+            if (st.indexOf('تم الزواج') !== -1) return 'تم الزواج 💍';
+            return '';
+        }
+        function favRelationMap(result) {
+            const m = {}; if (!result) return m;
+            const closed = s => /مغلق|مرفوض|رفض|ملغى|مكتمل/.test(s || '');
+            const mark = (k, st) => { k = String(k || ''); if (!k) return; if (!closed(st)) m[k] = 'open'; else if (!m[k]) m[k] = 'past'; };
+            (result.outgoingRequests || []).forEach(r => mark(r.targetRefId, r.status));
+            (result.incomingRequests || []).forEach(r => mark(r.requesterRefId, r.status));
+            return m;
+        }
+        function favsFromLocalCache() { try { return (JSON.parse(localStorage.getItem('master_activity_cache') || '{}').favorites) || []; } catch (e) { return []; } }
+
+        function renderMyFavorites(favs, result) {
             const container = document.getElementById('favoritesList');
-            window.myFavsDataStore = {}; 
-            if(!favs || favs.length === 0) {
-                container.innerHTML = `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد ملفات في المفضلة حالياً.</div>`;
+            if (result) window.__favLastResult = result;
+            const rel = favRelationMap(window.__favLastResult);
+            window.myFavsDataStore = {};
+            const list = (favs || []).filter(f => !window.__favPendingRemove[String(f.refId || f)]);
+            list.forEach(f => { window.myFavsDataStore[f.refId || f] = f; });
+            const sig = JSON.stringify(list.map(f => { const id = String(f.refId || f); return [id, f.status || '', rel[id] || '', f.unifiedName || '']; }));
+            if (container.dataset.sig === sig && container.querySelector('[data-fav-list]')) return; // نفس المحتوى: لا نحرّك البطاقات
+            container.dataset.sig = sig;
+            const header = `<div data-fav-list class="flex items-center justify-between mb-3 px-1"><h3 class="text-sm font-black text-slate-700">⭐ مفضلاتي <span class="text-slate-400 font-bold">(${list.length})</span></h3><span id="favSyncNote" class="text-[10px] text-indigo-500 font-bold ${isFetching ? '' : 'hidden'}">نُحدّث القائمة…</span></div>`;
+            if (list.length === 0) {
+                container.innerHTML = header + `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد ملفات في المفضلة حالياً.</div>`;
                 return;
             }
-            let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">';
-            favs.forEach(fav => {
-                let refId = fav.refId || fav; 
+            let html = header + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">';
+            list.forEach(fav => {
+                let refId = String(fav.refId || fav);
                 let unifiedName = fav.unifiedName || fav.summary || 'ملف رقم ' + refId;
-                window.myFavsDataStore[refId] = fav; 
                 let isFemale = fav.gender === 'أنثى' || unifiedName.includes('مطلقة') || unifiedName.includes('بكر') || unifiedName.includes('أرملة');
-                
+                const unav = favUnavailableLabel(fav.status);
+                const r = rel[refId];
+                const badge = unav ? `<span class="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">${unav}</span>`
+                    : r === 'open' ? `<span class="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">💬 بينكم طلب مفتوح</span>`
+                    : r === 'past' ? `<span class="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-50 text-slate-500 border border-slate-200">تواصلتم سابقاً</span>` : '';
                 html += `
-                <div onclick="viewFavoriteProfile('${refId}')" class="bg-white border border-slate-200 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-indigo-300 transition shadow-sm hover:shadow-md group">
-                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center relative bg-slate-50 border border-slate-100 overflow-hidden p-1.5">${getAvatarSvg(isFemale)}</div>
-                    <div class="flex-1 min-w-0 text-right pr-1"><p class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">${unifiedName}</p></div>
-                    <button type="button" onclick="removeFavorite(event, '${refId}')" class="text-amber-400 text-xl shrink-0 hover:scale-125 transition-all p-2 bg-slate-50 hover:bg-rose-50 rounded-full"><svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
+                <div onclick="viewFavoriteProfile('${favEsc(refId)}')" class="bg-white border border-slate-200 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-indigo-300 transition shadow-sm hover:shadow-md group ${unav ? 'opacity-60' : ''}">
+                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center relative bg-slate-50 border border-slate-100 overflow-hidden p-1.5 ${unav ? 'grayscale' : ''}">${getAvatarSvg(isFemale)}</div>
+                    <div class="flex-1 min-w-0 text-right pr-1"><p class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">${favEsc(unifiedName)}</p>${badge}</div>
+                    <button type="button" onclick="removeFavorite(event, '${favEsc(refId)}')" title="إزالة من المفضلة" class="shrink-0 w-11 h-11 flex items-center justify-center transition-all bg-slate-50 hover:bg-rose-50 rounded-full"><svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
                 </div>`;
             });
             container.innerHTML = html + '</div>';
@@ -1707,6 +1742,8 @@
 
         function viewFavoriteProfile(refId) {
             let fav = window.myFavsDataStore[refId]; if (!fav) return;
+            const unav = favUnavailableLabel(fav.status);
+            if (unav) { showToast('هذا الملف ' + (unav.indexOf('الزواج') !== -1 ? 'تم زواجه' : 'لم يعد متاحاً') + '، يمكنك إزالته من المفضلة.'); return; }
             if (window.self !== window.top) { window.parent.postMessage({ type: 'openProfileModal', title: 'تفاصيل ملف', subtitle: 'معلومات الملف رقم #' + refId, profileData: { refId: refId, autoBio: fav.autoBio, gender: fav.gender || '' } }, '*'); }
             else { showMsgModal("عرض الملف", fav.autoBio || "التفاصيل غير متوفرة."); }
         }
@@ -2018,14 +2055,60 @@
             window.processPendingAction(actionId);
         }
 
-        async function removeFavorite(event, refId) {
-            event.stopPropagation(); if (!phoneParam || !refIdParam) return;
-            const card = event.target.closest('.group'); if(card) card.classList.add('opacity-50', 'pointer-events-none');
-            try {
-                await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "toggleFavorite", phone: phoneParam, requesterRefId: refIdParam, refId: refId }) }, 0); // بلا إعادة محاولة: عملية قلب حالة
-                fetchData(true).finally(() => { if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*'); });
-            } catch(e) { if(card) card.classList.remove('opacity-50', 'pointer-events-none'); showMsgModal("خطأ", "تعذر الحذف."); }
+        // 🟢 [2026-10-29] الإزالة: تختفي البطاقة فوراً ويظهر شريط "تراجع" 5 ث، ثم تُرسل بوضع "إزالة فقط" (mode:'remove').
+        // كانت ضغطة واحدة بلا تأكيد ترسل "قلب" الحالة وتنتظر مزامنة كاملة (حتى 20 ث) والبطاقة باهتة؛ والقلب يعيد إضافة ملف أُزيل سابقاً إن كانت القائمة قديمة.
+        window.__favTimers = {};
+        function favPayload(refId) { return JSON.stringify({ action: "toggleFavorite", mode: "remove", phone: phoneParam, requesterRefId: refIdParam, refId: refId }); }
+        function showFavUndo(refId) {
+            let bar = document.getElementById('favUndoBar');
+            if (!bar) { bar = document.createElement('div'); bar.id = 'favUndoBar'; bar.className = 'fixed bottom-4 inset-x-4 z-[150] max-w-md mx-auto bg-slate-800 text-white rounded-xl shadow-lg px-4 py-3 flex items-center justify-between gap-3 text-xs font-bold'; document.body.appendChild(bar); }
+            bar.innerHTML = '<span>أُزيل الملف #' + favEsc(refId) + ' من المفضلة</span><button type="button" class="text-amber-300 font-black px-3 py-2 min-h-[44px]">تراجع</button>';
+            bar.querySelector('button').onclick = () => undoFavRemove(refId);
+            bar.classList.remove('hidden');
         }
+        function hideFavUndo() { const bar = document.getElementById('favUndoBar'); if (bar) bar.classList.add('hidden'); }
+        function undoFavRemove(refId) {
+            clearTimeout(window.__favTimers[refId]); delete window.__favTimers[refId];
+            delete window.__favPendingRemove[refId];
+            hideFavUndo(); renderMyFavorites(favsFromLocalCache());
+        }
+        async function commitFavRemove(refId) {
+            delete window.__favTimers[refId];
+            if (!Object.keys(window.__favTimers).length) hideFavUndo();
+            try {
+                const txt = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: favPayload(refId) }, 1); // آمنة لإعادة المحاولة: إزالة فقط
+                const res = JSON.parse(txt);
+                if (!res || !res.success) throw new Error((res && res.message) || 'rejected');
+                try {
+                    const c = JSON.parse(localStorage.getItem('master_activity_cache') || 'null');
+                    if (c) { c.favorites = (c.favorites || []).filter(f => String(f.refId || f) !== refId); c.favoriteIds = (c.favoriteIds || []).filter(x => String(x) !== refId); localStorage.setItem('master_activity_cache', JSON.stringify(c)); }
+                    const cf = JSON.parse(localStorage.getItem('cached_favorites') || '[]'); localStorage.setItem('cached_favorites', JSON.stringify(cf.filter(x => String(x) !== refId)));
+                } catch (e) {}
+                delete window.__favPendingRemove[refId];
+                renderMyFavorites(favsFromLocalCache());
+                if (window.self !== window.top) window.parent.postMessage({ action: 'forceGlobalSync' }, '*');
+            } catch (e) {
+                delete window.__favPendingRemove[refId];
+                renderMyFavorites(favsFromLocalCache());
+                showToast('⚠️ تعذرت إزالة الملف #' + refId + '، حاول مرة أخرى.');
+            }
+        }
+        function removeFavorite(event, refId) {
+            event.stopPropagation(); if (!phoneParam || !refIdParam) return;
+            refId = String(refId);
+            if (window.__favPendingRemove[refId]) return;
+            window.__favPendingRemove[refId] = true;
+            renderMyFavorites(favsFromLocalCache());
+            showFavUndo(refId);
+            window.__favTimers[refId] = setTimeout(() => commitFavRemove(refId), 5000);
+        }
+        // مغادرة الصفحة خلال مهلة التراجع: تُرسل الإزالة فوراً (keepalive يُكمل الطلب بعد إغلاق الصفحة)
+        window.addEventListener('pagehide', () => {
+            Object.keys(window.__favTimers || {}).forEach(refId => {
+                clearTimeout(window.__favTimers[refId]);
+                try { fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: favPayload(refId), keepalive: true }); } catch (e) {}
+            });
+        });
 
         window.cancelQueuedReq = async function(reqId) {
             if (!phoneParam) return;
@@ -2077,7 +2160,7 @@
                         pointsDisplay.innerText = window.userPointsBalance;
                     }
                     
-                    renderMyFavorites(result.favorites || []); 
+                    renderMyFavorites(result.favorites || [], result);
                     renderOutgoingRequests(result.outgoingRequests || []); 
                     renderIncomingRequests(result.incomingRequests || []);
                     
@@ -2124,6 +2207,7 @@
         async function fetchData(isSilent = false) {
             if (!phoneParam || !refIdParam || isFetching) return;
             isFetching = true; const banner = document.getElementById('syncBanner');
+            { const fsn = document.getElementById('favSyncNote'); if (fsn) fsn.classList.remove('hidden'); }
             if (isSilent && banner) banner.classList.replace('opacity-0', 'opacity-100');
             try {
                 const textResult = await fetchWithRetry(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "syncUserActivity", phone: phoneParam, requesterRefId: refIdParam }) });
@@ -2146,7 +2230,8 @@
                 else if (!isSilent) showErrorState(busyMsg + '<br><button type="button" onclick="showSkeletonLoader(); fetchData(false);" class="mt-4 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md">🔄 إعادة المحاولة</button>');
             } 
             finally { 
-                isFetching = false; 
+                isFetching = false;
+                { const fsn = document.getElementById('favSyncNote'); if (fsn) fsn.classList.add('hidden'); }
                 setTimeout(() => { 
                     if(banner) banner.classList.replace('opacity-100', 'opacity-0'); 
                     const btn = document.getElementById('manualRefreshBtn'); 
