@@ -1355,7 +1355,9 @@ function closeTermsModal() {
                     if (result.success) { 
                         const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); 
                         const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); 
-                        startOtpCountdown(); 
+                        startOtpCountdown();
+                        // 🟢 تسخين كاش الملفات على الخادم أثناء كتابة الرمز (لا ننتظره ولا يُرجع بيانات)، فيعود الدخول بعد الرمز بثوانٍ
+                        try { fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "warmLogin", phone: verifiedFullPhone }), keepalive: true }).catch(() => {}); } catch (eW) {}
                         setTimeout(() => { const o1 = document.getElementById('otp1'); if(o1) o1.focus(); }, 100);
                     } 
                     else showMsgModal("خطأ", result.message);
@@ -1424,7 +1426,9 @@ function closeTermsModal() {
                     if(result.success) {
                         err.classList.add('hidden'); const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
                         localStorage.setItem('verified_user_phone', verifiedFullPhone);
-                        await loadDashboard(); 
+                        // 🟢 الاسم والرقم المرجعي لا يصلان إلا مع getUserProfiles: نُعلم القشرة لتعرض "جارٍ تحميل بياناتك" بدل شريط فارغ/"غير مكتمل"
+                        try { sessionStorage.setItem('auth_pending', String(Date.now())); if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authPending' }, '*'); } catch (eP) {}
+                        try { await loadDashboard(); } finally { try { sessionStorage.removeItem('auth_pending'); } catch (eP) {} }
                         if (cachedProfiles && cachedProfiles.length > 0) {
                             if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authSuccess' }, '*');
                         } else {

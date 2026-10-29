@@ -1163,6 +1163,9 @@
                 }
             }
 
+            // 🟢 اكتمل التحقق من الرمز وبياناته (الاسم/الرقم المرجعي) ما زالت في الطريق: نعرض "جارٍ تحميل بياناتك"
+            if (data.action === 'authPending') { updateAuthUI(); }
+
             if (data.action === 'profileSwitched') {
                 updateAuthUI(); 
                 const phone = localStorage.getItem('verified_user_phone');
@@ -1562,6 +1565,18 @@
             if (phone) {
                 // 🟢 السيناريو الثاني: مستخدم مسجل ولكن لم يكمل بياناته (لا يوجد refId)
                 if (!refId || refId === 'null' || refId === 'undefined') {
+                    // 🟢 الدخول قبل وصول الملفات (حتى ~دقيقة): ليس "غير مكتمل" بل بياناته قيد الجلب، ويُحدَّث الشريط حين تصل (authSuccess)
+                    let pendingSince = 0;
+                    try { pendingSince = parseInt(sessionStorage.getItem('auth_pending') || '0', 10) || 0; } catch (e) {}
+                    if (pendingSince && Date.now() - pendingSince < 90000) {
+                        if (userNameEl) userNameEl.innerText = 'جارٍ تحميل بياناتك…';
+                        if (heroGreetingEl) heroGreetingEl.innerText = 'تم التحقق، لحظات';
+                        if (userStatusEl) userStatusEl.classList.add('hidden');
+                        if (authActionEl) { authActionEl.innerText = 'جارٍ التحميل…'; authActionEl.className = "w-full bg-slate-200 text-slate-500 font-bold py-2.5 md:py-3.5 rounded-xl text-xs md:text-sm animate-pulse"; }
+                        if (authArea) authArea.innerHTML = '<span class="text-[11px] font-bold text-slate-500 animate-pulse">جارٍ تحميل بياناتك…</span>';
+                        if (loggedInActionsEl) loggedInActionsEl.classList.add('hidden', 'opacity-0');
+                        return;
+                    }
                     if (userNameEl) userNameEl.innerText = 'أكمل بياناتك';
                     if (heroGreetingEl) heroGreetingEl.innerText = "التسجيل غير مكتمل";
                     if (userStatusEl) userStatusEl.classList.add('hidden');
