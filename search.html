@@ -9,7 +9,8 @@
     <title>محرك البحث المتقدم | منصة وسيط زواج أبو العنود</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="dhikr.js?v=2026-10-29a"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -378,8 +379,9 @@
 <!-- 🟥🟥🟥🟥 [ القسم رقم 9: شاشات التحميل والحالة الفارغة (Loading & Empty States) ] 🟥🟥🟥🟥 -->
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <div id="loadingState" class="hidden flex-col w-full mb-8 fade-in">
-            <h3 class="text-center text-slate-500 font-bold mb-6 animate-pulse">جاري تحليل البيانات والبحث...</h3>
-            
+            <h3 class="text-center text-slate-500 font-bold mb-2 animate-pulse">جاري تحليل البيانات والبحث...</h3>
+            <div data-dhikr="seek" class="mb-6"></div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm animate-pulse">
                     <div class="p-4 border-b border-slate-50 bg-slate-50/50 flex flex-col gap-3">
@@ -1074,7 +1076,25 @@
             });
         }
 
+        // 🟢 [2026-10-29] رقم آخر بحث: بحث الفلاتر البطيء كان يبقى "جاري التحليل" ظاهراً فوق نتيجة بحث رقم الملف الأسرع منه
+        // (بحث الرقم لا يلمس طبقة الفلاتر)، وكان رده المتأخر يكتب فوق النتيجة الأحدث. الآن أي بحث أحدث يُبطل الأقدم.
+        let searchSeq = 0;
+        function resetManualSearchUi() {
+            const loading = document.getElementById('loadingState');
+            if (loading) { loading.classList.add('hidden'); loading.classList.remove('flex'); }
+            const btn = document.getElementById('mainSearchBtn');
+            if (btn) {
+                btn.disabled = false;
+                document.getElementById('mainSearchBtnText').innerText = "بحث الآن";
+                document.getElementById('mainSearchBtnIcon').classList.remove('hidden');
+                document.getElementById('mainSearchBtnSpinner').classList.add('hidden');
+                btn.classList.replace('bg-slate-400', 'bg-primary');
+                btn.classList.replace('hover:bg-slate-500', 'hover:bg-primaryHover');
+            }
+        }
+
         async function fetchMatchesData(requestData) {
+            const mySeq = ++searchSeq;
             const btn = document.getElementById('mainSearchBtn');
             const btnText = document.getElementById('mainSearchBtnText');
             const btnIcon = document.getElementById('mainSearchBtnIcon');
@@ -1097,7 +1117,8 @@
 
             try {
                 const result = await fetchFromGASWithRetry(requestData);
-                
+                if (mySeq !== searchSeq) return; // جاء بحث أحدث (مثل بحث رقم الملف): تجاهل هذا الرد المتأخر
+
                 if (result.success && result.matches) {
                     result.matches = applyLocalFilters(result.matches, requestData.filters);
                     processResultsDisplay(result, requestData, true);
@@ -1107,22 +1128,13 @@
                     document.getElementById('manualSearchForm').classList.remove('hidden');
                 }
             } catch (error) {
+                if (mySeq !== searchSeq) return;
                 console.error(error);
                 alert("تأخر استجابة الخادم بسبب ضغط البحث. يرجى المحاولة بعد قليل.");
                 document.getElementById('filtersSummaryStrip').classList.add('hidden');
                 document.getElementById('manualSearchForm').classList.remove('hidden');
             } finally {
-                loading.classList.add('hidden');
-                loading.classList.remove('flex');
-                
-                if(btn) {
-                    btn.disabled = false;
-                    btnText.innerText = "بحث الآن";
-                    btnIcon.classList.remove('hidden');
-                    btnSpinner.classList.add('hidden');
-                    btn.classList.replace('bg-slate-400', 'bg-primary');
-                    btn.classList.replace('hover:bg-slate-500', 'hover:bg-primaryHover');
-                }
+                if (mySeq === searchSeq) resetManualSearchUi();
             }
         }
 
@@ -1417,6 +1429,7 @@
             try {
                 const result = await fetchFromGASWithRetry({ action: "findProfileByRefId", refId: val });
                 if (result.success && result.profile) {
+                    searchSeq++; resetManualSearchUi(); // يُبطل أي بحث فلاتر ما زال ينتظر
                     clearAllFilters();
                     document.getElementById('genderSelectionArea').classList.add('hidden');
                     document.getElementById('genderSummaryStrip').classList.add('hidden');
