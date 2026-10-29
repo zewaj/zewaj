@@ -366,6 +366,20 @@
             }
         }
 
+        // 🟢 [2026-10-29] صورة الملف الحقيقية (نفس صور الحساب الشخصي وبقية الصفحات من avatars/، يحسبها الخادم في avatarFile)
+        // بدل الرسمة الثابتة. نسخة مكررة من AVATAR_OBJECT_POSITION/avatarImgStyle في smart.html (عدّلهما معاً).
+        // إن لم يصل avatarFile (خادم أقدم أو كاش قديم على الجهاز) أو تعذّر تحميل الصورة تبقى الرسمة القديمة ظاهرة تحتها.
+        const AVATAR_OBJECT_POSITION = { 'hijab_black.png': '62%', 'gulf_red.png': '62%', 'gulf_white.png': '62%', 'turban_gulf.png': '62%', 'hijab_mask.png': '75%' };
+        function avatarImgStyle(file) {
+            return `transform: scale(1.35); object-position: ${AVATAR_OBJECT_POSITION[file] || '50%'} center;`;
+        }
+        function profileAvatarHtml(file, isFemale, boxClass, extraClass) {
+            const safe = String(file || '').replace(/[^A-Za-z0-9_.-]/g, '');
+            const svg = getAvatarSvg(isFemale);
+            if (!safe) return `<div class="${boxClass} p-1.5 ${extraClass || ''}">${svg}</div>`;
+            return `<div class="${boxClass} relative ${extraClass || ''}"><div class="absolute inset-0 p-1.5">${svg}</div><img src="avatars/${safe}" alt="" class="absolute inset-0 w-full h-full object-cover bg-white" style="${avatarImgStyle(safe)}" loading="lazy" onerror="this.style.display='none'"></div>`;
+        }
+
         function getAvatarSvg(isFemale) {
             return isFemale 
                 ? `<svg viewBox="0 0 64 64" class="w-full h-full drop-shadow-sm" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="#fce7f3"/><path d="M14 30 C14 8, 50 8, 50 30 L56 64 L8 64 Z" fill="#1f2937"/><circle cx="32" cy="34" r="12" fill="#fde68a"/><circle cx="28" cy="32" r="2" fill="#1f2937"/><circle cx="36" cy="32" r="2" fill="#1f2937"/><path d="M29 38 Q32 41 35 38" fill="none" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round"/></svg>`
@@ -538,7 +552,7 @@
         }
 
         function buildRequestCardHTML(req, targetInfo, isFemale, reqDate, statusColor, statusText, actionAreaHtml, chatHtml) {
-            let avatarSvg = getAvatarSvg(isFemale);
+            let avatarHtml = profileAvatarHtml(req.targetAvatar || req.requesterAvatar, isFemale, 'w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border overflow-hidden');
             let actionDate = req.lastActionDate || req.date;
             let relativeTime = timeAgo(actionDate);
             let isIncoming = !!req.senderRefId || (!!req.requesterRefId && !req.targetRefId); // 🟢 [2026-10-15] الوارد يحمل requesterRefId لا senderRefId، فكان الضغط على الاسم لا يفعل شيئاً 
@@ -548,7 +562,7 @@
             <div id="card-${req.reqId}" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col relative hover:shadow-md transition-shadow">
                 <div class="p-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center gap-2">
                     <button type="button" class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer group text-right appearance-none bg-transparent border-none p-0 outline-none" onclick="event.stopPropagation(); viewRequestProfile(${clickParams})">
-                        <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border overflow-hidden p-1.5">${avatarSvg}</div>
+                        ${avatarHtml}
                         <h4 class="font-bold text-[13px] leading-tight line-clamp-2 text-indigo-700 group-hover:text-indigo-900 group-hover:underline text-right">${targetInfo}</h4>
                     </button>
                     <span class="text-[10px] text-slate-400 font-bold shrink-0 bg-white px-2 py-1 rounded-md border border-slate-100">${reqDate}</span>
@@ -695,7 +709,7 @@
                     : r === 'past' ? `<span class="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-50 text-slate-500 border border-slate-200">تواصلتم سابقاً</span>` : '';
                 html += `
                 <div onclick="viewFavoriteProfile('${favEsc(refId)}')" class="bg-white border border-slate-200 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-indigo-300 transition shadow-sm hover:shadow-md group ${unav ? 'opacity-60' : ''}">
-                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center relative bg-slate-50 border border-slate-100 overflow-hidden p-1.5 ${unav ? 'grayscale' : ''}">${getAvatarSvg(isFemale)}</div>
+                    ${profileAvatarHtml(fav.avatarFile, isFemale, 'w-11 h-11 shrink-0 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 overflow-hidden', unav ? 'grayscale' : '')}
                     <div class="flex-1 min-w-0 text-right pr-1"><p class="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">${favEsc(unifiedName)}</p>${badge}</div>
                     <button type="button" onclick="removeFavorite(event, '${favEsc(refId)}')" title="إزالة من المفضلة" class="shrink-0 w-11 h-11 flex items-center justify-center transition-all bg-slate-50 hover:bg-rose-50 rounded-full"><svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
                 </div>`;
