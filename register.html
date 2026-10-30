@@ -2077,6 +2077,8 @@ function closeTermsModal() {
                 localStorage.setItem('active_profile_uid', activeUid); localStorage.setItem('active_profile_refid', activeProfile.refId || activeProfile.rowIndex);
                 localStorage.setItem('active_profile_index', activeProfile.rowIndex); localStorage.setItem('verified_user_name', activeProfile.name || 'عضونا الكريم');
                 localStorage.setItem('verified_user_gender', activeProfile.gender || 'ذكر');
+                // 🟢 صورة الملف النشط للصفحة الرئيسية (تُحدَّث عند كل عرض/تبديل ملف)
+                if (activeProfile.avatarFile) localStorage.setItem('active_profile_avatar', activeProfile.avatarFile); else localStorage.removeItem('active_profile_avatar');
                 // 🟢 حفظ الحالة في الذاكرة لتتمكن الصفحة الرئيسية من قراءتها
                 localStorage.setItem('active_profile_status', statusStr);
             }
@@ -2346,6 +2348,17 @@ function closeTermsModal() {
                 if (result.success) {
                     currentViewData.avatarFile = result.avatarFile;
                     if (heroAvatar) heroAvatar.innerHTML = heroAvatarImgHtml(result.avatarFile);
+                    // 🟢 الرئيسية تعرض الصورة نفسها: نحدّث المحفوظ في الجهاز وكاش الملفات المحلي ثم نُعلم القشرة
+                    try {
+                        if (!isAdminMode && String(localStorage.getItem('active_profile_refid')) === String(currentViewData.refId || currentViewData.rowIndex)) {
+                            localStorage.setItem('active_profile_avatar', result.avatarFile);
+                        }
+                        const pk = 'user_profiles_cache_' + verifiedFullPhone;
+                        const pl = JSON.parse(localStorage.getItem(pk) || '[]');
+                        pl.forEach(p => { if (String(p.refId) === String(currentViewData.refId)) p.avatarFile = result.avatarFile; });
+                        localStorage.setItem(pk, JSON.stringify(pl));
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'avatarChanged' }, '*');
+                    } catch (eA) {}
                 } else {
                     if (heroAvatar) heroAvatar.innerHTML = heroAvatarImgHtml(previousFile);
                     showMsgModal('تنبيه', result.message || 'تعذر تحديث الصورة، حاول مرة أخرى.');

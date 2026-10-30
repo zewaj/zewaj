@@ -1165,6 +1165,8 @@
 
             // 🟢 اكتمل التحقق من الرمز وبياناته (الاسم/الرقم المرجعي) ما زالت في الطريق: نعرض "جارٍ تحميل بياناتك"
             if (data.action === 'authPending') { updateAuthUI(); }
+            // 🟢 غيّر صورته من الحساب الشخصي: تتحدث الرئيسية فوراً
+            if (data.action === 'avatarChanged') { updateAuthUI(); }
 
             if (data.action === 'profileSwitched') {
                 updateAuthUI(); 
@@ -1522,6 +1524,17 @@
         <!-- ✂️ ---------- [ القسم رقم 20 : دالة تحديث الواجهة الرئيسية ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         */
+        // 🟢 ملف صورة المستخدم: المحفوظ عند اختيار الملف (register.html) ثم احتياطاً من كاش ملفاته المحلي بالرقم المرجعي
+        function getMyAvatarFile(phone, refId) {
+            try {
+                const saved = (localStorage.getItem('active_profile_avatar') || '').replace(/[^A-Za-z0-9_.-]/g, '');
+                if (saved) return saved;
+                const list = JSON.parse(localStorage.getItem('user_profiles_cache_' + phone) || '[]');
+                const mine = (list || []).find(p => String(p.refId) === String(refId));
+                return mine && mine.avatarFile ? String(mine.avatarFile).replace(/[^A-Za-z0-9_.-]/g, '') : '';
+            } catch (e) { return ''; }
+        }
+
         function updateAuthUI() {
             const phone = localStorage.getItem('verified_user_phone');
             let name = localStorage.getItem('verified_user_name');
@@ -1641,8 +1654,18 @@
                     }
                     if (userIconEl) {
                         userIconEl.className = "w-14 h-14 md:w-20 md:h-20 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-inner transition-colors duration-300";
+                        // 🟢 [2026-10-30] صورة ملفه نفسها (المختارة تلقائياً أو التي عدّلها من الحساب الشخصي) بدل أيقونة الشخص العامة
+                        const myAvatar = getMyAvatarFile(phone, refId);
+                        if (myAvatar) {
+                            if (userIconEl.dataset.avatar !== myAvatar) {
+                                userIconEl.dataset.avatar = myAvatar;
+                                userIconEl.innerHTML = `<img src="avatars/${myAvatar}" alt="" class="w-full h-full object-cover" style="${avatarImgStyle(myAvatar)}" onerror="this.remove()">`;
+                            }
+                            userIconEl.classList.add('overflow-hidden', 'bg-white');
+                            userIconEl.classList.remove('bg-blue-50');
+                        }
                     }
-                    
+
                     if (loggedInActionsEl) {
                         loggedInActionsEl.classList.remove('hidden');
                         setTimeout(() => loggedInActionsEl.classList.remove('opacity-0'), 50);
