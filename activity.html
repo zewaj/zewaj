@@ -717,12 +717,54 @@
             container.innerHTML = html + '</div>';
         }
 
+        // 🟢 [2026-10-30] بطاقة الطلب الجديد فوراً: index.html تحفظ pending_new_request لحظة نجاح طلب التواصل على الخادم،
+        // وهنا تُرسم بطاقة مؤقتة أعلى "طلبات أرسلتها" (اسم الملف + "تم إرسال طلبك" + شريط تقدّم) حتى يصل الطلب الحقيقي في المزامنة،
+        // فتحل محلها في المكان نفسه. نطلب مزامنة صامتة كل 5 ث ما دامت البطاقة ظاهرة، وتُحذف بعد 5 دقائق مهما حدث.
+        const PNR_MAX_AGE_MS = 5 * 60 * 1000;
+        function readPendingNewRequest() {
+            try {
+                const p = JSON.parse(localStorage.getItem('pending_new_request') || 'null');
+                if (!p || !p.targetRefId) return null;
+                const me = String(typeof phoneParam !== 'undefined' ? phoneParam : '').replace(/[^0-9]/g, '') + '_' + String(typeof refIdParam !== 'undefined' ? refIdParam : '');
+                if (p.owner && p.owner !== me) return null; // طلب ملف آخر من العائلة: لا يُعرض هنا
+                if (Date.now() - (p.at || 0) > PNR_MAX_AGE_MS) { localStorage.removeItem('pending_new_request'); return null; }
+                return p;
+            } catch (e) { return null; }
+        }
+        function pendingNewRequestHtml(reqs) {
+            window.__pnrActive = false;
+            const p = readPendingNewRequest(); if (!p) return '';
+            const arrived = (reqs || []).some(r => String(r.targetRefId) === String(p.targetRefId) && !/مغلق|مرفوض|رفض|ملغى|مكتمل/.test(r.status || ''));
+            if (arrived) { localStorage.removeItem('pending_new_request'); return ''; }
+            window.__pnrActive = true;
+            if (!window.__pnrTimer) window.__pnrTimer = setTimeout(() => { window.__pnrTimer = null; fetchData(true); }, 5000);
+            if (!document.getElementById('pnrStyle')) document.head.insertAdjacentHTML('beforeend', '<style id="pnrStyle">@keyframes pnrMove{from{transform:translateX(160%)}to{transform:translateX(-260%)}}.pnr-bar i{display:block;height:100%;width:40%;border-radius:2px;background:#10b981;animation:pnrMove 1.3s linear infinite}</style>');
+            const isFemale = p.gender === 'أنثى' || /مطلقة|بكر|أرملة/.test(p.name || '');
+            return `
+            <div id="pendingNewRequestCard" class="bg-white border-2 border-emerald-300 rounded-2xl p-3 shadow-sm flex flex-col gap-2 fade-in">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 overflow-hidden p-1.5">${getAvatarSvg(isFemale)}</div>
+                    <p class="flex-1 min-w-0 text-xs font-bold text-slate-800 line-clamp-2 leading-snug text-right">${favEsc(p.name)}</p>
+                    <span class="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">جديد</span>
+                </div>
+                <p class="text-[12px] font-bold text-emerald-700 flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>${p.queued ? 'تم تسجيل طلبك في قائمة الانتظار' : 'تم إرسال طلبك'}</p>
+                <div class="pnr-bar h-[3px] bg-slate-100 rounded overflow-hidden"><i></i></div>
+                <p class="text-[11px] text-slate-500 font-bold animate-pulse">نجهّز المحادثة… تظهر كاملة خلال ثوانٍ</p>
+            </div>`;
+        }
+
         function renderOutgoingRequests(reqs) {
             const container = document.getElementById('requestsList');
-            window.myReqsDataStore = {}; 
+            window.myReqsDataStore = {};
             let outBadge = 0;
             window.latestOutgoingTime = 0;
+            const pnrHtml = pendingNewRequestHtml(reqs);
 
+            if ((!reqs || reqs.length === 0) && pnrHtml) {
+                container.innerHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">' + pnrHtml + '</div>';
+                updateBadge('outgoingBadge', 0, false);
+                return;
+            }
             if(!reqs || reqs.length === 0) {
                 container.innerHTML = `<div class="text-center text-sm text-slate-400 py-16 pb-24 font-bold bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لم تقم بإرسال أي طلبات.</div>`;
                 updateBadge('outgoingBadge', 0, false);
@@ -953,7 +995,7 @@
                 }
             });
 
-            let finalHtml = quotaBannerHtml + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">' + (activeHtml || `<div class="col-span-1 md:col-span-2 text-center text-sm text-slate-400 py-12 font-bold bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد طلبات نشطة حالياً.</div>`) + '</div>';
+            let finalHtml = quotaBannerHtml + '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">' + ((pnrHtml + activeHtml) ||`<div class="col-span-1 md:col-span-2 text-center text-sm text-slate-400 py-12 font-bold bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">لا توجد طلبات نشطة حالياً.</div>`) + '</div>';
 
             if (archiveCount > 0) {
                 finalHtml += `
@@ -2190,6 +2232,8 @@
                         else if (hasOut && !hasIn) switchReqTab('outgoing');
                         else if (hasIn && hasOut) { if (window.latestIncomingTime > window.latestOutgoingTime) switchReqTab('incoming'); else switchReqTab('outgoing'); }
                     }
+                    // طلب أُرسل للتو: نفتح "طلبات أرسلتها" مرة واحدة ليرى بطاقته (لا نسحبه من تبويب اختاره بنفسه في التحديثات اللاحقة)
+                    if (window.__pnrActive && !window.__pnrTabSwitched && tabParam === 'requests') { window.__pnrTabSwitched = true; switchReqTab('outgoing'); }
 
                     if (window.highlightedReqId) {
                         // 🟢 [2026-10-16] رابط الواتساب يحمل رقم الطلب (focus): نفتح التبويب الذي فيه الطلب ونمرّر إليه ونُبرزه

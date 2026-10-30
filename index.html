@@ -2670,9 +2670,24 @@
                         <button onclick="closeMasterContactModal(); closeUnifiedProfileModal(); loadIframe('activity.html?tab=requests')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md text-sm">متابعة الطلب</button>
                     `;
                     
+                    // 🟢 [2026-10-30] بطاقة الطلب الجديد فوراً: الطلب حُفظ على الخادم الآن، لكن مراسلاتي ترسم من ذاكرة الجهاز التي لا تحويه بعد،
+                    // فكان العميل يرى الطلبات القديمة وحدها ثوانٍ ويظن أن طلبه لم يُرسل. activity.html تقرأ هذا المفتاح وتعرض بطاقة مؤقتة حتى يصل الحقيقي.
+                    try {
+                        const d = window.lastOpenedProfileData || {};
+                        const tRef = String(window.activeContactRefId);
+                        localStorage.setItem('pending_new_request', JSON.stringify({
+                            targetRefId: tRef,
+                            name: d.unifiedName || d.summary || d.unified_name || ('ملف #' + tRef),
+                            gender: d.gender || '',
+                            queued: !!forceQueue || /انتظار/.test(result.message || ''),
+                            owner: String(phone).replace(/[^0-9]/g, '') + '_' + String(reqRef || ''),
+                            at: Date.now()
+                        }));
+                    } catch (e) {}
+
                     const iframe = document.getElementById('appIframe');
-                    if (iframe && iframe.contentWindow) { 
-                        iframe.contentWindow.postMessage({ action: 'triggerActivityFetch', refId: window.activeContactRefId }, '*'); 
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage({ action: 'triggerActivityFetch', refId: window.activeContactRefId }, '*');
                     }
                     
                     fetchGlobalWalletBalance(phone);
