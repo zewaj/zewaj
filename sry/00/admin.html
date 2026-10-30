@@ -1567,20 +1567,32 @@
             let completeNewThread = oldChunks.join("\n\n---\n\n");
             let payloadText = "OVERWRITE_FLAG|||" + completeNewThread;
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            // [2026-10-31] الخادم المشغول (قفل محجوز، أو رد HTML، أو انقطاع) لم يعد يُظهر خطأً من أول مرة: نعيد المحاولة آلياً بنفس opId
+            // (الخادم ينفّذه مرة واحدة ويُرجع نتيجة الأولى إن كانت وصلت). إعادة الإرسال آمنة أصلاً: نفس المحادثة الكاملة ونفس الحالة.
+            const fwdOpId = 'fwd_' + reqId + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+            const fwdBody = JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: direction, opId: fwdOpId });
+            const FWD_RETRY_WAITS = [0, 4000, 8000, 12000];
+            const isBusyResult = (r) => !!(r && !r.success && (r.busy || r.pending || /مشغول|مزدحم|القفل|lock/i.test(r.message || '')));
 
             try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'adminUpdateMediationStatus', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, newStatus: newStatus, adminReply: payloadText, actionContext: direction }),
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                const textRes = await res.text();
-                let result;
-                try { result = JSON.parse(textRes); } catch(e) { throw new Error("استجابة السيرفر غير صالحة."); }
-                
+                let result = null;
+                for (let attempt = 0; attempt < FWD_RETRY_WAITS.length; attempt++) {
+                    if (attempt > 0) {
+                        btn.innerHTML = `الخادم مشغول، نعيد المحاولة تلقائياً (${attempt + 1}/${FWD_RETRY_WAITS.length})...`;
+                        await new Promise(r => setTimeout(r, FWD_RETRY_WAITS[attempt]));
+                    }
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+                    try {
+                        const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: fwdBody, signal: controller.signal });
+                        const textRes = await res.text();
+                        try { result = JSON.parse(textRes); } catch(e) { result = { success: false, busy: true, message: "الخادم مشغول (رد غير متوقع)." }; }
+                    } catch (netErr) {
+                        result = { success: false, busy: true, message: netErr.name === 'AbortError' ? "تأخر رد الخادم." : "انقطع الاتصال بالخادم." };
+                    } finally { clearTimeout(timeoutId); }
+                    if (result.success || !isBusyResult(result)) break;
+                }
+
                 if(result.success) {
                     closeForwardModal();
                     scrollPositions = {}; 
@@ -1602,16 +1614,14 @@
                     let craftedUrl = `https://wa.me/${targetPhoneNum}?text=${encodeURIComponent(waMessage)}`;
                     showWaSuccessModal(craftedUrl, reqId);
                     
-                    await fetchData(true, reqId); 
+                    await fetchData(true, reqId);
+                } else if (isBusyResult(result)) {
+                    await showMsgModal("لم يُحفظ بعد", "الخادم مشغول بعملية أخرى منذ دقيقة تقريباً، ولم يُحفظ العرض ولم يصل العميلَ شيء. أعد الضغط بعد دقيقة (النص الذي كتبته باقٍ في النافذة).");
                 } else {
                     await showMsgModal("تنبيه", result.message || "النظام مشغول، يرجى المحاولة مجدداً.");
                 }
             } catch(e) {
-                if (e.name === 'AbortError') {
-                    await showMsgModal("تنبيه", "تأخر استجابة السيرفر. يرجى المحاولة مجدداً.");
-                } else {
-                    await showMsgModal("خطأ في الاتصال", "فشل الاتصال بالخادم، تأكد من الإنترنت.");
-                }
+                await showMsgModal("خطأ", "حدث خطأ غير متوقع: " + (e && e.message ? e.message : e));
             } finally {
                 btn.innerHTML = originalBtnHtml;
                 btn.disabled = false;

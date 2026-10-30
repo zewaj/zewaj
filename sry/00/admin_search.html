@@ -1384,12 +1384,13 @@
             try {
                 // opId يمنع تكرار الإضافة إن أعاد apiCall المحاولة بعد انقطاع الشبكة
                 const opId = 'op_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
-                const res = await apiCall({ action: 'adminAddPackage', refId: st.refId, packageId: pkgId, note: noteEl ? noteEl.value.trim() : '', opId: opId, adminToken: state.adminToken });
+                // [2026-10-31] مهلة 60 ث (الإضافة تأخذ 20–40 ث فكانت مهلة 20 ث تُظهر فشلاً وهي ناجحة)، والإعادة بنفس opId آمنة: الخادم يُرجع نتيجة الأولى
+                const res = await apiCall({ action: 'adminAddPackage', refId: st.refId, packageId: pkgId, note: noteEl ? noteEl.value.trim() : '', opId: opId, adminToken: state.adminToken }, 3, 60000);
                 showToast(res.notified ? `${res.message} — أُرسل تأكيد واتساب للعميل` : res.message);
                 const profile = state.searchResults.find(p => p.refId === st.refId);
                 if (profile) profile.walletBalance = res.newBalance;
                 closeModal(); renderResults();
-            } catch (e) { showToast(e.message, 'error'); } finally { setBtnLoading(btn, false, 'تأكيد إضافة الباقة وإرسال واتساب للعميل'); }
+            } catch (e) { showToast(e.message + ' — قبل الإعادة تحقق من «باقات هذا العميل» فقد تكون أُضيفت', 'error'); } finally { setBtnLoading(btn, false, 'تأكيد إضافة الباقة وإرسال واتساب للعميل'); }
         };
 
         // 🟢 طلبات الباقات من العملاء (صفحة packages.html): تظهر بانتظار السداد ويُفعَّل الطلب بزر "تم السداد" بعد التأكد من التحويل
@@ -1466,12 +1467,21 @@
         window.activatePackageRequest = async function(reqId, btn) {
             if (!confirm('تأكيد أنك استلمت المبلغ وتفعيل الباقة؟ ستُضاف النقاط فوق رصيد العميل ويصله واتساب تأكيد.')) return;
             setBtnLoading(btn, true, '');
+            const card = btn.closest('.rounded-2xl');
+            if (card) card.querySelectorAll('button').forEach(b => { b.disabled = true; });
+            btn.innerHTML = 'جاري التفعيل… قد يستغرق دقيقة';
             try {
-                const opId = 'op_' + Date.now() + '_' + Math.floor(Math.random() * 100000); // يمنع التفعيل المزدوج عند إعادة apiCall للمحاولة
-                const res = await apiCall({ action: 'adminActivatePackageRequest', reqId: reqId, opId: opId, adminToken: state.adminToken });
+                // [2026-10-31] كانت المهلة 20 ث والتفعيل يأخذ أكثر، فتُعاد المحاولة وتصطدم بالأولى الناجحة فيظهر "فشل" ويعود الزر.
+                // الآن 60 ث، والإعادة بنفس opId تنتظر نتيجة الأولى على الخادم، وضغطة على طلب مُفعَّل ترجع "مُفعَّل مسبقاً" بلا إضافة.
+                const opId = 'op_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const res = await apiCall({ action: 'adminActivatePackageRequest', reqId: reqId, opId: opId, adminToken: state.adminToken }, 3, 60000);
                 showToast(res.notified ? `${res.message} — أُرسل تأكيد واتساب للعميل` : res.message);
                 window.openPackageRequests();
-            } catch (e) { showToast(e.message, 'error'); setBtnLoading(btn, false); }
+            } catch (e) {
+                // لا نعيد الزر كما هو: نعيد تحميل القائمة من الخادم لتظهر الحالة الحقيقية (إن كان قد فُعِّل يختفي من القائمة)
+                showToast(e.message + ' — أعدنا تحميل القائمة لتظهر الحالة الحقيقية', 'error');
+                window.openPackageRequests();
+            }
         };
 
         window.cancelPackageRequest = async function(reqId, btn) {
