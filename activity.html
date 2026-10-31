@@ -972,7 +972,9 @@
                         if (isUneditableAutoMsg) { 
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
+                            // 🔴 [2026-10-31] خط أحمر: لا زر تعديل هنا. الرسالة مرّت على الإدارة ووصلت الطرف الآخر (واتساب ومنصة)؛ التعديل بعد التمرير
+                            // كان يسمح بكتابة ما لم تراجعه الإدارة (رقم جوال مثلاً). التعديل مسموح فقط وهي «بانتظار اعتماد الإدارة» (الفرع أعلاه).
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                         }
                     } else {
                         // 🟢 "تواصل مباشر" للرجل دائماً (ولا يتكرر بعد إرساله)، و"موافقة تبادل أرقام" للمرأة دائماً (ولا يظهر إلا بعد أن يطلب الرجل التواصل)
@@ -1195,7 +1197,9 @@
                         if (isUneditableAutoMsg) { 
                             actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[10px] text-slate-600 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                         } else {
-                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div>${!isEditedByAdmin ? `<button type="button" onclick="event.stopPropagation(); openEditModal('${req.reqId}', '${encodedLastMsg}', event)" class="w-full py-2 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold shadow-sm">✏️ تعديل رسالتي</button>` : ''}</div>`;
+                            // 🔴 [2026-10-31] خط أحمر: لا زر تعديل هنا. الرسالة مرّت على الإدارة ووصلت الطرف الآخر (واتساب ومنصة)؛ التعديل بعد التمرير
+                            // كان يسمح بكتابة ما لم تراجعه الإدارة (رقم جوال مثلاً). التعديل مسموح فقط وهي «بانتظار اعتماد الإدارة» (الفرع أعلاه).
+                            actionAreaHtml = `<div class="bg-slate-50 p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl"><div class="text-center pb-1.5"><p class="text-[9px] text-slate-500 font-bold">⏳ بانتظار رد الطرف الآخر...</p></div></div>`;
                         }
                     } else {
                         let primaryBtnHtml = '';
