@@ -813,7 +813,7 @@
                 const mg = localStorage.getItem('verified_user_gender') || '', mm = localStorage.getItem('verified_user_mType') || '';
                 if ((mg.includes('أنثى') || mg.includes('نساء')) && /خاص|ظروف|اشتراطات|مسيار/.test(mm)) {
                     const ev = parseFloat(config.EXTEND_COST_BY_SPECIAL_WOMAN);
-                    EXT_COST_MINE = isNaN(ev) ? 6 : ev;
+                    if (!isNaN(ev)) EXT_COST_MINE = ev;
                 }
             } catch (e) {}
 

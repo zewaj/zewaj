@@ -2570,7 +2570,7 @@
                 const m = localStorage.getItem('verified_user_mType') || '';
                 if ((g.includes('أنثى') || g.includes('نساء')) && /خاص|ظروف|اشتراطات|مسيار/.test(m)) {
                     const v = parseFloat((cfg || {}).CONTACT_COST_BY_SPECIAL_WOMAN);
-                    return isNaN(v) ? 15 : v;
+                    return isNaN(v) ? null : v; // المفتاح غير موجود في إعدادات الخادم (خادم قديم) = تكلفة معتادة
                 }
             } catch (e) {}
             return null;

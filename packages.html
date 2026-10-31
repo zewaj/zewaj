@@ -291,7 +291,7 @@
                         <div class="text-left"><span class="text-2xl font-black text-indigo-600">${esc(p.price)}</span> <span class="text-xs font-bold text-slate-500">ريال</span></div>
                     </div>
                     <ul class="text-xs text-slate-700 font-bold flex flex-col gap-2 mb-3">
-                        <li class="flex items-start gap-2"><span>💎</span><span><b class="text-indigo-700">${esc(p.points)} نقطة</b><br><span class="text-[10px] text-slate-500">تكفي لنحو ${esc(platformContacts)} طلبات تواصل عبر المنصة${isMale ? ` (أو ${esc(specialContacts)} مع ذات الظروف الخاصة)` : (isGuest ? ` (أو ${esc(bySpContacts)} لذات الظروف الخاصة)` : '')}</span></span></li>
+                        <li class="flex items-start gap-2"><span>💎</span><span><b class="text-indigo-700">${esc(p.points)} نقطة</b><br><span class="text-[10px] text-slate-500">تكفي لنحو ${esc(platformContacts)} طلبات تواصل عبر المنصة${isMale ? ` (أو ${esc(specialContacts)} مع ذات الظروف الخاصة)` : (isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (أو ${esc(bySpContacts)} لذات الظروف الخاصة)` : '')}</span></span></li>
                         ${extLines}
                         ${p.adMonths > 0 ? `<li class="flex items-start gap-2"><span>📢</span><span>إعلان ملفك على شريط الموقع «ملفات مميزة» <b class="text-amber-700">مدة ${esc(monthsText(p.adMonths))}</b><br><span class="text-[10px] text-slate-500">يبدأ من اعتماد ملفك، وإن كان لديك إعلان ساري تُضاف المدة فوقه</span></span></li>` : ''}
                         ${p.unlocksSpecial ? '<li class="flex items-start gap-2"><span>⭐</span><span>تفعيل مزايا الاشتراطات الخاصة لملفك</span></li>' : ''}
@@ -309,7 +309,7 @@
             document.getElementById('infoBox').innerHTML = `
                 <div class="bg-slate-100 border border-slate-200 rounded-2xl p-3 mt-4 text-[11px] text-slate-600 font-bold leading-relaxed">
                     <p class="font-black text-slate-700 mb-1">كيف تُحسب التكاليف؟</p>
-                    <p>• التواصل مع ملف عبر المنصة: ${esc(pr.contactCostRegular)} نقاط${isMale ? ` (${esc(pr.contactCostSpecialWomen)} نقطة مع ذات الظروف الخاصة)` : (isGuest ? ` (${esc(pr.contactCostBySpecialWoman)} نقطة لذات الظروف الخاصة)` : '')}.</p>
+                    <p>• التواصل مع ملف عبر المنصة: ${esc(pr.contactCostRegular)} نقاط${isMale ? ` (${esc(pr.contactCostSpecialWomen)} نقطة مع ذات الظروف الخاصة)` : (isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (${esc(pr.contactCostBySpecialWoman)} نقطة لذات الظروف الخاصة)` : '')}.</p>
                     ${isMale ? `<p>• التواصل المباشر خارج المنصة بعد موافقة الطرف الآخر: ${esc(pr.directFee)} ريال (زواج معلن) أو ${esc(pr.directFeeSpecialWomen)} ريال (ظروف خاصة)، ويُسقطه التواصل المجاني من باقتك.</p>` : ''}
                     <p>• بعد الاشتراك تصلك رسالة واتساب بالمبلغ وحسابات السداد، وتُفعَّل باقتك فور التأكد من التحويل.</p>
                 </div>`;
