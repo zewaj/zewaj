@@ -73,6 +73,8 @@
       <button id="logoutBtn" class="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-rose-500 shadow-sm" title="تسجيل الخروج" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
     </div>
   </header>
+  <!-- [2026-10-31] رسائل واتساب لم تصل + اتصال جوال المنصة (القسم 37 في الخادم) — التفاصيل والإعادة في admin.html -->
+  <div id="waHomeBox" class="hidden mb-3"></div>
 
   <div id="errBar" class="hidden mb-3 text-[12px] font-bold bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-2.5"></div>
 
@@ -252,8 +254,20 @@ function setBusy(on, loud) {
   chip.textContent = on && loud ? (shownAt ? `جاري التحديث… الأرقام الظاهرة من ${ago(shownAt)}` : 'جاري تحميل الأرقام…') : '';
 }
 
+async function loadWaHome() {
+  const box = document.getElementById('waHomeBox'); if (!box) return;
+  const j = await post({ action: 'adminWaIssues', adminToken: token }, 30000).catch(() => null);
+  if (!j || !j.success) return; // خادم قديم
+  const n = (j.issues || []).length, inst = j.instance;
+  let html = '';
+  if (inst && inst.ok === false) html += `<div class="bg-rose-600 text-white rounded-2xl px-4 py-3 text-xs font-black shadow-sm mb-2">⚠️ جوال المنصة غير متصل بخدمة الواتساب — الرسائل الآلية لا تصل حتى يُعاد ربطه من لوحة UltraMsg.</div>`;
+  if (n) html += `<a href="admin.html" class="block bg-amber-50 border border-amber-300 text-amber-800 rounded-2xl px-4 py-3 text-xs font-black shadow-sm">📵 ${n === 1 ? 'رسالة واتساب واحدة لم تصل' : n + ' رسائل واتساب لم تصل'} — افتح المراسلات للعرض وإعادة الإرسال</a>`;
+  box.innerHTML = html; box.classList.toggle('hidden', !html);
+}
+
 async function load(force, loud) {
   if (loading) return; loading = true;
+  loadWaHome();
   if (shownAt && Date.now() - shownAt > STALE_LOUD_MS) loud = true;
   setBusy(true, !!loud);
   let ok = false;

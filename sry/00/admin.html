@@ -144,6 +144,9 @@
             </div>
         </div>
 
+        <!-- [2026-10-31] رسائل واتساب لم تصل + اتصال جوال المنصة (القسم 37 في الخادم) -->
+        <div id="waIssueBanner" class="hidden w-full"></div>
+
         <!-- السطر الثاني: الفلاتر الستة (يأخذ سطر كامل بالجوال) -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 flex items-center justify-center sm:justify-start gap-2 overflow-x-auto hide-scroll w-full">
             <button onclick="setFilter('active')" id="filter-active" class="filter-btn p-2.5 rounded-xl transition-all bg-indigo-600 text-white shadow-sm shrink-0 relative" title="الطلبات النشطة">
@@ -653,6 +656,7 @@
         async function fetchData(silent = false, highlightReqId = null) {
             if (isFetchingData || !state.adminToken) return;
             isFetchingData = true;
+            loadWaIssues();
 
             const refreshIcon = document.getElementById('refreshIcon');
             const loadingState = document.getElementById('loadingState');
@@ -2650,6 +2654,99 @@
         function closeQuickProfile() {
             document.getElementById('quickProfileModal').classList.add('hidden');
             document.getElementById('quickProfileIframe').src = ''; 
+        }
+    </script>
+
+    <script>
+        // 🟥 [2026-10-31] الواتساب الذي لم يصل (القسم 37 في الخادم): شريط فوق الفلاتر + نافذة بالرسائل وأزرار إعادة الإرسال
+        let waIssuesState = { issues: [], instance: null, retrying: 0, at: 0, busy: false };
+        function waEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        async function loadWaIssues(force) {
+            if (!state.adminToken || waIssuesState.busy) return;
+            if (!force && Date.now() - waIssuesState.at < 60000) return;
+            waIssuesState.busy = true;
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminWaIssues', adminToken: state.adminToken }) });
+                const j = JSON.parse(await res.text());
+                if (j && j.success) { waIssuesState.issues = j.issues || []; waIssuesState.instance = j.instance || null; waIssuesState.retrying = j.retrying || 0; waIssuesState.at = Date.now(); renderWaBanner(); }
+            } catch (e) { /* خادم قديم بلا هذا الإجراء أو انقطاع: لا شيء يظهر */ }
+            finally { waIssuesState.busy = false; }
+        }
+
+        function renderWaBanner() {
+            const el = document.getElementById('waIssueBanner'); if (!el) return;
+            const n = waIssuesState.issues.length, inst = waIssuesState.instance;
+            let html = '';
+            if (inst && inst.ok === false) html += `<div class="bg-rose-600 text-white rounded-2xl px-4 py-2.5 text-xs font-black shadow-sm mb-2">⚠️ جوال المنصة غير متصل بخدمة الواتساب (${waEsc(inst.s)}) — الرسائل الآلية لن تصل حتى يُعاد ربطه من لوحة UltraMsg. <span class="opacity-80 font-bold">آخر فحص ${waEsc(inst.at)}</span></div>`;
+            if (n) html += `<button onclick="openWaIssues()" class="w-full text-right bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 rounded-2xl px-4 py-2.5 text-xs font-black shadow-sm flex items-center gap-2"><span class="text-base">📵</span><span class="flex-1">${n === 1 ? 'رسالة واتساب واحدة لم تصل' : n + ' رسائل واتساب لم تصل'} — اضغط للعرض وإعادة الإرسال</span>${waIssuesState.retrying ? `<span class="text-[10px] font-bold text-amber-600">(${waIssuesState.retrying} قيد الإعادة الآلية)</span>` : ''}</button>`;
+            el.innerHTML = html;
+            el.classList.toggle('hidden', !html);
+            if (document.getElementById('waIssuesModal')) renderWaIssuesList();
+        }
+
+        function waWho(issue) {
+            const d = String(issue.p || '').slice(-9);
+            if (!d) return '';
+            for (const r of (allRequests || [])) {
+                if (issue.r && r.reqId !== issue.r) continue;
+                if (String(r.targetPhone || '').replace(/[^0-9]/g, '').slice(-9) === d) return 'الطرف الثاني: ' + (r.targetData || '');
+                if (String(r.requesterPhone || '').replace(/[^0-9]/g, '').slice(-9) === d) return 'الطرف الأول: ' + (r.requesterData || '');
+            }
+            return '';
+        }
+
+        function openWaIssues() {
+            let m = document.getElementById('waIssuesModal');
+            if (!m) {
+                m = document.createElement('div'); m.id = 'waIssuesModal';
+                m.className = 'fixed inset-0 z-[250] bg-slate-900/50 flex items-end sm:items-center justify-center p-0 sm:p-4';
+                m.onclick = (e) => { if (e.target === m) m.remove(); };
+                m.innerHTML = `<div class="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[88dvh] flex flex-col">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100"><b class="text-sm text-slate-800">📵 رسائل واتساب لم تصل</b><button onclick="document.getElementById('waIssuesModal').remove()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-black">✕</button></div>
+                    <p class="px-4 pt-2 text-[11px] text-slate-500 font-bold leading-relaxed">الطلب نفسه محفوظ ويظهر للعميل في الموقع؛ الذي لم يصل هو إشعار الواتساب. «أعد الإرسال» يرسل النص الأصلي نفسه آلياً، و«واتساب يدوي» يفتح محادثة العميل من جوالك.</p>
+                    <div id="waIssuesList" class="p-3 overflow-y-auto flex flex-col gap-2"></div></div>`;
+                document.body.appendChild(m);
+            }
+            renderWaIssuesList();
+            loadWaIssues(true);
+        }
+
+        function renderWaIssuesList() {
+            const box = document.getElementById('waIssuesList'); if (!box) return;
+            const list = waIssuesState.issues;
+            if (!list.length) { box.innerHTML = '<p class="text-center text-sm text-emerald-600 font-black py-8">✓ لا توجد رسائل عالقة</p>'; return; }
+            box.innerHTML = list.map(i => {
+                const who = waWho(i);
+                return `<div class="border border-slate-200 rounded-2xl p-3">
+                    <div class="flex items-center justify-between gap-2"><b class="text-xs text-slate-800">${i.r ? waEsc(i.r) : 'رسالة بلا رقم طلب'}</b><span class="text-[10px] text-slate-400 font-bold">${waEsc(i.at)}</span></div>
+                    ${who ? `<p class="text-[11px] text-slate-600 font-bold mt-1">${waEsc(who)}</p>` : ''}
+                    <p class="text-[11px] text-rose-600 font-bold mt-1">${waEsc(i.w)}</p>
+                    <p class="text-[10px] text-slate-400 mt-1 truncate">${waEsc(i.pv)}</p>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="waResend('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">🔁 أعد الإرسال</button>
+                        ${i.p ? `<a href="https://wa.me/${waEsc(i.p)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black">واتساب يدوي</a>` : ''}
+                        <button onclick="waDismiss('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black">تجاهل</button>
+                    </div></div>`;
+            }).join('');
+        }
+
+        async function waCall(action, ref) {
+            const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, ref: ref, adminToken: state.adminToken }) });
+            return JSON.parse(await res.text());
+        }
+        async function waResend(ref, btn) {
+            btn.disabled = true; btn.textContent = 'جاري الإرسال…';
+            try {
+                const j = await waCall('adminWaResend', ref);
+                if (j.success) { waIssuesState.issues = waIssuesState.issues.filter(x => x.ref !== ref); renderWaBanner(); qaToast(j.message || 'أُعيد الإرسال ✓', 'ok'); }
+                else { qaToast(j.message || 'لم تُرسل', 'error'); btn.disabled = false; btn.textContent = '🔁 أعد الإرسال'; }
+            } catch (e) { qaToast('تعذر الاتصال بالخادم، حاول بعد لحظات', 'error'); btn.disabled = false; btn.textContent = '🔁 أعد الإرسال'; }
+        }
+        async function waDismiss(ref, btn) {
+            btn.disabled = true;
+            try { await waCall('adminWaDismiss', ref); } catch (e) {}
+            waIssuesState.issues = waIssuesState.issues.filter(x => x.ref !== ref); renderWaBanner();
         }
     </script>
 </body>
