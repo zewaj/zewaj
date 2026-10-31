@@ -2144,6 +2144,7 @@
                 const specialWomenCost = platformConfig.CONTACT_COST_SPECIAL_WOMEN !== undefined ? platformConfig.CONTACT_COST_SPECIAL_WOMEN : 25;
                 // تطبيق الـ 25 نقطة لزواج ظروف خاصة (للنساء فقط حسب التسعيرة، أما الرجال فلهم تسعيرة أخرى)
                 currentCost = (isSpecialCondition && !isMale) ? specialWomenCost : regularCost;
+                const myOv = mySpecialWomanCost(platformConfig); if (myOv !== null) currentCost = myOv;
             } catch(e){}
 
             const cachedReqs = JSON.parse(localStorage.getItem('cached_requested_ids') || '[]');
@@ -2518,7 +2519,8 @@
                     const costRegular = config.CONTACT_COST_REGULAR !== undefined ? config.CONTACT_COST_REGULAR : 5;
                     const costSpecial = config.CONTACT_COST_SPECIAL_WOMEN !== undefined ? config.CONTACT_COST_SPECIAL_WOMEN : 25;
                     
-                    const pointsCost = isSpecial ? costSpecial : costRegular;
+                    const myOv = mySpecialWomanCost(config);
+                    const pointsCost = myOv !== null ? myOv : (isSpecial ? costSpecial : costRegular);
 
                     // 🟢 الرصيد لا يكفي: نخبره فوراً (قبل أن يضغط تأكيد) مع زر الباقات، بدل رفض متأخر
                     const liveBal = parseInt(localStorage.getItem('cached_wallet_balance') || currentBal || 0) || 0;
@@ -2561,6 +2563,18 @@
         }
 
         // 🟢 حالة "نقاطك غير كافية" داخل نافذة التواصل: تعرض الرصيد والمطلوب وزر الباقات (تُستدعى قبل التأكيد وبعد رفض الخادم)
+        function mySpecialWomanCost(cfg) {
+            // [2026-10-31] المرأة ذات الظروف الخاصة تدفع CONTACT_COST_BY_SPECIAL_WOMAN (15) بدل المعتاد حين تبادر بالتواصل. الخادم هو المرجع الفعلي.
+            try {
+                const g = localStorage.getItem('verified_user_gender') || '';
+                const m = localStorage.getItem('verified_user_mType') || '';
+                if ((g.includes('أنثى') || g.includes('نساء')) && /خاص|ظروف|اشتراطات|مسيار/.test(m)) {
+                    const v = parseFloat((cfg || {}).CONTACT_COST_BY_SPECIAL_WOMAN);
+                    return isNaN(v) ? 15 : v;
+                }
+            } catch (e) {}
+            return null;
+        }
         function renderNoBalanceInContactModal(cost, bal) {
             const contentArea = document.getElementById('mcmContentArea');
             const actionButtons = document.getElementById('mcmActionButtons');
@@ -2631,7 +2645,8 @@
             if (!isDirect) {
                 const costRegular = config.CONTACT_COST_REGULAR !== undefined ? config.CONTACT_COST_REGULAR : 5;
                 const costSpecial = config.CONTACT_COST_SPECIAL_WOMEN !== undefined ? config.CONTACT_COST_SPECIAL_WOMEN : 25;
-                requiredPoints = isSpecial ? costSpecial : costRegular;
+                const myOv = mySpecialWomanCost(config);
+                requiredPoints = myOv !== null ? myOv : (isSpecial ? costSpecial : costRegular);
                 
                 if (parseInt(localStorage.getItem('cached_wallet_balance') || '0') < requiredPoints) {
                     renderNoBalanceInContactModal(requiredPoints, parseInt(localStorage.getItem('cached_wallet_balance') || '0'));

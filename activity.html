@@ -807,6 +807,15 @@
             const MAX_EXT = config.MAX_EXTENDED_MESSAGES !== undefined ? config.MAX_EXTENDED_MESSAGES : 4;
             const EXT_COST_REG = config.EXTEND_COST_REGULAR !== undefined ? config.EXTEND_COST_REGULAR : 2;
             const EXT_COST_SPEC = config.EXTEND_COST_SPECIAL_WOMEN !== undefined ? config.EXTEND_COST_SPECIAL_WOMEN : 10;
+            // [2026-10-31] المرأة ذات الظروف الخاصة تدفع EXTEND_COST_BY_SPECIAL_WOMAN (6) لتمديد محادثتها أياً كان الطرف الآخر
+            let EXT_COST_MINE = null;
+            try {
+                const mg = localStorage.getItem('verified_user_gender') || '', mm = localStorage.getItem('verified_user_mType') || '';
+                if ((mg.includes('أنثى') || mg.includes('نساء')) && /خاص|ظروف|اشتراطات|مسيار/.test(mm)) {
+                    const ev = parseFloat(config.EXTEND_COST_BY_SPECIAL_WOMAN);
+                    EXT_COST_MINE = isNaN(ev) ? 6 : ev;
+                }
+            } catch (e) {}
 
             const myProfileStatus = getMyProfileStatus();
             const isBannedFromChat = (myProfileStatus === 'محذوف' || myProfileStatus === 'تم الزواج');
@@ -975,6 +984,7 @@
                             contactBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
                         }
                         let extCost = (targetInfo.includes('خاصة') || targetInfo.includes('مطلقة') || targetInfo.includes('أرملة')) ? EXT_COST_SPEC : EXT_COST_REG;
+                        if (EXT_COST_MINE !== null) extCost = EXT_COST_MINE;
                         let extendBtn = `<button type="button" onclick="event.stopPropagation(); promptExtendChat('${req.reqId}', ${extCost})" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
                         actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">

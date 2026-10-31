@@ -388,8 +388,21 @@
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
 /* 🟥🟥🟥 [ القسم رقم 4: دوال المساعدة وتنسيق النصوص ] 🟥🟥🟥 */
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
+        function mySpecialWomanCost(cfg) {
+            // [2026-10-31] المرأة ذات الظروف الخاصة تدفع CONTACT_COST_BY_SPECIAL_WOMAN (15) بدل المعتاد حين تبادر بالتواصل. الخادم هو المرجع الفعلي.
+            try {
+                const g = localStorage.getItem('verified_user_gender') || '';
+                const m = localStorage.getItem('verified_user_mType') || '';
+                if ((g.includes('أنثى') || g.includes('نساء')) && /خاص|ظروف|اشتراطات|مسيار/.test(m)) {
+                    const v = parseFloat((cfg || {}).CONTACT_COST_BY_SPECIAL_WOMAN);
+                    return isNaN(v) ? 15 : v;
+                }
+            } catch (e) {}
+            return null;
+        }
         function getContactCost(gender, marriageType) {
             let cost = 5;
+            try { const myOv = mySpecialWomanCost(JSON.parse(localStorage.getItem('platform_config') || '{}')); if (myOv !== null) return myOv; } catch (e) {}
             if (gender === 'أنثى' && marriageType && (marriageType.includes('بظروف خاصة') || marriageType.includes('مسيار'))) {
                 try {
                     const config = JSON.parse(localStorage.getItem('platform_config') || '{}');
