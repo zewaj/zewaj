@@ -643,7 +643,8 @@
 
     <!-- Iframe Container for Sub-pages -->
     <div id="iframeContainer">
-        <iframe id="appIframe" src=""></iframe>
+        <div id="iframeLoading" style="display:none; position:absolute; top:55px; left:0; right:0; padding:40px 16px; text-align:center; color:#64748b; font-weight:800; font-size:14px; pointer-events:none;">⏳ جاري التحميل...</div>
+        <iframe id="appIframe" src="" onload="var l=document.getElementById('iframeLoading'); if(l) l.style.display='none';"></iframe>
     </div>
 
     <!-- Bottom Navigation -->
@@ -1478,10 +1479,13 @@
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
         <!-- ✂️ ---------- [ القسم رقم 19 : تحديث حالة الواجهة ] ---------- ✂️ -->
         <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
-        window.handleHeroAuthClick = function() { 
-            const isLogged = localStorage.getItem('verified_user_phone');
+        // 🟢 قراءة آمنة: المتصفحات المدمجة (واتساب/إنستغرام...) والخصوصية العالية قد ترمي خطأ عند لمس التخزين فيصمت الزر
+        function safeLS(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+        window.handleHeroAuthClick = function() {
+            const isLogged = safeLS('verified_user_phone');
             if (isLogged) {
-                const refId = localStorage.getItem('active_profile_refid');
+                const refId = safeLS('active_profile_refid');
                 if (!refId || refId === 'null') {
                     loadIframe('register.html?action=add');
                 } else {
@@ -1874,16 +1878,16 @@
 
         function loadIframe(url) {
             closeLoginModal();
-            const isLogged = !!localStorage.getItem('verified_user_phone');
+            const isLogged = !!safeLS('verified_user_phone');
             if ((url.includes('smart.html') || url.includes('activity.html') || url.includes('contact.html')) && !isLogged) {
                 window.currentActivePage = url;
                 openLoginModal(); 
                 return; 
             }
 
-            const phone = localStorage.getItem('verified_user_phone') || '';
-            const refId = localStorage.getItem('active_profile_refid') || '';
-            const fullName = localStorage.getItem('verified_user_name') || '';
+            const phone = safeLS('verified_user_phone') || '';
+            const refId = safeLS('active_profile_refid') || '';
+            const fullName = safeLS('verified_user_name') || '';
             const firstName = fullName ? fullName.split(' ')[0] : '';
 
             // 🟢 إجبار المستخدم غير المكتمل على إكمال التسجيل
@@ -1911,6 +1915,8 @@
             document.body.classList.add('iframe-mode'); 
 
             const iframe = document.getElementById('appIframe');
+            const loadingEl = document.getElementById('iframeLoading');
+            if (loadingEl) loadingEl.style.display = 'block';
             if(iframe) iframe.src = urlObj.href;
             
             updateNavHighlight(urlObj.href);
@@ -2029,8 +2035,8 @@
             window.loginReturnRef = null;
             // بعد الدخول يعود الزائر لنفس الملف في البحث لا لصفحة بحث فارغة
             if (lr && Date.now() - lr.at < 300000) destination = 'search.html?refId=' + encodeURIComponent(lr.id);
-            sessionStorage.setItem('intended_destination', destination);
-            closeLoginModal(); 
+            try { sessionStorage.setItem('intended_destination', destination); } catch (e) {}
+            closeLoginModal();
             loadIframe('register.html');
         }
 
