@@ -202,15 +202,37 @@
             const u = new URL('index.html', window.location.href);
             return u.origin + u.pathname + '?ref=' + encodeURIComponent(refIdParam);
         }
+        // 🟢 [2026-11-01] عبارات جاهزة للمشاركة: يختار المشترك واحدة تناسب من يرسل إليه، ثم يرسلها أو ينسخها ومعها رابطه.
+        // عبارة التعريف TRUST_LINE هي نفسها شارتا الصفحة الرئيسية (وثيقة العمل الحر / الموارد البشرية والتنمية الاجتماعية) — عدّلها هنا إن تغيّر الوصف الرسمي.
+        const TRUST_LINE = 'وثيقة العمل الحر · الموارد البشرية والتنمية الاجتماعية';
+        const SHARE_TEMPLATES = [
+            { title: 'تعريف عام', text: 'السلام عليكم ورحمة الله 🌹\nأنصحكم بمنصة *أبو العنود للزواج*؛ وسيط زواج موثوق ({TRUST}).\nالتسجيل مجاني وبسرية تامة، وتُعرض بياناتك بعد اعتماد الوسيط فقط.\nسجّل من هنا 👇\n{LINK}' },
+            { title: 'أب أو أم يبحث لابنته', text: 'السلام عليكم 🌹\nلا تتردد في البحث عن الزوج الصالح لابنتك، فالسعي لسترها وسعادتها ليس عيباً بل حرص ومحبة 🤍\nمنصة *أبو العنود للزواج* وسيط موثوق ({TRUST})، وبياناتها تُحفظ بسرية واحترام، والتسجيل مجاني:\n{LINK}' },
+            { title: 'أب أو أم يبحث لابنه', text: 'السلام عليكم 🌹\nتبحث عن زوجة صالحة لابنك؟ لا تتردد في البدء من الآن 🤍\nمنصة *أبو العنود للزواج* وسيط زواج موثوق ({TRUST}) يعرّفك بالمناسبات بسرية واحترام، والتسجيل مجاني:\n{LINK}' },
+            { title: 'لفتاة تبحث عن زوج', text: 'أختي الكريمة 🌷\nلا تخجلي من البحث عن الزوج المناسب، فالزواج حق وستر وسعادة.\nمنصة *أبو العنود للزواج* وسيط موثوق ({TRUST})، بخصوصية تامة واحترام، والتسجيل مجاني:\n{LINK}' },
+            { title: 'لشاب يبحث عن زوجة', text: 'أخي الكريم 🌹\nإن كنت تبحث عن شريكة الحياة المناسبة فهذه خطوة سهلة وموثوقة:\nمنصة *أبو العنود للزواج* وسيط زواج موثوق ({TRUST})، مطابقة ذكية وسرية تامة، والتسجيل مجاني:\n{LINK}' },
+            { title: 'لمن يبدأ من جديد', text: 'السلام عليكم 🌹\nلكل من تبحث أو يبحث عن بداية جديدة بعد طلاق أو ترمّل: الزواج من جديد حق وفرصة طيبة 🤍\nمنصة *أبو العنود للزواج* وسيط موثوق ({TRUST}) بسرية واحترام، والتسجيل مجاني:\n{LINK}' }
+        ];
+        let shareTplIdx = 0;
         function referralShareText() {
-            return `السلام عليكم، أنصحك بمنصة أبو العنود للزواج (وسيط زواج موثوق). سجّل مجاناً عبر هذا الرابط:\n${referralUrl()}`;
+            return SHARE_TEMPLATES[shareTplIdx].text.replace('{TRUST}', TRUST_LINE).replace('{LINK}', referralUrl());
+        }
+        function pickShareTemplate(i) {
+            shareTplIdx = i;
+            document.querySelectorAll('.share-tpl').forEach((el, k) => {
+                const on = k === i;
+                el.classList.toggle('border-emerald-500', on); el.classList.toggle('bg-white', on);
+                el.classList.toggle('border-slate-200', !on); el.classList.toggle('bg-emerald-50/40', !on);
+            });
+            const pv = document.getElementById('sharePreview'); if (pv) pv.textContent = referralShareText();
         }
         function shareReferral() {
             window.open('https://wa.me/?text=' + encodeURIComponent(referralShareText()), '_blank', 'noopener');
         }
-        function copyReferral() {
-            const url = referralUrl();
-            const done = () => showToast('تم نسخ رابطك، شاركه مع من تعرف ✅');
+        function copyReferralMessage() { copyText(referralShareText(), 'تم نسخ الرسالة، الصقها وأرسلها لمن تعرف ✅'); }
+        function copyReferral() { copyText(referralUrl(), 'تم نسخ رابطك، شاركه مع من تعرف ✅'); }
+        function copyText(url, doneMsg) {
+            const done = () => showToast(doneMsg);
             const fallback = () => {
                 const ta = document.createElement('textarea'); ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
                 document.body.appendChild(ta); ta.select();
@@ -223,7 +245,7 @@
             const pct = Math.min(100, Math.round((cur / target) * 100));
             return `
                 <div class="mb-2">
-                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-1"><span>${label}</span><span class="text-emerald-700 font-black">${esc(Math.min(cur, target))} / ${esc(target)}</span></div>
+                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700 mb-1"><span>${label}</span><span dir="ltr" class="text-emerald-700 font-black">${esc(Math.min(cur, target))} / ${esc(target)}</span></div>
                     <div class="h-2 rounded-full bg-emerald-100 overflow-hidden"><div class="h-full rounded-full bg-emerald-500" style="width:${pct}%"></div></div>
                 </div>`;
         }
@@ -249,17 +271,34 @@
             }
             const actions = isGuest
                 ? `<button type="button" onclick="guestSubscribe()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md">سجّل دخولك لتحصل على رابطك الخاص</button>`
-                : `<div class="flex gap-2">
-                        <button type="button" onclick="shareReferral()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md active:scale-95 transition-all">مشاركة عبر واتساب</button>
-                        <button type="button" onclick="copyReferral()" class="flex-1 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-700 font-black text-xs active:scale-95 transition-all">نسخ رابطي</button>
-                   </div>`;
+                : `<p class="text-[11px] font-black text-slate-700 mb-1.5">اختر العبارة المناسبة لمن سترسل إليه:</p>
+                   <div class="flex flex-wrap gap-1.5 mb-2">${SHARE_TEMPLATES.map((t, i) => `<button type="button" onclick="pickShareTemplate(${i})" class="share-tpl px-2.5 py-1.5 rounded-full border text-[11px] font-bold text-slate-700 transition-all">${esc(t.title)}</button>`).join('')}</div>
+                   <div id="sharePreview" class="bg-white border border-emerald-200 rounded-xl p-3 text-[11px] leading-relaxed text-slate-700 font-medium whitespace-pre-line break-words mb-2" dir="rtl"></div>
+                   <div class="flex gap-2">
+                        <button type="button" onclick="shareReferral()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md active:scale-95 transition-all">إرسال عبر واتساب</button>
+                        <button type="button" onclick="copyReferralMessage()" class="flex-1 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-700 font-black text-xs active:scale-95 transition-all">نسخ الرسالة</button>
+                   </div>
+                   <button type="button" onclick="copyReferral()" class="w-full mt-2 py-2 rounded-xl text-emerald-700 font-bold text-[11px] underline">نسخ الرابط فقط</button>`;
             box.innerHTML = `
-                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm mb-3 fade-in">
-                    <h2 class="text-sm font-black text-emerald-800 mb-1">🎁 احصل على <span class="text-emerald-600">${esc(rf.rewardName)}</span> مجاناً</h2>
-                    <p class="text-[11px] text-slate-700 font-bold leading-relaxed mb-2">شارك رابطك الخاص مع من تعرف، وتحصل على الباقة مجاناً عند ${paths.join(' <span class="text-emerald-700">أو</span> ')}. ${rf.cooldownDays > 0 ? `ويمكنك تكرارها بعد ${esc(rf.cooldownDays)} يوماً.` : ''}</p>
-                    ${rule}
-                    <div class="mt-2">${state}${actions}</div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm mb-3 fade-in overflow-hidden">
+                    <button type="button" onclick="toggleReferral()" class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-right">
+                        <span class="text-sm font-black text-emerald-800">🎁 احصل على <span class="text-emerald-600">${esc(rf.rewardName)}</span> مجاناً${rf.rewardPending ? ' <span class="text-[10px] bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 mr-1">استحققتها 🎉</span>' : ''}</span>
+                        <span id="refChev" class="text-emerald-600 text-xs transition-transform ${referralOpen ? 'rotate-180' : ''}">▼</span>
+                    </button>
+                    <div id="refBody" class="px-4 pb-4 ${referralOpen ? '' : 'hidden'}">
+                        <p class="text-[11px] text-slate-700 font-bold leading-relaxed mb-2">شارك رابطك الخاص مع من تعرف، وتحصل على الباقة مجاناً عند ${paths.join(' <span class="text-emerald-700">أو</span> ')}. ${rf.cooldownDays > 0 ? `ويمكنك تكرارها بعد ${esc(rf.cooldownDays)} يوماً.` : ''}</p>
+                        ${rule}
+                        <div class="mt-2">${state}${actions}</div>
+                    </div>
                 </div>`;
+            if (!isGuest) pickShareTemplate(shareTplIdx);
+        }
+        // البطاقة مطوية افتراضياً (سطر واحد) حتى لا تدفع الباقات لأسفل الصفحة؛ الضغط عليها يفتح التفاصيل والعبارات
+        let referralOpen = false;
+        function toggleReferral() {
+            referralOpen = !referralOpen;
+            document.getElementById('refBody').classList.toggle('hidden', !referralOpen);
+            document.getElementById('refChev').classList.toggle('rotate-180', referralOpen);
         }
 
         function renderPackages() {
