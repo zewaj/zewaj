@@ -135,6 +135,15 @@
     </a>
   </div>
 
+  <!-- [2026-11-01] إحصائية المُحيلين (القسم 34 في الخادم): تُحمَّل عند الفتح فقط حتى لا تثقل تحديث الأرقام الدوري -->
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">الإحالات (من شاركوا رابطهم)</p>
+  <button id="refToggle" type="button" class="wide w-full text-right bg-violet-50 text-violet-800 border border-violet-100">
+    <i class="fas fa-share-nodes text-xl"></i>
+    <span><b class="block text-sm">المُحيلون ومن انضمّ عبرهم</b><span class="text-[11px] opacity-80" id="refSub">اضغط لعرض الأسماء والأعداد</span></span>
+    <i id="refChev" class="fas fa-chevron-down" style="margin-inline-start:auto"></i>
+  </button>
+  <div id="refPanel" class="hidden mt-2.5"></div>
+
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">الصفحات</p>
   <div class="grid grid-cols-3 gap-2.5">
     <a href="admin.html" class="relative bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><span id="readyMsg" class="ready-dot" title="بياناتها جاهزة"></span><i class="fas fa-comments text-xl text-indigo-600 block mb-1"></i><span class="text-xs font-bold">المراسلات</span></a>
@@ -316,6 +325,56 @@ async function prefetchPages() {
   } finally { prefetching = false; }
 }
 
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// 🟥🟥🟥 القسم 3-ب: جافاسكريبت - إحصائية المُحيلين 🟥🟥🟥
+// 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+// adminGetReferralStats: لكل مُحيل عدد من سجّلوا عبره ومن اعتُمد ومن ينتظر ومن اشترك بباقة والمكافآت. تُحمَّل عند أول فتح وتُحدَّث بزر التحديث.
+const escH = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let refLoaded = false, refLoading = false;
+function refStat(label, val, cls) { return `<div class="rounded-xl px-2 py-1.5 text-center ${cls}"><div class="font-black text-base leading-none">${val}</div><div class="text-[10px] font-bold opacity-80 mt-0.5">${label}</div></div>`; }
+function renderRefStats(j) {
+  const t = j.totals || {}, list = j.referrers || [];
+  document.getElementById('refSub').textContent = list.length ? `${t.referrers} مُحيل · ${t.approved} معتمد · ${t.paid} اشترك` : 'لا توجد إحالات بعد';
+  if (!list.length) { document.getElementById('refPanel').innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">لم يسجّل أحد عبر رابط إحالة بعد.</p>'; return; }
+  let html = `<div class="grid grid-cols-3 gap-2 mb-3">${refStat('مُحيلون', t.referrers, 'bg-violet-50 text-violet-800')}${refStat('سجّلوا', t.referred, 'bg-slate-100 text-slate-700')}${refStat('معتمدون', t.approved, 'bg-emerald-50 text-emerald-800')}${refStat('بانتظار الاعتماد', t.pending, 'bg-amber-50 text-amber-800')}${refStat('اشتروا باقة', t.paid, 'bg-sky-50 text-sky-800')}${refStat('مكافآت', t.rewards + (t.rewardsPending ? ' (+' + t.rewardsPending + ')' : ''), 'bg-rose-50 text-rose-700')}</div>`;
+  list.forEach((r, i) => {
+    const pct = r.regTarget > 0 ? Math.min(100, Math.round(r.counted / r.regTarget * 100)) : 0;
+    const wa = r.phone ? `<a href="https://wa.me/${escH(r.phone)}" target="_blank" rel="noopener" class="text-emerald-600 text-lg" title="واتساب المُحيل" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i></a>` : '';
+    const members = (r.members || []).map(m => `<div class="flex items-center justify-between text-[11px] py-1 border-t border-slate-100"><span class="font-bold">#${escH(m.ref)} ${escH(m.name)} <span class="text-slate-400">${m.gender === 'ذكر' ? '♂' : '♀'}</span></span><span class="text-slate-500">${escH(m.status)}${m.paid ? ' · 💎 اشترك' : ''}${m.counted ? '' : ''}</span></div>`).join('');
+    html += `<div class="bg-white border border-slate-200 rounded-2xl p-3 mb-2 shadow-sm">
+      <div class="flex items-center justify-between gap-2 cursor-pointer" onclick="document.getElementById('refm${i}').classList.toggle('hidden')">
+        <div class="min-w-0"><b class="text-sm block truncate">${escH(r.name)}</b><span class="text-[11px] text-slate-500 font-bold">#${escH(r.ref)} · ${r.gender === 'ذكر' ? 'رجل' : 'امرأة'}${r.rewardPending ? ' · <span class="text-rose-600">🎁 مكافأة تنتظر التفعيل</span>' : ''}${r.rewards ? ' · نال ' + r.rewards + ' مكافأة' : ''}</span></div>
+        ${wa}
+      </div>
+      <div class="grid grid-cols-4 gap-1.5 mt-2">${refStat('سجّلوا', r.total, 'bg-slate-100 text-slate-700')}${refStat('معتمد', r.approved, 'bg-emerald-50 text-emerald-800')}${refStat('ينتظر', r.pending, 'bg-amber-50 text-amber-800')}${refStat('اشترك', r.paid, 'bg-sky-50 text-sky-800')}</div>
+      ${r.regTarget > 0 ? `<div class="mt-2"><div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1"><span>التقدّم نحو المكافأة</span><span>${r.counted} من ${r.regTarget}${r.paidTarget > 0 ? ' · أو اشتراك ' + r.paidCounted + ' من ' + r.paidTarget : ''}</span></div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-violet-500" style="width:${pct}%"></div></div></div>` : ''}
+      ${r.foreignMen ? `<p class="text-[10px] text-slate-400 font-bold mt-1.5">منهم ${r.foreignMen} رجل غير سعودي (لا يُحتسب بالتسجيل)</p>` : ''}
+      <div id="refm${i}" class="hidden mt-2">${members}</div>
+    </div>`;
+  });
+  if (j.truncated) html += '<p class="text-[10px] text-slate-400 font-bold text-center">عُرض أعلى 100 مُحيل فقط.</p>';
+  document.getElementById('refPanel').innerHTML = html;
+}
+async function loadRefStats(force) {
+  if (refLoading) return; refLoading = true;
+  const panel = document.getElementById('refPanel'), sub = document.getElementById('refSub');
+  if (!refLoaded) panel.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4"><i class="fas fa-spinner fa-spin"></i> جاري تحميل الإحصائية…</p>';
+  try {
+    const j = await post({ action: 'adminGetReferralStats', adminToken: token, force: !!force }, 90000);
+    if (isAuthError(j)) return logout('انتهت الجلسة أو تغيّرت كلمة المرور.');
+    if (!j || !j.success) { if (!refLoaded) { panel.innerHTML = `<p class="text-xs text-amber-700 font-bold text-center py-4">${escH((j && j.message) || 'الخادم لم يُحدَّث بعد بهذه الإحصائية (الصق آخر نسخة من السكريبت وانشرها).')}</p>`; sub.textContent = 'غير متاحة بعد'; } return; }
+    refLoaded = true; renderRefStats(j);
+  } catch (e) {
+    if (!refLoaded) { panel.innerHTML = '<p class="text-xs text-amber-700 font-bold text-center py-4">تعذر تحميل الإحصائية، اضغط تحديث.</p>'; }
+  } finally { refLoading = false; }
+}
+document.getElementById('refToggle').onclick = () => {
+  const panel = document.getElementById('refPanel'), open = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !open);
+  document.getElementById('refChev').className = 'fas ' + (open ? 'fa-chevron-up' : 'fa-chevron-down');
+  if (open && !refLoaded) loadRefStats(false);
+};
+
 function showHome() {
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('homeView').classList.remove('hidden');
@@ -344,7 +403,7 @@ document.getElementById('loginForm').onsubmit = async ev => {
   } catch (e) { err.textContent = 'تعذر الاتصال بالخادم، حاول مرة أخرى.'; err.classList.remove('hidden'); }
   finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
 };
-document.getElementById('refreshBtn').onclick = () => load(true, true);
+document.getElementById('refreshBtn').onclick = () => { load(true, true); if (!document.getElementById('refPanel').classList.contains('hidden')) loadRefStats(true); };
 document.getElementById('logoutBtn').onclick = () => logout('');
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) load(false); });
 setInterval(() => { if (!document.hidden && token) load(false); }, 120000);
