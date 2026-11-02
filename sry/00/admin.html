@@ -2064,10 +2064,18 @@
             if (ok) {
                 t.set('✔ ' + (message || 'تم التنفيذ.'), 'ok');
                 setTimeout(t.remove, 9000);
-            } else {
-                t.remove();
-                if (!handleAuthError(message)) await showMsgModal('⚠️ لم يُنفَّذ: ' + label, (message || 'تعذر تنفيذ القرار.') + '\n\nلا يُعاد الإرسال تلقائياً. راجع حالة الطلب في اللوحة قبل إعادة المحاولة.');
+                // [2026-11-02] تحديث فوري من نتيجة الخادم؛ لا ننتظر إعادة بناء اللوحة (قد تتجاوز 30 ث) ثم تصحح المزامنة الخلفية أي فرق
+                const cur = allRequests.find(x => x.reqId === reqId);
+                if (cur) {
+                    cur.delayPending = false;
+                    if (decision === 'close' && !/مغلق|ملغى/.test(cur.status || '')) cur.status = 'مغلق - تأخر في الرد';
+                }
+                renderTable();
+                fetchData(true).then(renderTable).catch(() => {});
+                return;
             }
+            t.remove();
+            if (!handleAuthError(message)) await showMsgModal('⚠️ لم يُنفَّذ: ' + label, (message || 'تعذر تنفيذ القرار.') + '\n\nلا يُعاد الإرسال تلقائياً. راجع حالة الطلب في اللوحة قبل إعادة المحاولة.');
             try { await fetchData(true); } catch (e) {}
             renderTable();
         }
