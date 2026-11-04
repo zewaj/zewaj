@@ -282,7 +282,7 @@
             box.innerHTML = `
                 <div class="bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm mb-3 fade-in overflow-hidden">
                     <button type="button" onclick="toggleReferral()" class="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-right">
-                        <span class="text-sm font-black text-emerald-800">🎁 احصل على <span class="text-emerald-600">${esc(rf.rewardName)}</span> مجاناً${rf.rewardPending ? ' <span class="text-[10px] bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 mr-1">استحققتها 🎉</span>' : ''}</span>
+                        <span class="text-sm font-black text-emerald-800">🎁 احصل على <span class="text-emerald-600">الباقة المجانية</span>${rf.rewardPending ? ' <span class="text-[10px] bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 mr-1">استحققتها 🎉</span>' : ''}</span>
                         <span id="refChev" class="text-emerald-600 text-xs transition-transform ${referralOpen ? 'rotate-180' : ''}">▼</span>
                     </button>
                     <div id="refBody" class="px-4 pb-4 ${referralOpen ? '' : 'hidden'}">
