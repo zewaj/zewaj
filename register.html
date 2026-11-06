@@ -804,6 +804,11 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        // 🛡️ [2026-11-07] المرحلة 1: بطاقة الجلسة تُمرَّر تلقائياً مع كل طلب للخادم (تمهيد؛ لا رفض بعد).
+        (function(){ if (window.__authPatch) return; window.__authPatch = 1; var _f = window.fetch;
+          window.fetch = function(u, o){ try { if (o && typeof o.body === 'string' && typeof u === 'string' && u.indexOf('script.google.com') !== -1) {
+            var t = localStorage.getItem('auth_session_token');
+            if (t) { var b = JSON.parse(o.body); if (b && b.action && !b.authToken && !b.adminToken) { b.authToken = t; o = Object.assign({}, o, { body: JSON.stringify(b) }); } } } } catch(e){} return _f.call(this, u, o); }; })();
         
         let isAdminMode = false;
         let adminTargetPhone = "";
@@ -1292,6 +1297,7 @@ function closeTermsModal() {
         function logout() {
             if(isAdminMode) { exitAdminMode(); return; }
             localStorage.removeItem('verified_user_phone'); localStorage.removeItem('verified_user_name'); localStorage.removeItem('verified_user_gender'); localStorage.removeItem('active_profile_refid'); localStorage.removeItem('active_profile_index');
+            localStorage.removeItem('auth_session_token'); // 🛡️ [2026-11-07] امسح بطاقة الجلسة عند الخروج
             verifiedFullPhone = "";
             const dash = document.getElementById('dashboardSection'); if(dash) dash.classList.add('hidden');
             const mf = document.getElementById('mainFormSection'); if(mf) mf.classList.add('hidden');
@@ -1426,6 +1432,8 @@ function closeTermsModal() {
                     if(result.success) {
                         err.classList.add('hidden'); const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
                         localStorage.setItem('verified_user_phone', verifiedFullPhone);
+                        // 🛡️ [2026-11-07] المرحلة 1: احفظ بطاقة الجلسة (يقرؤها اعتراض fetch في كل الصفحات، localStorage مشترك بين القشرة والـ iframe)
+                        try { if (result.authToken) localStorage.setItem('auth_session_token', result.authToken); } catch (eT) {}
                         // 🟢 الاسم والرقم المرجعي لا يصلان إلا مع getUserProfiles: نُعلم القشرة لتعرض "جارٍ تحميل بياناتك" بدل شريط فارغ/"غير مكتمل"
                         try { sessionStorage.setItem('auth_pending', String(Date.now())); if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authPending' }, '*'); } catch (eP) {}
                         try { await loadDashboard(); } finally { try { sessionStorage.removeItem('auth_pending'); } catch (eP) {} }

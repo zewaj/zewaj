@@ -78,6 +78,11 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
+        // 🛡️ [2026-11-07] المرحلة 1: بطاقة الجلسة تُمرَّر تلقائياً مع كل طلب للخادم (تمهيد؛ لا رفض بعد).
+        (function(){ if (window.__authPatch) return; window.__authPatch = 1; var _f = window.fetch;
+          window.fetch = function(u, o){ try { if (o && typeof o.body === 'string' && typeof u === 'string' && u.indexOf('script.google.com') !== -1) {
+            var t = localStorage.getItem('auth_session_token');
+            if (t) { var b = JSON.parse(o.body); if (b && b.action && !b.authToken && !b.adminToken) { b.authToken = t; o = Object.assign({}, o, { body: JSON.stringify(b) }); } } } } catch(e){} return _f.call(this, u, o); }; })();
 
         const urlParams = new URLSearchParams(window.location.search);
         function safeStorage(key) { try { return localStorage.getItem(key) || ''; } catch (e) { return ''; } }
