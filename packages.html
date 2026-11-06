@@ -226,11 +226,19 @@
             });
             const pv = document.getElementById('sharePreview'); if (pv) pv.textContent = referralShareText();
         }
+        // 🟢 [2026-11-06] إحصائية المشاركة للإدارة (logReferralShare): فتح البطاقة، الإرسال عبر واتساب، النسخ. بالخلفية ولا تؤخر الزر؛
+        // فتح البطاقة يُسجَّل مرة في اليوم لكل جهاز، والخادم يمنع تكرار نفس النوع خلال دقيقة.
+        function logShare(kind) {
+            if (isGuest) return;
+            if (kind === 'open') { const k = 'ref_open_logged_' + refIdParam, day = new Date().toISOString().slice(0, 10); if (safeStorage(k) === day) return; try { localStorage.setItem(k, day); } catch (e) {} }
+            try { fetch(SCRIPT_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'logReferralShare', refId: refIdParam, kind: kind, tpl: (SHARE_TEMPLATES[shareTplIdx] || {}).title || '' }) }).catch(() => {}); } catch (e) {}
+        }
         function shareReferral() {
             window.open('https://wa.me/?text=' + encodeURIComponent(referralShareText()), '_blank', 'noopener');
+            logShare('wa');
         }
-        function copyReferralMessage() { copyText(referralShareText(), 'تم نسخ الرسالة، الصقها وأرسلها لمن تعرف ✅'); }
-        function copyReferral() { copyText(referralUrl(), 'تم نسخ رابطك، شاركه مع من تعرف ✅'); }
+        function copyReferralMessage() { copyText(referralShareText(), 'تم نسخ الرسالة، الصقها وأرسلها لمن تعرف ✅'); logShare('copyMsg'); }
+        function copyReferral() { copyText(referralUrl(), 'تم نسخ رابطك، شاركه مع من تعرف ✅'); logShare('copyLink'); }
         function copyText(url, doneMsg) {
             const done = () => showToast(doneMsg);
             const fallback = () => {
@@ -297,6 +305,7 @@
         let referralOpen = false;
         function toggleReferral() {
             referralOpen = !referralOpen;
+            if (referralOpen) logShare('open');
             document.getElementById('refBody').classList.toggle('hidden', !referralOpen);
             document.getElementById('refChev').classList.toggle('rotate-180', referralOpen);
         }
