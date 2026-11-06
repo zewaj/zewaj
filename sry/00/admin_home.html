@@ -98,10 +98,11 @@
     <span class="num" data-k="review">0</span>
   </a>
   <div class="grid grid-cols-2 gap-2.5 mt-2.5">
-    <a href="admin_search.html" id="newTodayLink" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
+    <!-- [2026-11-06] «مسجلون جدد» = كل ملف حالته «جديد» لم تغيّرها بعد (أياً كان يوم تسجيله)؛ ما نشرته ينتقل إلى «ملفات نشر» -->
+    <a href="admin_search.html?show=جديد" class="tile bg-emerald-50 text-emerald-800 border border-emerald-100">
       <i class="fas fa-chevron-left chev"></i>
-      <span class="num block" data-k="newToday">0</span>
-      <span class="text-xs font-bold">مسجلون جدد اليوم</span>
+      <span class="num block" data-k="newAll">0</span>
+      <span class="text-xs font-bold">مسجلون جدد</span>
       <span class="block text-[10px] opacity-75 mt-0.5" id="newTodaySub"></span>
     </a>
     <a href="admin_search.html?show=نشر" class="tile bg-cyan-50 text-cyan-800 border border-cyan-100">
@@ -129,9 +130,9 @@
       <i class="fas fa-gem text-amber-500"></i><span class="text-xs font-bold text-slate-600">طلبات الباقات</span>
       <span class="num !text-xl text-slate-800" data-k="packages">0</span>
     </a>
-    <a href="admin_search.html?open=bans" class="wide bg-white border border-slate-200 !p-3">
-      <i class="fas fa-ban text-rose-500"></i><span class="text-xs font-bold text-slate-600">المحظورون</span>
-      <span class="num !text-xl text-slate-800" data-k="bans">0</span>
+    <a href="admin.html?filter=acquaintance" class="wide bg-white border border-slate-200 !p-3">
+      <i class="fas fa-heart text-rose-500"></i><span class="text-xs font-bold text-slate-600">في مرحلة التعارف</span>
+      <span class="num !text-xl text-slate-800" data-k="courtship">0</span>
     </a>
   </div>
 
@@ -139,7 +140,7 @@
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">الإحالات (من شاركوا رابطهم)</p>
   <button id="refToggle" type="button" class="wide w-full text-right bg-violet-50 text-violet-800 border border-violet-100">
     <i class="fas fa-share-nodes text-xl"></i>
-    <span><b class="block text-sm">المُحيلون ومن انضمّ عبرهم</b><span class="text-[11px] opacity-80" id="refSub">اضغط لعرض الأسماء والأعداد</span></span>
+    <span><b class="block text-sm">المُحيلون ومن انضمّ عبرهم</b><span class="text-[11px] opacity-80" id="refSub">جاري التحميل…</span></span>
     <i id="refChev" class="fas fa-chevron-down" style="margin-inline-start:auto"></i>
   </button>
   <div id="refPanel" class="hidden mt-2.5"></div>
@@ -225,15 +226,11 @@ function render(sum, fromCache) {
   // ملخص من خادم قبل 2026-10-28 لا يحمل review/publish ← "—" بدل صفر مضلل
   setNum('review', sum.profiles && p.review !== undefined ? p.review : null, fl);
   setNum('publish', sum.profiles && p.publish !== undefined ? p.publish : null, fl);
-  setNum('newToday', sum.profiles && p.newToday !== null && p.newToday !== undefined ? p.newToday : null, fl);
+  setNum('newAll', sum.profiles && p.newAll !== undefined ? p.newAll : null, fl);
   setNum('packages', sum.packages === undefined ? null : sum.packages, fl);
-  setNum('bans', sum.bans === undefined ? null : sum.bans, fl);
+  setNum('courtship', sum.messages && m.courtship !== undefined ? m.courtship : null, fl); // خادم قبل 2026-11-06 ← «—»
   shownAt = sum.builtAt || Date.now();
-  // «مسجلون جدد اليوم» يفتح ملفات اليوم بأرقامها أياً كانت حالتها (newTodayRefs من الخادم r7)؛ قائمة «جديد» كانت تظهر
-  // فارغة حين تكون ملفات اليوم «نشر» أو معتمدة. خادم أقدم ← قائمة الانتظار كلها.
-  const todayRefs = Array.isArray(p.newTodayRefs) ? p.newTodayRefs : [];
-  document.getElementById('newTodayLink').href = todayRefs.length ? `admin_search.html?refs=${encodeURIComponent(todayRefs.join(','))}` : 'admin_search.html';
-  document.getElementById('newTodaySub').textContent = p.newToday ? `رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0}` : (sum.legacy ? 'يظهر بعد تحديث السكريبت' : '');
+  document.getElementById('newTodaySub').textContent = p.newToday ? `سجّل اليوم ${p.newToday} (رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0})` : (sum.profiles ? 'لا تسجيلات اليوم' : '');
   document.getElementById('outcomeSub').textContent = sum.messages && m.outcome ? `زواج ${m.outcomeMarriage} · عدم توفيق ${m.outcomeEnd}` : 'زواج أو عدم توفيق بانتظار التأكيد';
   document.getElementById('actionSub').textContent = sum.messages && m.dispute ? `منها ${m.dispute} نزاع` : 'نزاع، رسائل تنتظر اعتمادك، دفع، تأخر';
   const d = new Date(sum.builtAt || Date.now());
@@ -291,7 +288,7 @@ async function load(force, loud) {
   } catch (e) {
     showErr(shownAt ? `تعذر الاتصال بالخادم. الأرقام الظاهرة من ${ago(shownAt)}، اضغط تحديث.` : 'تعذر الاتصال بالخادم، اضغط تحديث.');
   } finally { loading = false; setBusy(false); }
-  if (ok) setTimeout(prefetchPages, 300);
+  if (ok) setTimeout(async () => { if (!refLoaded) await loadRefStats(false); prefetchPages(); }, 300); // الإحالات أولاً (لها كاش دقيقتان في الخادم)
 }
 
 // 🟢 [2026-10-28] تحميل مسبق في الخلفية بعد وصول الأرقام: بيانات المراسلات (admin.html تقرأ admin_requests_cache وترسم منها
@@ -334,9 +331,13 @@ let refLoaded = false, refLoading = false;
 function refStat(label, val, cls) { return `<div class="rounded-xl px-2 py-1.5 text-center ${cls}"><div class="font-black text-base leading-none">${val}</div><div class="text-[10px] font-bold opacity-80 mt-0.5">${label}</div></div>`; }
 function renderRefStats(j) {
   const t = j.totals || {}, list = j.referrers || [];
-  document.getElementById('refSub').textContent = list.length ? `${t.referrers} مُحيل · ${t.approved} معتمد · ${t.paid} اشترك` : 'لا توجد إحالات بعد';
-  if (!list.length) { document.getElementById('refPanel').innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-4">لم يسجّل أحد عبر رابط إحالة بعد.</p>'; return; }
-  let html = `<div class="grid grid-cols-3 gap-2 mb-3">${refStat('مُحيلون', t.referrers, 'bg-violet-50 text-violet-800')}${refStat('سجّلوا', t.referred, 'bg-slate-100 text-slate-700')}${refStat('معتمدون', t.approved, 'bg-emerald-50 text-emerald-800')}${refStat('بانتظار الاعتماد', t.pending, 'bg-amber-50 text-amber-800')}${refStat('اشتروا باقة', t.paid, 'bg-sky-50 text-sky-800')}${refStat('مكافآت', t.rewards + (t.rewardsPending ? ' (+' + t.rewardsPending + ')' : ''), 'bg-rose-50 text-rose-700')}</div>`;
+  const hasShareLog = t.openers !== undefined; // خادم قبل 2026-11-06 لا يحمل أرقام المشاركة
+  document.getElementById('refSub').textContent = (hasShareLog ? `${t.sharers} شاركوا · ` : '') + `${t.referred} انضموا · ${t.approved} معتمد`;
+  let html = (hasShareLog ? `<p class="text-[11px] font-black text-slate-500 mb-1.5">المشاركة (من بطاقة «الباقة المجانية» في صفحة الباقات)</p>
+    <div class="grid grid-cols-4 gap-2 mb-3">${refStat('فتحوا البطاقة', t.openers, 'bg-slate-100 text-slate-700')}${refStat('شاركوا', t.sharers, 'bg-violet-50 text-violet-800')}${refStat('أرسلوا واتساب', t.waShares, 'bg-emerald-50 text-emerald-800')}${refStat('نسخوا', t.copies, 'bg-sky-50 text-sky-800')}</div>` : '')
+    + `<p class="text-[11px] font-black text-slate-500 mb-1.5">النتيجة (سجّلوا عبر رابط إحالة)</p>
+    <div class="grid grid-cols-3 gap-2 mb-3">${refStat('مُحيلون', t.referrers, 'bg-violet-50 text-violet-800')}${refStat('سجّلوا', t.referred, 'bg-slate-100 text-slate-700')}${refStat('معتمدون', t.approved, 'bg-emerald-50 text-emerald-800')}${refStat('بانتظار الاعتماد', t.pending, 'bg-amber-50 text-amber-800')}${refStat('اشتروا باقة', t.paid, 'bg-sky-50 text-sky-800')}${refStat('مكافآت', t.rewards + (t.rewardsPending ? ' (+' + t.rewardsPending + ')' : ''), 'bg-rose-50 text-rose-700')}</div>`;
+  if (!list.length) { document.getElementById('refPanel').innerHTML = html + '<p class="text-xs text-slate-500 font-bold text-center py-2">لم يشارك أحد رابطه ولم يسجّل أحد عبر رابط بعد.</p>'; return; }
   list.forEach((r, i) => {
     const pct = r.regTarget > 0 ? Math.min(100, Math.round(r.counted / r.regTarget * 100)) : 0;
     const wa = r.phone ? `<a href="https://wa.me/${escH(r.phone)}" target="_blank" rel="noopener" class="text-emerald-600 text-lg" title="واتساب المُحيل" onclick="event.stopPropagation()"><i class="fab fa-whatsapp"></i></a>` : '';
@@ -346,6 +347,7 @@ function renderRefStats(j) {
         <div class="min-w-0"><b class="text-sm block truncate">${escH(r.name)}</b><span class="text-[11px] text-slate-500 font-bold">#${escH(r.ref)} · ${r.gender === 'ذكر' ? 'رجل' : 'امرأة'}${r.rewardPending ? ' · <span class="text-rose-600">🎁 مكافأة تنتظر التفعيل</span>' : ''}${r.rewards ? ' · نال ' + r.rewards + ' مكافأة' : ''}</span></div>
         ${wa}
       </div>
+      ${(r.waShares || r.copies) ? `<p class="text-[10px] font-bold text-violet-700 mt-1.5">📤 شارك رابطه: ${r.waShares ? r.waShares + ' واتساب' : ''}${r.waShares && r.copies ? ' · ' : ''}${r.copies ? r.copies + ' نسخ' : ''}${r.lastShare ? ' · آخرها ' + escH(r.lastShare) : ''}${r.total ? '' : ' — لم ينضم أحد بعد'}</p>` : ''}
       <div class="grid grid-cols-4 gap-1.5 mt-2">${refStat('سجّلوا', r.total, 'bg-slate-100 text-slate-700')}${refStat('معتمد', r.approved, 'bg-emerald-50 text-emerald-800')}${refStat('ينتظر', r.pending, 'bg-amber-50 text-amber-800')}${refStat('اشترك', r.paid, 'bg-sky-50 text-sky-800')}</div>
       ${r.regTarget > 0 ? `<div class="mt-2"><div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1"><span>التقدّم نحو المكافأة</span><span>${r.counted} من ${r.regTarget}${r.paidTarget > 0 ? ' · أو اشتراك ' + r.paidCounted + ' من ' + r.paidTarget : ''}</span></div><div class="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full bg-violet-500" style="width:${pct}%"></div></div></div>` : ''}
       ${r.foreignMen ? `<p class="text-[10px] text-slate-400 font-bold mt-1.5">منهم ${r.foreignMen} رجل غير سعودي (لا يُحتسب بالتسجيل)</p>` : ''}
@@ -379,7 +381,7 @@ function showHome() {
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('homeView').classList.remove('hidden');
   let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
-  if (cached) render(cached, true); else ['action','outcome','newToday','review','publish','active','contact','packages','bans'].forEach(k => setNum(k, undefined));
+  if (cached) render(cached, true); else ['action','outcome','newAll','review','publish','active','contact','packages','courtship'].forEach(k => setNum(k, undefined));
   markReady();
   load(false, true);
 }
