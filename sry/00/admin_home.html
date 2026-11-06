@@ -406,7 +406,10 @@ document.getElementById('loginForm').onsubmit = async ev => {
   finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
 };
 document.getElementById('refreshBtn').onclick = () => { load(true, true); if (!document.getElementById('refPanel').classList.contains('hidden')) loadRefStats(true); };
-document.getElementById('logoutBtn').onclick = () => logout('');
+document.getElementById('logoutBtn').onclick = () => { // 🛡️ الخروج اليدوي يُلغي الجلسة في الخادم أيضاً
+  if (token) { try { fetch(SCRIPT_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminLogout', adminToken: token }) }).catch(() => {}); } catch (e) {} }
+  logout('');
+};
 document.addEventListener('visibilitychange', () => { if (!document.hidden && token) load(false); });
 setInterval(() => { if (!document.hidden && token) load(false); }, 120000);
 

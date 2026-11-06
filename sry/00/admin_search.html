@@ -237,6 +237,9 @@
         function encodeBase64(str) { return btoa(unescape(encodeURIComponent(str || ''))); }
         function decodeBase64(b64) { try { return decodeURIComponent(escape(atob(b64 || ''))); } catch(e) { return ''; } }
         function decodeFromHTML(html) { if (!html) return ''; const txt = document.createElement("textarea"); txt.innerHTML = html; return txt.value; }
+        // 🛡️ [2026-11-06] تهريب نصوص العملاء قبل innerHTML (منع حقن سكربت يسرق توكن الإدارة). escH للنص والسمات، jsq لنص داخل '...' في onclick.
+        function escH(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+        function jsq(s) { return escH(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n')); }
 
 //
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
@@ -248,7 +251,7 @@
             const colors = type === 'success' ? 'bg-emerald-600' : (type === 'warning' ? 'bg-amber-500' : 'bg-red-600');
             const icon = type === 'success' ? 'fa-check' : 'fa-exclamation-triangle';
             toast.className = `flex items-center justify-center gap-2 px-4 py-3 rounded-2xl shadow-xl text-white ${colors} toast-enter pointer-events-auto`;
-            toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span class="font-bold text-sm text-center">${message}</span>`;
+            toast.innerHTML = `<i class="fas ${icon} text-sm"></i><span class="font-bold text-sm text-center">${escH(message)}</span>`;
             container.appendChild(toast); setTimeout(() => { toast.classList.replace('toast-enter', 'toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
@@ -316,12 +319,18 @@
                 try {
                     const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow', signal: controller.signal });
                     clearTimeout(timeoutId); if (!res.ok) throw new Error(`خطأ سيرفر: ${res.status}`);
-                    const data = await res.json(); if (data.success === false) throw new Error(data.error || 'خطأ من السيرفر'); return data;
+                    const data = await res.json();
+                    if (data.success === false && /مصرح|Invalid Admin Token/.test(data.message || '')) { // جلسة منتهية/ملغاة: لا إعادة محاولة، والعودة لشاشة الدخول
+                        localStorage.removeItem('adminToken'); state.adminToken = null; try { checkAuth(); } catch (eA) {}
+                        const authErr = new Error('انتهت الجلسة أو تغيّرت كلمة المرور. سجّل الدخول من جديد.'); authErr.noRetry = true; throw authErr;
+                    }
+                    if (data.success === false) throw new Error(data.error || 'خطأ من السيرفر'); return data;
                 } catch (error) { 
                     clearTimeout(timeoutId); 
                     const isNetwork = error.message.includes('Failed to fetch') || error.message.includes('NetworkError');
                     const isFileProtocol = isNetwork && window.location.protocol === 'file:';
                     
+                    if (error.noRetry) throw error;
                     if (attempt < retries && !isFileProtocol) {
                         console.warn(`تعثر السيرفر. جاري إعادة المحاولة صمتاً (${attempt + 1}/${retries})...`);
                         await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); 
@@ -343,11 +352,21 @@
         window.login = async function() {
             const pwd = els.passwordInput.value.trim(); if(!pwd) return showToast('أدخل الرمز السري', 'error');
             setBtnLoading(els.loginBtn, true, '');
-            try { const res = await apiCall({ action: 'adminLogin', password: pwd }); state.adminToken = res.token || pwd; localStorage.setItem('adminToken', state.adminToken); showToast('تم تسجيل الدخول'); checkAuth(); } 
-            catch (error) { showToast(error.message, 'error'); } finally { setBtnLoading(els.loginBtn, false, 'تسجيل الدخول <i class="fas fa-sign-in-alt text-sm"></i>'); }
+            // 🛡️ [2026-11-06] محاولة واحدة بلا إعادة (كل خطأ يُحسب من حد المحاولات في الخادم)، ويُحفظ توكن الجلسة فقط لا كلمة المرور
+            try {
+                const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminLogin', password: pwd }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const res = await r.json();
+                if (!res || !res.success || !res.token) throw new Error((res && res.message) || 'تعذر تسجيل الدخول');
+                state.adminToken = res.token; localStorage.setItem('adminToken', state.adminToken); els.passwordInput.value = ''; showToast('تم تسجيل الدخول'); checkAuth();
+            }
+            catch (error) { showToast(error.message === 'Failed to fetch' ? 'تعذر الاتصال بالخادم' : error.message, 'error'); } finally { setBtnLoading(els.loginBtn, false, 'تسجيل الدخول <i class="fas fa-sign-in-alt text-sm"></i>'); }
         };
-        
-        window.logout = function() { localStorage.removeItem('adminToken'); state.adminToken = null; checkAuth(); };
+
+        window.logout = function() {
+            const old = state.adminToken;
+            if (old) { try { fetch(SCRIPT_URL, { method: 'POST', keepalive: true, body: JSON.stringify({ action: 'adminLogout', adminToken: old }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {} }
+            localStorage.removeItem('adminToken'); state.adminToken = null; checkAuth();
+        };
         
         function checkAuth() {
             if (state.adminToken) { 
@@ -661,10 +680,10 @@
                 if (displayMarriageType.includes('تقليدي')) { mtClass = 'bg-emerald-50 text-emerald-700 border-emerald-200'; mtIcon = 'fa-seedling'; } 
                 else if (displayMarriageType.includes('اشتراطات')) { mtClass = 'bg-purple-50 text-purple-700 border-purple-200'; mtIcon = 'fa-handshake'; } 
                 else if (displayMarriageType.includes('ظروف')) { mtClass = 'bg-orange-50 text-orange-700 border-orange-200'; mtIcon = 'fa-feather-alt'; }
-                const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm shrink-0"><i class="fas ${mtIcon}"></i> ${displayMarriageType}</span>`;
+                const marriageTypeBadge = `<span class="${mtClass} px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 shadow-sm shrink-0"><i class="fas ${mtIcon}"></i> ${escH(displayMarriageType)}</span>`;
 
                 const currentBalance = p.walletBalance || 0;
-                const walletBadge = `<button onclick="actionUpdateWallet('${p.refId}', ${currentBalance}, ${isMale}, '${displayMarriageType}')" class="bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1.5 shadow-sm shrink-0 transition-colors cursor-pointer group" title="إدارة الرصيد"><i class="far fa-gem text-pink-500 group-hover:scale-110 transition-transform"></i> ${currentBalance}</button>`;
+                const walletBadge = `<button onclick="actionUpdateWallet('${jsq(p.refId)}', ${Number(currentBalance) || 0}, ${isMale}, '${jsq(displayMarriageType)}')" class="bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-md text-[10px] font-black flex items-center gap-1.5 shadow-sm shrink-0 transition-colors cursor-pointer group" title="إدارة الرصيد"><i class="far fa-gem text-pink-500 group-hover:scale-110 transition-transform"></i> ${currentBalance}</button>`;
 
                 // 🟢 الحظر على رقم الجوال (كل ملفاته): شارة حمراء للحظر القائم، ورمادية لمن سبق حظره ثم رُفع
                 const banBadge = p.banned
@@ -681,7 +700,7 @@
                 const base64ShortBioLink = encodeBase64(decodedShortBio + buildProfileShareLink(p.refId)); // للنسخ والنشر فقط (رسالة صاحب الملف بلا رابط)
                 
                 const realName = p.name || 'بدون اسم';
-                const safeClientName = realName.replace(/'/g, "\\'"); 
+                const safeClientName = jsq(realName);
                 const displayUnified = p.unifiedName || '(اسم الحفظ الموحد غير متوفر)';
                 const b64UnifiedToCopy = p.unifiedName ? encodeBase64(p.unifiedName) : encodeBase64('(اسم الحفظ الموحد غير متوفر من السيرفر)');
                 
@@ -693,10 +712,10 @@
                     
                     <div class="flex justify-between items-start mb-4 gap-4">
                         <div class="flex-1 min-w-0 text-right">
-                            <h3 class="font-black text-slate-800 text-xl truncate mb-1" title="${realName}">${realName}</h3>
+                            <h3 class="font-black text-slate-800 text-xl truncate mb-1" title="${escH(realName)}">${escH(realName)}</h3>
                             <div class="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-1.5 w-fit max-w-full">
                                 <!-- تم التعديل هنا: اسم الحفظ يليه زر النسخ ليكون الزر في اليسار -->
-                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${displayUnified}</span>
+                                <span class="text-[11px] font-bold text-slate-600 font-mono leading-snug truncate text-right">${escH(displayUnified)}</span>
                                 <button onclick="safeCopyFromBase64(this, '${b64UnifiedToCopy}')" class="text-slate-400 hover:text-indigo-600 bg-white border border-slate-200 w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm text-xs shrink-0" title="نسخ اسم الحفظ الموحد">
                                     <i class="far fa-copy"></i>
                                 </button>
@@ -722,15 +741,15 @@
                     </div>
                     
                     <div class="bg-slate-50 rounded-xl p-3 flex items-center justify-center gap-4 text-xs font-bold text-slate-600 mb-4 border border-slate-100">
-                        <div class="flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-slate-400"></i> ${p.city || '-'}</div>
+                        <div class="flex items-center gap-1.5"><i class="fas fa-map-marker-alt text-slate-400"></i> ${escH(p.city || '-')}</div>
                         <div class="w-px h-4 bg-slate-200"></div>
-                        <div class="flex items-center gap-1.5"><i class="far fa-calendar-alt text-slate-400"></i> ${p.age ? p.age + ' سنة' : '-'}</div>
+                        <div class="flex items-center gap-1.5"><i class="far fa-calendar-alt text-slate-400"></i> ${p.age ? escH(p.age) + ' سنة' : '-'}</div>
                     </div>
 
                     <div class="mb-4 flex flex-col flex-1">
                         <div class="relative bg-slate-50 border border-slate-100 rounded-xl p-3 pt-4 mb-2 flex-1">
                             <div class="absolute -top-2.5 right-4 bg-white px-2 text-[9px] font-bold text-slate-400">النبذة المختصرة</div>
-                            <p class="text-[11px] text-slate-600 leading-relaxed line-clamp-4 font-medium">${decodedShortBio}</p>
+                            <p class="text-[11px] text-slate-600 leading-relaxed line-clamp-4 font-medium">${escH(decodedShortBio)}</p>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="showDetailedBio('${p.refId}')" class="flex-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 py-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"><i class="fas fa-expand-arrows-alt"></i> النبذة المفصلة</button>
@@ -740,7 +759,7 @@
                     
                     <div class="mt-auto pt-2">
                         <button onclick="openWaFromBase64('${cleanPhone}', '${base64ShortBio}')" class="w-full bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 border border-emerald-200 py-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 mb-4 transition-all shadow-sm">
-                            <i class="fab fa-whatsapp text-lg"></i> تواصل مباشر <span class="font-mono dir-ltr ml-1">${p.phone}</span>
+                            <i class="fab fa-whatsapp text-lg"></i> تواصل مباشر <span class="font-mono dir-ltr ml-1">${escH(p.phone)}</span>
                         </button>
                         
                         <div class="grid grid-cols-4 gap-2 pt-4 border-t border-slate-100">
@@ -861,7 +880,7 @@
         window.showDetailedBio = function(refId) {
             const profile = state.searchResults.find(p => p.refId === refId); if (!profile) return;
             const bioText = decodeFromHTML(profile.autoBio || 'لا توجد نبذة مفصلة.');
-            const bodyHTML = `<div class="whitespace-pre-wrap text-sm leading-8 text-slate-700 font-medium bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100">${bioText}</div>`;
+            const bodyHTML = `<div class="whitespace-pre-wrap text-sm leading-8 text-slate-700 font-medium bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100">${escH(bioText)}</div>`;
             const footerHTML = `<button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-bold transition-colors">إغلاق</button><button onclick="safeCopyFromBase64(this, '${encodeBase64(bioText + buildProfileShareLink(refId))}')" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold transition-colors"><i class="far fa-copy"></i> نسخ النبذة</button>`;
             openModal(`النبذة المفصلة للملف #${refId}`, bodyHTML, footerHTML, 'p-4 w-full');
         };
@@ -1580,22 +1599,22 @@
                     arr.forEach(m => {
                         let mName = [m.name, m.familyName].filter(Boolean).join(' ') || 'بدون اسم';
                         let mSt = getStatusConfig(m.profileStatus);
-                        let actionWaBtn = mSt.canContact ? `<button onclick="openWaFromBase64('${m.phone}', '${myBioBase64}')" class="w-10 h-10 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 flex items-center justify-center border border-emerald-200 transition-all shadow-sm shrink-0"><i class="fab fa-whatsapp text-xl"></i></button>` : `<button disabled class="w-10 h-10 rounded-lg bg-slate-100 text-slate-300 flex items-center justify-center cursor-not-allowed border border-slate-200 shadow-sm shrink-0" title="يمنع التواصل (تواصل مباشر)"><i class="fas fa-ban text-xl"></i></button>`;
+                        let actionWaBtn = mSt.canContact ? `<button onclick="openWaFromBase64('${jsq(m.phone)}', '${myBioBase64}')" class="w-10 h-10 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 flex items-center justify-center border border-emerald-200 transition-all shadow-sm shrink-0"><i class="fab fa-whatsapp text-xl"></i></button>` : `<button disabled class="w-10 h-10 rounded-lg bg-slate-100 text-slate-300 flex items-center justify-center cursor-not-allowed border border-slate-200 shadow-sm shrink-0" title="يمنع التواصل (تواصل مباشر)"><i class="fas fa-ban text-xl"></i></button>`;
 
-                        let dataRibbon = `<div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 mt-1.5 flex-wrap"><span><i class="fas fa-map-marker-alt"></i> ${m.city || '-'}</span> | <span>${m.nationality || 'سعودية/ي'}</span> | <span>${m.maritalStatus || '-'}</span>`;
-                        if(isMale) dataRibbon += ` | <span>تعدد: ${m.acceptMarried || '-'}</span>`; dataRibbon += ` | <span>${m.marriageType || '-'}</span></div>`;
+                        let dataRibbon = `<div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 mt-1.5 flex-wrap"><span><i class="fas fa-map-marker-alt"></i> ${escH(m.city || '-')}</span> | <span>${escH(m.nationality || 'سعودية/ي')}</span> | <span>${escH(m.maritalStatus || '-')}</span>`;
+                        if(isMale) dataRibbon += ` | <span>تعدد: ${escH(m.acceptMarried || '-')}</span>`; dataRibbon += ` | <span>${escH(m.marriageType || '-')}</span></div>`;
                         
                         groupHtml += `
                         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative">
                             <div class="absolute top-4 left-4 font-black text-lg text-${colorCode}-500">${m.numScore}%</div>
                             <div class="pr-3 border-r-[3px] border-${colorCode}-400 mb-3">
-                                <h5 class="font-black text-slate-800 text-sm leading-tight">${mName} <span class="text-slate-400 font-normal text-[10px] mr-1 font-mono">#${m.refId}</span></h5>
+                                <h5 class="font-black text-slate-800 text-sm leading-tight">${escH(mName)} <span class="text-slate-400 font-normal text-[10px] mr-1 font-mono">#${m.refId}</span></h5>
                                 ${dataRibbon}
                             </div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-[11px] text-slate-600 leading-relaxed mb-3 border border-slate-100 font-medium">${decodeFromHTML(m.shortBio || 'لا توجد نبذة')}</div>
+                            <div class="bg-slate-50 p-3 rounded-xl text-[11px] text-slate-600 leading-relaxed mb-3 border border-slate-100 font-medium">${escH(decodeFromHTML(m.shortBio || 'لا توجد نبذة'))}</div>
                             <div class="flex justify-between items-center gap-2">
                                 <div class="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-200 flex-1 overflow-hidden">
-                                    <span class="text-[11px] font-mono font-bold text-slate-600 flex-1 text-left dir-ltr truncate">${m.phone}</span>
+                                    <span class="text-[11px] font-mono font-bold text-slate-600 flex-1 text-left dir-ltr truncate">${escH(m.phone)}</span>
                                     <button onclick="safeCopyFromBase64(this, '${encodeBase64(m.phone)}')" class="text-slate-400 hover:text-indigo-600 p-1 bg-white rounded shadow-sm border border-slate-200 shrink-0"><i class="far fa-copy"></i></button>
                                 </div>
                                 ${actionWaBtn}
@@ -1606,7 +1625,7 @@
                 };
 
                 html += renderGroup(groups.high, 'emerald', 'high'); html += renderGroup(groups.med, 'amber', 'med'); html += renderGroup(groups.low, 'slate', 'low'); html += `</div>`;
-                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${clientName})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50 w-full');
+                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${escH(clientName)})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50 w-full');
             } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100">${error.message}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 w-full'); }
         };
 
