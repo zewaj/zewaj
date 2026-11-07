@@ -2711,7 +2711,10 @@
                         localStorage.setItem('pending_new_request', JSON.stringify({
                             targetRefId: tRef,
                             name: d.unifiedName || d.summary || d.unified_name || ('ملف #' + tRef),
-                            gender: d.gender || '',
+                            // الطرف الآخر من الجنس المقابل دائماً، فجنس المستخدم احتياط إن لم يصل جنس الملف
+                            gender: /أنثى|نساء/.test(String(d.gender || '')) ? 'أنثى' : (/ذكر|رجال/.test(String(d.gender || '')) ? 'ذكر'
+                                : (/أنثى|نساء/.test(localStorage.getItem('verified_user_gender') || '') ? 'ذكر' : 'أنثى')),
+                            avatarFile: d.avatarFile || '',
                             queued: !!forceQueue || /انتظار/.test(result.message || ''),
                             owner: String(phone).replace(/[^0-9]/g, '') + '_' + String(reqRef || ''),
                             at: Date.now()

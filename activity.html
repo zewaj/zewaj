@@ -748,7 +748,7 @@
             return `
             <div id="pendingNewRequestCard" class="bg-white border-2 border-emerald-300 rounded-2xl p-3 shadow-sm flex flex-col gap-2 fade-in">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 shrink-0 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 overflow-hidden p-1.5">${getAvatarSvg(isFemale)}</div>
+                    ${profileAvatarHtml(p.avatarFile, isFemale, 'w-11 h-11 shrink-0 rounded-full flex items-center justify-center bg-slate-50 border border-slate-100 overflow-hidden')}
                     <p class="flex-1 min-w-0 text-xs font-bold text-slate-800 line-clamp-2 leading-snug text-right">${favEsc(p.name)}</p>
                     <span class="shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">جديد</span>
                 </div>
