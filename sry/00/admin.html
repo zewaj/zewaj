@@ -2745,17 +2745,26 @@
 
         function renderWaIssuesList() {
             const box = document.getElementById('waIssuesList'); if (!box) return;
-            const list = waIssuesState.issues;
+            const opened = waOpenedMap();
+            // غير المفتوحة أولاً (الجديدة أعلى)، والتي فتحتها يدوياً في الأسفل بلون برتقالي حتى تضغط «أرسلتها»
+            const list = waIssuesState.issues.slice().sort((a, b) => (opened[a.ref] ? 1 : 0) - (opened[b.ref] ? 1 : 0));
+            const nOpened = list.filter(i => opened[i.ref]).length;
             if (!list.length) { box.innerHTML = '<p class="text-center text-sm text-emerald-600 font-black py-8">✓ لا توجد رسائل عالقة</p>'; return; }
-            box.innerHTML = list.map(i => {
+            const head = `<p class="text-[11px] font-black text-slate-600 px-1">المتبقية: ${list.length - nOpened} ${nOpened ? ` · فتحتها يدوياً (تنتظر تأكيدك): ${nOpened}` : ''}</p>`;
+            box.innerHTML = head + list.map(i => {
                 const who = waWho(i);
-                return `<div class="border border-slate-200 rounded-2xl p-3">
+                const op = opened[i.ref];
+                const mins = op ? Math.max(0, Math.round((Date.now() - op) / 60000)) : 0;
+                const manualBtn = !i.p ? '' : (op
+                    ? `<button onclick="waDismiss('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black">✓ أرسلتها؟ اضغط لإزالتها <span class="opacity-80">(فُتحت منذ ${mins} د)</span></button><button onclick="waManual('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-white text-amber-700 border border-amber-300 text-[11px] font-black">فتح مجدداً</button>`
+                    : `<button onclick="waManual('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">📲 أرسل يدوياً (واتساب)</button>`);
+                return `<div class="border ${op ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200'} rounded-2xl p-3">
                     <div class="flex items-center justify-between gap-2"><b class="text-xs text-slate-800">${i.r ? waEsc(i.r) : 'رسالة بلا رقم طلب'}</b><span class="text-[10px] text-slate-400 font-bold">${waEsc(i.at)}</span></div>
                     ${who ? `<p class="text-[11px] text-slate-600 font-bold mt-1">${waEsc(who)}</p>` : ''}
                     <p class="text-[11px] text-rose-600 font-bold mt-1">${waEsc(i.w)}</p>
                     <p class="text-[10px] text-slate-400 mt-1 truncate">${waEsc(i.pv)}</p>
                     <div class="flex gap-2 mt-2">
-                        ${i.p ? `<button onclick="waManual('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">📲 أرسل يدوياً (واتساب)</button>` : ''}
+                        ${manualBtn}
                         <button onclick="waResend('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black">🔁 آلياً</button>
                         <button onclick="waDismiss('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black">تجاهل</button>
                     </div></div>`;
@@ -2783,6 +2792,19 @@
             else if (d.length === 9 && d.startsWith('5')) d = '966' + d;
             return d;
         }
+        // ذاكرة «فتحتها يدوياً» محفوظة في الجهاز (localStorage) فلا تضيع مع تحديث القائمة التلقائي كل دقيقة ولا مع إغلاق الصفحة. تُنظَّف بعد 3 أيام.
+        const WA_OPENED_KEY = 'wa_manual_opened_v1';
+        function waOpenedMap() {
+            try {
+                const m = JSON.parse(localStorage.getItem(WA_OPENED_KEY) || '{}') || {}, now = Date.now();
+                let dirty = false; for (const k in m) if (now - m[k] > 3 * 864e5) { delete m[k]; dirty = true; }
+                if (dirty) localStorage.setItem(WA_OPENED_KEY, JSON.stringify(m));
+                return m;
+            } catch (e) { return {}; }
+        }
+        function waOpenedSet(ref, on) {
+            try { const m = waOpenedMap(); if (on) m[ref] = Date.now(); else delete m[ref]; localStorage.setItem(WA_OPENED_KEY, JSON.stringify(m)); } catch (e) {}
+        }
         function waManual(ref, btn) {
             const it = waIssuesState.issues.find(x => x.ref === ref); if (!it) return;
             const phone = waPhoneIntl(it.p);
@@ -2790,11 +2812,12 @@
             const url = 'https://wa.me/' + phone + (it.text ? '?text=' + encodeURIComponent(it.text) : '');
             window.open(url, '_blank', 'noopener');
             if (!it.text) qaToast('فُتحت المحادثة بلا نص (لم يصل نص الرسالة من الخادم). انسخ نصها من سجل الواتساب.', 'error');
-            btn.textContent = '✓ أرسلتها؟ اضغط لإزالتها'; btn.className = 'flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black';
-            btn.onclick = () => waDismiss(ref, btn);
+            waOpenedSet(ref, true);
+            renderWaIssuesList();
         }
         async function waDismiss(ref, btn) {
             btn.disabled = true;
+            waOpenedSet(ref, false);
             try { await waCall('adminWaDismiss', ref); } catch (e) {}
             waIssuesState.issues = waIssuesState.issues.filter(x => x.ref !== ref); renderWaBanner();
         }
