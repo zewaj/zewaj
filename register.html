@@ -1373,17 +1373,7 @@ function closeTermsModal() {
             ['otp1', 'otp2', 'otp3', 'otp4'].forEach(id => { const e = document.getElementById(id); if(e) e.value = ''; });
             const otpCodeError = document.getElementById('otpCodeError'); if(otpCodeError) otpCodeError.classList.add('hidden');
             
-            if (cleanPhone === '500000000') {
-                const os = document.getElementById('otpSection'); if(os) os.classList.add('hidden');
-                localStorage.setItem('verified_user_phone', verifiedFullPhone);
-                await loadDashboard();
-                if (cachedProfiles && cachedProfiles.length > 0) {
-                    if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'authSuccess' }, '*');
-                } else {
-                    if (window.parent && window.parent !== window) window.parent.postMessage({ action: 'profileSwitched' }, '*');
-                }
-                return;
-            }
+            // [2026-11-12] حُذف تجاوز التجربة (الرقم 500000000) نهائياً: كان يتخطى الرمز ويفتح الجلسة.
 
             const btn = document.getElementById('btnSendCode'); if(!btn) return;
             const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
