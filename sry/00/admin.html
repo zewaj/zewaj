@@ -453,7 +453,7 @@
             const btn = document.getElementById('adminLoginBtn'); btn.disabled = true; btn.classList.add('opacity-60');
             setLoginErr('');
             try {
-                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminLogin', password: pw }) });
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminLogin', password: pw, deviceKey: (function () { try { return localStorage.getItem('adminDeviceKey') || ''; } catch (e) { return ''; } })() }) });
                 const j = await res.json();
                 if (!j || !j.success || !j.token) { setLoginErr((j && j.message) || 'تعذر تسجيل الدخول'); return; }
                 state.adminToken = j.token;

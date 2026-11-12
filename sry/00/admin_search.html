@@ -354,7 +354,7 @@
             setBtnLoading(els.loginBtn, true, '');
             // 🛡️ [2026-11-06] محاولة واحدة بلا إعادة (كل خطأ يُحسب من حد المحاولات في الخادم)، ويُحفظ توكن الجلسة فقط لا كلمة المرور
             try {
-                const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminLogin', password: pwd }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'adminLogin', password: pwd, deviceKey: (function () { try { return localStorage.getItem('adminDeviceKey') || ''; } catch (e) { return ''; } })() }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 const res = await r.json();
                 if (!res || !res.success || !res.token) throw new Error((res && res.message) || 'تعذر تسجيل الدخول');
                 state.adminToken = res.token; localStorage.setItem('adminToken', state.adminToken); els.passwordInput.value = ''; showToast('تم تسجيل الدخول'); checkAuth();

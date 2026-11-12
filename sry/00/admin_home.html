@@ -145,6 +145,15 @@
   </button>
   <div id="refPanel" class="hidden mt-2.5"></div>
 
+  <!-- [2026-11-12] حماية الدخول: أجهزة الإدارة المسجّلة (مفتاح جهاز عشوائي يُحفظ في متصفح الجهاز). عند تفعيل التقييد لا يدخل إلا هذه الأجهزة. -->
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">حماية الدخول</p>
+  <button id="devToggle" type="button" class="wide w-full text-right bg-sky-50 text-sky-800 border border-sky-100">
+    <i class="fas fa-shield-halved text-xl"></i>
+    <span><b class="block text-sm">الأجهزة المسجّلة لدخول الإدارة</b><span class="text-[11px] opacity-80" id="devSub">اضغط للعرض والإعداد</span></span>
+    <i id="devChev" class="fas fa-chevron-down" style="margin-inline-start:auto"></i>
+  </button>
+  <div id="devPanel" class="hidden mt-2.5"></div>
+
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">الصفحات</p>
   <div class="grid grid-cols-3 gap-2.5">
     <a href="admin.html" class="relative bg-white border border-slate-200 rounded-2xl py-3 text-center shadow-sm"><span id="readyMsg" class="ready-dot" title="بياناتها جاهزة"></span><i class="fas fa-comments text-xl text-indigo-600 block mb-1"></i><span class="text-xs font-bold">المراسلات</span></a>
@@ -399,12 +408,73 @@ document.getElementById('loginForm').onsubmit = async ev => {
   const btn = document.getElementById('loginBtn'), err = document.getElementById('loginErr');
   btn.disabled = true; btn.textContent = 'جاري التحقق…'; err.classList.add('hidden');
   try {
-    const res = await post({ action: 'adminLogin', password: pw });
+    const res = await post({ action: 'adminLogin', password: pw, deviceKey: devKey() });
     if (res && res.success && res.token) { token = res.token; try { localStorage.setItem('adminToken', token); } catch (e) {} showHome(); }
     else { err.textContent = (res && res.message) || 'كلمة المرور غير صحيحة'; err.classList.remove('hidden'); }
   } catch (e) { err.textContent = 'تعذر الاتصال بالخادم، حاول مرة أخرى.'; err.classList.remove('hidden'); }
   finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
 };
+// ===== [2026-11-12] أجهزة الإدارة المسجّلة =====
+let devState = null;
+function devKey() { try { return localStorage.getItem('adminDeviceKey') || ''; } catch (e) { return ''; } }
+function devEsc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function devSubText() {
+  if (!devState) return 'اضغط للعرض والإعداد';
+  return (devState.currentRegistered ? 'هذا الجهاز: مسجّل ✓' : 'هذا الجهاز: غير مسجّل') + ' · التقييد: ' + (devState.enforced ? 'مفعّل 🔒' : 'معطّل');
+}
+function renderDev(msg) {
+  const panel = document.getElementById('devPanel'), s = devState; if (!panel || !s) return;
+  document.getElementById('devSub').textContent = devSubText();
+  const rows = (s.devices || []).map(d => `<div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+      <i class="fas ${d.current ? 'fa-circle-check text-emerald-500' : 'fa-laptop text-slate-400'}"></i>
+      <div class="flex-1 min-w-0"><b class="text-xs text-slate-800 block truncate">${devEsc(d.name)}${d.current ? ' <span class="text-emerald-600">(هذا الجهاز)</span>' : ''}</b><span class="text-[10px] text-slate-400 font-bold">أُضيف ${devEsc(d.at)}</span></div>
+      <button type="button" data-devdel="${devEsc(d.id)}" class="text-[11px] font-black text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2 py-1">حذف</button></div>`).join('') || '<p class="text-xs text-slate-500 font-bold text-center py-2">لا توجد أجهزة مسجّلة بعد.</p>';
+  panel.innerHTML = `<div class="flex flex-col gap-2">
+    ${msg ? `<p class="text-xs font-black ${msg.err ? 'text-rose-600' : 'text-emerald-600'} text-center">${devEsc(msg.t)}</p>` : ''}
+    ${rows}
+    ${s.currentRegistered ? '' : '<button type="button" id="devAdd" class="w-full py-2.5 rounded-xl bg-sky-600 text-white text-xs font-black">➕ أضف هذا الجهاز</button>'}
+    <button type="button" id="devEnf" class="w-full py-2.5 rounded-xl ${s.enforced ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-800 text-white'} text-xs font-black">${s.enforced ? '🔓 تعطيل تقييد الدخول بالأجهزة' : '🔒 تفعيل تقييد الدخول بالأجهزة المسجّلة'}</button>
+    <p class="text-[10px] text-slate-500 font-bold leading-relaxed">سجّل جهازك الحالي من كل جهاز تستعمله (لابتوب، جوال) وأنت داخل بكلمة المرور، ثم فعّل التقييد: بعدها لا يدخل اللوحة أحد من غير هذه الأجهزة حتى لو عرف كلمة المرور، ولا يستطيع أحد أن يقفل الدخول عليك. إن علقت خارج اللوحة شغّل <span dir="ltr">adminDisableDeviceEnforcement()</span> من محرّر Apps Script.</p></div>`;
+  const add = document.getElementById('devAdd'); if (add) add.onclick = devEnroll;
+  document.getElementById('devEnf').onclick = devEnforce;
+  panel.querySelectorAll('[data-devdel]').forEach(b => b.onclick = () => devRemove(b.getAttribute('data-devdel')));
+}
+async function devLoad(msg) {
+  try {
+    const r = await post({ action: 'adminListDevices', adminToken: token, deviceKey: devKey() });
+    if (isAuthError(r)) { logout('انتهت الجلسة، سجّل الدخول من جديد.'); return; }
+    if (r && r.success) { devState = r; if (!r.currentRegistered && devKey()) { try { localStorage.removeItem('adminDeviceKey'); } catch (e) {} } renderDev(msg); }
+    else renderDev({ t: (r && r.message) || 'تعذر تحميل الأجهزة (حدّث الخادم أولاً).', err: true });
+  } catch (e) { document.getElementById('devPanel').innerHTML = '<p class="text-xs text-rose-600 font-black text-center py-2">تعذر الاتصال بالخادم.</p>'; }
+}
+async function devEnroll() {
+  const def = /iPhone|Android/i.test(navigator.userAgent) ? 'جوالي' : 'لابتوبي';
+  const name = prompt('اسم هذا الجهاز (مثلاً: لابتوب المكتب / جوالي):', def); if (name === null) return;
+  const r = await post({ action: 'adminEnrollDevice', adminToken: token, name: name.trim() || def });
+  if (r && r.success && r.deviceKey) { try { localStorage.setItem('adminDeviceKey', r.deviceKey); } catch (e) {} devState = r; renderDev({ t: 'تم تسجيل هذا الجهاز ✓' }); }
+  else renderDev({ t: (r && r.message) || 'تعذر التسجيل', err: true });
+}
+async function devRemove(id) {
+  if (!confirm('حذف هذا الجهاز من الأجهزة المسجّلة؟')) return;
+  const mine = (devState.devices || []).find(d => d.id === id && d.current);
+  const r = await post({ action: 'adminRemoveDevice', adminToken: token, id: id, deviceKey: devKey() });
+  if (r && r.success) { if (mine) { try { localStorage.removeItem('adminDeviceKey'); } catch (e) {} } devLoad({ t: 'تم الحذف' }); }
+  else renderDev({ t: (r && r.message) || 'تعذر الحذف', err: true });
+}
+async function devEnforce() {
+  const on = !devState.enforced;
+  if (on && !confirm('بعد التفعيل لا يدخل اللوحة إلا الأجهزة المسجّلة (' + (devState.devices || []).length + ' الآن). هل سجّلت كل أجهزتك (اللابتوب والجوال)؟ المتابعة؟')) return;
+  const r = await post({ action: 'adminSetDeviceEnforcement', adminToken: token, on: on, deviceKey: devKey() });
+  if (r && r.success) { devState = r; renderDev({ t: on ? 'فُعّل التقييد 🔒' : 'عُطّل التقييد' }); }
+  else renderDev({ t: (r && r.message) || 'تعذر التغيير', err: true });
+}
+document.getElementById('devToggle').onclick = () => {
+  const panel = document.getElementById('devPanel'), open = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !open);
+  document.getElementById('devChev').className = 'fas ' + (open ? 'fa-chevron-up' : 'fa-chevron-down');
+  if (open) { panel.innerHTML = '<p class="text-xs text-slate-500 font-bold text-center py-2">جاري التحميل…</p>'; devLoad(); }
+};
+
 document.getElementById('refreshBtn').onclick = () => { load(true, true); if (!document.getElementById('refPanel').classList.contains('hidden')) loadRefStats(true); };
 document.getElementById('logoutBtn').onclick = () => { // 🛡️ الخروج اليدوي يُلغي الجلسة في الخادم أيضاً
   if (token) { try { fetch(SCRIPT_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'adminLogout', adminToken: token }) }).catch(() => {}); } catch (e) {} }
