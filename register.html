@@ -204,6 +204,7 @@
                     <input type="tel" id="otpPhoneInput" class="w-full flex-1 min-w-0 p-2.5 sm:p-3 border border-gray-300 border-l-0 rounded-r-xl outline-none text-left font-bold text-gray-800 tracking-wider focus:ring-2 focus:ring-[#25D366] text-base placeholder:font-normal placeholder:text-gray-300" placeholder="5XXXXXXXX">
                 </div>
                 <p id="otpPhoneError" class="text-red-500 text-[10px] font-bold mt-1 hidden text-center">يرجى إدخال رقم جوال صحيح</p>
+                <div id="turnstileBox" class="flex justify-center"></div>
                 <button id="btnSendCode" type="button" onclick="sendWhatsAppCode()" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
                     إرسال رمز الدخول
                 </button>
@@ -1324,6 +1325,43 @@ function closeTermsModal() {
 
         let otpIntervalTimer = null;
 
+        // 🛡️ Cloudflare Turnstile (إثبات أن الطلب من إنسان على صفحة الموقع). المفتاح العام (Site Key) يوضع هنا؛ فارغ = معطّل.
+        // المفتاح السري يوضع في خصائص السكريبت (TURNSTILE_SECRET) ولا يُكتب في أي صفحة.
+        const TURNSTILE_SITE_KEY = "0x4AAAAAAF96CYQnADy8ZDai";
+        let tsWidgetId = null, tsToken = "", tsReady = false;
+        function initTurnstile() {
+            if (!TURNSTILE_SITE_KEY || tsReady) return;
+            tsReady = true;
+            const s = document.createElement('script');
+            s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+            s.async = true; s.defer = true;
+            s.onload = () => {
+                try {
+                    tsWidgetId = turnstile.render('#turnstileBox', {
+                        sitekey: TURNSTILE_SITE_KEY, appearance: 'interaction-only', language: 'ar',
+                        callback: (t) => { tsToken = t; },
+                        'expired-callback': () => { tsToken = ""; },
+                        'error-callback': () => { tsToken = ""; }
+                    });
+                } catch (e) { tsReady = false; }
+            };
+            s.onerror = () => { tsReady = false; };
+            document.head.appendChild(s);
+        }
+        // يُرجع توكن صالحاً (ينتظر حتى 12 ثانية)، أو "" إن لم يتوفر. التوكن يُستعمل مرة واحدة ثم يُجدَّد تلقائياً.
+        async function getTurnstileToken() {
+            if (!TURNSTILE_SITE_KEY) return "";
+            initTurnstile();
+            for (let i = 0; i < 60 && !tsToken; i++) await new Promise(r => setTimeout(r, 200));
+            const t = tsToken; tsToken = "";
+            return t;
+        }
+        function resetTurnstile() {
+            tsToken = "";
+            try { if (tsWidgetId !== null && window.turnstile) turnstile.reset(tsWidgetId); } catch (e) {}
+        }
+        window.addEventListener('load', () => { setTimeout(initTurnstile, 300); });
+
         async function sendWhatsAppCode() {
             const phoneEl = document.getElementById('otpPhoneInput'); const codeEl = document.getElementById('otpCountryCode'); const errEl = document.getElementById('otpPhoneError');
             if(!phoneEl || !codeEl || !errEl) return;
@@ -1353,8 +1391,22 @@ function closeTermsModal() {
             // 🟢 تم ضبط وقت تحميل الواجهة إلى 40 ثانية بناءً على طلبك
             const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 60000);
 
+            // 🛡️ معرّف عشوائي لهذا الجهاز (يمنع أن يطلب جهاز واحد رموزاً لجوالات كثيرة؛ الخادم يحدّ عدد الجوالات المختلفة لكل جهاز)
+            function getOtpDeviceId() {
+                try {
+                    let d = localStorage.getItem('otp_device_id');
+                    if (!d || d.length < 16) {
+                        d = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2))).replace(/-/g, '');
+                        localStorage.setItem('otp_device_id', d);
+                    }
+                    return d;
+                } catch (e) { return ""; }
+            }
             try {
-                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone }), signal: controller.signal });
+                const cfToken = await getTurnstileToken();
+                if (TURNSTILE_SITE_KEY && !cfToken) { clearTimeout(timeoutId); btn.innerHTML = originalText; btn.disabled = false; showMsgModal("تعذر التحقق", "لم نتمكن من التحقق من الاتصال. حدّث الصفحة وحاول مرة أخرى."); return; }
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone, deviceId: getOtpDeviceId(), cfToken: cfToken }), signal: controller.signal });
+                resetTurnstile();
                 clearTimeout(timeoutId); const text = await res.text();
                 try {
                     const result = JSON.parse(text);
