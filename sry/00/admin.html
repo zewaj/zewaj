@@ -2755,8 +2755,8 @@
                     <p class="text-[11px] text-rose-600 font-bold mt-1">${waEsc(i.w)}</p>
                     <p class="text-[10px] text-slate-400 mt-1 truncate">${waEsc(i.pv)}</p>
                     <div class="flex gap-2 mt-2">
-                        <button onclick="waResend('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">🔁 أعد الإرسال</button>
-                        ${i.p ? `<a href="https://wa.me/${waEsc(i.p)}" target="_blank" rel="noopener" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black">واتساب يدوي</a>` : ''}
+                        ${i.p ? `<button onclick="waManual('${waEsc(i.ref)}', this)" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black">📲 أرسل يدوياً (واتساب)</button>` : ''}
+                        <button onclick="waResend('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black">🔁 آلياً</button>
                         <button onclick="waDismiss('${waEsc(i.ref)}', this)" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-500 text-[11px] font-black">تجاهل</button>
                     </div></div>`;
             }).join('');
@@ -2773,6 +2773,25 @@
                 if (j.success) { waIssuesState.issues = waIssuesState.issues.filter(x => x.ref !== ref); renderWaBanner(); qaToast(j.message || 'أُعيد الإرسال ✓', 'ok'); }
                 else { qaToast(j.message || 'لم تُرسل', 'error'); btn.disabled = false; btn.textContent = '🔁 أعد الإرسال'; }
             } catch (e) { qaToast('تعذر الاتصال بالخادم، حاول بعد لحظات', 'error'); btn.disabled = false; btn.textContent = '🔁 أعد الإرسال'; }
+        }
+        // 📲 [2026-11-12] إرسال يدوي: يفتح واتساب (تطبيقك أو الويب) على محادثة العميل والنص الأصلي مكتوب جاهز، فتضغط «إرسال» فقط.
+        // بعد الفتح يتحول الزر إلى «✓ أرسلتها» فتضغطه لتختفي من القائمة. النص يأتي من الخادم (adminWaIssues.text)؛ إن لم يصل يُفتح الرقم بلا نص.
+        function waPhoneIntl(p) {
+            let d = String(p || '').replace(/[^0-9]/g, '');
+            if (d.startsWith('00')) d = d.slice(2);
+            if (d.length === 10 && d.startsWith('05')) d = '966' + d.slice(1);
+            else if (d.length === 9 && d.startsWith('5')) d = '966' + d;
+            return d;
+        }
+        function waManual(ref, btn) {
+            const it = waIssuesState.issues.find(x => x.ref === ref); if (!it) return;
+            const phone = waPhoneIntl(it.p);
+            if (!phone) { qaToast('لا يوجد رقم لهذه الرسالة', 'error'); return; }
+            const url = 'https://wa.me/' + phone + (it.text ? '?text=' + encodeURIComponent(it.text) : '');
+            window.open(url, '_blank', 'noopener');
+            if (!it.text) qaToast('فُتحت المحادثة بلا نص (لم يصل نص الرسالة من الخادم). انسخ نصها من سجل الواتساب.', 'error');
+            btn.textContent = '✓ أرسلتها؟ اضغط لإزالتها'; btn.className = 'flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-black';
+            btn.onclick = () => waDismiss(ref, btn);
         }
         async function waDismiss(ref, btn) {
             btn.disabled = true;
