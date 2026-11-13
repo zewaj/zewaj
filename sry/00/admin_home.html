@@ -145,6 +145,17 @@
   </button>
   <div id="refPanel" class="hidden mt-2.5"></div>
 
+  <!-- 🛑 [2026-11-12] مفتاح الإيقاف الطارئ للواتساب الآلي -->
+  <p class="text-xs font-black text-slate-500 mt-5 mb-2">الواتساب الآلي</p>
+  <div id="waPauseBox" class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm">
+    <div class="flex items-center gap-2">
+      <i id="waPauseIcon" class="fas fa-circle text-slate-300"></i>
+      <b id="waPauseTitle" class="text-sm text-slate-700">جاري التحقق…</b>
+    </div>
+    <p id="waPauseNote" class="text-[11px] text-slate-500 font-bold leading-relaxed mt-1.5">عند الإيقاف: لا تُرسل أي رسالة آلية (رموز التحقق وتنبيهات الطلبات)، وتذهب الرسائل لقائمة «لم تصل» في المراسلات لترسلها يدوياً.</p>
+    <button id="waPauseBtn" type="button" class="w-full mt-2.5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black" disabled>…</button>
+  </div>
+
   <!-- [2026-11-12] حماية الدخول: أجهزة الإدارة المسجّلة (مفتاح جهاز عشوائي يُحفظ في متصفح الجهاز). عند تفعيل التقييد لا يدخل إلا هذه الأجهزة. -->
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">حماية الدخول</p>
   <button id="devToggle" type="button" class="wide w-full text-right bg-sky-50 text-sky-800 border border-sky-100">
@@ -393,6 +404,7 @@ function showHome() {
   if (cached) render(cached, true); else ['action','outcome','newAll','review','publish','active','contact','packages','courtship'].forEach(k => setNum(k, undefined));
   markReady();
   load(false, true);
+  waPauseLoad();
 }
 function logout(msg) {
   try { localStorage.removeItem('adminToken'); localStorage.removeItem(CACHE_KEY); sessionStorage.removeItem(PENDING_KEY); sessionStorage.removeItem(DASH_AT_KEY); } catch (e) {}
@@ -414,6 +426,41 @@ document.getElementById('loginForm').onsubmit = async ev => {
   } catch (e) { err.textContent = 'تعذر الاتصال بالخادم، حاول مرة أخرى.'; err.classList.remove('hidden'); }
   finally { btn.disabled = false; btn.textContent = 'تسجيل الدخول'; }
 };
+// ===== 🛑 [2026-11-12] مفتاح الإيقاف الطارئ للواتساب الآلي =====
+let waPaused = null;
+function renderWaPause(err) {
+  const btn = document.getElementById('waPauseBtn'), box = document.getElementById('waPauseBox'); if (!btn) return;
+  const icon = document.getElementById('waPauseIcon'), title = document.getElementById('waPauseTitle');
+  if (err) { title.textContent = err; icon.className = 'fas fa-circle text-slate-300'; btn.disabled = true; btn.textContent = '—'; return; }
+  btn.disabled = false;
+  if (waPaused) {
+    box.className = 'bg-amber-50 border border-amber-300 rounded-2xl p-3 shadow-sm';
+    icon.className = 'fas fa-circle-pause text-amber-600'; title.textContent = 'الإرسال الآلي موقوف'; title.className = 'text-sm text-amber-800';
+    btn.className = 'w-full mt-2.5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black'; btn.textContent = '▶️ استئناف الإرسال الآلي';
+  } else {
+    box.className = 'bg-white border border-slate-200 rounded-2xl p-3 shadow-sm';
+    icon.className = 'fas fa-circle-check text-emerald-500'; title.textContent = 'الإرسال الآلي يعمل'; title.className = 'text-sm text-slate-700';
+    btn.className = 'w-full mt-2.5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black'; btn.textContent = '⏸️ إيقاف الإرسال الآلي فوراً';
+  }
+}
+async function waPauseLoad() {
+  try {
+    const r = await post({ action: 'adminWaPause', adminToken: token });
+    if (isAuthError(r)) return;
+    if (r && r.success) { waPaused = !!r.paused; renderWaPause(); } else renderWaPause('حدّث الخادم أولاً لتفعيل الزر');
+  } catch (e) { renderWaPause('تعذر الاتصال بالخادم'); }
+}
+async function waPauseToggle() {
+  const want = !waPaused;
+  if (want && !confirm('إيقاف كل الإرسال الآلي للواتساب؟ لن تصل العملاء رموز تحقق ولا تنبيهات حتى تستأنفه، وستجد الرسائل في قائمة «لم تصل» لترسلها يدوياً.')) return;
+  const btn = document.getElementById('waPauseBtn'); btn.disabled = true; btn.textContent = 'جاري التنفيذ…';
+  try {
+    const r = await post({ action: 'adminWaPause', adminToken: token, on: want });
+    if (isAuthError(r)) { logout('انتهت الجلسة، سجّل الدخول من جديد.'); return; }
+    if (r && r.success) { waPaused = !!r.paused; renderWaPause(); } else { renderWaPause(); alert((r && r.message) || 'تعذر التنفيذ'); }
+  } catch (e) { renderWaPause(); alert('تعذر الاتصال بالخادم، تأكد من الحالة ثم أعد المحاولة.'); }
+}
+document.getElementById('waPauseBtn').onclick = waPauseToggle;
 // ===== [2026-11-12] أجهزة الإدارة المسجّلة =====
 let devState = null;
 function devKey() { try { return localStorage.getItem('adminDeviceKey') || ''; } catch (e) { return ''; } }
