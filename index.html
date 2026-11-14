@@ -1328,6 +1328,7 @@
                     updateWalletDisplay();
                     setTimeout(maybeShowPackagesIntro, 2500);
                     setTimeout(maybeShowLowBalanceNudge, 5000);
+                    setTimeout(prefetchPackagesCache, 9000);
 
                     if (result.favorites) localStorage.setItem('cached_favorites', JSON.stringify(result.favorites.map(f => f.refId)));
                     if (result.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(result.contactedIds));
@@ -2081,6 +2082,26 @@
             } catch (e) {}
         }
         function closeLowBalanceNudge() { const n = document.getElementById('lowBalanceNudge'); if (n) n.classList.add('hidden'); }
+
+        // 🟢 [2026-11-14] تحميل مسبق لصفحة الباقات في الخلفية: يكتب نسخة `pkg_page_<refId>` (نفس صيغة packages.html) فتظهر الباقات فوراً
+        // عند أول ضغطة على 💎. مرة كل 3 ساعات لكل ملف كحد أدنى، بلا مزاحمة (تُؤجَّل إن كانت الصفحة مخفية)، وأي فشل صامت.
+        async function prefetchPackagesCache() {
+            try {
+                if (window.__pkgPrefetching || document.hidden) return;
+                const phone = localStorage.getItem('verified_user_phone');
+                const refId = localStorage.getItem('active_profile_refid');
+                if (!phone || !refId || refId === 'null') return;
+                const key = 'pkg_page_' + refId;
+                let old = null; try { old = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+                if (old && old.v === 1 && Date.now() - (old.at || 0) < 3 * 3600 * 1000) return;
+                window.__pkgPrefetching = true;
+                const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 60000);
+                const res = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'getUserPackages', phone: phone, refId: refId }), signal: ctrl.signal });
+                clearTimeout(t);
+                const j = JSON.parse(await res.text());
+                if (j && j.success === true && !j.guest) localStorage.setItem(key, JSON.stringify({ v: 1, at: Date.now(), data: j }));
+            } catch (e) {} finally { window.__pkgPrefetching = false; }
+        }
 
         // الملف الذي كان الزائر يهمّ بالتفاعل معه (تواصل/مفضلة) قبل أن يُطلب منه الدخول؛ صالح 5 دقائق فقط كي لا يتسرب لدخول لاحق
         function rememberLoginRef(refId) {

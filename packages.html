@@ -122,6 +122,34 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // ✂️ ---------- [ القسم رقم 5 ]: جافاسكريبت - رسم الصفحة ---------- ✂️
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
+
+        // 🟢 [2026-11-14] نسخة الصفحة المحفوظة على الجهاز (مفتاحها بالملف أو بجنس الزائر). تكتبها هذه الصفحة بعد كل جلب ناجح،
+        // وتكتبها القشرة index.html بالتحميل المسبق بعد المزامنة (prefetchPackagesCache) فتكون جاهزة قبل أن يضغط العميل شارة 💎.
+        const PKG_CACHE_VER = 1, PKG_CACHE_MAX_AGE = 7 * 24 * 3600 * 1000;
+        function pkgCacheKey() { return isGuest ? ('pkg_page_guest_' + (guestGender === 'أنثى' ? 'f' : 'm')) : ('pkg_page_' + refIdParam); }
+        function readPkgCache() {
+            try {
+                const o = JSON.parse(localStorage.getItem(pkgCacheKey()) || 'null');
+                if (!o || o.v !== PKG_CACHE_VER || !o.data || o.data.success !== true || Date.now() - (o.at || 0) > PKG_CACHE_MAX_AGE) return null;
+                if (!isGuest && o.data.guest) return null;
+                return o.data;
+            } catch (e) { return null; }
+        }
+        function writePkgCache(data) { try { localStorage.setItem(pkgCacheKey(), JSON.stringify({ v: PKG_CACHE_VER, at: Date.now(), data: data })); } catch (e) {} }
+        let unconfirmedPrices = false; // true ما دام المعروض نسخة محفوظة لم يؤكدها الخادم بعد
+        function setRefreshNote(state) {
+            let n = document.getElementById('refreshNote');
+            if (!n) {
+                n = document.createElement('div'); n.id = 'refreshNote';
+                n.className = 'text-center text-[10px] font-bold rounded-lg py-1 mb-2';
+                const first = document.getElementById('reasonBox'); first.parentNode.insertBefore(n, first);
+            }
+            if (!state) { n.classList.add('hidden'); return; }
+            n.classList.remove('hidden');
+            n.className = 'text-center text-[10px] font-bold rounded-lg py-1 mb-2 ' + (state === 'failed' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500');
+            n.innerHTML = state === 'failed' ? 'تعذر التأكد من آخر الأسعار الآن، وسيؤكد لك الوسيط المبلغ عبر الواتساب' : '<span class="inline-block spin">⏳</span> نتأكد من آخر الأسعار…';
+        }
+
         function receiptLink(name, price, reqId) {
             const text = `السلام عليكم، تم السداد لـ ${name} (${price} ريال) - رقم الطلب ${reqId} - ملف #${refIdParam}. المرفق الإيصال.`;
             return `https://wa.me/${(pageData && pageData.mediatorPhone) || '966590779236'}?text=${encodeURIComponent(text)}`;
@@ -384,6 +412,7 @@
         function askSubscribe(packageId) {
             const p = (pageData.packages || []).find(x => x.id === packageId);
             if (!p || isSubmitting) return;
+            if (unconfirmedPrices) { showToast('لحظة، نتأكد من آخر الأسعار…'); return; }
             selectedPackageId = packageId;
             document.getElementById('confirmTitle').innerText = `الاشتراك في ${p.name}`;
             document.getElementById('confirmText').innerText = `المبلغ: ${p.price} ريال. سنرسل لك الآن على الواتساب المبلغ وحسابات السداد، وتُفعَّل الباقة بعد التأكد من التحويل.`;
@@ -420,16 +449,37 @@
                 document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-500 font-bold py-8">اختر باقات الرجال أو باقات النساء لعرضها.</p>';
                 return;
             }
-            if (!silent) document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-400 font-bold py-10"><span class="inline-block spin">⏳</span> جاري تحميل الباقات...</p>';
+            // [2026-11-14] ظهور فوري: آخر نسخة محفوظة على الجهاز (من زيارة سابقة أو من التحميل المسبق في القشرة) تُرسم في الحال،
+            // ثم يُجلب الجديد من الخادم بصمت ويُستبدل المعروض إن اختلف (أسعار/باقات/رصيد). الاشتراك يُحجب لحظات حتى يصل التأكيد.
+            let shownFromCache = false;
+            if (!silent && !pageData) {
+                const c = readPkgCache();
+                if (c) {
+                    pageData = c;
+                    shownFromCache = true; unconfirmedPrices = true;
+                    renderReason(); renderStatus(); renderPending(); renderReferral(); renderPackages(); renderInfo();
+                    setRefreshNote('loading');
+                    if (openReason === 'free' && !window.__freeScrolled && document.getElementById('referralBox').firstElementChild) { window.__freeScrolled = true; document.getElementById('referralBox').scrollIntoView({ block: 'start' }); }
+                }
+            }
+            if (!silent && !shownFromCache) document.getElementById('packagesList').innerHTML = '<p class="text-center text-sm text-slate-400 font-bold py-10"><span class="inline-block spin">⏳</span> جاري تحميل الباقات...</p>';
             try {
+                const before = pageData ? JSON.stringify(pageData) : '';
                 const res = await postJson(isGuest
                     ? { action: 'getUserPackages', guestGender: guestGender }
                     : { action: 'getUserPackages', phone: phoneParam, refId: refIdParam });
                 if (!res || res.success !== true) throw new Error((res && (res.error || res.message)) || 'تعذر التحميل');
+                unconfirmedPrices = false; setRefreshNote('');
+                writePkgCache(res);
+                const changed = JSON.stringify(res) !== before;
+                if (shownFromCache && !changed) return; // نفس ما عُرض: لا إعادة رسم ولا قفز
+                const priceChanged = shownFromCache && JSON.stringify((res.packages || []).map(p => [p.id, p.name, p.price, p.points])) !== JSON.stringify(((JSON.parse(before) || {}).packages || []).map(p => [p.id, p.name, p.price, p.points]));
                 pageData = res;
                 renderReason(); renderStatus(); renderPending(); renderReferral(); renderPackages(); renderInfo();
+                if (priceChanged) showToast('تم تحديث الباقات والأسعار ✅');
                 if (openReason === 'free' && !window.__freeScrolled && document.getElementById('referralBox').firstElementChild) { window.__freeScrolled = true; document.getElementById('referralBox').scrollIntoView({ block: 'start' }); }
             } catch (e) {
+                if (shownFromCache) { unconfirmedPrices = false; setRefreshNote('failed'); return; } // نُبقي النسخة المحفوظة ظاهرة بدل شاشة خطأ
                 if (!silent) document.getElementById('packagesList').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-10">${esc(e.message || 'تعذر تحميل الباقات')}<br><button type="button" onclick="loadPage()" class="mt-3 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">إعادة المحاولة</button></p>`;
             }
         }
