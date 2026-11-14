@@ -496,7 +496,7 @@
             
             <!-- الذكي -->
             <!-- تم إزالة aspect-square في الجوال وتقليل الـ padding لتصبح مستطيلة وأنيقة -->
-            <button onclick="handleSmartNavigation()" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-amber-200 transition-all active:scale-95 relative overflow-hidden sm:aspect-square">
+            <button id="homeTileSmart" onclick="handleSmartNavigation()" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-amber-200 transition-all active:scale-95 relative overflow-hidden sm:aspect-square">
                 <span class="absolute top-0 right-2 sm:right-4 bg-amber-400 text-white text-[8px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-b-md shadow-sm">ذكي</span>
                 <div class="w-8 h-8 sm:w-16 sm:h-16 bg-amber-50 rounded-full flex items-center justify-center mb-1.5 sm:mb-4 group-hover:scale-110 transition-transform border border-amber-100">
                     <svg class="w-4 h-4 sm:w-8 sm:h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -505,7 +505,7 @@
             </button>
             
             <!-- البحث -->
-            <button onclick="loadIframe('search.html')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-emerald-100 transition-all active:scale-95 sm:aspect-square">
+            <button id="homeTileSearch" onclick="loadIframe('search.html')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-emerald-100 transition-all active:scale-95 sm:aspect-square">
                 <div class="w-8 h-8 sm:w-16 sm:h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-1.5 sm:mb-4 group-hover:scale-110 transition-transform border border-emerald-100">
                     <svg class="w-4 h-4 sm:w-8 sm:h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
@@ -513,7 +513,7 @@
             </button>
 
             <!-- مراسلاتي -->
-            <button onclick="loadIframe('activity.html?tab=requests')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all active:scale-95 relative sm:aspect-square">
+            <button id="homeTileRequests" onclick="loadIframe('activity.html?tab=requests')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-blue-100 transition-all active:scale-95 relative sm:aspect-square">
                 <!-- تصغير شارة الإشعارات لتتناسب مع الحجم الجديد -->
                 <span id="heroRequestsBadge" class="hidden absolute top-1.5 right-1.5 sm:top-4 sm:right-4 bg-rose-500 text-white text-[9px] sm:text-[12px] font-black w-4 h-4 sm:w-7 sm:h-7 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.6)] z-10 transition-transform">0</span>
                 
@@ -524,7 +524,7 @@
             </button>
 
             <!-- مفضلاتي -->
-            <button onclick="loadIframe('activity.html?tab=favorites')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-rose-100 transition-all active:scale-95 sm:aspect-square">
+            <button id="homeTileFav" onclick="loadIframe('activity.html?tab=favorites')" class="group bg-white flex flex-col items-center justify-center py-3.5 px-2 sm:p-8 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-md hover:border-rose-100 transition-all active:scale-95 sm:aspect-square">
                 <div class="w-8 h-8 sm:w-16 sm:h-16 bg-rose-50 rounded-full flex items-center justify-center mb-1.5 sm:mb-4 group-hover:scale-110 transition-transform border border-rose-100">
                     <svg class="w-4 h-4 sm:w-8 sm:h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                 </div>
@@ -3175,6 +3175,54 @@
             const mainArea = document.getElementById('appScrollContainer');
             if (mainArea) mainArea.scrollTo(0, 0);
         };
+    </script>
+
+    <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <!-- ✂️ ---------- [ القسم رقم 13 : الجولة التعليمية للرئيسية وزر المساعدة ؟ ] ---------- ✂️ -->
+    <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+    <style>
+        #tourHelpFab { position: fixed; left: 14px; bottom: 84px; z-index: 101; width: 42px; height: 42px; border-radius: 50%; border: 0; background: #4f46e5; color: #fff; font-size: 22px; font-weight: 800; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(79,70,229,.4); animation: tourFabPulse 2.2s ease-in-out infinite; }
+        body.iframe-mode #tourHelpFab { display: none; }
+        @keyframes tourFabPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+    </style>
+    <button id="tourHelpFab" type="button" aria-label="شرح استخدام الموقع" title="شرح استخدام الموقع" onclick="startHomeTour(true)">؟</button>
+    <script src="tour.js?v=1"></script>
+    <script>
+        // الجولة تُعرض تلقائياً مرة واحدة فقط للزائر الجديد (أو من لم يكمل ملفه)، ويعيدها زر ؟ في أي وقت.
+        function startHomeTour(force) {
+            if (!window.AbuTour) return false;
+            return AbuTour.start({
+                key: 'tour_home_v1',
+                force: !!force,
+                steps: [
+                    { target: '#heroAuthAction', title: 'ابدأ من هنا', text: 'اضغط هذا الزر، أدخل رقم جوالك، ثم أضف بياناتك على خطوات قصيرة. التسجيل بلا رسوم.' },
+                    { target: '#heroLoggedInActions', title: 'ملفك وعائلتك', text: 'من هنا تعدّل بياناتك، أو تضيف فرداً من عائلتك ليكون له ملف مستقل.' },
+                    { target: '#homeTileSearch', title: 'ابحث بنفسك', text: 'اكتب رقم الملف إن كان معك، أو اختر ذكر أو أنثى ثم ضع فلاتر قليلة. البحث متاح بلا تسجيل.' },
+                    { target: '#homeTileSmart', title: 'المرشحين لك', text: 'بعد اكتمال ملفك ترشّح لك المنصة ملفات مناسبة تلقائياً بحسب بياناتك وشروطك.' },
+                    { target: '#homeTileRequests', title: 'مراسلاتي', text: 'هنا تتابع طلبات التواصل وردودها عبر الوسيط، وتبقى بياناتك محفوظة وخاصة.' },
+                    { target: '#homeTileFav', title: 'مفضلاتي', text: 'اضغط القلب على أي ملف يعجبك لتجده هنا وتعود إليه لاحقاً.' },
+                    { target: '#bottomNav', title: 'شريط التنقل', text: 'يبقى ظاهراً أثناء التنقل: الرئيسية والبحث والمرشحين والمفضلة والمراسلات وحسابك.' },
+                    { target: '#tourHelpFab', title: 'زر المساعدة', text: 'اضغطه في أي وقت لإعادة هذا الشرح.' }
+                ]
+            });
+        }
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                try {
+                    if (/[?&](token|open|refId)=/.test(location.search)) return; // روابط مباشرة (رابط سحري، ملف، نافذة محددة)
+                    if (document.body.classList.contains('iframe-mode')) return;
+                    var phone = localStorage.getItem('verified_user_phone');
+                    var rid = localStorage.getItem('active_profile_refid');
+                    if (phone && rid && rid !== 'null') return; // مستخدم مكتمل الملف: لا جولة تلقائية، وزر ؟ متاح
+                    var blockers = ['loginRequiredModal', 'unreadAlertModal', 'packagesModal', 'packagesIntroModal', 'banOverlay', 'magicBootOverlay'];
+                    for (var i = 0; i < blockers.length; i++) {
+                        var el = document.getElementById(blockers[i]);
+                        if (el && getComputedStyle(el).display !== 'none') return;
+                    }
+                    startHomeTour(false);
+                } catch (e) {}
+            }, 1800);
+        });
     </script>
 </body>
 </html>

@@ -221,6 +221,7 @@
 <!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
             <form id="manualSearchForm" class="hidden bg-white p-6 sm:p-10 rounded-3xl shadow-sm border border-slate-200 mb-6 fade-in">
                 <div class="saved-host mb-5"></div>
+                <div id="tipHostForm" class="mb-4"></div>
 
                 <div class="mb-5 bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-inner">
                     <h3 class="text-sm font-bold text-slate-700 mb-4 border-b border-slate-200 pb-2">مكان الإقامة <span class="text-xs font-normal text-slate-400">(يمكنك اختيار المجموعتين معاً)</span></h3>
@@ -245,6 +246,7 @@
                             <select id="manual_city" multiple class="hidden"></select>
                         </div>
                     </div>
+                    <div id="tipHostCity" class="mt-3"></div>
                     <div class="hidden mt-5" id="outsideKsaResidenceFields">
                         <label class="block text-xs font-bold text-slate-500 mb-1.5">دولة الإقامة (خارج السعودية - اختيار متعدد)</label>
                         <select id="manual_residenceCountry" multiple class="hidden"></select>
@@ -304,6 +306,7 @@
                 </div>
 
                 <div id="advancedFilters" class="hidden pt-2">
+                    <div id="tipHostAdv" class="mb-3"></div>
                     <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5 bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1.5">الجنسية (اختيار متعدد)</label>
@@ -478,6 +481,7 @@
             </div>
         </div>
 
+        <div id="tipHostResults" class="mb-4"></div>
         <div id="emptyState" class="hidden flex-col items-center justify-center py-16 bg-white rounded-3xl border border-slate-200 mb-8 fade-in shadow-sm">
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -1063,11 +1067,15 @@
                 }
 
                 const requestData = {
-                    action: "getAllCandidates", 
+                    action: "getAllCandidates",
                     isManualType: true,
                     filters: filters,
                     sheetName: targetSheetName
                 };
+                // 🟢 [2026-11-14] النصائح الذكية: إعادة البحث بعد تعديل فلتر من نصيحة تعيد استعمال القائمة المحمَّلة (بلا طلب للخادم). لا يُرسل للخادم.
+                requestData.useRaw = !!window.__reuseRawOnce;
+                window.__reuseRawOnce = false;
+                window.__lastFilters = filters;
 
                 document.getElementById('manualSearchForm').classList.add('hidden');
                 document.getElementById('filtersSummaryStrip').classList.remove('hidden');
@@ -1121,12 +1129,21 @@
             loading.classList.add('flex');
 
             try {
-                const result = await fetchFromGASWithRetry(requestData);
+                const useRaw = !!requestData.useRaw;
+                delete requestData.useRaw; // حقل محلي فقط
+                let result;
+                if (useRaw && window.__rawCache && window.__rawCache.sheet === requestData.sheetName && (Date.now() - window.__rawCache.at) < 300000) {
+                    result = { success: true, matches: window.__rawCache.matches.slice() }; // قائمة محمَّلة قبل أقل من 5 دقائق: لا حاجة للخادم
+                } else {
+                    result = await fetchFromGASWithRetry(requestData);
+                }
                 if (mySeq !== searchSeq) return; // جاء بحث أحدث (مثل بحث رقم الملف): تجاهل هذا الرد المتأخر
 
                 if (result.success && result.matches) {
+                    if (!useRaw) window.__rawCache = { sheet: requestData.sheetName, at: Date.now(), matches: result.matches };
                     result.matches = applyLocalFilters(result.matches, requestData.filters);
                     processResultsDisplay(result, requestData, true);
+                    try { if (window.onSearchDone) window.onSearchDone(result.matches.length, requestData); } catch (e) {}
                 } else {
                     alert(result.message || "حدث خطأ غير متوقع.");
                     document.getElementById('filtersSummaryStrip').classList.add('hidden');
@@ -1262,6 +1279,7 @@
                 createCustomMultiSelect('manual_education', serverDropdowns.educations || ['متوسط وما دون', 'ثانوي', 'دبلوم', 'بكالوريوس', 'ماجستير / دكتوراه']);
                 createCustomMultiSelect('manual_residenceCountry', serverDropdowns.residenceCountries || []);
             }
+            try { if (window.onGenderSelected) window.onGenderSelected(gender); } catch (e) {} // النصائح والجولة (القسم 22)
         }
 
 /* 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 */
@@ -1484,6 +1502,7 @@
             const linkedRefId = urlParams.get('refId');
 
             if (!linkedRefId) await dropdownsPromise;
+            if (!linkedRefId && !isQuickSearch && window.maybeStartSearchTour) setTimeout(window.maybeStartSearchTour, 900); // جولة أول زيارة للبحث
 
             if (linkedRefId) {
                 const refIdInput = document.getElementById('refIdSearchInput');
@@ -1590,7 +1609,8 @@
         }
 
         function processResultsDisplay(result, requestData, isManual = true) {
-            window.myUserData = null; 
+            try { if (window.clearResultTips) window.clearResultTips(); } catch (e) {}
+            window.myUserData = null;
             
             let targetGenderForCards = requestData.filters.targetGender;
             window.lastSearchedGender = targetGenderForCards; 
@@ -2298,5 +2318,272 @@
     } catch (e) {}
 })();
 </script>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥 [ القسم رقم 22: الجولة التعليمية والنصائح الذكية وزر المساعدة ؟ ] 🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<button id="searchHelpFab" type="button" aria-label="شرح البحث ونصائحه" title="شرح البحث ونصائحه" onclick="openSearchHelp()" style="position:fixed;left:14px;bottom:16px;z-index:140;width:42px;height:42px;border-radius:50%;border:0;background:#4f46e5;color:#fff;font-size:22px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(79,70,229,.4)">؟</button>
+
+<div id="searchHelpPanel" class="hidden fixed inset-0 z-[150] items-end sm:items-center justify-center bg-slate-900/60 px-0 sm:px-4" onclick="if(event.target===this) closeSearchHelp()">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[88dvh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-base font-black text-slate-800">كيف تبحث بذكاء؟</h3>
+            <button type="button" onclick="closeSearchHelp()" class="text-slate-400 text-xl leading-none px-2" aria-label="إغلاق">✕</button>
+        </div>
+        <ul class="text-[13px] text-slate-700 font-medium leading-relaxed space-y-2.5">
+            <li><b class="text-slate-900">عندك رقم الملف؟</b> اكتبه في الخانة أعلى الصفحة واضغط «بحث».</li>
+            <li><b class="text-slate-900">لا تكثر الفلاتر.</b> ابدأ بالجنس والمنطقة، وربما الحالة الاجتماعية، ثم وسّع إن قلّت النتائج.</li>
+            <li><b class="text-slate-900">العمر:</b> لا تضيّق النطاق، ويفضّل فارق 10 سنوات فأكثر.</li>
+            <li><b class="text-slate-900">الطول والوزن</b> من أكثر الفلاتر التي تُقلّل النتائج، فاستخدمهما عند الحاجة فقط.</li>
+            <li><b class="text-slate-900">المدن الصغيرة</b> (مثل القطيف أو عنك) قد لا يكون فيها تسجيل. اكتفِ باختيار المنطقة أو اختر مدينة رئيسية.</li>
+            <li><b class="text-slate-900">نتائج قليلة؟</b> سنقترح عليك ما يمكن تخفيفه ونعيد البحث بضغطة.</li>
+        </ul>
+        <div class="flex flex-col gap-2 mt-5">
+            <button type="button" onclick="replaySearchTour()" class="w-full bg-indigo-600 text-white font-bold text-sm rounded-xl py-3">إعادة جولة الشرح</button>
+            <button type="button" id="tipsToggleBtn" onclick="toggleSearchTips()" class="w-full bg-slate-100 text-slate-700 font-bold text-sm rounded-xl py-3"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var SMALL_CITY_MAX = 3;        // مدينة فيها هذا العدد من الملفات أو أقل (للجنس المبحوث عنه) تُعدّ صغيرة
+    var NARROW_AGE_SPAN = 5;       // فارق عمر أقل من أو يساوي هذا يُعدّ ضيقاً
+    var WIDE_AGE_SPAN = 10;        // الفارق المقترح كحد أدنى عند التوسيع
+    var FEW_RESULTS_MAX = 2;       // 0–2 نتيجة = قليلة جداً
+    var OFF_KEY = 'search_tips_off';
+
+    function tipsOff() { try { return localStorage.getItem(OFF_KEY) === '1'; } catch (e) { return false; } }
+    function $(id) { return document.getElementById(id); }
+    function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+    /* ---------- بطاقة نصيحة ---------- */
+    function showTip(hostId, tipId, text, actions) {
+        if (tipsOff()) return;
+        var host = $(hostId); if (!host) return;
+        removeTip(hostId, tipId);
+        var card = el('div', 'bg-amber-50 border border-amber-200 rounded-2xl p-3 flex gap-2 items-start fade-in');
+        card.setAttribute('data-tip', tipId);
+        card.appendChild(el('span', 'text-lg leading-none mt-0.5', '💡'));
+        var body = el('div', 'flex-1 min-w-0 text-xs text-amber-900 font-bold leading-relaxed');
+        (Array.isArray(text) ? text : [text]).forEach(function (line, i) {
+            body.appendChild(el('div', i ? 'mt-1.5' : '', line.msg || line));
+            if (line.fix) {
+                var b = el('button', 'mt-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1 text-[11px] font-bold', line.fix.label);
+                b.type = 'button';
+                b.onclick = function () { line.fix.run(); };
+                body.appendChild(b);
+            }
+        });
+        if (actions && actions.length) {
+            var row = el('div', 'flex flex-wrap gap-2 mt-2');
+            actions.forEach(function (a) {
+                var b = el('button', 'bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3 py-1 text-[11px] font-bold', a.label);
+                b.type = 'button'; b.onclick = a.run; row.appendChild(b);
+            });
+            body.appendChild(row);
+        }
+        var off = el('button', 'block mt-2 text-[10px] text-amber-700/80 underline font-medium', 'لا تُظهر النصائح مرة أخرى');
+        off.type = 'button';
+        off.onclick = function () {
+            try { localStorage.setItem(OFF_KEY, '1'); } catch (e) {}
+            clearAllTips();
+            if (typeof showSearchToast === 'function') showSearchToast('أوقفنا النصائح التلقائية. يمكنك إعادة تشغيلها من زر ؟');
+        };
+        body.appendChild(off);
+        card.appendChild(body);
+        var x = el('button', 'text-amber-400 hover:text-amber-600 text-base leading-none px-1', '✕');
+        x.type = 'button'; x.setAttribute('aria-label', 'إغلاق'); x.onclick = function () { card.remove(); };
+        card.appendChild(x);
+        host.appendChild(card);
+    }
+    function removeTip(hostId, tipId) {
+        var host = $(hostId); if (!host) return;
+        var old = host.querySelector('[data-tip="' + tipId + '"]'); if (old) old.remove();
+    }
+    function clearAllTips() {
+        ['tipHostForm', 'tipHostCity', 'tipHostAdv', 'tipHostResults'].forEach(function (h) { var e = $(h); if (e) e.innerHTML = ''; });
+    }
+    window.clearResultTips = function () { var e = $('tipHostResults'); if (e) e.innerHTML = ''; };
+
+    /* ---------- عدّ ملفات المدينة من بيانات الخادم (getDropdowns.cityCounts، تُبنى مع لقطة الرئيسية بلا أي كلفة على البحث) ---------- */
+    function cityCount(name) {
+        var all = (window.serverDropdowns || serverDropdowns || {}).cityCounts;
+        var counts = all && all[activeGenderTarget];
+        if (!counts) return null; // خادم قديم أو لم تُبنَ اللقطة بعد: لا تنبيه مسبق (يبقى تشخيص ما بعد البحث)
+        var n = 0, nm = (name || '').trim();
+        if (!nm) return null;
+        Object.keys(counts).forEach(function (k) {
+            var kk = (k || '').trim();
+            if (kk && (kk.indexOf(nm) !== -1 || nm.indexOf(kk) !== -1)) n += counts[k];
+        });
+        return n;
+    }
+    function cityTip() {
+        var inst = multiSelectInstances['manual_city'];
+        if (!inst) return;
+        var sel = inst.getSelected();
+        removeTip('tipHostCity', 'city');
+        if (!sel.length) return;
+        var small = [];
+        sel.forEach(function (c) { var n = cityCount(c); if (n !== null && n <= SMALL_CITY_MAX) small.push({ c: c, n: n }); });
+        if (!small.length) return;
+        var names = small.map(function (s) { return '«' + s.c + '»' + (s.n === 0 ? ' (لا ملفات مسجلة حالياً)' : ' (' + s.n + ' ملفات فقط)'); }).join('، ');
+        showTip('tipHostCity', 'city', 'المدن الصغيرة قد لا يكون فيها تسجيل: ' + names + '. الأفضل أن تكتفي باختيار المنطقة، أو تختار مدينة رئيسية.', [{
+            label: 'الاكتفاء بالمنطقة', run: function () { inst.clear(); removeTip('tipHostCity', 'city'); }
+        }]);
+    }
+    document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (!t || t.type !== 'checkbox' || !t.closest) return;
+        if (t.closest('#menu_manual_city')) cityTip();
+        else if (t.closest('#menu_manual_region')) removeTip('tipHostCity', 'city'); // قائمة المدن أُعيد بناؤها
+    });
+
+    /* ---------- نصائح الدخول للفلاتر ---------- */
+    window.onGenderSelected = function () {
+        clearAllTips();
+        showTip('tipHostForm', 'general', 'نصيحة: لا تكثر الفلاتر. ابدأ بالجنس والمنطقة (وربما الحالة الاجتماعية) فقط، ثم وسّع إن قلّت النتائج. كل فلتر إضافي يستبعد ملفات قد تناسبك.');
+        if (window.AbuTour && !AbuTour.seen('tour_search_filters_v1')) setTimeout(startFiltersTour, 500);
+    };
+    var advBtn = $('toggleAdvancedBtn');
+    if (advBtn) advBtn.addEventListener('click', function () {
+        var adv = $('advancedFilters');
+        if (adv && !adv.classList.contains('hidden')) showTip('tipHostAdv', 'adv', 'الطول والوزن من أكثر الفلاتر التي تُقلّل النتائج. استخدمهما عند الحاجة فقط، وإذا استخدمتهما فاجعل النطاق واسعاً.');
+        else removeTip('tipHostAdv', 'adv');
+    });
+
+    /* ---------- تشخيص النتائج القليلة بعد البحث ---------- */
+    function arr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
+    function selClear(id) { return function () { var i = multiSelectInstances[id]; if (i) i.clear(); }; }
+    function inpClear(ids) { return function () { ids.forEach(function (i) { var e = $(i); if (e) e.value = ''; }); }; }
+    function selReset(id) { return function () { var e = $(id); if (e) e.selectedIndex = 0; }; }
+    var GROUPS = [
+        { id: 'hw', keys: ['heightFrom', 'heightTo', 'weightFrom', 'weightTo'], label: 'الطول والوزن', clear: inpClear(['manual_heightFrom', 'manual_heightTo', 'manual_weightFrom', 'manual_weightTo']) },
+        { id: 'age', keys: ['ageFrom', 'ageTo'], label: 'العمر', clear: inpClear(['manual_ageFrom', 'manual_ageTo']) },
+        { id: 'city', keys: ['city'], label: 'المدينة', clear: selClear('manual_city') },
+        { id: 'region', keys: ['region'], label: 'المنطقة', clear: function () { selClear('manual_region')(); if (typeof updateCityOptions === 'function') updateCityOptions(); } },
+        { id: 'skin', keys: ['skinColor'], label: 'لون البشرة', clear: selClear('manual_skinColor') },
+        { id: 'marital', keys: ['maritalStatus'], label: 'الحالة الاجتماعية', clear: selClear('manual_maritalStatus') },
+        { id: 'mtype', keys: ['marriageType'], label: 'نوع الزواج', clear: selClear('manual_marriageType') },
+        { id: 'poly', keys: ['acceptsPolygamy'], label: 'قبول التعدد', clear: selClear('manual_acceptsPolygamy') },
+        { id: 'income', keys: ['monthlyIncome'], label: 'المستوى المالي', clear: selClear('manual_monthlyIncome') },
+        { id: 'nat', keys: ['nationality'], label: 'الجنسية', clear: selClear('manual_nationality') },
+        { id: 'edu', keys: ['education'], label: 'التعليم', clear: selClear('manual_education') },
+        { id: 'job', keys: ['job'], label: 'الوظيفة', clear: selClear('manual_job') },
+        { id: 'origin', keys: ['originType'], label: 'الحالة القبلية', clear: selReset('manual_originType') },
+        { id: 'kids', keys: ['hasChildren'], label: 'الأبناء', clear: selReset('manual_hasChildren') }
+    ];
+    function groupActive(g, f) {
+        return g.keys.some(function (k) { var v = f[k]; return Array.isArray(v) ? v.length > 0 : (v !== undefined && v !== null && v !== ''); });
+    }
+    function without(f, g) { var c = Object.assign({}, f); g.keys.forEach(function (k) { delete c[k]; }); return c; }
+    function countWith(raw, f) { return applyLocalFilters(raw, f).length; }
+    function rerun() {
+        window.__reuseRawOnce = true; // قائمة المرشحين محمَّلة أصلاً: نعيد التصفية محلياً بلا طلب للخادم
+        var form = $('manualSearchForm');
+        if (form && typeof form.requestSubmit === 'function') form.requestSubmit();
+        else if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    }
+
+    window.onSearchDone = function (n, requestData) {
+        if (tipsOff() || n > FEW_RESULTS_MAX) return;
+        var f = requestData && requestData.filters;
+        var raw = window.__rawCache && window.__rawCache.matches;
+        if (!f || !raw) return;
+        var active = GROUPS.filter(function (g) { return groupActive(g, f); });
+        if (!active.length) return;
+        var hasCity = groupActive(GROUPS[2], f);
+        var found = [];
+        active.forEach(function (g) {
+            if (g.id === 'region' && hasCity) return; // المدينة تتقدّم على المنطقة في التصفية
+            var line = null;
+            if (g.id === 'age' && f.ageFrom && f.ageTo) {
+                var a = parseInt(f.ageFrom), b = parseInt(f.ageTo), span = b - a;
+                if (span < WIDE_AGE_SPAN) {
+                    var extra = WIDE_AGE_SPAN - span, a2 = Math.max(18, a - Math.ceil(extra / 2)), b2 = Math.min(70, b + Math.floor(extra / 2));
+                    var f2 = Object.assign({}, f, { ageFrom: String(a2), ageTo: String(b2) });
+                    var c2 = countWith(raw, f2);
+                    if (c2 > n) line = { gain: c2 - n, msg: (span <= NARROW_AGE_SPAN ? 'نطاق العمر (' + a + '–' + b + ') ضيق جداً. ' : 'نطاق العمر (' + a + '–' + b + ') قصير. ') + 'اجعل الفارق 10 سنوات على الأقل، فمثلاً ' + a2 + '–' + b2 + ' تظهر لك ' + c2 + ' ملف.',
+                        fix: { label: 'وسّع العمر إلى ' + a2 + '–' + b2, run: function () { var e1 = $('manual_ageFrom'), e2 = $('manual_ageTo'); if (e1) e1.value = a2; if (e2) e2.value = b2; rerun(); } } };
+                }
+            }
+            if (!line) {
+                var cnt = countWith(raw, without(f, g));
+                if (cnt <= n) return;
+                var msg, label;
+                if (g.id === 'hw') { msg = 'الطول والوزن من أكثر ما يُقلّل النتائج. بدونهما تظهر لك ' + cnt + ' ملف.'; label = 'إزالة الطول والوزن'; }
+                else if (g.id === 'age') { msg = 'فلتر العمر يستبعد ملفات. بدونه تظهر لك ' + cnt + ' ملف.'; label = 'إزالة فلتر العمر'; }
+                else if (g.id === 'city') {
+                    var cs = arr(f.city).join('، ');
+                    var keepRegion = groupActive(GROUPS[3], f);
+                    msg = 'المدينة (' + cs + ') قد تكون صغيرة وملفاتها قليلة. ' + (keepRegion ? 'بالاكتفاء بالمنطقة' : 'بدون تحديد مدينة') + ' تظهر لك ' + cnt + ' ملف.';
+                    label = keepRegion ? 'الاكتفاء بالمنطقة' : 'إزالة المدينة';
+                }
+                else if (g.id === 'region') { msg = 'تحديد المنطقة يحصر البحث. بدونها تظهر لك ' + cnt + ' ملف.'; label = 'البحث في كل المناطق'; }
+                else { msg = 'فلتر «' + g.label + '» يستبعد ملفات. بدونه تظهر لك ' + cnt + ' ملف.'; label = 'إزالة هذا الفلتر'; }
+                line = { gain: cnt - n, msg: msg, fix: { label: label, run: function () { g.clear(); rerun(); } } };
+            }
+            line.order = GROUPS.indexOf(g);
+            found.push(line);
+        });
+        if (!found.length) return;
+        found.sort(function (x, y) { return (y.gain - x.gain) || (x.order - y.order); });
+        var head = n === 0 ? 'لا توجد نتائج مطابقة.' : (n === 1 ? 'ظهر ملف واحد فقط.' : 'ظهر ملفان فقط.');
+        if (active.length >= 4) head += ' استخدمت ' + active.length + ' فلاتر وهذا كثير.';
+        var lines = [head].concat(found.slice(0, 3));
+        showTip('tipHostResults', 'few', lines);
+    };
+
+    /* ---------- الجولات ---------- */
+    function startFiltersTour() {
+        if (!window.AbuTour) return false;
+        return AbuTour.start({
+            key: 'tour_search_filters_v1', force: window.__forceTour === true,
+            steps: [
+                { target: '#ksaResidenceFields', title: 'المنطقة والمدينة', text: 'اختر المنطقة في الغالب. المدن الصغيرة قد لا يكون فيها تسجيل، فاختر مدينة رئيسية أو اكتفِ بالمنطقة.' },
+                { target: function () { var a = $('manual_ageFrom'); return a && a.closest('.col-span-1'); }, title: 'نطاق العمر', text: 'لا تضيّقه. يفضّل أن يكون الفارق 10 سنوات فأكثر.' },
+                { target: '#toggleAdvancedBtn', title: 'المزيد من الفلاتر', text: 'الطول والوزن يُقلّلان النتائج كثيراً، فلا تستخدمهما إلا عند الحاجة.' },
+                { target: '#mainSearchBtn', title: 'ثم ابحث', text: 'ابدأ بفلاتر قليلة. إن كانت النتائج قليلة نقترح عليك ما تخفّفه.' }
+            ], doneText: 'فهمت'
+        });
+    }
+    window.maybeStartSearchTour = function () {
+        var area = $('genderSelectionArea');
+        if (!window.AbuTour || !area || area.classList.contains('hidden')) return;
+        AbuTour.start({
+            key: 'tour_search_v1',
+            steps: [
+                { target: function () { var i = $('refIdSearchInput'); return i && i.closest('.max-w-xs'); }, title: 'عندك رقم الملف؟', text: 'اكتب الرقم هنا واضغط «بحث» لتصل إلى الملف مباشرة.' },
+                { target: function () { var c = $('cardFemale'); return c && c.parentElement; }, title: 'أو اختر من تبحث عنه', text: 'اختر ذكر أو أنثى لتظهر لك الفلاتر. ابدأ بفلاتر قليلة، فكثرتها تُخفي ملفات مناسبة.' }
+            ], doneText: 'ابدأ البحث'
+        });
+    };
+
+    /* ---------- زر ؟ ---------- */
+    function refreshToggleLabel() { var b = $('tipsToggleBtn'); if (b) b.textContent = tipsOff() ? 'تشغيل النصائح التلقائية' : 'إيقاف النصائح التلقائية'; }
+    window.openSearchHelp = function () { refreshToggleLabel(); var p = $('searchHelpPanel'); if (p) { p.classList.remove('hidden'); p.classList.add('flex'); } };
+    window.closeSearchHelp = function () { var p = $('searchHelpPanel'); if (p) { p.classList.add('hidden'); p.classList.remove('flex'); } };
+    window.toggleSearchTips = function () {
+        try { if (tipsOff()) localStorage.removeItem(OFF_KEY); else localStorage.setItem(OFF_KEY, '1'); } catch (e) {}
+        if (tipsOff()) clearAllTips();
+        else if (activeGenderTarget && !$('manualSearchForm').classList.contains('hidden')) window.onGenderSelected();
+        refreshToggleLabel();
+    };
+    window.replaySearchTour = function () {
+        closeSearchHelp();
+        var area = $('genderSelectionArea'), form = $('manualSearchForm');
+        if (area && !area.classList.contains('hidden')) { AbuTour.reset('tour_search_v1'); window.maybeStartSearchTour(); }
+        else if (form && !form.classList.contains('hidden')) { window.__forceTour = true; startFiltersTour(); window.__forceTour = false; }
+        else { // شاشة نتائج: ارجع لنموذج الفلاتر ثم اشرحه
+            if (typeof editFiltersSelection === 'function') editFiltersSelection();
+            setTimeout(function () { window.__forceTour = true; startFiltersTour(); window.__forceTour = false; }, 300);
+        }
+        if (!tipsOff() && activeGenderTarget) window.onGenderSelected && setTimeout(function () { showTip('tipHostForm', 'general', 'نصيحة: لا تكثر الفلاتر. ابدأ بالجنس والمنطقة فقط، ثم وسّع إن قلّت النتائج.'); }, 0);
+    };
+})();
+</script>
+<script src="tour.js?v=1"></script>
 </body>
 </html>
