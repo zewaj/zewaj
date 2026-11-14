@@ -770,6 +770,19 @@
         </div>
     </div>
 
+    <!-- 🟢 [2026-11-14] تنبيه الرصيد المنخفض: بطاقة سفلية غير حاجبة (مرة كل 24 ساعة لكل حساب) بزرّين يفتحان نافذة الباقات فوق الصفحة -->
+    <div id="lowBalanceNudge" class="fixed inset-x-0 z-[195] hidden px-3 pointer-events-none" style="bottom:calc(76px + env(safe-area-inset-bottom));">
+        <div class="pointer-events-auto max-w-md mx-auto bg-white border border-amber-200 rounded-2xl shadow-2xl p-3.5 relative">
+            <button type="button" onclick="closeLowBalanceNudge()" aria-label="إغلاق" class="absolute top-2 left-2 w-7 h-7 rounded-full bg-slate-100 text-slate-500 text-xs font-black">✕</button>
+            <p class="text-sm font-black text-slate-800 pl-8">💎 رصيدك <span id="lowBalanceNum">0</span> نقطة فقط</p>
+            <p id="lowBalanceSub" class="text-[11px] font-bold text-slate-500 mt-0.5 mb-2.5"></p>
+            <div class="flex gap-2">
+                <button type="button" id="lowBalanceFreeBtn" onclick="closeLowBalanceNudge(); openPackagesModal('free')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs shadow-md">🎁 باقة مجانية</button>
+                <button type="button" onclick="closeLowBalanceNudge(); openPackagesModal('lowbalance')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 rounded-xl text-xs shadow-md">💎 الباقات</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 🟢 نافذة الباقات المنبثقة: تُفتح فوق الصفحة الحالية فلا يغادر العميل بحثه، ويعود إليه بإغلاقها -->
     <div id="packagesModal" class="fixed inset-0 z-[210] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300 sm:px-4" onclick="if(event.target===this) closePackagesModal()">
         <div class="bg-slate-50 w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden transform translate-y-6 transition-transform duration-300" style="height:90vh;max-height:90dvh;">
@@ -1314,6 +1327,7 @@
                     if (result.config) localStorage.setItem('platform_config', JSON.stringify(result.config));
                     updateWalletDisplay();
                     setTimeout(maybeShowPackagesIntro, 2500);
+                    setTimeout(maybeShowLowBalanceNudge, 5000);
 
                     if (result.favorites) localStorage.setItem('cached_favorites', JSON.stringify(result.favorites.map(f => f.refId)));
                     if (result.contactedIds) localStorage.setItem('cached_requested_ids', JSON.stringify(result.contactedIds));
@@ -2027,6 +2041,46 @@
             m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-95');
             setTimeout(() => m.classList.add('hidden'), 300);
         }
+
+        // 🟢 [2026-11-14] تنبيه الرصيد المنخفض (≤ LOW_BALANCE_NUDGE_POINTS، الافتراضي 5): يظهر في أي صفحة (الرئيسية، المراسلات...) لأنه في القشرة.
+        // مرة كل 24 ساعة لكل حساب (يُسجَّل لحظة الظهور فلا يتكرر مع كل مزامنة)، ولا يزاحم أي نافذة أخرى ولا صفحة التسجيل.
+        // زر «الباقة المجانية» يفتح نافذة الباقات على بطاقة الإحالة مفتوحة بخطواتها (reason=free)، و«الباقات» على القائمة (reason=lowbalance).
+        function maybeShowLowBalanceNudge() {
+            try {
+                const phone = localStorage.getItem('verified_user_phone');
+                const refId = localStorage.getItem('active_profile_refid');
+                if (!phone || !refId || refId === 'null') return;
+                const st = localStorage.getItem('active_profile_status') || '';
+                if (st === 'محذوف' || st.indexOf('تم الزواج') !== -1) return;
+                const pg = window.currentActivePage || '';
+                if (pg.includes('register.html') || pg.includes('packages.html')) return;
+                let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+                const limit = (config.LOW_BALANCE_NUDGE_POINTS !== undefined && !isNaN(parseFloat(config.LOW_BALANCE_NUDGE_POINTS))) ? parseFloat(config.LOW_BALANCE_NUDGE_POINTS) : 5;
+                if (limit < 0) return; // سالب = إيقاف التنبيه
+                const bal = parseInt(localStorage.getItem('cached_wallet_balance') || '0') || 0;
+                if (bal > limit) return;
+                const key = 'low_balance_nudge_' + phone;
+                const last = parseInt(localStorage.getItem(key) || '0') || 0;
+                if (Date.now() - last < 24 * 3600 * 1000) return;
+                const blockers = ['unreadAlertModal', 'masterContactModal', 'loginRequiredModal', 'packagesModal', 'packagesIntroModal', 'banOverlay', 'approvalCelebrationModal'];
+                if (blockers.some(id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); })) return;
+                if (document.documentElement.classList.contains('magic-boot')) return;
+                const cost = config.CONTACT_COST_REGULAR !== undefined ? config.CONTACT_COST_REGULAR : 5;
+                const reqs = cost > 0 ? Math.floor(bal / cost) : 0;
+                document.getElementById('lowBalanceNum').innerText = bal;
+                document.getElementById('lowBalanceSub').innerText = reqs > 0
+                    ? 'يكفي لنحو ' + reqs + (reqs === 1 ? ' طلب تواصل' : ' طلبات تواصل') + '. احصل على نقاط مجاناً أو اختر باقة.'
+                    : 'لا يكفي لطلب تواصل جديد. احصل على نقاط مجاناً أو اختر باقة.';
+                // زر الباقة المجانية يُخفى إن عطّل صاحب المشروع الإحالة (الهدفان صفر) من الشيت
+                const male = (localStorage.getItem('verified_user_gender') || '').indexOf('ذكر') !== -1;
+                const tReg = parseFloat(config[male ? 'REFERRAL_REG_TARGET_MEN' : 'REFERRAL_REG_TARGET_WOMEN']);
+                const tPaid = parseFloat(config[male ? 'REFERRAL_PAID_TARGET_MEN' : 'REFERRAL_PAID_TARGET_WOMEN']);
+                document.getElementById('lowBalanceFreeBtn').classList.toggle('hidden', tReg === 0 && tPaid === 0);
+                localStorage.setItem(key, String(Date.now()));
+                document.getElementById('lowBalanceNudge').classList.remove('hidden');
+            } catch (e) {}
+        }
+        function closeLowBalanceNudge() { const n = document.getElementById('lowBalanceNudge'); if (n) n.classList.add('hidden'); }
 
         // الملف الذي كان الزائر يهمّ بالتفاعل معه (تواصل/مفضلة) قبل أن يُطلب منه الدخول؛ صالح 5 دقائق فقط كي لا يتسرب لدخول لاحق
         function rememberLoginRef(refId) {

@@ -170,6 +170,16 @@
                 </div>`;
                 return;
             }
+            // [2026-11-14] جاء من تنبيه الرصيد المنخفض في القشرة: نذكّره برصيده ونهوّن عليه الخطوات
+            if (openReason === 'lowbalance' && !isGuest) {
+                const lb = pageData && pageData.wallet ? (pageData.wallet.balance || 0) : (parseInt(safeStorage('cached_wallet_balance')) || 0);
+                box.innerHTML = `
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-3 text-center">
+                    <p class="text-xs font-black text-amber-800">رصيدك الحالي ${esc(lb)} نقطة فقط 💎</p>
+                    <p class="text-[11px] font-bold text-amber-700 mt-1">يمكنك الحصول على نقاط مجاناً بدعوة من تعرف (البطاقة الخضراء أدناه)، أو اختيار باقة تُضاف نقاطها فوق رصيدك. وعند الانتهاء أغلق النافذة بزر ✕ وأكمل من حيث كنت.</p>
+                </div>`;
+                return;
+            }
             if (openReason !== 'nobalance' || isGuest) { box.innerHTML = ''; return; }
             const bal = pageData && pageData.wallet ? (pageData.wallet.balance || 0) : (parseInt(safeStorage('cached_wallet_balance')) || 0);
             box.innerHTML = `
@@ -307,7 +317,7 @@
             if (!isGuest) pickShareTemplate(shareTplIdx);
         }
         // البطاقة مطوية افتراضياً (سطر واحد) حتى لا تدفع الباقات لأسفل الصفحة؛ الضغط عليها يفتح التفاصيل والعبارات
-        let referralOpen = false;
+        let referralOpen = openReason === 'free'; // reason=free (زر «الباقة المجانية» في تنبيه الرصيد): تُفتح البطاقة بخطواتها مباشرة
         function toggleReferral() {
             referralOpen = !referralOpen;
             if (referralOpen) logShare('open');
@@ -418,6 +428,7 @@
                 if (!res || res.success !== true) throw new Error((res && (res.error || res.message)) || 'تعذر التحميل');
                 pageData = res;
                 renderReason(); renderStatus(); renderPending(); renderReferral(); renderPackages(); renderInfo();
+                if (openReason === 'free' && !window.__freeScrolled && document.getElementById('referralBox').firstElementChild) { window.__freeScrolled = true; document.getElementById('referralBox').scrollIntoView({ block: 'start' }); }
             } catch (e) {
                 if (!silent) document.getElementById('packagesList').innerHTML = `<p class="text-center text-sm text-rose-600 font-bold py-10">${esc(e.message || 'تعذر تحميل الباقات')}<br><button type="button" onclick="loadPage()" class="mt-3 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-black">إعادة المحاولة</button></p>`;
             }
