@@ -986,7 +986,7 @@
                         let hasDirectReqInThread = hasDirectRequest(req, originalChunks);
                         let contactBtn = '';
                         if (currentUserIsMale) {
-                            if (!hasDirectReqInThread) contactBtn = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
+                            if (!hasDirectReqInThread) contactBtn = `<button type="button" data-tour="direct" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.targetMarriageType || ''}')" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
                         } else if (hasDirectReqInThread) {
                             contactBtn = `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'موافقة تبادل أرقام', false, event)" class="flex-1 py-1.5 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">✨ موافقة تبادل أرقام (+1 نقطة)</button>`;
                         }
@@ -995,7 +995,7 @@
                         let extendBtn = `<button type="button" onclick="event.stopPropagation(); promptExtendChat('${req.reqId}', ${extCost})" class="w-full py-2 px-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-xs font-bold shadow-sm">🔓 تمديد المحادثة (-${extCost} نقطة لـ ${MAX_EXT} رسائل)</button>`;
 
                         actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
-                            ${!isQuotaExhausted ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر <span class="text-[10px] font-medium opacity-70">(متبقٍ ${quotaLeft})</span></button>` : extendBtn}
+                            ${!isQuotaExhausted ? `<button type="button" data-tour="reply" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رسالة متابعة', false, event)" class="w-full py-2 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 إرسال رسالة للطرف الآخر <span class="text-[10px] font-medium opacity-70">(متبقٍ ${quotaLeft})</span></button>` : extendBtn}
                             <div class="flex gap-1.5 w-full">${contactBtn}<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'اعتذار بلطف', false, event)" class="flex-1 py-1.5 px-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold shadow-sm">❌ إنهاء واعتذار</button></div>
                         </div>`;
                     }
@@ -1030,6 +1030,7 @@
 
             container.innerHTML = finalHtml;
             updateBadge('outgoingBadge', outBadge, hasRedBadge);
+            try { if (window.maybeStartReplyTour) window.maybeStartReplyTour(); } catch (e) {} // جولة أول رد من الطرف الآخر (القسم 24)
         }
 
         function renderIncomingRequests(reqs) {
@@ -2444,6 +2445,7 @@
             const outBtn = document.getElementById('subTab-outgoing'); const inBtn = document.getElementById('subTab-incoming');
             const outSec = document.getElementById('outgoingReqsSection'); const inSec = document.getElementById('incomingReqsSection');
             if (type === 'outgoing') {
+                setTimeout(() => { try { if (window.maybeStartReplyTour) window.maybeStartReplyTour(); } catch (e) {} }, 500);
                 outBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-slate-800 shadow-sm transition-all flex items-center justify-center gap-1.5 border border-slate-200/50 relative";
                 inBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all relative flex items-center justify-center gap-1.5";
                 outSec.classList.remove('hidden'); inSec.classList.add('hidden');
@@ -2467,6 +2469,7 @@
             const subTabsWrapper = document.getElementById('subTabsWrapper'); 
             if (tabName === 'requests') { subTabsWrapper.classList.remove('hidden'); scrollToBottomChats(); } else { subTabsWrapper.classList.add('hidden'); }
             let targetContainer = document.getElementById(tabName + 'TabContainer'); if (targetContainer) { targetContainer.classList.remove('hidden'); setTimeout(() => { targetContainer.classList.remove('opacity-0'); targetContainer.classList.add('block', 'opacity-100'); scrollToBottomChats(); }, 50); }
+            if (tabName === 'requests') setTimeout(() => { try { if (window.maybeStartReplyTour) window.maybeStartReplyTour(); } catch (e) {} }, 500);
         }
 
         function manualRefresh() {
@@ -2485,5 +2488,32 @@
             document.getElementById('favoritesList').innerHTML = errorHtml; document.getElementById('requestsList').innerHTML = errorHtml; document.getElementById('incomingRequestsList').innerHTML = errorHtml;
         }
     </script>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥 [ القسم رقم 24: جولة أول رد من الطرف الآخر (الرد وعدم كتابة أرقام + التواصل المباشر) ] 🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<script src="tour.js?v=1"></script>
+<script>
+// مرة واحدة لكل جهاز: أول مرة يجد فيها المستخدم بطاقة صادرة ردّ عليها الطرف الآخر (أزرار الرد ظاهرة)، يُعرَّف بزر الرد
+// وبمنع كتابة أرقام/حسابات تواصل، ثم (للرجل) بزر التواصل المباشر بدلاً منها. لا تتكرر مع الردود التالية.
+window.maybeStartReplyTour = function () {
+    if (!window.AbuTour || AbuTour.isActive() || AbuTour.seen('tour_reply_v1')) return;
+    var reply = document.querySelector('#requestsList [data-tour="reply"]');
+    if (!reply || !AbuTour.visible(reply)) return;
+    // لا تبدأ فوق نافذة مفتوحة (رد/تعديل/تأكيد)
+    var open = document.querySelector('.fixed.inset-0:not(.hidden)');
+    if (open && open.offsetParent !== null && getComputedStyle(open).display !== 'none' && open.id) return;
+    AbuTour.start({
+        key: 'tour_reply_v1',
+        steps: [
+            { target: function () { return document.querySelector('#requestsList [data-tour="reply"]'); }, title: 'للرد على الطرف الآخر',
+              text: 'اضغط هنا لكتابة ردك، وتمر رسالتك على الإدارة قبل وصولها. لا تكتب أبداً رقم جوال أو حساب تواصل (سناب، تويتر، واتساب، إنستغرام وغيرها) داخل الرسالة.' },
+            { target: function () { return document.querySelector('#requestsList [data-tour="direct"]'); }, title: 'تريد التواصل المباشر؟',
+              text: 'إن رغبتم بالتواصل خارج المنصة فلا تكتب الأرقام في الرسالة، بل اضغط «تواصل مباشر». يظهر لك الرسم والتعهد قبل التأكيد، وتتولى الإدارة تسليم الأرقام.' }
+        ],
+        doneText: 'فهمت'
+    });
+};
+</script>
 </body>
 </html>
