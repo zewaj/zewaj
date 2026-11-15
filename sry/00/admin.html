@@ -2141,7 +2141,7 @@
 
             const lvlColors = { 1: 'bg-amber-100 text-amber-800 border-amber-300', 2: 'bg-orange-100 text-orange-800 border-orange-300' };
             const lvlCls = lvlColors[info.level] || 'bg-rose-100 text-rose-800 border-rose-300';
-            const compTxt = c => c.kind === 'full' ? `إرجاع كامل (${c.amount} نقاط)` : (c.kind === 'consolation' ? `ترضية ${c.amount} نقاط` : 'بلا تعويض');
+            const compTxt = c => c.kind === 'full' ? `إرجاع كامل (${c.amount} نقاط)` : (c.kind === 'refund' ? `إرجاع ${c.amount} من ${c.cost} نقاط` : (c.kind === 'consolation' ? `ترضية ${c.amount} نقاط` : 'بلا تعويض'));
             const state0 = { mode: (info.suggestBan && !info.alreadyBanned) ? 'ban' : 'warn', deduct: 0 };
             const optCard = (id, icon, title, sub, disabled) => `
                 <button type="button" data-mode="${id}" ${disabled ? 'disabled' : ''} class="dl-opt group text-right rounded-2xl border-2 p-3 transition-all ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-indigo-300 active:scale-[.98]'} border-slate-200 bg-white">
