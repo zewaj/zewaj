@@ -1210,7 +1210,7 @@
                     } else {
                         let primaryBtnHtml = '';
                         if (isFirstMessage) {
-                            primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); openApproveChoice('${req.reqId}')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
+                            primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); incomingFeeGate('${req.reqId}', 'approve')" class="flex-1 py-2 px-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">👍 موافقة مبدئية</button>`;
                         } else {
                             if (currentUserIsMale && !hasDirectReqInThread) {
                                 primaryBtnHtml = `<button type="button" onclick="event.stopPropagation(); promptDirectContact('${req.reqId}', '${req.requesterMarriageType || ''}')" class="flex-1 py-2 px-1 bg-emerald-500 text-white border border-emerald-400 rounded-lg text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse transition-all">📞 تواصل مباشر</button>`;
@@ -1220,7 +1220,7 @@
                         }
 
                         let rejectTxt = '❌ اعتذار بلطف';
-                        let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'رد على الطلب', false, event)" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
+                        let replyBtnHtml = !isFirstMessage ? `<button type="button" onclick="event.stopPropagation(); incomingFeeGate('${req.reqId}', 'reply')" class="w-full py-2.5 px-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold shadow-sm">💬 رد على الطلب</button>` : '';
 
                         actionAreaHtml = `<div class="bg-white p-2.5 border-t border-slate-100 flex flex-col gap-1.5 rounded-b-2xl">
                             ${replyBtnHtml}
@@ -1586,6 +1586,40 @@
         window.closeApproveChoice = function() { document.getElementById('approveChoiceModal').classList.add('hidden'); };
         window.approveChoiceDirect = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية مباشرة', false, null); };
         window.approveChoiceInquiry = function() { const r = window.approveChoiceReqId; closeApproveChoice(); if (r) openReplyModal(r, 'موافقة مبدئية', false, null); };
+
+        // 🟢 [2026-11-18] الرجل الذي تبادر امرأة بمراسلته: كان لا يرى أي رسوم حتى يضغط "تواصل مباشر" بعد عدة رسائل فيتفاجأ ويتوقف،
+        // بينما الرجل المبادر يرى نافذة الرسوم والتعهد قبل إرسال طلبه (index.html). الآن تظهر النافذة نفسها مرة واحدة لكل طلب
+        // عند أول رد له (موافقة مبدئية أو رسالة). لا تظهر لمن له تواصل مجاني أو رسمه 0 (نفس حساب الخادم computeDirectFee)، ولا للاعتذار.
+        function incomingFeeGateNeeded(req) {
+            if (!req) return false;
+            const myG = localStorage.getItem('verified_user_gender') || '';
+            if (!(myG.includes('ذكر') || myG.includes('رجل') || myG.includes('رجال'))) return false;
+            const rg = req.requesterGender || '';
+            if (!(rg === 'أنثى' || rg === 'نساء')) return false;
+            if (req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE') return false;
+            try { if (localStorage.getItem('inc_fee_ok_' + req.reqId) === '1') return false; } catch (e) {}
+            const freeLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
+            if (freeLeft > 0) return false;
+            if (localStorage.getItem('cached_special_package') === '1') {
+                let cfg = {}; try { cfg = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
+                const v = Number(cfg.DIRECT_FEE_MEN_SPECIAL);
+                if (isNaN(v) || v <= 0) return false;
+            }
+            return true;
+        }
+        window.incomingFeeGate = function(reqId, next) {
+            const run = () => { if (next === 'approve') openApproveChoice(reqId); else openReplyModal(reqId, 'رد على الطلب', false, null); };
+            const req = findReqById(reqId);
+            if (!incomingFeeGateNeeded(req)) { run(); return; }
+            window.lastInteractedReqId = reqId;
+            const mt = req.requesterMarriageType || '';
+            const isWomanSpecial = mt.includes('ظروف') || mt.includes('خاص');
+            document.getElementById('confirmActionText').innerHTML = '<div class="text-sm font-black text-slate-800 text-center mb-1">قبل أن تردّ، اطّلع على الرسوم</div><div class="text-[11px] text-slate-600 text-center leading-relaxed">المراسلة داخل المنصة بلا رسوم عليك. وإن رغبت لاحقاً في استلام رقم التواصل فهذه الرسوم:</div>' + buildFeePledgeHtml(isWomanSpecial);
+            window.pledgeRequired = true;
+            const yesBtn = document.getElementById('confirmActionYesBtn'); if (yesBtn) yesBtn.innerText = 'أتعهد وأتابع الرد';
+            window.pendingConfirmAction = function() { try { localStorage.setItem('inc_fee_ok_' + reqId, '1'); } catch (e) {} run(); };
+            document.getElementById('confirmActionModal').classList.remove('hidden');
+        };
 
         // 🟢 [2026-10-14] تمديد المحادثة (لمن بدأ الطلب رجلاً أو امرأة، حين ينفد عدّاد رسائله): تأكيد ثم extendChat؛ opId يمنع الخصم المزدوج عند إعادة المحاولة
         window.promptExtendChat = function(reqId, cost) {
