@@ -89,6 +89,30 @@
     </div>
   </section>
 
+  <!-- [2026-11-21] لماذا تغيّر الدخل؟ (القسم 40 في الخادم: adminGetInsights) -->
+  <section id="whyBox" class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm mt-3">
+    <p class="text-sm font-black text-slate-800"><i class="fas fa-magnifying-glass-chart text-indigo-500"></i> لماذا تغيّر الدخل؟</p>
+    <p id="whyLead" class="text-[12px] font-bold text-slate-600 leading-relaxed mt-2">جاري تحميل المؤشرات…</p>
+    <div id="whyRecs" class="space-y-2 mt-3"></div>
+    <details class="mt-3">
+      <summary class="text-[12px] font-black text-indigo-600 cursor-pointer">كل المؤشرات مقارنة بالفترة السابقة والمعتاد</summary>
+      <div class="overflow-x-auto mt-2">
+        <table class="w-full text-[11.5px]">
+          <thead class="bg-slate-50 text-slate-500"><tr><th class="text-right font-bold px-2 py-1.5">المؤشر</th><th class="font-bold px-1">هذه</th><th class="font-bold px-1">السابقة</th><th class="font-bold px-1">المعتاد</th><th class="font-bold px-1"></th></tr></thead>
+          <tbody id="whyTable"></tbody>
+        </table>
+      </div>
+      <p class="text-[10px] text-slate-400 font-bold mt-1.5">«المعتاد» = متوسط آخر <span id="baseN"></span> قبل الفترة المختارة. نتائج الطلبات (موافقة، اعتذار، تسليم) منسوبة ليوم إرسال الطلب.</p>
+    </details>
+  </section>
+
+  <!-- فرص الآن -->
+  <section class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm mt-3">
+    <p class="text-sm font-black text-slate-800"><i class="fas fa-bullseye text-emerald-500"></i> فرص الآن</p>
+    <p class="text-[11px] text-slate-500 font-bold mt-0.5">أشياء موجودة اليوم يمكن تحويلها إلى دخل</p>
+    <div id="nowGrid" class="grid grid-cols-2 gap-2 mt-3"></div>
+  </section>
+
   <!-- الرسم -->
   <section class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm mt-3">
     <div class="flex items-center justify-between mb-2">
@@ -100,6 +124,7 @@
     </div>
     <div id="chart" class="h-36 grid gap-1" style="grid-template-columns: repeat(12, minmax(0,1fr));" dir="ltr"></div>
     <div id="chartLabels" class="grid gap-1 mt-1 text-[9px] text-slate-400 font-bold text-center" style="grid-template-columns: repeat(12, minmax(0,1fr));" dir="ltr"></div>
+    <div id="chartEvents" class="grid gap-1 text-[10px] text-violet-600 font-black text-center leading-none" style="grid-template-columns: repeat(12, minmax(0,1fr));" dir="ltr"></div>
   </section>
 
   <!-- جدول الفترات -->
@@ -125,6 +150,28 @@
       </select>
     </div>
     <div id="items" class="space-y-2"></div>
+  </section>
+
+  <!-- دراسة الأسابيع المرتفعة -->
+  <section class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm mt-3">
+    <p class="text-sm font-black text-slate-800"><i class="fas fa-trophy text-amber-500"></i> ماذا يميّز أسابيعك الأعلى دخلاً؟</p>
+    <div id="studyBox" class="text-[12px] font-bold text-slate-600 leading-relaxed mt-2">…</div>
+  </section>
+
+  <!-- دفتر الأحداث -->
+  <section class="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm mt-3">
+    <p class="text-sm font-black text-slate-800"><i class="fas fa-book text-violet-500"></i> دفتر الأحداث</p>
+    <p class="text-[11px] text-slate-500 font-bold mt-0.5">سجّل إعلاناتك والمواسم وتغييرات الأسعار، فتظهر علامة <span class="text-violet-600">●</span> تحت الفترة في الرسم وتدخل في التفسير.</p>
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <input id="evDate" type="date" class="border border-slate-300 rounded-xl px-2 py-2 text-[12px] font-bold">
+      <select id="evType" class="border border-slate-300 rounded-xl px-2 py-2 text-[12px] font-bold bg-white">
+        <option>إعلان</option><option>موسم أو إجازة</option><option>تغيير سعر أو باقة</option><option>عطل</option><option>أخرى</option>
+      </select>
+    </div>
+    <input id="evText" type="text" maxlength="200" class="w-full border border-slate-300 rounded-xl px-3 py-2 mt-2 text-[12px] font-bold" placeholder="مثال: إعلان في قروب الأسر بالرياض">
+    <p id="evErr" class="hidden text-[11px] text-rose-600 font-bold mt-1"></p>
+    <button id="evAdd" class="w-full mt-2 bg-violet-600 text-white font-bold py-2 rounded-xl text-[12px]">إضافة للدفتر</button>
+    <div id="evList" class="space-y-1.5 mt-3"></div>
   </section>
 
   <div class="mt-3 grid grid-cols-2 gap-2">
@@ -419,6 +466,286 @@ $('editModal').onclick = e => { if (e.target === $('editModal')) closeEdit(); };
 // أول فتح: آخر نسخة محفوظة على الجهاز فوراً، ثم الجديد من الخادم
 try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (c && c.success) { DATA = c; render(); } } catch (e) {}
 if (token) load(false);
+</script>
+
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<!-- 🟥🟥🟥 القسم 3: JS - لماذا تغيّر الدخل؟ (المؤشرات، التوصيات، فرص الآن، الأسابيع المرتفعة، دفتر الأحداث) 🟥🟥🟥 -->
+<!-- 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥 -->
+<script>
+const INS_CACHE_KEY = 'admin_insights_cache';
+let INS = null;
+
+// المؤشرات المعروضة (المفتاح من adminGetInsights.d)
+const METRICS = [
+  { k: 'reg', l: 'تسجيلات جديدة', g: 'acq' },
+  { k: 'regF', l: '— منها نساء', g: 'acq' },
+  { k: 'regM', l: '— منها رجال', g: 'acq' },
+  { k: 'fVirgin', l: 'نساء بكر', g: 'acq' },
+  { k: 'fDivorced', l: 'نساء مطلقات', g: 'acq' },
+  { k: 'fWidow', l: 'نساء أرامل', g: 'acq' },
+  { k: 'fSpecial', l: 'نساء ظروف خاصة', g: 'acq' },
+  { k: 'mSpecial', l: 'رجال اشتراطات خاصة', g: 'acq' },
+  { k: 'stActivated', l: 'تنشيطاتك (نشر ← نشط)', g: 'acq', log: true },
+  { k: 'stApproved', l: 'ملفات اعتمدتها', g: 'acq', log: true },
+  { k: 'refJoin', l: 'انضموا بالإحالة', g: 'acq' },
+  { k: 'refShare', l: 'مشاركات رابط الإحالة', g: 'acq' },
+  { k: 'reqSent', l: 'طلبات تواصل أُرسلت', g: 'act' },
+  { k: 'reqFromM', l: '— من رجال', g: 'act' },
+  { k: 'reqFromF', l: '— من نساء', g: 'act' },
+  { k: 'reqRejected', l: 'انتهت باعتذار', g: 'act' },
+  { k: 'reqDelayClosed', l: 'أُغلقت لتأخر الرد', g: 'act' },
+  { k: 'reqDirect', l: 'طلب الرجل تواصلاً مباشراً', g: 'act' },
+  { k: 'reqApproved', l: 'وافقت المرأة على التبادل', g: 'act' },
+  { k: 'reqDelivered', l: 'سُلّمت فيها الأرقام', g: 'act' },
+  { k: 'reqMarried', l: 'انتهت بالزواج', g: 'act' },
+  { k: 'pkgReq', l: 'طلبات باقات', g: 'pay' },
+  { k: 'pkgPaid', l: '— سُدّدت وفُعّلت', g: 'pay' },
+  { k: 'pkgCancel', l: '— أُلغيت', g: 'pay' }
+];
+const GROUP_LABEL = { acq: 'الوصول والتسجيل', act: 'الطلبات والتحويل', pay: 'البيع' };
+
+function insSum(key, m) {
+  const out = {}; const map = (INS && INS.d && INS.d[key]) || {};
+  for (const day in map) { const k = periodKey(day, m); if (k) out[k] = (out[k] || 0) + map[day]; }
+  return out;
+}
+function revByPeriod(m) { const agg = aggregate(m); const o = {}; for (const k in agg) o[k] = agg[k].pkg + agg[k].ct; return o; }
+function baseKeys(k, m) { const n = m === 'week' ? 8 : 3; const out = []; for (let i = 1; i <= n; i++) out.push(shiftKey(k, m, -i)); return out; }
+function avgOf(map, keys) { if (!keys.length) return 0; return keys.reduce((s, k) => s + (map[k] || 0), 0) / keys.length; }
+function chg(cur, ref) { if (!ref) return cur ? 1 : 0; return (cur - ref) / ref; }
+// تغيّر يُذكر: 25% فأكثر وفرق رقمين على الأقل (الأعداد الصغيرة تتقلب بلا معنى)
+function moved(cur, ref) { return Math.abs(cur - ref) >= 2 && Math.abs(chg(cur, ref)) >= 0.25 ? (cur > ref ? 1 : -1) : 0; }
+function n1(x) { return Math.round(x * 10) / 10; }
+function topSource(lastKeys, m) {
+  if (!INS || !INS.src) return null;
+  let best = null, bestN = 0;
+  for (const name in INS.src) {
+    let t = 0; const map = INS.src[name];
+    for (const day in map) if (lastKeys.indexOf(periodKey(day, m)) !== -1) t += map[day];
+    if (name !== 'غير محدد' && t > bestN) { bestN = t; best = name; }
+  }
+  return best ? { name: best, n: bestN } : null;
+}
+function eventsIn(k, m) { return ((INS && INS.events) || []).filter(e => periodKey(e.d, m) === k); }
+
+function renderInsights() {
+  if (!DATA || !INS) return;
+  if (selKey === 'unknown') { $('whyLead').textContent = 'اختر فترة لها تاريخ لعرض التفسير.'; $('whyRecs').innerHTML = ''; renderNow(); renderStudy(); renderEvents(); renderChartEvents(); return; }
+  const m = mode, k = selKey || periodKey(DATA.today, m), prevK = shiftKey(k, m, -1), bk = baseKeys(k, m);
+  const curKey = periodKey(DATA.today, m);
+  const partial = k === curKey;
+  $('baseN').textContent = m === 'week' ? '8 أسابيع' : '3 أشهر';
+  const rev = revByPeriod(m);
+  const agg = aggregate(m);
+  const vals = {}; METRICS.forEach(x => { const s = insSum(x.k, m); vals[x.k] = { cur: s[k] || 0, prev: s[prevK] || 0, base: avgOf(s, bk), map: s }; });
+  const revCur = rev[k] || 0, revPrev = rev[prevK] || 0, revBase = avgOf(rev, bk);
+  // مؤشرات سجل الحالات تُقارن فقط حين يغطي السجلُّ فترة «المعتاد» كلها (وإلا ظهر ارتفاع كاذب من صفر)
+  const oldestBase = bk[bk.length - 1];
+  const logOk = !!INS.logStart && INS.logStart <= (m === 'week' ? oldestBase : oldestBase + '-01');
+
+  // ---- جدول المؤشرات ----
+  let lastG = '';
+  $('whyTable').innerHTML = METRICS.map(x => {
+    const v = vals[x.k]; let head = '';
+    if (x.g !== lastG) { lastG = x.g; head = '<tr class="bg-slate-50"><td colspan="5" class="px-2 py-1 text-[10.5px] font-black text-slate-500">' + GROUP_LABEL[x.g] + '</td></tr>'; }
+    if (x.log && !logOk) return head + '<tr class="border-t border-slate-100"><td class="px-2 py-1.5 font-bold text-slate-400">' + x.l + '</td><td colspan="4" class="text-center text-[10px] text-slate-400">يبدأ تسجيله من تاريخ نشر التحديث</td></tr>';
+    const mv = moved(v.cur, v.base);
+    const arrow = mv > 0 ? '<span class="text-emerald-600">▲</span>' : mv < 0 ? '<span class="text-rose-600">▼</span>' : '';
+    return head + '<tr class="border-t border-slate-100"><td class="px-2 py-1.5 font-bold">' + x.l + '</td><td class="text-center font-black">' + v.cur + '</td><td class="text-center text-slate-500">' + v.prev + '</td><td class="text-center text-slate-500">' + n1(v.base) + '</td><td class="text-center">' + arrow + '</td></tr>';
+  }).join('');
+
+  // ---- جملة التفسير ----
+  const revMv = moved(revCur, revBase);
+  const periodWord = m === 'week' ? 'الأسبوع' : 'الشهر';
+  let lead = '';
+  if (!revCur && !revBase) lead = 'لا دخل مسجّل في هذه الفترة ولا قبلها بعد.';
+  else {
+    const pct = revBase ? Math.round(chg(revCur, revBase) * 100) : 0;
+    lead = 'دخل هذا ' + periodWord + ' ' + fmt(revCur) + ' ريال، ' + (revMv > 0 ? 'أعلى من المعتاد بـ' + pct + '%' : revMv < 0 ? 'أقل من المعتاد بـ' + Math.abs(pct) + '%' : 'قريب من المعتاد') + ' (المعتاد ' + fmt(revBase) + ').';
+    const a = agg[k] || { pkg: 0, ct: 0 }; const baseP = avgOf(Object.fromEntries(Object.keys(agg).map(x => [x, agg[x].pkg])), bk), baseC = avgOf(Object.fromEntries(Object.keys(agg).map(x => [x, agg[x].ct])), bk);
+    const parts = [];
+    if (moved(a.pkg, baseP)) parts.push('الباقات ' + (a.pkg > baseP ? 'أعلى' : 'أقل') + ' (' + fmt(a.pkg) + ' مقابل ' + fmt(baseP) + ')');
+    if (moved(a.ct, baseC)) parts.push('رسوم التواصل ' + (a.ct > baseC ? 'أعلى' : 'أقل') + ' (' + fmt(a.ct) + ' مقابل ' + fmt(baseC) + ')');
+    if (parts.length) lead += ' الفرق جاء من: ' + parts.join('، و') + '.';
+    // المؤشرات التي تحركت (الفترة نفسها، والسابقة لأن أثر الإعلان يتأخر)
+    const drivers = [];
+    METRICS.forEach(x => {
+      if (x.l.indexOf('—') === 0 || (x.log && !logOk)) return;
+      const v = vals[x.k], mv = moved(v.cur, v.base), mvPrev = moved(v.prev, avgOf(v.map, baseKeys(prevK, m)));
+      if (mv) drivers.push(x.l + ' ' + (mv > 0 ? '▲' : '▼') + ' ' + v.cur + ' مقابل ' + n1(v.base));
+      else if (mvPrev && revMv && mvPrev === revMv) drivers.push(x.l + ' في ' + periodWord + ' السابق ' + (mvPrev > 0 ? '▲' : '▼'));
+    });
+    if (drivers.length) lead += ' أبرز ما تغيّر: ' + drivers.slice(0, 5).join('، ') + '.';
+    const evs = eventsIn(k, m).concat(eventsIn(prevK, m));
+    if (evs.length) lead += ' من دفتر الأحداث: ' + evs.slice(0, 3).map(e => e.text).join('؛ ') + '.';
+  }
+  if (partial) lead += ' (هذا ' + periodWord + ' لم يكتمل بعد، فقارن بحذر.)';
+  $('whyLead').textContent = lead;
+
+  // ---- التوصيات ----
+  const recs = buildRecs(m, k, vals, { revCur, revBase, revMv, logOk, partial, agg, bk });
+  $('whyRecs').innerHTML = recs.length ? recs.map(r =>
+    '<div class="flex gap-2 rounded-2xl p-2.5 ' + (r.lvl === 'up' ? 'bg-emerald-50 border border-emerald-100' : r.lvl === 'now' ? 'bg-amber-50 border border-amber-100' : 'bg-indigo-50 border border-indigo-100') + '">' +
+    '<span class="text-base leading-none">' + r.icon + '</span><div class="text-[12px] leading-relaxed"><b class="block">' + escH(r.t) + '</b><span class="text-slate-600 font-bold">' + escH(r.d) + '</span></div></div>').join('')
+    : '<p class="text-[12px] text-slate-400 font-bold">لا توصية خاصة لهذه الفترة: المؤشرات قريبة من المعتاد.</p>';
+
+  renderNow(); renderStudy(); renderEvents(); renderChartEvents();
+}
+
+function buildRecs(m, k, v, c) {
+  const R = [], now = INS.now || {};
+  const periodWord = m === 'week' ? 'الأسبوع' : 'الشهر';
+  const lastKeys = [k].concat(baseKeys(k, m));
+  const top = topSource(lastKeys, m);
+  const regMv = moved(v.reg.cur, v.reg.base);
+  // الوصول
+  if (regMv < 0) {
+    if (c.logOk && moved(v.stActivated.cur, v.stActivated.base) < 0)
+      R.push({ icon: '📢', t: 'التسجيلات أقل من المعتاد، وتنشيطاتك من «نشر» أقل أيضاً', d: 'السبب المرجّح قلة الإعلان. اعمل إعلاناً' + (top ? ' في «' + top.name + '» (أعلى قناة تسجيلاً مؤخراً: ' + top.n + ')' : '') + ' وانشر الملفات المنتظرة في «نشر».' });
+    else
+      R.push({ icon: '📢', t: 'التسجيلات أقل من المعتاد (' + v.reg.cur + ' مقابل ' + n1(v.reg.base) + ')', d: (top ? 'أعلى قناة مؤخراً «' + top.name + '»؛ ' : '') + 'جرّب إعلاناً جديداً أو قناة مختلفة، وذكّر المشتركين برابط الإحالة (الباقة المجانية).' });
+  }
+  if (moved(v.regF.cur, v.regF.base) < 0 || (v.regF.cur + v.regF.base > 0 && v.regF.cur < v.regM.cur * 0.5))
+    R.push({ icon: '👩', t: 'النساء الجديدات قليلات', d: 'الرجال يدفعون غالباً، وقلة النساء تقلل طلباتهم. اعمل إعلاناً موجّهاً للأسر والفتيات (التسجيل مجاني لهن)' + (v.fSpecial.cur < v.fSpecial.base ? '، وخاصة ذوات الظروف الخاصة (رسم تواصلهن أعلى).' : '.') });
+  // التحويل
+  if (v.reqSent.cur > 0 && moved(v.reqSent.cur, v.reqSent.base) < 0 && regMv >= 0)
+    R.push({ icon: '💬', t: 'الطلبات المرسلة أقل رغم أن التسجيلات طبيعية', d: 'النشاط هو الذي قلّ. ذكّر الأعضاء بصفحة «المرشحين لك» برسالة، وانشر ملفات جديدة مميزة.' });
+  const rr = v.reqSent.cur >= 5 ? v.reqRejected.cur / v.reqSent.cur : 0, rb = v.reqSent.base >= 3 ? v.reqRejected.base / v.reqSent.base : 0;
+  if (rr && rb && rr - rb >= 0.1)
+    R.push({ icon: '🙅', t: 'نسبة الاعتذار ارتفعت (' + Math.round(rr * 100) + '% مقابل ' + Math.round(rb * 100) + '%)', d: 'راجع الاعتذارات الأخيرة في المراسلات: إن تكرر سبب (العمر، المنطقة...) فنبّه الرجال إليه قبل الإرسال.' });
+  if (moved(v.reqDelayClosed.cur, v.reqDelayClosed.base) > 0)
+    R.push({ icon: '⏰', t: 'إغلاقات التأخر زادت', d: 'تأكد من سرعة تمريرك للرسائل، ومن وصول تنبيهات التأخر للعملاء.' });
+  if (v.reqDirect.cur >= 3 && v.reqApproved.cur / v.reqDirect.cur < 0.4)
+    R.push({ icon: '🤝', t: 'نساء كثيرات لم يوافقن على تبادل الأرقام', d: v.reqApproved.cur + ' موافقة من ' + v.reqDirect.cur + ' طلب تواصل مباشر. تابع من تأخرت ردودهن بلطف.' });
+  // البيع
+  const pr = v.pkgReq.cur, pp = v.pkgPaid.cur;
+  if (pr >= 3 && pp / pr < 0.6)
+    R.push({ icon: '💳', t: 'طلبات باقات كثيرة لم تُسدَّد (' + (pr - pp) + ' من ' + pr + ')', d: 'تابعهم بالواتساب، وفكّر في طريقة سداد أسهل أو مراجعة السعر.' });
+  const a = c.agg[k] || {};
+  if ((a.ctN || 0) >= 4 && (a.ctFree || 0) / a.ctN >= 0.5)
+    R.push({ icon: '🎁', t: 'نصف تسليمات الأرقام أو أكثر كانت مجانية من الباقات', d: 'الباقات تأكل رسوم التواصل. راجع عدد التواصلات المجانية في الباقات أو سعرها.' });
+  if (v.reqMarried.cur > 0)
+    R.push({ icon: '💍', lvl: 'up', t: 'زواج تم في هذه الفترة', d: 'اطلب إذن الطرفين لنشر قصة نجاح بلا أسماء: أقوى إعلان للثقة.' });
+  // ارتفاع الدخل: ما يُكرَّر
+  if (c.revMv > 0) {
+    const ups = METRICS.filter(x => x.l.indexOf('—') !== 0 && !(x.log && !c.logOk) && moved(v[x.k].cur, v[x.k].base) > 0).map(x => x.l);
+    const evs = eventsIn(k, m).concat(eventsIn(shiftKey(k, m, -1), m)).map(e => e.text);
+    R.unshift({ icon: '🚀', lvl: 'up', t: 'الدخل أعلى من المعتاد: كرّر ما فعلته', d: (ups.length ? 'ارتفع معه: ' + ups.slice(0, 4).join('، ') + '. ' : '') + (evs.length ? 'وفي الدفتر: ' + evs.slice(0, 2).join('؛ ') + '. ' : 'سجّل في الدفتر ما فعلته هذه الفترة لتعرف لاحقاً ما الذي نجح. ') });
+  }
+  // فرص اليوم (من لقطة «الآن»، لا تتبع الفترة المختارة)
+  if (now.awaitingPay > 0) R.push({ icon: '💰', lvl: 'now', t: now.awaitingPay + ' موافقة تبادل أرقام تنتظر الدفع', d: 'أقرب مال: تواصل مع الرجل اليوم (أقدمها منذ ' + (now.awaitingPayOldDays || 0) + ' يوم).' });
+  if (now.pendingApproval >= 5 || now.pendingOldestDays >= 3) R.push({ icon: '🗂️', lvl: 'now', t: now.pendingApproval + ' ملفاً ينتظر اعتمادك', d: 'الملف غير المعتمد لا يرسل طلبات ولا يشتري غالباً؛ اعتماد المتراكم أسرع مكسب.' });
+  if (now.lowBalanceMen >= 5) R.push({ icon: '💎', lvl: 'now', t: now.lowBalanceMen + ' رجلاً رصيدهم لا يكفي لطلب تواصل', d: 'عرض باقة لمدة محدودة أو رسالة تذكير بالباقات قد يعيدهم للطلب.' });
+  if (now.menAtLimit >= 3) R.push({ icon: '➕', lvl: 'now', t: now.menAtLimit + ' رجال بلغوا حد الطلبات النشطة', d: 'روّج لهم المحادثات الإضافية.' });
+  // التقويم
+  const dom = +DATA.today.slice(8, 10);
+  if (dom >= 20 && dom <= 26) R.push({ icon: '📅', lvl: 'now', t: 'يوم الراتب قريب (27)', d: 'جدول إعلانك وعروض الباقات قبله بيومين أو ثلاثة.' });
+  return R;
+}
+
+function renderNow() {
+  const n = (INS && INS.now) || {};
+  const cards = [
+    { v: n.awaitingPay, t: 'موافقات تنتظر الدفع', s: n.awaitingPay ? 'أقدمها منذ ' + (n.awaitingPayOldDays || 0) + ' يوم — أقرب مال، تابعهم اليوم' : 'لا شيء ينتظر', c: 'emerald', href: 'admin.html?filter=contact' },
+    { v: n.pkgPending, t: 'طلبات باقات بلا سداد', s: n.pkgPending ? fmt(n.pkgPendingSum) + ' ريال متوقعة' : 'لا شيء ينتظر', c: 'amber', href: 'admin_search.html?open=pkgreq' },
+    { v: n.pendingApproval, t: 'ملفات تنتظر اعتمادك', s: n.pendingApproval ? 'أقدمها منذ ' + (n.pendingOldestDays || 0) + ' يوم' : 'لا شيء ينتظر', c: 'orange', href: 'admin_search.html?show=جديد' },
+    { v: n.lowBalanceMen, t: 'رجال رصيدهم لا يكفي لطلب', s: 'زبائن محتملون للباقات (أقل من ' + ((INS && INS.cfg && INS.cfg.lowCost) || 5) + ' نقاط)', c: 'indigo' },
+    { v: n.menAtLimit, t: 'رجال بلغوا حد الطلبات', s: 'فرصة لبيع المحادثات الإضافية', c: 'sky' },
+    { v: n.delayEscalated, t: 'تأخر مرفوع لقرارك', s: 'الحسم يحرّك الطلبات المعلقة', c: 'rose', href: 'admin.html?filter=action' },
+    { v: (n.activeWomen || 0) + ' / ' + (n.activeMen || 0), t: 'نساء / رجال نشطون', s: 'منهن ' + (n.activeWomenSpecial || 0) + ' ظروف خاصة', c: 'slate' }
+  ];
+  $('nowGrid').innerHTML = cards.map(x => {
+    const inner = '<p class="text-[11px] font-bold text-' + x.c + '-700">' + escH(x.t) + '</p><p class="font-black text-xl text-' + x.c + '-900">' + escH(x.v == null ? '—' : x.v) + '</p><p class="text-[10px] font-bold text-' + x.c + '-600 leading-snug">' + escH(x.s) + '</p>';
+    return x.href ? '<a href="' + x.href + '" class="block rounded-2xl bg-' + x.c + '-50 border border-' + x.c + '-100 p-3">' + inner + '</a>' : '<div class="rounded-2xl bg-' + x.c + '-50 border border-' + x.c + '-100 p-3">' + inner + '</div>';
+  }).join('');
+}
+
+// دراسة الأسابيع المرتفعة: الربع الأعلى دخلاً مقابل البقية، في الأسبوع نفسه والأسبوع الذي قبله
+function renderStudy() {
+  const box = $('studyBox');
+  const rev = revByPeriod('week'); const cur = periodKey(DATA.today, 'week');
+  const allK = Object.keys(rev).filter(k => k !== 'unknown' && k < cur).sort();
+  if (!allK.length) { box.textContent = 'لا بيانات بعد.'; return; }
+  const keys = []; for (let k = allK[0]; k < cur; k = shiftKey(k, 'week', 1)) keys.push(k); // كل الأسابيع المكتملة، بما فيها التي بلا دخل
+  if (keys.length < 12) { box.textContent = 'تحتاج الدراسة 12 أسبوعاً مكتملاً على الأقل، والمتوفر ' + keys.length + '. ستظهر تلقائياً حين تكتمل.'; return; }
+  const sorted = keys.slice().sort((a, b) => (rev[b] || 0) - (rev[a] || 0));
+  const topN = Math.max(3, Math.round(keys.length / 4));
+  const top = sorted.slice(0, topN), rest = sorted.slice(topN);
+  const avg = (map, ks, lag) => ks.reduce((s, k) => s + (map[lag ? shiftKey(k, 'week', -lag) : k] || 0), 0) / ks.length;
+  const rows = [];
+  METRICS.forEach(x => {
+    if (x.l.indexOf('—') === 0) return;
+    if (x.log && !(INS.logStart && INS.logStart <= keys[0])) return; // سجل الحالات لا يغطي الفترة كلها بعد
+    const map = insSum(x.k, 'week');
+    [0, 1].forEach(lag => {
+      const t = avg(map, top, lag), r = avg(map, rest, lag);
+      if (t >= 1 && t - r >= 1 && (r === 0 || t / r >= 1.3)) rows.push({ l: x.l + (lag ? ' (في الأسبوع الذي قبله)' : ''), t, r, ratio: r ? t / r : 9 });
+    });
+  });
+  rows.sort((a, b) => b.ratio - a.ratio);
+  // أثر يوم الراتب: نصيب الأيام 25–3 من الدخل (10 أيام من ~30 = 33% متوقعة)
+  let salT = 0, allT = 0;
+  allItems().forEach(it => { if (it.kind === 'mr' || !it.d) return; const dd = +it.d.slice(8, 10), a = +it.amt || 0; allT += a; if (dd >= 25 || dd <= 3) salT += a; });
+  const salShare = allT ? Math.round(salT / allT * 100) : 0;
+  let html = '<p>قارنتُ أعلى ' + topN + ' أسابيع دخلاً (متوسطها ' + fmt(avg(rev, top, 0)) + ' ريال) ببقية ' + rest.length + ' أسبوعاً (' + fmt(avg(rev, rest, 0)) + ').</p>';
+  html += rows.length ? '<ul class="list-disc pr-5 mt-2 space-y-1">' + rows.slice(0, 6).map(r => '<li>' + escH(r.l) + ': <b>' + n1(r.t) + '</b> مقابل ' + n1(r.r) + '</li>').join('') + '</ul>'
+    : '<p class="mt-2 text-slate-500">لم يظهر مؤشر يميّزها بوضوح بعد.</p>';
+  html += '<p class="mt-2">نصيب الأيام من 25 إلى 3 (حول الراتب) من الدخل: <b>' + salShare + '%</b>' + (salShare >= 45 ? ' — أعلى بوضوح من المتوقع (33%)، فالتوقيت قرب الراتب مؤثر.' : ' (المتوقع لو لم يكن للراتب أثر نحو 33%).') + '</p>';
+  html += '<p class="mt-2 text-[10.5px] text-slate-400">هذا ارتباط لا إثبات، ويزداد دقة كلما طالت المدة.</p>';
+  box.innerHTML = html;
+}
+
+function renderEvents() {
+  const evs = ((INS && INS.events) || []).slice().sort((a, b) => (b.d || '').localeCompare(a.d || '')).slice(0, 30);
+  $('evList').innerHTML = evs.length ? evs.map(e => '<div class="flex items-center gap-2 text-[12px] border border-slate-100 rounded-xl px-2.5 py-1.5"><span class="chip bg-violet-100 text-violet-700">' + escH(e.type) + '</span><span class="text-slate-400 font-bold">' + escH(e.d) + '</span><span class="flex-1 font-bold truncate">' + escH(e.text) + '</span><button class="ev-del text-slate-400 hover:text-rose-500 px-1" data-id="' + escH(e.id) + '" aria-label="حذف">✕</button></div>').join('')
+    : '<p class="text-[11px] text-slate-400 font-bold">لا أحداث بعد.</p>';
+  $('evList').querySelectorAll('.ev-del').forEach(b => b.onclick = () => saveEvent('delete', b.dataset.id));
+}
+function renderChartEvents() {
+  const cur = periodKey(DATA.today, mode); const keys = []; for (let i = 11; i >= 0; i--) keys.push(shiftKey(cur, mode, -i));
+  $('chartEvents').innerHTML = keys.map(k => { const e = eventsIn(k, mode); return '<span title="' + escH(e.map(x => x.text).join(' | ')) + '">' + (e.length ? '●' : '') + '</span>'; }).join('');
+}
+
+async function saveEvent(op, id) {
+  $('evErr').classList.add('hidden');
+  const body = { action: 'adminSaveEvent', adminToken: token, op: op };
+  if (op === 'add') {
+    body.day = $('evDate').value; body.type = $('evType').value; body.text = $('evText').value.trim();
+    if (!body.day || !body.text) { $('evErr').textContent = 'اكتب التاريخ ووصف الحدث.'; $('evErr').classList.remove('hidden'); return; }
+    $('evAdd').disabled = true; $('evAdd').textContent = 'جاري الحفظ…';
+  } else body.id = id;
+  try {
+    const res = await post(body, 45000);
+    if (!res || !res.success) throw new Error((res && res.message) || 'تعذر الحفظ');
+    INS.events = res.events || INS.events;
+    try { localStorage.setItem(INS_CACHE_KEY, JSON.stringify(INS)); } catch (e) {}
+    if (op === 'add') $('evText').value = '';
+    renderInsights();
+  } catch (e) {
+    $('evErr').textContent = e.message === 'busy' || e.name === 'AbortError' ? 'تأخر الرد، حدّث الصفحة لترى هل حُفظ.' : e.message; $('evErr').classList.remove('hidden');
+  } finally { $('evAdd').disabled = false; $('evAdd').textContent = 'إضافة للدفتر'; }
+}
+$('evAdd').onclick = () => saveEvent('add');
+try { $('evDate').value = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10); } catch (e) {}
+
+async function loadInsights(force) {
+  try {
+    const res = await post({ action: 'adminGetInsights', adminToken: token, force: !!force });
+    if (!res || !res.success) throw new Error((res && res.message) || 'fail');
+    INS = res; try { localStorage.setItem(INS_CACHE_KEY, JSON.stringify(res)); } catch (e) {}
+    renderInsights();
+  } catch (e) {
+    if (!INS) $('whyLead').textContent = 'تعذر تحميل المؤشرات. إن لم يُنشر تحديث الخادم (القسم 40) بعد فهذا القسم لن يعمل قبله.';
+  }
+}
+
+// ربط القسم بالرسم الأصلي: كل إعادة رسم للصفحة تعيد رسم التفسير، وزر التحديث يحدّث المؤشرات أيضاً
+const __baseRender = render;
+render = function () { __baseRender(); try { renderInsights(); } catch (e) { console.error(e); } };
+$('refreshBtn').addEventListener('click', () => loadInsights(true));
+try { const c = JSON.parse(localStorage.getItem(INS_CACHE_KEY) || 'null'); if (c && c.success) INS = c; } catch (e) {}
+if (DATA) render();
+if (token) loadInsights(false);
 </script>
 </body>
 </html>
