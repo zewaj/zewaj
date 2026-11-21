@@ -806,11 +806,23 @@
 // 🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥🟥
 // 
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwqGgVJ4P0G7mhDtyAMVS4GsQ5BvXlytmhoCon-H_EUdx1KhDBOxr5cyLNR3VcB8sGb/exec";
-        // 🛡️ [2026-11-07] المرحلة 1: بطاقة الجلسة تُمرَّر تلقائياً مع كل طلب للخادم (تمهيد؛ لا رفض بعد).
+        // 🛡️ [2026-11-21] بطاقة الجلسة (المرحلة 2): تُمرَّر تلقائياً مع كل طلب للخادم، وتُحفظ من أي رد يحمل authToken (رمز التحقق، الرابط السحري).
+        // رد authRequired (بطاقة مفقودة/منتهية والخادم في وضع الرفض) يُخرج العميل لصفحة الدخول مرة واحدة. localStorage مشترك بين القشرة والـ iframe (نفس الأصل).
+        // تعديل الإدارة (register.html?mode=admin_edit) يضع window.__adminEditToken فيُرسل توكن الإدارة بدل بطاقة العميل.
         (function(){ if (window.__authPatch) return; window.__authPatch = 1; var _f = window.fetch;
-          window.fetch = function(u, o){ try { if (o && typeof o.body === 'string' && typeof u === 'string' && u.indexOf('script.google.com') !== -1) {
-            var t = localStorage.getItem('auth_session_token');
-            if (t) { var b = JSON.parse(o.body); if (b && b.action && !b.authToken && !b.adminToken) { b.authToken = t; o = Object.assign({}, o, { body: JSON.stringify(b) }); } } } } catch(e){} return _f.call(this, u, o); }; })();
+          function onAuthRequired(msg){ if (window.__authExpired || window.__adminEditToken) return; window.__authExpired = 1;
+            try { if (window.self !== window.top) { window.parent.postMessage({ action: 'authRequired', message: msg || '' }, window.location.origin); return; } } catch(e){}
+            if (typeof window.__handleAuthRequired === 'function') { window.__handleAuthRequired(msg); return; }
+            try { localStorage.removeItem('auth_session_token'); localStorage.removeItem('verified_user_phone'); } catch(e){}
+            try { alert(msg || 'انتهت جلستك، يرجى تسجيل الدخول من جديد.'); } catch(e){} location.href = 'index.html'; }
+          window.fetch = function(u, o){ var isGas = false; try { if (o && typeof o.body === 'string' && typeof u === 'string' && u.indexOf('script.google.com') !== -1) { isGas = true;
+            var b = JSON.parse(o.body), changed = false;
+            if (b && b.action && !b.authToken && !b.adminToken) { if (window.__adminEditToken) { b.adminToken = window.__adminEditToken; changed = true; } else { var t = localStorage.getItem('auth_session_token'); if (t) { b.authToken = t; changed = true; } } }
+            if (changed) o = Object.assign({}, o, { body: JSON.stringify(b) }); } } catch(e){}
+            var p = _f.call(this, u, o); if (!isGas || !p || typeof p.then !== 'function') return p;
+            return p.then(function(r){ try { r.clone().text().then(function(s){ if (!s || s.indexOf('"auth') === -1) return; var j = JSON.parse(s);
+              if (j && typeof j.authToken === 'string' && /^u[12]\./.test(j.authToken)) localStorage.setItem('auth_session_token', j.authToken);
+              if (j && j.authRequired) onAuthRequired(j.message); }).catch(function(){}); } catch(e){} return r; }); }; })();
         
         let isAdminMode = false;
         let adminTargetPhone = "";
@@ -1239,7 +1251,8 @@ function closeTermsModal() {
             if (urlParams.get('mode') === 'admin_edit' && urlParams.get('targetPhone')) {
                 adminToken = localStorage.getItem('adminToken');
                 if (adminToken) {
-                    isAdminMode = true; adminTargetPhone = urlParams.get('targetPhone'); verifiedFullPhone = adminTargetPhone; 
+                    isAdminMode = true; adminTargetPhone = urlParams.get('targetPhone'); verifiedFullPhone = adminTargetPhone;
+                    window.__adminEditToken = adminToken; // [2026-11-21] كل طلب هنا يحمل توكن الإدارة (لا بطاقة العميل)، فبوابة جلسة العميل تمرّره
                     const otpSec = document.getElementById('otpSection'); if(otpSec) otpSec.classList.add('hidden');
                     const admBan = document.getElementById('adminBanner'); if(admBan) { admBan.classList.remove('hidden'); admBan.classList.add('flex'); }
                     const admPhone = document.getElementById('adminBannerPhone'); if(admPhone) admPhone.innerText = adminTargetPhone;
