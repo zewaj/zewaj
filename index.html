@@ -928,6 +928,7 @@
             window.userPointsBalance = r.walletBalance || 0;
             localStorage.setItem('cached_free_external', r.freeExternalContacts || 0);
             localStorage.setItem('cached_special_package', r.hasSpecialPackage ? '1' : '0');
+            localStorage.setItem('cached_wallet_stars', r.walletStars || 0);
             if (r.currentUserMarriageType !== undefined) localStorage.setItem('verified_user_mType', r.currentUserMarriageType);
             if (r.config) localStorage.setItem('platform_config', JSON.stringify(r.config));
             if (r.favorites) localStorage.setItem('cached_favorites', JSON.stringify(r.favorites.map(f => f.refId)));
@@ -1338,6 +1339,7 @@
                     // استحقاقات الباقات (تُقرأ في نافذة رسوم التواصل المباشر): تواصلات خارج المنصة المتبقية، وعلامة باقة الاشتراطات الخاصة
                     localStorage.setItem('cached_free_external', result.freeExternalContacts || 0);
                     localStorage.setItem('cached_special_package', result.hasSpecialPackage ? '1' : '0');
+                    localStorage.setItem('cached_wallet_stars', result.walletStars || 0);
 
                     if (result.currentUserMarriageType !== undefined) {
                         localStorage.setItem('verified_user_mType', result.currentUserMarriageType);
@@ -2409,6 +2411,24 @@
         const FEE_PLEDGE_TEXT_MAN = 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بأنني صادق في بياناتي وطلبي، غير متلاعب ولا متحايل، وبأنني ملتزم بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وبعدم تجاوز المنصة في التواصل مع الطرف الآخر. وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة، وأقبل مساءلتي عنها أمام الجهات المعنية.';
         const FEE_PLEDGE_TEXT_WOMAN = 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بأنني صادقة في بياناتي وطلبي، غير متلاعبة ولا متحايلة، وبأنني ملتزمة بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وبعدم تجاوز المنصة في التواصل مع الطرف الآخر. وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة، وأقبل مساءلتي عنها أمام الجهات المعنية.';
 
+        // [2026-11-22] رسم التواصل المباشر للرجل بنفس قاعدة الخادم (computeDirectFee): التواصل المجاني من باقة عادية يغطي المرأة العادية فقط؛
+        // مع ظروف خاصة/مسيار يُغطّى كاملاً لمن عنده باقة الاشتراطات الخاصة أو نجومه ≥ SPECIAL_COVER_MIN_STARS، وإلا يُخفَّض الرسم بنسبة FREE_CONTACT_SPECIAL_DISCOUNT_PCT.
+        function directFeeQuote(cfg, isTargetSpecial) {
+            const num = (v, d) => (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) ? Number(v) : d;
+            const base = isTargetSpecial ? num(cfg.DIRECT_FEE_SPECIAL_WOMEN, 250) : num(cfg.DIRECT_CONTACT_FEE, 150);
+            const freeLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
+            const hasSp = localStorage.getItem('cached_special_package') === '1';
+            const stars = parseInt(localStorage.getItem('cached_wallet_stars') || '0') || 0;
+            if (freeLeft > 0) {
+                if (!isTargetSpecial || hasSp || stars >= num(cfg.SPECIAL_COVER_MIN_STARS, 4)) return { kind: 'free', base: base, fee: 0, freeLeft: freeLeft };
+                const pct = Math.max(0, Math.min(100, num(cfg.FREE_CONTACT_SPECIAL_DISCOUNT_PCT, 50)));
+                const fee = Math.round(base * (100 - pct) / 100);
+                return fee > 0 ? { kind: 'discount', base: base, fee: fee, pct: pct, freeLeft: freeLeft } : { kind: 'free', base: base, fee: 0, freeLeft: freeLeft };
+            }
+            if (hasSp) return { kind: 'special', base: base, fee: num(cfg.DIRECT_FEE_MEN_SPECIAL, 0) };
+            return { kind: 'regular', base: base, fee: base };
+        }
+
         function buildFeePledgeHtml(isTargetSpecial) {
             let config = {}; try { config = JSON.parse(localStorage.getItem('platform_config') || '{}'); } catch (e) {}
             const myGender = localStorage.getItem('verified_user_gender') || '';
@@ -2419,11 +2439,15 @@
             const matchFee = isMan ? num(config.FEE_MEN_MATCH, 3000) : num(config.FEE_WOMEN_MATCH, 2000);
             const freeLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
             const hasSpecialPkg = localStorage.getItem('cached_special_package') === '1';
+            const q = directFeeQuote(config, isTargetSpecial);
 
             let directValue, directSub;
             if (!isMan) {
                 directValue = '<b class="text-emerald-600 text-base">بدون رسوم عليكِ</b>';
                 directSub = 'التواصل المباشر وتبادل الأرقام لا رسوم فيه عليكِ.';
+            } else if (q.kind === 'discount') {
+                directValue = `<span class="line-through text-slate-400 ml-2 text-xs">${baseFee} ريال</span><b class="text-rose-600 text-lg">${q.fee} ريال</b>`;
+                directSub = `لك تواصل مجاني من باقتك، لكن هذا الطرف «ظروف خاصة / مسيار» فيُخفَّض رسمه ${q.pct}% فقط (يغطّيه كاملاً باقة الاشتراطات الخاصة والباقة الذهبية). يُخصم تواصلك المجاني عند موافقة الطرف الآخر، وتُستحق الرسوم قبل استلام الرقم.`;
             } else if (freeLeft > 0) {
                 directValue = `<span class="line-through text-slate-400 ml-2 text-xs">${baseFee} ريال</span><b class="text-emerald-600 text-sm">مجاني من باقتك (متبقٍ ${freeLeft})</b>`;
                 directSub = 'ويُخصم من تواصلاتك المجانية عند موافقة الطرف الآخر.';
@@ -2594,9 +2618,12 @@
                 const freeExternalLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
                 const hasSpecialPackage = localStorage.getItem('cached_special_package') === '1';
 
+                const dq = directFeeQuote(config, isSpecial);
                 let feeText = !isMan
                     ? `<span class="text-indigo-600 text-xl font-black">مجاناً</span>`
-                    : (freeExternalLeft > 0
+                    : (dq.kind === 'discount'
+                        ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-indigo-600 text-xl font-black">${dq.fee} ريال</span><span class="block text-[10px] font-bold text-slate-500 mt-1">بعد خصم ${dq.pct}% لتواصلك المجاني (ملف «ظروف خاصة / مسيار»)</span>`
+                    : freeExternalLeft > 0
                         ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-emerald-500 text-lg font-black">مجاني من باقتك (متبقٍ ${freeExternalLeft})</span>`
                         : (hasSpecialPackage
                             ? `<span class="line-through text-slate-400 ml-2">${baseFee} ريال</span> <span class="text-emerald-500 text-lg font-black">${DIRECT_FEE_MEN_SPECIAL} ريال (مشمول باشتراكك)</span>`
