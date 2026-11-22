@@ -176,6 +176,12 @@
             return n + ' شهراً';
         }
 
+        // عدد أرقام التواصل بصياغة عربية سليمة: رقم تواصل واحد، رقمان للتواصل، 3-10 أرقام للتواصل
+        function extNums(n) {
+            n = parseInt(n) || 0;
+            return n === 1 ? 'رقم تواصل واحد' : (n === 2 ? 'رقمان للتواصل' : n + ' أرقام للتواصل');
+        }
+
         function renderGuestBox() {
             const box = document.getElementById('guestBox');
             if (!isGuest) { box.innerHTML = ''; return; }
@@ -372,7 +378,7 @@
             const box = document.getElementById('packagesList');
             if (!list.length) { box.innerHTML = '<p class="text-center text-sm text-slate-400 font-bold py-10">لا توجد باقات متاحة لملفك حالياً.</p>'; return; }
 
-            box.innerHTML = list.map(p => {
+            const cardHtml = (p) => {
                 const platformContacts = pr.contactCostRegular > 0 ? Math.floor(p.points / pr.contactCostRegular) : 0;
                 const specialContacts = pr.contactCostSpecialWomen > 0 ? Math.floor(p.points / pr.contactCostSpecialWomen) : 0;
                 const bySpContacts = pr.contactCostBySpecialWoman > 0 ? Math.floor(p.points / pr.contactCostBySpecialWoman) : 0;
@@ -381,9 +387,19 @@
                     const menSpecialFee = Number(pr.directFeeMenSpecial) || 0;
                     const after = p.unlocksSpecial
                         ? (menSpecialFee > 0 ? `${esc(menSpecialFee)} ريال للتواصل الواحد` : 'يبقى التواصل بلا رسوم')
-                        : `${esc(pr.directFee)} ريال مع امرأة (زواج معلن) · ${esc(pr.directFeeSpecialWomen)} ريال مع امرأة (ظروف خاصة)`;
+                        : `${esc(pr.directFee)} ريال للزواج المعلن · ${esc(pr.directFeeSpecialWomen)} ريال للمسيار`;
+                    // [2026-11-22] التواصل المجاني يغطي النساء العاديات؛ مع ذوات الظروف الخاصة (مسيار) يغطيه كاملاً ما تُشير إليه الباقة، وإلا يُخفَّض الرسم
+                    const coverMin = pr.specialCoverMinStars !== undefined ? Number(pr.specialCoverMinStars) : 4;
+                    const dPct = pr.freeContactSpecialDiscountPct !== undefined ? Number(pr.freeContactSpecialDiscountPct) : 50;
+                    const spFull = Number(pr.directFeeSpecialWomen) || 0, spDisc = Math.round(spFull * (100 - dPct) / 100);
+                    const covers = p.unlocksSpecial || Number(p.stars) >= coverMin;
+                    const coverNote = covers
+                        ? 'للزواج المعلن والمسيار معاً'
+                        : (spDisc > 0 && spDisc < spFull
+                            ? `للزواج المعلن (والمسيار بخصم ${esc(dPct)}%: ${esc(spDisc)} ريال)`
+                            : 'للزواج المعلن');
                     extLines = `
-                        <li class="flex items-start gap-2"><span>📞</span><span><b class="text-emerald-700">${esc(p.external)} تواصل خارج المنصة مجاناً</b><br><span class="text-[10px] text-slate-500">بعد انتهاء التواصلات المجانية: ${after}</span></span></li>`;
+                        <li class="flex items-start gap-2"><span>📞</span><span><b class="text-emerald-700">${esc(extNums(p.external))} مجاناً</b><br><span class="text-[10px] font-black ${covers ? 'text-emerald-700' : 'text-amber-700'}">${coverNote}</span><br><span class="text-[10px] text-slate-500">رقم جوال الطرف الآخر بعد موافقته. بعد انتهاء المجاني: ${after}</span></span></li>`;
                 }
                 const isBanRequired = !!(pageData.ban && pageData.ban.condType === 'package' && pageData.ban.packageId === p.id);
                 return `
@@ -394,7 +410,7 @@
                         <div class="text-left"><span class="text-2xl font-black text-indigo-600">${esc(p.price)}</span> <span class="text-xs font-bold text-slate-500">ريال</span></div>
                     </div>
                     <ul class="text-xs text-slate-700 font-bold flex flex-col gap-2 mb-3">
-                        <li class="flex items-start gap-2"><span>💎</span><span><b class="text-indigo-700">${esc(p.points)} نقطة</b><br><span class="text-[10px] text-slate-500">تكفي لنحو ${esc(platformContacts)} طلبات تواصل عبر المنصة${isMale ? ` (أو ${esc(specialContacts)} مع ذات الظروف الخاصة)` : (isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (أو ${esc(bySpContacts)} لذات الظروف الخاصة)` : '')}</span></span></li>
+                        <li class="flex items-start gap-2"><span>💎</span><span><b class="text-indigo-700">${esc(p.points)} نقطة</b><br><span class="text-[10px] text-slate-500">${isMale ? `تكفي لمراسلة نحو ${esc(platformContacts)} من ملفات الزواج المعلن (${esc(pr.contactCostRegular)} نقاط للملف)، أو ${esc(specialContacts)} من ملفات المسيار والظروف الخاصة (${esc(pr.contactCostSpecialWomen)} نقطة للملف)` : `تكفي لمراسلة نحو ${esc(platformContacts)} ملفات${isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (أو ${esc(bySpContacts)} لذات الظروف الخاصة)` : ''}`}</span></span></li>
                         ${extLines}
                         ${p.adMonths > 0 ? `<li class="flex items-start gap-2"><span>📢</span><span>إعلان ملفك على شريط الموقع «ملفات مميزة» <b class="text-amber-700">مدة ${esc(monthsText(p.adMonths))}</b><br><span class="text-[10px] text-slate-500">يبدأ من اعتماد ملفك، وإن كان لديك إعلان ساري تُضاف المدة فوقه</span></span></li>` : ''}
                         ${p.unlocksSpecial ? '<li class="flex items-start gap-2"><span>⭐</span><span>تفعيل مزايا الاشتراطات الخاصة لملفك</span></li>' : ''}
@@ -403,7 +419,25 @@
                         ? `<button type="button" onclick="guestSubscribe()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-sm shadow-md active:scale-95 transition-all">سجّل دخولك للاشتراك في ${esc(p.name)}</button>`
                         : `<button type="button" onclick="askSubscribe('${esc(p.id)}')" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md active:scale-95 transition-all">اشترك في ${esc(p.name)}</button>`}
                 </div>`;
-            }).join('');
+            };
+            // [2026-11-22] لمن سجّل اشتراطات خاصة: الباقات المقترحة أولاً، والباقي يُطوى تحت «باقات أخرى قد لا تناسبك» ويبقى قابلاً للاشتراك
+            const main = list.filter(p => !p.other), others = list.filter(p => p.other);
+            // شرح مرة واحدة أعلى القائمة لمن يرى باقات فيها أرقام تواصل (الرجال): ما هو رقم التواصل وكم رسمه
+            const explain = (isMale && list.some(p => p.external > 0)) ? `<div class="bg-slate-100 border border-slate-200 rounded-2xl p-3 mb-3 text-[11px] text-slate-600 font-bold leading-relaxed"><p class="font-black text-slate-700 mb-0.5">ما هو رقم التواصل؟</p>بعد موافقة الطرف الآخر تستلم رقم جواله لتتواصلا مباشرة، وله رسوم ${esc(pr.directFee)} ريال للزواج المعلن و${esc(pr.directFeeSpecialWomen)} ريال للمسيار. الباقة تمنحك عدداً منها مجاناً.</div>` : '';
+            box.innerHTML = explain + main.map(cardHtml).join('') + (others.length ? `
+                <div class="mt-1">
+                    <button type="button" onclick="toggleOtherPackages()" class="w-full flex items-center justify-between gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-2xl px-4 py-3 text-right transition-colors">
+                        <span class="text-xs font-black text-slate-700">باقات أخرى قد لا تناسبك (${esc(others.length)})<br><span class="text-[10px] font-bold text-slate-500">تناسب غالباً من يراسل نساء عاديات، وقد لا تناسب نوع زواجك</span></span>
+                        <span id="otherChev" class="text-slate-500 text-xs transition-transform ${otherPackagesOpen ? 'rotate-180' : ''}">▼</span>
+                    </button>
+                    <div id="otherPackages" class="flex flex-col gap-3 mt-3 ${otherPackagesOpen ? '' : 'hidden'}">${others.map(cardHtml).join('')}</div>
+                </div>` : '');
+        }
+        let otherPackagesOpen = false;
+        function toggleOtherPackages() {
+            otherPackagesOpen = !otherPackagesOpen;
+            document.getElementById('otherPackages').classList.toggle('hidden', !otherPackagesOpen);
+            document.getElementById('otherChev').classList.toggle('rotate-180', otherPackagesOpen);
         }
 
         function renderInfo() {
@@ -412,8 +446,8 @@
             document.getElementById('infoBox').innerHTML = `
                 <div class="bg-slate-100 border border-slate-200 rounded-2xl p-3 mt-4 text-[11px] text-slate-600 font-bold leading-relaxed">
                     <p class="font-black text-slate-700 mb-1">كيف تُحسب التكاليف؟</p>
-                    <p>• التواصل مع ملف عبر المنصة: ${esc(pr.contactCostRegular)} نقاط${isMale ? ` (${esc(pr.contactCostSpecialWomen)} نقطة مع ذات الظروف الخاصة)` : (isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (${esc(pr.contactCostBySpecialWoman)} نقطة لذات الظروف الخاصة)` : '')}.</p>
-                    ${isMale ? `<p>• التواصل المباشر خارج المنصة بعد موافقة الطرف الآخر: ${esc(pr.directFee)} ريال (زواج معلن) أو ${esc(pr.directFeeSpecialWomen)} ريال (ظروف خاصة)، ويُسقطه التواصل المجاني من باقتك.</p>` : ''}
+                    <p>• مراسلة ملف عبر المنصة: ${esc(pr.contactCostRegular)} نقاط${isMale ? ` لملفات الزواج المعلن، و${esc(pr.contactCostSpecialWomen)} نقطة لملفات المسيار والظروف الخاصة` : (isGuest && pr.contactCostBySpecialWoman !== undefined ? ` (${esc(pr.contactCostBySpecialWoman)} نقطة لذات الظروف الخاصة)` : '')}.</p>
+                    ${isMale ? `<p>• رقم التواصل المباشر (جوال الطرف الآخر بعد موافقته): ${esc(pr.directFee)} ريال للزواج المعلن، و${esc(pr.directFeeSpecialWomen)} ريال للمسيار. الأرقام المجانية في باقتك تُسقطه للزواج المعلن؛ وللمسيار تُسقطه كاملاً الباقات المكتوب فيها «للزواج المعلن والمسيار معاً»، وفي غيرها يُخفَّض ${esc(pr.freeContactSpecialDiscountPct !== undefined ? pr.freeContactSpecialDiscountPct : 50)}% فقط.</p>` : ''}
                     <p>• بعد الاشتراك تصلك رسالة واتساب بالمبلغ وحسابات السداد، وتُفعَّل باقتك فور التأكد من التحويل.</p>
                 </div>`;
         }
