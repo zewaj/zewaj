@@ -1342,37 +1342,79 @@ function closeTermsModal() {
         // 🛡️ Cloudflare Turnstile (إثبات أن الطلب من إنسان على صفحة الموقع). المفتاح العام (Site Key) يوضع هنا؛ فارغ = معطّل.
         // المفتاح السري يوضع في خصائص السكريبت (TURNSTILE_SECRET) ولا يُكتب في أي صفحة.
         const TURNSTILE_SITE_KEY = "0x4AAAAAAF96CYQnADy8ZDai";
-        let tsWidgetId = null, tsToken = "", tsReady = false;
+        // [2026-11-23] أداة الحماية كانت تفشل كثيراً على الجوال (متصفح داخل التطبيقات، وضع التطبيق المثبّت، شبكة بطيئة) فيظهر "تعذر التحقق"
+        // ويُطلب تحديث صفحة لا يعرف العميل كيف يحدّثها. الآن: إعادة تحميل الأداة عند فشلها، انتظار أطول، محاولة ثانية صامتة،
+        // ثم إرسال الطلب مع رمز الخطأ (tsError) والخادم يقبله تحت سقف صغير. لا يُطلب من العميل تحديث الصفحة إطلاقاً.
+        let tsWidgetId = null, tsToken = "", tsReady = false, tsError = "", tsLoadTries = 0;
+        function renderTurnstile() {
+            try {
+                if (tsWidgetId !== null) { try { turnstile.remove(tsWidgetId); } catch (eR) {} tsWidgetId = null; }
+                tsWidgetId = turnstile.render('#turnstileBox', {
+                    sitekey: TURNSTILE_SITE_KEY, appearance: 'interaction-only', language: 'ar',
+                    retry: 'auto', 'retry-interval': 2000, 'refresh-expired': 'auto',
+                    callback: (t) => { tsToken = t; tsError = ""; },
+                    'expired-callback': () => { tsToken = ""; },
+                    'timeout-callback': () => { tsToken = ""; tsError = "timeout"; },
+                    'unsupported-callback': () => { tsToken = ""; tsError = "unsupported"; },
+                    'error-callback': (code) => { tsToken = ""; tsError = "e" + (code || ""); return true; }
+                });
+            } catch (e) { tsError = "render"; tsReady = false; }
+        }
         function initTurnstile() {
             if (!TURNSTILE_SITE_KEY || tsReady) return;
-            tsReady = true;
+            if (window.turnstile && typeof turnstile.render === 'function') { tsReady = true; renderTurnstile(); return; }
+            tsReady = true; tsLoadTries++;
             const s = document.createElement('script');
             s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
             s.async = true; s.defer = true;
-            s.onload = () => {
-                try {
-                    tsWidgetId = turnstile.render('#turnstileBox', {
-                        sitekey: TURNSTILE_SITE_KEY, appearance: 'interaction-only', language: 'ar',
-                        callback: (t) => { tsToken = t; },
-                        'expired-callback': () => { tsToken = ""; },
-                        'error-callback': () => { tsToken = ""; }
-                    });
-                } catch (e) { tsReady = false; }
+            s.onload = () => renderTurnstile();
+            s.onerror = () => {
+                tsReady = false; tsError = "load"; try { s.remove(); } catch (eS) {}
+                if (tsLoadTries < 3) setTimeout(initTurnstile, 2000 * tsLoadTries);
             };
-            s.onerror = () => { tsReady = false; };
             document.head.appendChild(s);
         }
-        // يُرجع توكن صالحاً (ينتظر حتى 12 ثانية)، أو "" إن لم يتوفر. التوكن يُستعمل مرة واحدة ثم يُجدَّد تلقائياً.
-        async function getTurnstileToken() {
+        // يُرجع توكناً صالحاً (ينتظر حتى waitMs)، أو "" إن لم يتوفر. التوكن يُستعمل مرة واحدة ثم يُجدَّد تلقائياً.
+        async function getTurnstileToken(waitMs) {
             if (!TURNSTILE_SITE_KEY) return "";
             initTurnstile();
-            for (let i = 0; i < 60 && !tsToken; i++) await new Promise(r => setTimeout(r, 200));
+            const steps = Math.ceil((waitMs || 15000) / 200);
+            // إن أبلغت الأداة عن خطأ نكتفي بـ5 ثوانٍ لإعادتها التلقائية بدل الانتظار كاملاً
+            for (let i = 0; i < steps && !tsToken && !(tsError && i >= 25); i++) await new Promise(r => setTimeout(r, 200));
             const t = tsToken; tsToken = "";
             return t;
         }
         function resetTurnstile() {
             tsToken = "";
             try { if (tsWidgetId !== null && window.turnstile) turnstile.reset(tsWidgetId); } catch (e) {}
+        }
+        // محاولة ثانية كاملة: إعادة بناء الأداة (أو إعادة تحميلها إن لم تُحمَّل أصلاً)
+        function hardResetTurnstile() {
+            tsToken = "";
+            if (window.turnstile && typeof turnstile.render === 'function') { tsReady = true; renderTurnstile(); }
+            else { tsReady = false; tsLoadTries = 0; initTurnstile(); }
+        }
+        // نافذة واضحة بزرين كبيرين بدل "حدّث الصفحة" (العميل في التطبيق المثبّت لا يجد زر تحديث)
+        function showSendRetryModal(msg) {
+            let m = document.getElementById('otpRetryModal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'otpRetryModal';
+                m.className = 'fixed inset-0 z-[300] bg-black/50 flex items-center justify-center p-4';
+                m.innerHTML = '<div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" dir="rtl">'
+                    + '<div class="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto mb-3 text-2xl">📶</div>'
+                    + '<h3 class="text-base font-bold text-gray-900 mb-2">لم يكتمل الإرسال</h3>'
+                    + '<p id="otpRetryMsg" class="text-sm text-gray-600 mb-5 leading-relaxed"></p>'
+                    + '<button id="otpRetryBtn" type="button" class="w-full bg-[#25D366] hover:bg-[#1ebd57] text-white font-bold py-3 rounded-xl shadow-md active:scale-95 text-base mb-2">🔄 حاول مرة أخرى</button>'
+                    + '<button id="otpReloadBtn" type="button" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-sm mb-2">↻ إعادة تحميل الصفحة</button>'
+                    + '<button id="otpRetryClose" type="button" class="w-full text-gray-400 text-xs py-1">إغلاق</button></div>';
+                document.body.appendChild(m);
+                m.querySelector('#otpRetryClose').onclick = () => m.classList.add('hidden');
+                m.querySelector('#otpRetryBtn').onclick = () => { m.classList.add('hidden'); hardResetTurnstile(); sendWhatsAppCode(); };
+                m.querySelector('#otpReloadBtn').onclick = () => { try { window.top.location.reload(); } catch (e) { location.reload(); } };
+            }
+            m.querySelector('#otpRetryMsg').textContent = msg || 'تعذر الاتصال للحظة. اضغط (حاول مرة أخرى) وسيُرسل الرمز إلى واتسابك.';
+            m.classList.remove('hidden');
         }
         window.addEventListener('load', () => { setTimeout(initTurnstile, 300); });
 
@@ -1393,7 +1435,7 @@ function closeTermsModal() {
             const originalText = btn.innerHTML; btn.innerHTML = "جاري الإرسال..."; btn.disabled = true;
             
             // 🟢 تم ضبط وقت تحميل الواجهة إلى 40 ثانية بناءً على طلبك
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 60000);
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 90000); // يشمل انتظار فحص الحماية (حتى 27 ث)
 
             // 🛡️ معرّف عشوائي لهذا الجهاز (يمنع أن يطلب جهاز واحد رموزاً لجوالات كثيرة؛ الخادم يحدّ عدد الجوالات المختلفة لكل جهاز)
             function getOtpDeviceId() {
@@ -1407,13 +1449,21 @@ function closeTermsModal() {
                 } catch (e) { return ""; }
             }
             try {
-                const cfToken = await getTurnstileToken();
-                if (TURNSTILE_SITE_KEY && !cfToken) { clearTimeout(timeoutId); btn.innerHTML = originalText; btn.disabled = false; showMsgModal("تعذر التحقق", "لم نتمكن من التحقق من الاتصال. حدّث الصفحة وحاول مرة أخرى."); return; }
-                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone, deviceId: getOtpDeviceId(), cfToken: cfToken }), signal: controller.signal });
+                let cfToken = await getTurnstileToken(15000);
+                if (TURNSTILE_SITE_KEY && !cfToken) {
+                    // محاولة ثانية صامتة: إعادة بناء الأداة والانتظار مرة أخرى (الزر يطمئن العميل)
+                    btn.innerHTML = "نتحقق من الاتصال، لحظات...";
+                    hardResetTurnstile();
+                    cfToken = await getTurnstileToken(12000);
+                }
+                const cfFail = (TURNSTILE_SITE_KEY && !cfToken) ? (tsError || "notoken") : "";
+                btn.innerHTML = "جاري الإرسال...";
+                const res = await fetch(SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "sendOtp", phone: verifiedFullPhone, deviceId: getOtpDeviceId(), cfToken: cfToken, cfFail: cfFail }), signal: controller.signal });
                 resetTurnstile();
                 clearTimeout(timeoutId); const text = await res.text();
                 try {
                     const result = JSON.parse(text);
+                    if (!result.success && result.captcha) { showSendRetryModal("لم يكتمل فحص الأمان للحظة. اضغط (حاول مرة أخرى) وسيُرسل الرمز إلى واتسابك."); return; }
                     if (result.success) { 
                         const s1 = document.getElementById('otpStep1'); if(s1) s1.classList.add('hidden'); 
                         const s2 = document.getElementById('otpStep2'); if(s2) s2.classList.remove('hidden'); 
@@ -1423,7 +1473,7 @@ function closeTermsModal() {
                         setTimeout(() => { const o1 = document.getElementById('otp1'); if(o1) o1.focus(); }, 100);
                     } 
                     else showMsgModal("خطأ", result.message);
-                } catch(e) { showMsgModal("خطأ اتصال", "السيرفر لا يعمل بشكل صحيح."); }
+                } catch(e) { showSendRetryModal("الخادم مشغول للحظة. اضغط (حاول مرة أخرى) بعد ثوانٍ."); }
             } catch (e) {
                 // 🟢 الرمز غالباً يكون قد أُرسل فعلاً رغم تأخر رد السيرفر، فننقل المستخدم
                 // لشاشة إدخال الرمز بدل دفعه للضغط على "إرسال" مراراً (وهو سبب تراكم
@@ -1435,7 +1485,7 @@ function closeTermsModal() {
                     setTimeout(() => { const o1 = document.getElementById('otp1'); if(o1) o1.focus(); }, 100);
                     showMsgModal("تأخر رد السيرفر", "غالباً وصلك الرمز على الواتساب رغم التأخير. تحقق من رسائلك وأدخل الرمز، وإن لم يصلك خلال دقيقة اضغط (إعادة إرسال).");
                 }
-                else showMsgModal("خطأ اتصال", "يرجى التحقق من الإنترنت.");
+                else showSendRetryModal("تعذر الاتصال للحظة (قد يكون الإنترنت ضعيفاً). اضغط (حاول مرة أخرى).");
             } finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
