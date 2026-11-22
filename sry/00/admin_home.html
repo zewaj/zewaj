@@ -154,6 +154,11 @@
     </div>
     <p id="waPauseNote" class="text-[11px] text-slate-500 font-bold leading-relaxed mt-1.5">عند الإيقاف: لا تُرسل أي رسالة آلية (رموز التحقق وتنبيهات الطلبات)، وتذهب الرسائل لقائمة «لم تصل» في المراسلات لترسلها يدوياً.</p>
     <button id="waPauseBtn" type="button" class="w-full mt-2.5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black" disabled>…</button>
+    <div class="border-t border-slate-100 mt-3 pt-3">
+      <b id="waEssTitle" class="text-sm text-slate-700">🔊 كل الرسائل الآلية تعمل</b>
+      <p class="text-[11px] text-slate-500 font-bold leading-relaxed mt-1.5">«الرسائل الأساسية فقط»: يبقى رمز التحقق ورسائل الطلبات والردود وتبادل الأرقام والباقات. تتوقف مؤقتاً رسالة اعتماد الملف وبدء الإعلان وتنبيهات التأخر ومتابعة التعارف وإشعارات الإحالات. لا يضيع شيء: المتابعات تُستأنف بعد إيقاف الوضع.</p>
+      <button id="waEssBtn" type="button" class="w-full mt-2.5 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black" disabled>…</button>
+    </div>
   </div>
 
   <!-- [2026-11-12] حماية الدخول: أجهزة الإدارة المسجّلة (مفتاح جهاز عشوائي يُحفظ في متصفح الجهاز). عند تفعيل التقييد لا يدخل إلا هذه الأجهزة. -->
@@ -455,8 +460,8 @@ async function waPauseLoad() {
   try {
     const r = await post({ action: 'adminWaPause', adminToken: token });
     if (isAuthError(r)) return;
-    if (r && r.success) { waPaused = !!r.paused; renderWaPause(); } else renderWaPause('حدّث الخادم أولاً لتفعيل الزر');
-  } catch (e) { renderWaPause('تعذر الاتصال بالخادم'); }
+    if (r && r.success) { waPaused = !!r.paused; renderWaPause(); if (typeof r.essential === 'boolean') { waEssential = r.essential; renderWaEss(); } else renderWaEss('حدّث الخادم لتفعيل هذا الوضع'); } else { renderWaPause('حدّث الخادم أولاً لتفعيل الزر'); renderWaEss('—'); }
+  } catch (e) { renderWaPause('تعذر الاتصال بالخادم'); renderWaEss('—'); }
 }
 async function waPauseToggle() {
   const want = !waPaused;
@@ -469,6 +474,32 @@ async function waPauseToggle() {
   } catch (e) { renderWaPause(); alert('تعذر الاتصال بالخادم، تأكد من الحالة ثم أعد المحاولة.'); }
 }
 document.getElementById('waPauseBtn').onclick = waPauseToggle;
+// وضع «الرسائل الأساسية فقط»
+let waEssential = null;
+function renderWaEss(err) {
+  const btn = document.getElementById('waEssBtn'), title = document.getElementById('waEssTitle'); if (!btn) return;
+  if (err) { title.textContent = err; btn.disabled = true; btn.textContent = '—'; return; }
+  btn.disabled = false;
+  if (waEssential) {
+    title.textContent = '🔇 الرسائل الأساسية فقط (الاختيارية متوقفة)'; title.className = 'text-sm text-amber-800';
+    btn.className = 'w-full mt-2.5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black'; btn.textContent = '🔊 إعادة كل الرسائل الآلية';
+  } else {
+    title.textContent = '🔊 كل الرسائل الآلية تعمل'; title.className = 'text-sm text-slate-700';
+    btn.className = 'w-full mt-2.5 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black'; btn.textContent = '🔇 الرسائل الأساسية فقط';
+  }
+}
+async function waEssToggle() {
+  const want = !waEssential;
+  if (want && !confirm('تفعيل «الرسائل الأساسية فقط»؟ تتوقف رسائل الاعتماد والإعلان وتنبيهات التأخر ومتابعة التعارف والإحالات حتى تعيدها.')) return;
+  const btn = document.getElementById('waEssBtn'); btn.disabled = true; btn.textContent = 'جاري التنفيذ…';
+  try {
+    const r = await post({ action: 'adminWaPause', adminToken: token, essential: want });
+    if (isAuthError(r)) { logout('انتهت الجلسة، سجّل الدخول من جديد.'); return; }
+    if (r && r.success && typeof r.essential === 'boolean') { waEssential = r.essential; renderWaEss(); }
+    else { renderWaEss(); alert('حدّث الخادم أولاً لتفعيل هذا الوضع.'); }
+  } catch (e) { renderWaEss(); alert('تعذر الاتصال بالخادم، تأكد من الحالة ثم أعد المحاولة.'); }
+}
+document.getElementById('waEssBtn').onclick = waEssToggle;
 // ===== [2026-11-12] أجهزة الإدارة المسجّلة =====
 let devState = null;
 function devKey() { try { return localStorage.getItem('adminDeviceKey') || ''; } catch (e) { return ''; } }
