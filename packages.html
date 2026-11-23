@@ -242,7 +242,7 @@
             document.getElementById('statusBox').innerHTML = `
                 <div class="bg-white border border-indigo-100 rounded-2xl p-3 shadow-sm mb-3 flex items-center justify-around text-center">
                     <div><p class="text-[10px] text-slate-400 font-bold">رصيدك الحالي</p><p class="text-lg font-black text-indigo-600">${esc(w.balance || 0)} 💎</p></div>
-                    ${isMale ? `<div class="border-r border-slate-100 pr-4"><p class="text-[10px] text-slate-400 font-bold">تواصلات خارج المنصة</p><p class="text-lg font-black text-emerald-600">${esc(w.freeExternal || 0)}</p></div>` : ''}
+                    ${isMale ? `<div class="border-r border-slate-100 pr-4"><p class="text-[10px] text-slate-400 font-bold">تواصلات خارج المنصة</p><p class="text-lg font-black text-emerald-600">${esc(w.freeExternal || 0)}</p>${(w.freeCover !== undefined && (w.freeExternal || 0) > 0) ? `<p class="text-[10px] text-slate-500 font-bold">${Number(w.freeCover) >= Number(w.freeExternal) ? 'كلها تشمل المسيار' : (Number(w.freeCover) > 0 ? 'منها ' + esc(w.freeCover) + ' تشمل المسيار' : 'للزواج المعلن (والمسيار بخصم)')}</p>` : ''}</div>` : ''}
                 </div>`;
         }
 

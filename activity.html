@@ -1764,8 +1764,11 @@
             const freeLeft = parseInt(localStorage.getItem('cached_free_external') || '0') || 0;
             const hasSp = localStorage.getItem('cached_special_package') === '1';
             const stars = parseInt(localStorage.getItem('cached_wallet_stars') || '0') || 0;
+            // [2026-11-23] كل رقم يحمل ميزة باقته: cached_free_cover = كم منها يغطي المسيار (خادم أقدم بلا الحقل ← القاعدة السابقة)
+            const cc = localStorage.getItem('cached_free_cover');
+            const coverLeft = (cc !== null && cc !== '') ? (parseInt(cc) || 0) : ((hasSp || stars >= num(cfg.SPECIAL_COVER_MIN_STARS, 4)) ? freeLeft : 0);
             if (freeLeft > 0) {
-                if (!isTargetSpecial || hasSp || stars >= num(cfg.SPECIAL_COVER_MIN_STARS, 4)) return { kind: 'free', base: base, fee: 0, freeLeft: freeLeft };
+                if (!isTargetSpecial || coverLeft > 0) return { kind: 'free', base: base, fee: 0, freeLeft: freeLeft };
                 const pct = Math.max(0, Math.min(100, num(cfg.FREE_CONTACT_SPECIAL_DISCOUNT_PCT, 50)));
                 const fee = Math.round(base * (100 - pct) / 100);
                 return fee > 0 ? { kind: 'discount', base: base, fee: fee, pct: pct, freeLeft: freeLeft } : { kind: 'free', base: base, fee: 0, freeLeft: freeLeft };
@@ -2304,6 +2307,7 @@
                     if (result.freeExternalContacts !== undefined) localStorage.setItem('cached_free_external', result.freeExternalContacts || 0);
                     if (result.hasSpecialPackage !== undefined) localStorage.setItem('cached_special_package', result.hasSpecialPackage ? '1' : '0');
                     if (result.walletStars !== undefined) localStorage.setItem('cached_wallet_stars', result.walletStars || 0);
+                    if (result.freeCoverContacts !== undefined) localStorage.setItem('cached_free_cover', result.freeCoverContacts || 0); else if (result.walletStars !== undefined) localStorage.removeItem('cached_free_cover');
                     const pointsDisplay = document.getElementById('userPointsDisplay');
                     if (pointsDisplay) {
                         pointsDisplay.innerText = window.userPointsBalance;
