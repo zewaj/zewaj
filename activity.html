@@ -950,7 +950,7 @@
                     actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
                         <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
                         <div class="flex gap-1.5 w-full">
-                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تم الزواج', false, event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
+                            <button type="button" onclick="event.stopPropagation(); openMarriageCelebration('${req.reqId}', event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
                             <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="flex-1 py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
                         </div>
                     </div>`;
@@ -966,7 +966,7 @@
                     // 🟢 [2026-10-09] الإغلاق يُفحص أولاً: علم الموافقة (finalApprovalGiven) يبقى TRUE للأبد، فكان الطلب المغلق بعد التعارف
                     // يعرض "🎉 تمت الموافقة، الطلب في عهدة الإدارة" بالأخضر. المغلق يعرض نتيجته (closedNoteHtml) بلون محايد.
                     if (isMasterClosed) {
-                        actionAreaHtml = closedNoteHtml(statusText, reopenExtraHtml(req));
+                        actionAreaHtml = closedNoteHtml(statusText, reopenExtraHtml(req) + marriageObjectionHtml(req, false));
                     } else if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
                         actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-xs text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
                     } else {
@@ -1184,7 +1184,7 @@
                     actionAreaHtml = `<div class="bg-purple-50 p-3 border-t border-purple-100 flex flex-col gap-2 rounded-b-2xl">
                         <p class="text-[11px] text-purple-800 font-bold text-center">📞 أنتم الآن في مرحلة التعارف المباشر عبر الواتساب.</p>
                         <div class="flex gap-1.5 w-full">
-                            <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'تم الزواج', false, event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
+                            <button type="button" onclick="event.stopPropagation(); openMarriageCelebration('${req.reqId}', event)" class="flex-1 py-2 bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">💍 تم الزواج</button>
                             <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'إنهاء التعارف', false, event)" class="flex-1 py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[10px] font-bold shadow-sm transition-colors cursor-pointer">❌ إنهاء التعارف (عدم التوفيق)</button>
                         </div>
                     </div>`;
@@ -1193,7 +1193,7 @@
                     actionAreaHtml = `<div class="bg-amber-50 p-3 border-t border-amber-100 text-center rounded-b-2xl"><p class="text-[11px] text-amber-700 font-bold">${msg}</p></div>`;
                 } else if (isMasterClosed) {
                     // 🟢 [2026-10-09] الإغلاق قبل علم الموافقة (انظر التعليق نفسه في بطاقة الصادر)
-                    actionAreaHtml = closedNoteHtml(statusText, reopenExtraHtml(req));
+                    actionAreaHtml = closedNoteHtml(statusText, reopenExtraHtml(req) + marriageObjectionHtml(req, true));
                 } else if (req.finalApprovalGiven || statusText.includes('موافقة تبادل') || statusText.includes('موافقة نهائية')) {
                     actionAreaHtml = `<div class="bg-emerald-50 p-3 border-t border-emerald-200 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">🎉 تمت الموافقة، الطلب الآن في عهدة الإدارة لتسليم الأرقام.</p></div>`;
                 } else if (isAccepted) {
@@ -1349,7 +1349,7 @@
         // 🟢 [2026-10-09] شريط أسفل بطاقة الطلب المغلق يذكر نتيجته، بدل رسالة الموافقة الخضراء القديمة التي كانت تبقى بعد الإغلاق.
         function closedNoteHtml(statusText, extraHtml) {
             const s = statusText || '';
-            if (s.includes('تم الزواج')) return `<div class="bg-emerald-50 p-2.5 border-t border-emerald-100 text-center rounded-b-2xl"><p class="text-[11px] text-emerald-700 font-bold">💍 أُغلق الطلب: تم الزواج. بارك الله لكما، وبارك عليكما، وجمع بينكما في خير.</p></div>`;
+            if (s.includes('تم الزواج')) return `<div class="bg-emerald-50 p-2.5 border-t border-emerald-100 text-center rounded-b-2xl flex flex-col gap-1.5"><p class="text-[11px] text-emerald-700 font-bold">💍 أُغلق الطلب: تم الزواج. بارك الله لكما، وبارك عليكما، وجمع بينكما في خير.</p>${extraHtml || ''}</div>`;
             let note = 'تم إغلاق المحادثة.';
             if (s.includes('إنهاء التعارف')) note = 'أُغلق الطلب: انتهى التعارف لعدم التوفيق.';
             else if (s.includes('تأخر في الرد')) note = 'أُغلق الطلب لتأخر الرد.';
@@ -1428,7 +1428,9 @@
         };
 
         const OUTCOME_REPLIES = {
-            'تم الزواج': { title: 'إبلاغ عن إتمام الزواج', text: 'تم الاتفاق والزواج ولله الحمد.' },
+            // [2026-11-23] نص بلاغ الزواج = MARRIAGE_REPORT_TEXT في الخادم حرفياً (عدّلهما معاً)
+            'تم الزواج': { title: 'إبلاغ عن إتمام الزواج', text: '💍 أبلغ بإتمام الزواج ولله الحمد.' },
+            'اعتراض على الزواج': { title: 'لم يتم الزواج', text: '⚠️ اعترض على بلاغ الزواج: لم يتم الزواج.' },
             'تأكيد الإنهاء': { title: 'تأكيد إنهاء التعارف', text: 'تم تأكيد إنهاء التعارف وإبراء الذمة.' },
             'تأكيد الزواج': { title: 'تأكيد إتمام الزواج', text: 'تم تأكيد الزواج، نسأل الله التوفيق.' }
         };
@@ -1446,6 +1448,8 @@
                 : (type === 'موافقة مبدئية') ? 'اكتب استفساراتك، وتراجعها الإدارة ثم تصل للطرف الآخر.'
                 : (type === 'موافقة تبادل أرقام') ? 'تصل موافقتك فوراً، وتتولى الإدارة تسليم الأرقام.'
                 : (type.includes('اعتذار')) ? 'يصل اعتذارك للطرف الآخر فوراً ويُغلق الطلب.'
+                : (type === 'اعتراض على الزواج') ? 'يُحال الطلب للإدارة للتحقق، ويصل الطرف الآخر إشعار بذلك.'
+                : (OUTCOME_REPLIES[type] || type === 'إنهاء التعارف') ? 'يصل للطرف الآخر فوراً في المنصة والواتساب.'
                 : 'سيتم إرسال هذه الرسالة للطرف الآخر عبر الإدارة.';
             if (type === 'موافقة مبدئية مباشرة') document.getElementById('replyModalTitle').innerText = '✅ موافقة مبدئية على البيانات';
             const warnEl = document.getElementById('quotaWarning'); if(warnEl) warnEl.classList.add('hidden');
@@ -1519,6 +1523,65 @@
             
             document.getElementById('replySubmitBtn').onclick = submitReply;
         };
+
+        // 💍 [2026-11-23] بلاغ الزواج: الزر ← شاشة مباركة كبيرة ← زر التأكيد (ضغطتان، فالخطأ شبه مستحيل).
+        // بلا ذكر للرسوم هنا عمداً (قرار صاحب المشروع)؛ الرسوم تصل الطرفين في رسالة التبريك بالواتساب.
+        // بلاغ طرف واحد يكفي: الخادم يُغلق الطلب "تم الزواج" فوراً، والطرف الآخر يستطيع الاعتراض خلال 7 أيام.
+        window.openMarriageCelebration = function (reqId, event) {
+            if (event) event.stopPropagation();
+            if (!document.getElementById('mcStyle')) {
+                const st = document.createElement('style'); st.id = 'mcStyle';
+                st.textContent = '@keyframes mcPop{0%{transform:scale(.7);opacity:0}70%{transform:scale(1.04);opacity:1}100%{transform:scale(1)}}'
+                    + '@keyframes mcRing{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}'
+                    + '@keyframes mcFall{0%{transform:translateY(-20px) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(105vh) rotate(360deg);opacity:0}}'
+                    + '.mc-pop{animation:mcPop .45s ease-out both}.mc-ring{display:inline-block;animation:mcRing 1.6s ease-in-out infinite}'
+                    + '.mc-bit{position:fixed;top:0;font-size:22px;pointer-events:none;animation:mcFall linear infinite}';
+                document.head.appendChild(st);
+            }
+            const old = document.getElementById('marriageCelebrate'); if (old) old.remove();
+            const ov = document.createElement('div');
+            ov.id = 'marriageCelebrate';
+            ov.className = 'fixed inset-0 z-[300] flex items-center justify-center p-4 bg-emerald-950/70 backdrop-blur-sm';
+            const bits = ['🎉', '✨', '🌸', '💐', '🎊', '🤍', '✨', '🌸', '🎉', '💐'].map((e, i) =>
+                `<span class="mc-bit" style="left:${5 + i * 9.5}%;animation-duration:${3.2 + (i % 4) * 0.7}s;animation-delay:${(i % 5) * 0.45}s">${e}</span>`).join('');
+            ov.innerHTML = bits + `
+                <div class="mc-pop relative w-full max-w-sm max-h-full overflow-y-auto bg-gradient-to-b from-amber-50 via-white to-emerald-50 rounded-3xl shadow-2xl border-2 border-amber-200 p-6 text-center">
+                    <div class="text-7xl mb-3"><span class="mc-ring">💍</span></div>
+                    <h2 class="text-3xl font-black text-emerald-700 mb-2">ألف مبروك!</h2>
+                    <p class="text-[15px] font-extrabold text-amber-700 mb-3">بارك الله لكما، وبارك عليكما، وجمع بينكما في خير</p>
+                    <p class="text-[13px] text-slate-600 font-bold leading-loose mb-5">نسأل الله أن يجعله زواجاً مباركاً، وأن يرزقكما السعادة والذرية الصالحة 🤍</p>
+                    <button type="button" id="mcConfirm" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-black rounded-2xl shadow-lg transition-colors">✅ تأكيد إتمام الزواج</button>
+                    <button type="button" id="mcCancel" class="w-full mt-2 py-2.5 text-slate-500 hover:text-slate-700 text-sm font-bold">تراجع</button>
+                </div>`;
+            document.body.appendChild(ov);
+            ov.querySelector('#mcCancel').onclick = () => ov.remove();
+            ov.querySelector('#mcConfirm').onclick = () => {
+                ov.remove();
+                currentReplyReqId = reqId; currentReplyType = 'تم الزواج';
+                const mi = document.getElementById('replyMessage'); if (mi) mi.value = OUTCOME_REPLIES['تم الزواج'].text;
+                submitReply();
+            };
+        };
+
+        // [2026-11-23] زر «لم يتم الزواج» للطرف الذي لم يُبلغ، على الطلب المغلق بزواج من طرف واحد، خلال 7 أيام (الخادم يتحقق من المهلة).
+        function marriageObjectionHtml(req, isIncomingCard) {
+            if (!req) return '';
+            const chunks = (req.message || '').split('---').map(c => c.trim()).filter(Boolean);
+            let lastIsFirst = null, lastChunk = '';
+            for (let i = chunks.length - 1; i >= 0; i--) {
+                const c = chunks[i];
+                if (c.includes('[تعديل الإدارة]') || c.includes('[من الإدارة')) continue;
+                if (c.includes('[من الطرف الأول]') || c.includes('[من الطالب]')) { lastIsFirst = true; lastChunk = c; break; }
+                if (c.includes('[من الطرف الثاني]') || c.includes('[من المطلوب]')) { lastIsFirst = false; lastChunk = c; break; }
+            }
+            if (lastIsFirst === null || !lastChunk.includes('أبلغ بإتمام الزواج')) return '';
+            const reporterIsMe = isIncomingCard ? !lastIsFirst : lastIsFirst;
+            if (reporterIsMe) return '';
+            const t = typeof safeGetTime === 'function' ? safeGetTime(req.lastActionDate || req.date) : new Date(req.lastActionDate || req.date).getTime();
+            if (!t || (Date.now() - t) > 7 * 86400000) return '';
+            return `<p class="text-[10px] text-slate-500 font-bold mt-1">أبلغ الطرف الآخر بإتمام الزواج. إن لم يتم الزواج فعلاً:</p>
+                <button type="button" onclick="event.stopPropagation(); openReplyModal('${req.reqId}', 'اعتراض على الزواج', false, event)" class="w-full py-2 bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 rounded-lg text-[11px] font-bold shadow-sm">❌ لم يتم الزواج</button>`;
+        }
 
         function closeReplyModal() { document.getElementById('replyModal').classList.add('hidden'); }
 
@@ -1967,6 +2030,8 @@
             if (act.type === 'طلب تواصل مباشر') return req.hasRequestedContact === true || String(req.hasRequestedContact).toUpperCase() === 'TRUE';
             if (act.type === 'موافقة تبادل أرقام') return req.finalApprovalGiven === true || String(req.finalApprovalGiven).toUpperCase() === 'TRUE';
             if ((act.type || '').includes('اعتذار') && /مغلق|مرفوض/.test(st)) return true;
+            // [2026-11-23] بلاغ زواج/اعتراض/عدم توفيق: يكفي تغيّر الحالة (الخادم يكتب نص النزاع بدل النص المرسل حين تخالف النتيجة بلاغاً قائماً)
+            if (['تم الزواج', 'اعتراض على الزواج', 'إنهاء التعارف'].includes(act.type) && /مغلق|نزاع|بانتظار تأكيد الطرف الآخر/.test(st)) return true;
             const t = normMsg(act.text);
             return !!(t && normMsg(req.message).indexOf(t) !== -1);
         }
