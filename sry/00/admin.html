@@ -1198,7 +1198,12 @@
                 } else if (s.includes('يوجد نزاع')) {
                     statusBadge = `<span class="bg-rose-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-700 animate-pulse shadow-md shrink-0 whitespace-nowrap">🚨 نزاع يتطلب تدخلاً</span>`;
                 } else if (s.includes('بانتظار تأكيد')) {
-                    statusBadge = `<span class="bg-orange-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-orange-600 animate-pulse shadow-md shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ بانتظار تأكيد عدم التوفيق' : '⚠️ بانتظار تأكيد الزواج'}</span>`;
+                    // [2026-11-23] عدد أيام الانتظار: بعد يومين يصل الطرف الآخر تذكير آلي، وبعد 5 أيام تتحول الشارة للأحمر (تابعه يدوياً)
+                    const pcT = new Date(String(req.lastActionDate || '').replace(/-/g, '/')).getTime();
+                    const pcDays = pcT ? Math.floor((Date.now() - pcT) / 86400000) : 0;
+                    const pcCls = pcDays >= 5 ? 'bg-rose-600 border-rose-700' : 'bg-orange-500 border-orange-600';
+                    const pcAge = pcDays >= 1 ? ' · منذ ' + pcDays + (pcDays === 1 ? ' يوم' : (pcDays === 2 ? ' يومين' : ' أيام')) : '';
+                    statusBadge = `<span class="${pcCls} text-white text-[10px] font-extrabold px-2 py-0.5 rounded border animate-pulse shadow-md shrink-0 whitespace-nowrap">${s.includes('للإنهاء') ? '⚠️ بانتظار تأكيد عدم التوفيق' : '⚠️ بانتظار تأكيد الزواج'}${pcAge}</span>`;
                 } else if (s.includes('مرحلة التعارف')) {
                     statusBadge = courtshipBadgeHtml(req);
                 } else if (req.finalApprovalGiven || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع')) {
@@ -1900,7 +1905,7 @@
                 newStatus = "بانتظار الطرف الثاني";
                 prefixTag = "[من الطرف الأول] [تعديل الإدارة]: "; 
             } else if (actionType === 'closeChatSuccess') {
-                customPhoneToShare = await showMsgModal("تسليم الأرقام", "تم استلام الرسوم. الرجاء إدخال رقم الجوال المعتمد (ولي الأمر أو المخطوبة) ليتم إرساله للرجل:", "prompt");
+                customPhoneToShare = await showMsgModal("تسليم الأرقام", "تم استلام الرسوم. الرجاء إدخال رقم الجوال المعتمد (ولي الأمر أو المخطوبة) ليتم إرساله للرجل.\n(تصل المرأة رسالة آلية بالرقم الذي استلمه):", "prompt");
                 if (!customPhoneToShare || customPhoneToShare.trim() === "") return; 
                 
                 adminMessage = "[رسالة نظامية]: تم استلام الرسوم، وتبادل الأرقام بنجاح. نتمنى لكم التوفيق.";
