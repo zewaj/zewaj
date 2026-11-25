@@ -18,6 +18,7 @@
   .bar-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; height: 100%; cursor: pointer; }
   .bar-col .pk { background: #6366f1; border-radius: .35rem .35rem 0 0; }
   .bar-col .ct { background: #10b981; }
+  .bar-col .mf { background: #f43f5e; }
   .bar-col.sel .pk, .bar-col.sel .ct { filter: brightness(.85); }
   .bar-col.sel { outline: 2px solid #0f172a; outline-offset: 2px; border-radius: .4rem; }
   #topBar { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 50; overflow: hidden; opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -63,7 +64,7 @@
       <button id="nextBtn" class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-500" aria-label="الفترة التالية"><i class="fas fa-chevron-left"></i></button>
     </div>
     <div class="text-center mt-3">
-      <p class="text-[11px] font-bold text-slate-500">إجمالي الدخل (باقات + رسوم تواصل)</p>
+      <p class="text-[11px] font-bold text-slate-500">إجمالي الدخل (باقات + رسوم تواصل + رسوم زواج محصّلة)</p>
       <p class="font-black text-4xl text-slate-900 mt-1"><span id="totalNum">0</span> <span class="text-base text-slate-400">ريال</span></p>
       <p id="cmpLine" class="text-[11px] font-bold mt-1 text-slate-400"></p>
     </div>
@@ -79,14 +80,23 @@
         <p id="ctCnt" class="text-[10px] font-bold text-emerald-600"></p>
       </div>
     </div>
+    <!-- 💰 [2026-11-25] رسوم الزواج: المحصّل يدخل الدخل بتاريخ الاستلام (من تبويب «التحصيل» في المراسلات)، والمتبقي سطر للاطلاع -->
     <div class="mt-2 rounded-2xl bg-rose-50 border border-rose-100 p-3 flex items-center gap-2">
       <i class="fas fa-ring text-rose-500"></i>
       <div class="flex-1">
-        <p class="text-[11px] font-bold text-rose-700">رسوم زواج مستحقة (لا تُحسب في الإجمالي)</p>
-        <p id="mrCnt" class="text-[10px] font-bold text-rose-600"></p>
+        <p class="text-[11px] font-bold text-rose-700">رسوم زواج محصّلة</p>
+        <p id="mfCnt" class="text-[10px] font-bold text-rose-600"></p>
       </div>
-      <p class="font-black text-lg text-rose-900"><span id="mrSum">0</span> <span class="text-xs">ريال</span></p>
+      <p class="font-black text-lg text-rose-900"><span id="mfSum">0</span> <span class="text-xs">ريال</span></p>
     </div>
+    <a href="admin.html?filter=collect" class="mt-2 rounded-2xl bg-amber-50 border border-amber-200 p-3 flex items-center gap-2">
+      <i class="fas fa-sack-dollar text-amber-500"></i>
+      <div class="flex-1">
+        <p class="text-[11px] font-bold text-amber-800">رسوم زواج لم تُحصَّل بعد (كل الزيجات، خارج الإجمالي)</p>
+        <p id="mrCnt" class="text-[10px] font-bold text-amber-700"></p>
+      </div>
+      <p class="font-black text-lg text-amber-900"><span id="mrSum">0</span> <span class="text-xs">ريال</span></p>
+    </a>
   </section>
 
   <!-- [2026-11-21] لماذا تغيّر الدخل؟ (القسم 40 في الخادم: adminGetInsights) -->
@@ -146,7 +156,7 @@
     <div class="flex items-center justify-between mb-2">
       <p class="text-xs font-black text-slate-600">بنود الفترة المختارة</p>
       <select id="itemFilter" class="text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 bg-white">
-        <option value="all">الكل</option><option value="pkg">الباقات</option><option value="ct">التواصل</option><option value="mr">الزواج</option><option value="edited">المُعدَّلة يدوياً</option>
+        <option value="all">الكل</option><option value="pkg">الباقات</option><option value="ct">التواصل</option><option value="mf">رسوم زواج محصّلة</option><option value="mr">الزيجات</option><option value="edited">المُعدَّلة يدوياً</option>
       </select>
     </div>
     <div id="items" class="space-y-2"></div>
@@ -193,7 +203,7 @@
       <li><b>الباقات</b>: كل باقة أو محادثات إضافية فُعّلت (من سجل الباقات) بسعرها، عدا المحذوفة ومكافآت الإحالة المجانية.</li>
       <li><b>رسوم التواصل</b>: كل طلب سُلّمت فيه الأرقام. الرسم <b>تقديري</b> بأسعار الشيت الحالية: <span id="feeLine"></span>. التواصل المجاني من الباقة يُحسب 0.</li>
       <li><b>التاريخ</b>: تاريخ تسليم الأرقام. الطلبات القديمة (قبل تسجيل هذا التاريخ) تُنسب لآخر حركة عليها، وعليها علامة «تاريخ تقريبي».</li>
-      <li><b>رسوم الزواج</b>: مستحقة لكل طلب أُغلق بالزواج (<span id="mrFeeLine"></span>)، ولا تدخل الإجمالي لأنها لا تُعرف إن سُدّدت.</li>
+      <li><b>رسوم الزواج</b>: مستحقة لكل طلب أُغلق بالزواج (اليوم: <span id="mrFeeLine"></span>، ويُثبَّت المبلغ لحظة الزواج). تدخل الإجمالي فقط حين تضع ✅ «تم الاستلام» في تبويب 💰 التحصيل بالمراسلات، وبتاريخ الاستلام. وتعديل مبلغها من هناك أيضاً.</li>
       <li>أي بند لم يُدفع أو دُفع بمبلغ مختلف: اضغط ✏️ عليه واكتب المبلغ الفعلي (0 = لم يدفع). التعديل يُحفظ في ورقة «تعديلات_الإيرادات».</li>
     </ul>
   </details>
@@ -273,6 +283,7 @@ function allItems() {
   (DATA.packages || []).forEach(x => out.push(Object.assign({ kind: 'pkg' }, x)));
   (DATA.contacts || []).forEach(x => out.push(Object.assign({ kind: 'ct' }, x)));
   (DATA.marriages || []).forEach(x => out.push(Object.assign({ kind: 'mr' }, x)));
+  (DATA.collected || []).forEach(x => out.push(Object.assign({ kind: 'mf' }, x))); // [2026-11-25] رسوم زواج محصّلة (بتاريخ الاستلام)
   return out;
 }
 
@@ -280,14 +291,17 @@ function aggregate(m) {
   const map = {};
   allItems().forEach(it => {
     const k = periodKey(it.d, m) || 'unknown';
-    const a = map[k] || (map[k] = { pkg: 0, pkgN: 0, ct: 0, ctN: 0, ctFree: 0, mr: 0, mrN: 0 });
+    const a = map[k] || (map[k] = { pkg: 0, pkgN: 0, ct: 0, ctN: 0, ctFree: 0, mr: 0, mrN: 0, mf: 0, mfN: 0 });
     const amt = Number(it.amt) || 0;
     if (it.kind === 'pkg') { a.pkg += amt; a.pkgN++; }
     else if (it.kind === 'ct') { a.ct += amt; a.ctN++; if (it.type === 'free' && !amt) a.ctFree++; }
+    else if (it.kind === 'mf') { a.mf += amt; a.mfN++; }
     else { a.mr += amt; a.mrN++; }
   });
   return map;
 }
+// إجمالي الدخل في الفترة: باقات + تواصل + رسوم زواج محصّلة
+function inc(v) { return (v.pkg || 0) + (v.ct || 0) + (v.mf || 0); }
 
 // ---------- الرسم ----------
 function render() {
@@ -295,18 +309,22 @@ function render() {
   const agg = aggregate(mode);
   const curKey = periodKey(DATA.today, mode);
   if (!selKey) selKey = curKey;
-  const z = { pkg: 0, pkgN: 0, ct: 0, ctN: 0, ctFree: 0, mr: 0, mrN: 0 };
+  const z = { pkg: 0, pkgN: 0, ct: 0, ctN: 0, ctFree: 0, mr: 0, mrN: 0, mf: 0, mfN: 0 };
   const a = agg[selKey] || z;
 
   $('periodLabel').textContent = (selKey === curKey ? (mode === 'week' ? 'هذا الأسبوع · ' : 'هذا الشهر · ') : '') + keyLabel(selKey, mode);
   $('periodRange').textContent = keyRange(selKey, mode);
   $('nextBtn').disabled = selKey >= curKey; $('nextBtn').style.opacity = selKey >= curKey ? .35 : 1;
-  $('totalNum').textContent = fmt(a.pkg + a.ct);
+  $('totalNum').textContent = fmt(inc(a));
   $('pkgSum').textContent = fmt(a.pkg); $('pkgCnt').textContent = a.pkgN + ' عملية';
   $('ctSum').textContent = fmt(a.ct); $('ctCnt').textContent = a.ctN + ' تسليم أرقام' + (a.ctFree ? ' (منها ' + a.ctFree + ' مجاني)' : '');
-  $('mrSum').textContent = fmt(a.mr); $('mrCnt').textContent = a.mrN ? a.mrN + ' زواج' : 'لا يوجد';
+  $('mfSum').textContent = fmt(a.mf); $('mfCnt').textContent = a.mfN ? a.mfN + ' عملية استلام' + (a.mrN ? ' · زيجات الفترة ' + a.mrN : '') : (a.mrN ? 'زيجات الفترة ' + a.mrN + ' · لا استلام بعد' : 'لا يوجد');
+  // المتبقي من كل الزيجات (لا الفترة وحدها): ما لم يُعلَّم سداده في تبويب التحصيل
+  let dueAll = 0, dueN = 0;
+  (DATA.marriages || []).forEach(x => { if (x.due > 0) { dueAll += x.due; dueN++; } });
+  $('mrSum').textContent = fmt(dueAll); $('mrCnt').textContent = dueN ? dueN + ' زيجة لم يكتمل سدادها — اضغط للتحصيل' : 'لا متبقٍ';
   const prev = agg[shiftKey(selKey, mode, -1)] || z;
-  const pt = prev.pkg + prev.ct, ct = a.pkg + a.ct;
+  const pt = inc(prev), ct = inc(a);
   const cmp = $('cmpLine');
   if (!pt && !ct) { cmp.textContent = ''; }
   else if (!pt) { cmp.textContent = 'لا دخل في ' + (mode === 'week' ? 'الأسبوع' : 'الشهر') + ' السابق'; cmp.className = 'text-[11px] font-bold mt-1 text-slate-400'; }
@@ -318,12 +336,13 @@ function render() {
 
   // الرسم: آخر 12 فترة حتى الفترة الحالية
   const keys = []; for (let i = 11; i >= 0; i--) keys.push(shiftKey(curKey, mode, -i));
-  const max = Math.max(1, ...keys.map(k => (agg[k] ? agg[k].pkg + agg[k].ct : 0)));
+  const max = Math.max(1, ...keys.map(k => (agg[k] ? inc(agg[k]) : 0)));
   $('chartTitle').textContent = mode === 'week' ? 'آخر 12 أسبوعاً' : 'آخر 12 شهراً';
   $('chart').innerHTML = keys.map(k => {
-    const v = agg[k] || z; const hp = v.pkg / max * 100, hc = v.ct / max * 100;
-    return '<div class="bar-col' + (k === selKey ? ' sel' : '') + '" data-k="' + k + '" title="' + escH(keyLabel(k, mode) + ': ' + fmt(v.pkg + v.ct) + ' ريال') + '">' +
-      '<div class="pk" style="height:' + hp + '%"></div><div class="ct" style="height:' + hc + '%;' + (hp ? '' : 'border-radius:.35rem .35rem 0 0') + '"></div></div>';
+    const v = agg[k] || z; const hm = (v.mf || 0) / max * 100, hp = v.pkg / max * 100, hc = v.ct / max * 100;
+    return '<div class="bar-col' + (k === selKey ? ' sel' : '') + '" data-k="' + k + '" title="' + escH(keyLabel(k, mode) + ': ' + fmt(inc(v)) + ' ريال') + '">' +
+      '<div class="mf" style="height:' + hm + '%;border-radius:.35rem .35rem 0 0"></div>' +
+      '<div class="pk" style="height:' + hp + '%;' + (hm ? 'border-radius:0' : '') + '"></div><div class="ct" style="height:' + hc + '%;' + (hp || hm ? '' : 'border-radius:.35rem .35rem 0 0') + '"></div></div>';
   }).join('');
   $('chartLabels').innerHTML = keys.map(k => '<span>' + escH(keyLabel(k, mode, true)) + '</span>').join('');
   $('chart').querySelectorAll('.bar-col').forEach(el => el.onclick = () => { selKey = el.dataset.k; render(); });
@@ -337,7 +356,7 @@ function render() {
       '<td class="px-3 py-2 font-bold">' + (k === 'unknown' ? 'بلا تاريخ' : escH(keyLabel(k, mode))) + '</td>' +
       '<td class="text-center">' + fmt(v.pkg) + '<span class="text-slate-400 text-[10px]"> (' + v.pkgN + ')</span></td>' +
       '<td class="text-center">' + fmt(v.ct) + '<span class="text-slate-400 text-[10px]"> (' + v.ctN + ')</span></td>' +
-      '<td class="text-center px-3 font-black">' + fmt(v.pkg + v.ct) + '</td></tr>';
+      '<td class="text-center px-3 font-black">' + fmt(inc(v)) + (v.mf ? '<span class="block text-rose-500 text-[10px] font-bold">زواج ' + fmt(v.mf) + '</span>' : '') + '</td></tr>';
   }).join('') || '<tr><td colspan="4" class="text-center text-slate-400 py-4">لا بيانات بعد</td></tr>';
   $('periodRows').querySelectorAll('tr[data-k]').forEach(el => el.onclick = () => { selKey = el.dataset.k; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
   $('moreRows').classList.toggle('hidden', allKeys.length <= rowsShown);
@@ -345,9 +364,9 @@ function render() {
   renderItems();
 
   // إجماليات
-  let tp = 0, tc = 0, np = 0, nc = 0;
-  allItems().forEach(it => { if (it.kind === 'pkg') { tp += +it.amt || 0; np++; } else if (it.kind === 'ct') { tc += +it.amt || 0; nc++; } });
-  $('allSum').textContent = fmt(tp + tc); $('allCnt').textContent = 'باقات ' + fmt(tp) + ' (' + np + ') · تواصل ' + fmt(tc) + ' (' + nc + ')';
+  let tp = 0, tc = 0, np = 0, nc = 0, tm = 0, nm = 0;
+  allItems().forEach(it => { if (it.kind === 'pkg') { tp += +it.amt || 0; np++; } else if (it.kind === 'ct') { tc += +it.amt || 0; nc++; } else if (it.kind === 'mf') { tm += +it.amt || 0; nm++; } });
+  $('allSum').textContent = fmt(tp + tc + tm); $('allCnt').textContent = 'باقات ' + fmt(tp) + ' (' + np + ') · تواصل ' + fmt(tc) + ' (' + nc + ')' + (nm ? ' · زواج ' + fmt(tm) + ' (' + nm + ')' : '');
   const pd = DATA.pending || {}; $('pendSum').textContent = fmt(pd.sum); $('pendCnt').textContent = (pd.count || 0) + ' طلب';
   const f = DATA.fees || {};
   $('feeLine').textContent = 'عادي ' + fmt(f.regular) + '، مع ذات ظروف خاصة ' + fmt(f.womanSpecial) + '، صاحب باقة الاشتراطات الخاصة ' + fmt(f.menSpecial);
@@ -372,10 +391,14 @@ function renderItems() {
       title = 'تسليم أرقام · ' + escH(it.req) + ' <span class="chip ' + (it.type === 'free' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700') + '">' + escH(TYPE_LABEL[it.type] || it.type) + '</span>';
       sub = 'الرجل #' + escH(it.man) + ' · المرأة #' + escH(it.woman) + ' · ' + escH(it.st);
       if (it.dEst) chips += '<span class="chip bg-amber-100 text-amber-700">تاريخ تقريبي</span> ';
+    } else if (it.kind === 'mf') {
+      icon = '<i class="fas fa-sack-dollar text-rose-500"></i>';
+      title = 'رسوم توفيق محصّلة · ' + escH(it.req) + ' <span class="chip bg-rose-100 text-rose-700">' + (it.side === 'm' ? 'من الرجل' : 'من المرأة') + '</span>';
+      sub = 'الرجل #' + escH(it.man) + ' · المرأة #' + escH(it.woman);
     } else {
       icon = '<i class="fas fa-ring text-rose-500"></i>';
-      title = 'زواج · ' + escH(it.req);
-      sub = 'الرجل #' + escH(it.man) + ' · المرأة #' + escH(it.woman);
+      title = 'زواج · ' + escH(it.req) + (it.manAmt !== undefined ? (it.complete ? ' <span class="chip bg-emerald-100 text-emerald-700">✅ سُدّد</span>' : ' <span class="chip bg-amber-100 text-amber-700">متبقٍ ' + fmt(it.due) + '</span>') : '');
+      sub = 'الرجل #' + escH(it.man) + (it.manAmt !== undefined ? ' (' + fmt(it.manAmt) + (it.manPaid ? ' ✅' : '') + ')' : '') + ' · المرأة #' + escH(it.woman) + (it.womanAmt !== undefined ? ' (' + fmt(it.womanAmt) + (it.womanPaid ? ' ✅' : '') + ')' : '');
     }
     if (edited) chips += '<span class="chip bg-violet-100 text-violet-700">معدّل يدوياً' + (Number(it.amt) !== Number(it.est) ? ' (التقدير ' + fmt(it.est) + ')' : '') + '</span> ';
     if (it.on) chips += '<span class="chip bg-slate-100 text-slate-600">' + escH(it.on) + '</span>';
@@ -385,7 +408,9 @@ function renderItems() {
       '<p class="text-[10.5px] text-slate-500 font-bold truncate">' + sub + '</p>' +
       '<p class="text-[10px] text-slate-400 font-bold mt-0.5">' + escH(it.d || 'بلا تاريخ') + ' ' + chips + '</p></div>' +
       '<div class="text-left shrink-0"><p class="font-black text-sm">' + fmt(it.amt) + '</p>' +
-      '<button class="edit-btn text-[11px] text-indigo-600 font-bold mt-1" data-k="' + escH(it.k) + '" aria-label="تعديل المبلغ">✏️ تعديل</button></div></div>';
+      (it.kind === 'pkg' || it.kind === 'ct'
+        ? '<button class="edit-btn text-[11px] text-indigo-600 font-bold mt-1" data-k="' + escH(it.k) + '" aria-label="تعديل المبلغ">✏️ تعديل</button>'
+        : '<a href="admin.html?filter=collect" class="block text-[11px] text-amber-700 font-bold mt-1">💰 التحصيل</a>') + '</div></div>';
   }).join('');
   $('items').querySelectorAll('.edit-btn').forEach(b => b.onclick = () => openEdit(b.dataset.k));
 }
@@ -509,7 +534,7 @@ function insSum(key, m) {
   for (const day in map) { const k = periodKey(day, m); if (k) out[k] = (out[k] || 0) + map[day]; }
   return out;
 }
-function revByPeriod(m) { const agg = aggregate(m); const o = {}; for (const k in agg) o[k] = agg[k].pkg + agg[k].ct; return o; }
+function revByPeriod(m) { const agg = aggregate(m); const o = {}; for (const k in agg) o[k] = inc(agg[k]); return o; }
 function baseKeys(k, m) { const n = m === 'week' ? 8 : 3; const out = []; for (let i = 1; i <= n; i++) out.push(shiftKey(k, m, -i)); return out; }
 function avgOf(map, keys) { if (!keys.length) return 0; return keys.reduce((s, k) => s + (map[k] || 0), 0) / keys.length; }
 function chg(cur, ref) { if (!ref) return cur ? 1 : 0; return (cur - ref) / ref; }

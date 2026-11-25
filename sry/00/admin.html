@@ -170,6 +170,11 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
                 <span id="badgeCourtship" class="absolute -top-1.5 -right-1.5 bg-sky-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden" title="تعارف طويل بلا تحديث - تابعه">0</span>
             </button>
+            <!-- 💰 [2026-11-25] تحصيل رسوم التوفيق: زيجات لم يكتمل سداد الطرفين (القسم 41 في الخادم) -->
+            <button onclick="setFilter('collect')" id="filter-collect" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0 relative" title="تحصيل رسوم التوفيق بعد الزواج">
+                <span class="block w-4 h-4 leading-4 text-[13px] text-center">💰</span>
+                <span id="badgeCollect" class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border border-white shadow-sm hidden">0</span>
+            </button>
             <button onclick="setFilter('archived')" id="filter-archived" class="filter-btn p-2.5 rounded-xl transition-all bg-slate-50 text-slate-500 hover:bg-slate-100 border border-transparent hover:border-slate-200 shrink-0" title="مكتمل / ملغى">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
             </button>
@@ -648,7 +653,7 @@
 
             // 🟢 [2026-10-25] ?filter= من بطاقات admin_home.html (يُضبط قبل أول رسم فلا تومض القائمة الكاملة)
             const urlFilter = new URLSearchParams(location.search).get('filter');
-            if (['action', 'contact', 'acquaintance', 'queue', 'archived'].includes(urlFilter)) setFilter(urlFilter);
+            if (['action', 'contact', 'acquaintance', 'queue', 'archived', 'collect'].includes(urlFilter)) setFilter(urlFilter);
 
             const cachedData = sessionStorage.getItem('admin_requests_cache');
             if (cachedData) {
@@ -1043,6 +1048,12 @@
                 badgeContact.innerText = contactCount;
                 badgeContact.classList.toggle('hidden', contactCount === 0);
             }
+            const badgeCollect = document.getElementById('badgeCollect');
+            if (badgeCollect) {
+                const collectCount = allRequests.filter(mfOpen).length;
+                badgeCollect.innerText = collectCount;
+                badgeCollect.classList.toggle('hidden', collectCount === 0);
+            }
             const badgeCourtship = document.getElementById('badgeCourtship');
             if (badgeCourtship) {
                 badgeCourtship.innerText = courtshipPendingCount;
@@ -1077,6 +1088,8 @@
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-emerald-600 text-white shadow-sm border-transparent shrink-0 relative`;
                 } else if (type === 'acquaintance') {
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-sky-600 text-white shadow-sm border-transparent shrink-0 relative`;
+                } else if (type === 'collect') {
+                    activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-amber-500 text-white shadow-sm border-transparent shrink-0 relative`;
                 } else if (type === 'failed') {
                     activeBtn.className = `filter-btn p-2.5 rounded-xl transition-all bg-rose-600 text-white shadow-sm border-transparent shrink-0 relative`;
                 } else {
@@ -1120,7 +1133,8 @@
                 else if (currentFilterType === 'queue') matchesStatus = !isClosed && s.includes('قائمة الانتظار');
                 else if (currentFilterType === 'acquaintance') matchesStatus = (s.includes('مرحلة التعارف') || s.includes('نزاع') || s.includes('تأكيد')) && courtshipAgeMatches(req); // 🟢 يظهر في قائمة التعارف والأكشن (مع تصفية مدة التعارف)
                 else if (currentFilterType === 'contact') matchesStatus = !isClosed && !s.includes('مرحلة التعارف') && (req.hasRequestedContact || s.includes('موافقة تبادل أرقام') || s.includes('بانتظار الدفع'));
-                else if (currentFilterType === 'archived') matchesStatus = isClosed; 
+                else if (currentFilterType === 'archived') matchesStatus = isClosed;
+                else if (currentFilterType === 'collect') matchesStatus = mfOpen(req); // 💰 زيجات لم يكتمل سداد رسومها
                 else if (currentFilterType === 'failed') matchesStatus = pendingAdminActions.some(a => a.reqId === req.reqId && a.state === 'failed');
 
                 if (!matchesStatus) return false;
@@ -1168,6 +1182,8 @@
                 }
                 // مرحلة التعارف: الأقدم تسليماً للأرقام أولاً (هو الأولى بالمتابعة)
                 if (priorityA === 7) return courtshipDaysOf(b) - courtshipDaysOf(a);
+                // 💰 التحصيل: الأقدم زواجاً أولاً (الأطول انتظاراً للسداد)
+                if (currentFilterType === 'collect') return (dateA || Number.MAX_SAFE_INTEGER) - (dateB || Number.MAX_SAFE_INTEGER);
                 return dateB - dateA;
             });
             
@@ -1191,6 +1207,9 @@
                 if (isClosed) {
                     let archiveText = s.includes('تم الزواج') ? "تم الزواج 💍" : (s.includes('إنهاء التعارف') ? "مغلق - عدم توفيق ❌" : (s.includes('تأخر في الرد') ? "مغلق - تأخر في الرد ⏰" : "مغلق / مؤرشف"));
                     statusBadge = `<span class="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300 shrink-0 whitespace-nowrap">${archiveText}</span>`;
+                    if (req.marriageFee) statusBadge += req.marriageFee.complete
+                        ? `<span class="bg-emerald-100 text-emerald-700 text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">✅ سُدّدت الرسوم</span>`
+                        : `<span class="bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-amber-600 shrink-0 whitespace-nowrap">💰 متبقٍ ${mfFmt(req.marriageFee.due)}</span>`;
                 } else if (deletedSideText(req)) {
                     statusBadge = `<span class="bg-slate-700 text-white text-[10px] font-extrabold px-2 py-0.5 rounded border border-slate-800 animate-pulse shadow-md shrink-0 whitespace-nowrap">${deletedSideIcon(req)} ${deletedSideText(req)} - راجعها</span>`;
                 } else if (req.delayPending) {
@@ -1339,7 +1358,7 @@
                     if (isSendingNow) {
                         actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl animate-pulse">⏳ جاري معالجة الإجراء في الخلفية...</div>`;
                     } else if (isClosed) {
-                        actionButtonHTML = `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl">هذا الطلب مغلق ومؤرشف في سجلات المنصة 🗄️</div>`;
+                        actionButtonHTML = collectPanelHtml(req) + `<div class="text-center text-xs text-slate-500 font-bold p-3 bg-slate-50 border border-slate-200 rounded-xl">هذا الطلب مغلق ومؤرشف في سجلات المنصة 🗄️</div>`;
                     } else if (s.includes('بانتظار تأكيد') || s.includes('يوجد نزاع')) {
                         let alertText = s.includes('يوجد نزاع') 
                             ? "🚨 حالة نزاع: الأطراف غير متفقين على نتيجة التعارف. يرجى التقصي عبر الواتساب ثم فرض الإغلاق الإداري لحسم النزاع وتحرير الكوتا."
@@ -1984,7 +2003,7 @@
             'فارق العمر غير مناسب لي.',
             'منطقة السكن غير مناسبة لي.',
             'أرغب بزواج بظروف خاصة.',
-            'أبحث عن زواج معلن فقط.',
+            'لا أرغب بزواج مسيار أو غير معلن من الطرفين.',
             'أرغب بالزواج من سعودي فقط، أو من نفس جنسيتي.',
             'الوضع المادي أو الشروط غير مناسبة لي.',
             'أبحث عن تكافؤ نسب معين.'
@@ -2110,6 +2129,81 @@
         }
 
         // 🤝 [2026-10-21] تمديد مهلة تعارف طويل (يُنفَّذ بالخلفية بنفس نمط delayRunBg؛ لا رسالة للعميلين)
+        // 💰 [2026-11-25] تحصيل رسوم التوفيق بعد الزواج (القسم 41 في الخادم: adminSetMarriageFee).
+        // req.marriageFee = { man, woman, manPaid, womanPaid, complete, due } لكل طلب «مغلق - تم الزواج» (يشمل الزيجات القديمة).
+        // الأعمدة بالجنس (الرجل/المرأة) لا بالطرف الأول/الثاني. رسم 0 = لا شيء عليه.
+        window.mfBusy = window.mfBusy || {};
+        function mfOpen(req) { return !!(req && req.marriageFee && !req.marriageFee.complete); }
+        function mfFmt(n) { return (Number(n) || 0).toLocaleString('en-US') + ' ريال'; }
+        function mfDaysWord(dateStr) {
+            const t = getTimestamp(dateStr); if (!t) return '';
+            const d = Math.floor((Date.now() - t) / 86400000);
+            return d <= 0 ? 'اليوم' : (d === 1 ? 'منذ يوم' : d === 2 ? 'منذ يومين' : 'منذ ' + d + (d <= 10 ? ' أيام' : ' يوماً'));
+        }
+        function collectPanelHtml(req) {
+            const f = req.marriageFee; if (!f) return '';
+            const rid = jsq(req.reqId);
+            if (window.mfBusy[req.reqId]) return `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-center text-xs font-bold text-amber-700 flex items-center justify-center gap-2"><span class="w-4 h-4 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin"></span> جاري حفظ التحصيل...</div>`;
+            const side = (who, label, amt, paid) => {
+                const amtBtn = `<button type="button" onclick="mfEditAmount('${rid}','${who}')" class="text-[12px] font-black text-slate-800 hover:text-indigo-700" title="تعديل المبلغ">${mfFmt(amt)} ✏️</button>`;
+                if (!(amt > 0)) return `<div class="flex-1 rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-center"><p class="text-[11px] font-black text-slate-500">${label}</p>${amtBtn}<p class="text-[10px] text-slate-400 font-bold">لا رسوم عليه</p></div>`;
+                if (paid) return `<div class="flex-1 rounded-xl border-2 border-emerald-300 bg-emerald-50 p-2.5 text-center"><p class="text-[11px] font-black text-emerald-800">${label} ✅ سدّد</p>${amtBtn}<p class="text-[10px] text-emerald-700 font-bold">استُلم ${escH(paid)}</p><button type="button" onclick="mfSet('${rid}','${who}','unpaid')" class="text-[10px] text-slate-400 hover:text-rose-600 underline mt-1">إلغاء العلامة</button></div>`;
+                return `<div class="flex-1 rounded-xl border-2 border-amber-300 bg-amber-50 p-2.5 text-center"><p class="text-[11px] font-black text-amber-800">${label} ⏳ لم يسدّد</p>${amtBtn}
+                    <button type="button" onclick="mfSet('${rid}','${who}','paid')" class="w-full mt-1.5 py-2 text-[11px] font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm">✅ تم الاستلام</button>
+                    <button type="button" onclick="mfRemind('${rid}','${who}')" class="w-full mt-1 py-1.5 text-[10px] font-bold bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-lg">📲 تذكير بالسداد</button></div>`;
+            };
+            const head = f.complete
+                ? `<p class="text-xs font-black text-emerald-700 text-center mb-2">✅ اكتمل سداد رسوم التوفيق</p>`
+                : `<p class="text-xs font-black text-amber-800 text-center mb-2">💰 تحصيل رسوم التوفيق · المتبقي ${mfFmt(f.due)} · الزواج ${escH(mfDaysWord(req.lastActionDate || req.date))}</p>`;
+            return `<div class="border ${f.complete ? 'border-emerald-200 bg-white' : 'border-amber-300 bg-amber-50/40'} rounded-xl p-3 mb-3 shadow-sm">${head}<div class="flex gap-2">${side('man', 'الرجل', f.man, f.manPaid)}${side('woman', 'المرأة', f.woman, f.womanPaid)}</div></div>`;
+        }
+        async function mfCall(reqId, who, op, amount) {
+            const req = allRequests.find(x => x.reqId === reqId);
+            if (!req || window.mfBusy[reqId]) return null;
+            window.mfBusy[reqId] = true; qaInflight++; renderTable();
+            let r;
+            try { r = await qaPost({ action: 'adminSetMarriageFee', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, who: who, op: op, amount: amount }, 60000); }
+            catch (e) { r = { ok: false, message: 'تعذر الاتصال بالخادم.' }; }
+            qaInflight--; delete window.mfBusy[reqId];
+            if (r.ok && r.data && r.data.marriageFee) { req.marriageFee = r.data.marriageFee; sessionStorage.removeItem('admin_requests_cache'); }
+            renderTable();
+            if (!r.ok && !handleAuthError(r.message)) await showMsgModal('⚠️ لم يُحفظ', r.message || 'تعذر الحفظ. حدّث اللوحة وتحقق.');
+            return r;
+        }
+        async function mfSet(reqId, who, op) {
+            const req = allRequests.find(x => x.reqId === reqId); if (!req || !req.marriageFee) return;
+            const label = who === 'man' ? 'الرجل' : 'المرأة';
+            const amt = who === 'man' ? req.marriageFee.man : req.marriageFee.woman;
+            const ok = await showMsgModal(op === 'paid' ? '💰 تأكيد الاستلام' : 'إلغاء علامة السداد',
+                op === 'paid' ? `تأكيد استلام ${mfFmt(amt)} من ${label}؟ (طلب ${reqId})` : `إلغاء علامة سداد ${label}؟ سيعود الطلب لقائمة التحصيل.`, 'confirm');
+            if (!ok) return;
+            const r = await mfCall(reqId, who, op);
+            if (r && r.ok) { const t = qaToast(r.data.marriageFee.complete ? '✅ اكتمل سداد ' + reqId : '✔ تم الحفظ', 'ok'); setTimeout(t.remove, 4000); }
+        }
+        async function mfEditAmount(reqId, who) {
+            const req = allRequests.find(x => x.reqId === reqId); if (!req || !req.marriageFee) return;
+            const label = who === 'man' ? 'الرجل' : 'المرأة';
+            const v = await showMsgModal('تعديل رسوم ' + label, `المبلغ الحالي ${mfFmt(who === 'man' ? req.marriageFee.man : req.marriageFee.woman)}. اكتب المبلغ الجديد بالريال (0 = لا شيء عليه):`, 'prompt');
+            if (v === null || v === undefined || String(v).trim() === '') return;
+            const n = Number(String(v).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[^0-9.]/g, ''));
+            if (isNaN(n)) { await showMsgModal('مبلغ غير صالح', 'اكتب رقماً فقط.'); return; }
+            const r = await mfCall(reqId, who, 'amount', n);
+            if (r && r.ok) { const t = qaToast('✔ عُدّل المبلغ إلى ' + mfFmt(n), 'ok'); setTimeout(t.remove, 4000); }
+        }
+        async function mfRemind(reqId, who) {
+            const req = allRequests.find(x => x.reqId === reqId); if (!req) return;
+            // النافذة تُفتح لحظة الضغط (قبل انتظار الخادم) حتى لا يحجبها المتصفح كنافذة منبثقة
+            const win = window.open('', '_blank');
+            const t = qaToast('⏳ تجهيز رسالة التذكير...', 'info', true);
+            let r;
+            try { r = await qaPost({ action: 'adminSetMarriageFee', adminToken: state.adminToken, reqId: reqId, rowHint: req.rowIndex, who: who, op: 'remind' }, 60000); }
+            catch (e) { r = { ok: false, message: 'تعذر الاتصال بالخادم.' }; }
+            t.remove();
+            if (!r.ok || !r.data || !r.data.phone) { if (win) win.close(); if (!handleAuthError(r.message)) await showMsgModal('⚠️ تعذر التجهيز', r.message || 'لا يوجد رقم جوال لهذا الطرف.'); return; }
+            const url = `https://wa.me/${r.data.phone}?text=${encodeURIComponent(r.data.text)}`;
+            if (win) win.location.href = url; else window.open(url, '_blank');
+        }
+
         async function courtshipExtend(reqId, days) {
             const req = allRequests.find(x => x.reqId === reqId);
             if (!req || window.delayBusy[reqId]) return;

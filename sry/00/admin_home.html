@@ -135,6 +135,12 @@
       <span class="num !text-xl text-slate-800" data-k="courtship">0</span>
     </a>
   </div>
+  <!-- 💰 [2026-11-25] تحصيل رسوم التوفيق بعد الزواج (القسم 41 في الخادم) -->
+  <a href="admin.html?filter=collect" class="wide bg-amber-50 text-amber-800 border border-amber-200 mt-2.5">
+    <i class="fas fa-sack-dollar text-xl"></i>
+    <span><b class="block text-sm">بانتظار تحصيل رسوم التوفيق</b><span class="text-[11px] opacity-80" id="collectSub">زيجات لم يكتمل سداد رسومها</span></span>
+    <span class="num" data-k="collect">0</span>
+  </a>
 
   <!-- [2026-11-01] إحصائية المُحيلين (القسم 34 في الخادم): تُحمَّل عند الفتح فقط حتى لا تثقل تحديث الأرقام الدوري -->
   <p class="text-xs font-black text-slate-500 mt-5 mb-2">الإحالات (من شاركوا رابطهم)</p>
@@ -262,6 +268,8 @@ function render(sum, fromCache) {
   setNum('newAll', sum.profiles && p.newAll !== undefined ? p.newAll : null, fl);
   setNum('packages', sum.packages === undefined ? null : sum.packages, fl);
   setNum('courtship', sum.messages && m.courtship !== undefined ? m.courtship : null, fl); // خادم قبل 2026-11-06 ← «—»
+  setNum('collect', sum.messages && m.collect !== undefined ? m.collect : null, fl); // خادم قبل 2026-11-25 ← «—»
+  document.getElementById('collectSub').textContent = sum.messages && m.collect ? `المتبقي ${(m.collectSum || 0).toLocaleString('en-US')} ريال` : 'زيجات لم يكتمل سداد رسومها';
   shownAt = sum.builtAt || Date.now();
   document.getElementById('newTodaySub').textContent = p.newToday ? `سجّل اليوم ${p.newToday} (رجال ${p.newTodayMen || 0} · نساء ${p.newTodayWomen || 0})` : (sum.profiles ? 'لا تسجيلات اليوم' : '');
   document.getElementById('outcomeSub').textContent = sum.messages && m.outcome ? `زواج ${m.outcomeMarriage} · عدم توفيق ${m.outcomeEnd}` : 'زواج أو عدم توفيق بانتظار التأكيد';
@@ -414,7 +422,7 @@ function showHome() {
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('homeView').classList.remove('hidden');
   let cached = null; try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch (e) {}
-  if (cached) render(cached, true); else ['action','outcome','newAll','review','publish','active','contact','packages','courtship'].forEach(k => setNum(k, undefined));
+  if (cached) render(cached, true); else ['action','outcome','newAll','review','publish','active','contact','packages','courtship','collect'].forEach(k => setNum(k, undefined));
   markReady();
   load(false, true);
   waPauseLoad();
