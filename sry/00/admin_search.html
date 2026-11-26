@@ -1550,28 +1550,256 @@
             document.querySelectorAll('.match-group-block').forEach(g => { g.style.display = (t === 'all' || g.getAttribute('data-group') === t) ? 'block' : 'none'; });
         };
 
+        // 🟢 [2026-11-26] المراسلة بالنيابة من المطابقة (القسم 42 في الخادم). حالة النافذة المفتوحة الآن:
+        let matchState = null;
+
+        // طلب خام: يُرجع رد الخادم كما هو (apiCall ترمي عند success:false فتضيع رسالة الخادم وعلامة قائمة الانتظار)
+        async function matchPost(payload, timeoutMs = 60000) {
+            const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(Object.assign({ adminToken: state.adminToken }, payload)), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, redirect: 'follow', signal: controller.signal });
+                const data = await res.json();
+                if (data && data.success === false && /مصرح|Invalid Admin Token/.test(data.message || '')) { localStorage.removeItem('adminToken'); state.adminToken = null; try { checkAuth(); } catch (eA) {} }
+                return data;
+            } finally { clearTimeout(timer); }
+        }
+
+        function matchWords() { return matchState.isMale ? { her: 'ها', them: 'لها' } : { her: 'ه', them: 'له' }; }
+        function matchFind(ref) { return matchState.matches.find(m => String(m.refId) === String(ref)); }
+
+        function matchCostFor(m) {
+            const c = matchState.ctx && matchState.ctx.costs; if (!c) return null;
+            if (c.bySpecialWoman !== null && c.bySpecialWoman !== undefined) return Number(c.bySpecialWoman);
+            const special = /خاص|ظروف|اشتراطات|مسيار/.test(m.marriageType || '');
+            return Number(matchState.isMale && special ? c.specialWoman : c.regular);
+        }
+
+        // نص البيانات التي تذهب للعميل: رقم الملف والنبذة المختصرة ورابط الملف فقط (لا جوال ولا معلومات سرية)
+        function matchShareText(refs) {
+            const blocks = refs.map(r => { const m = matchFind(r); return `ملف #${m.refId}\n${decodeFromHTML(m.shortBio || 'لا توجد نبذة')}${buildProfileShareLink(m.refId)}`; });
+            const one = blocks.length === 1;
+            return `السلام عليكم، ${one ? 'هذه بيانات ملف قد يناسبكم' : 'هذه ملفات قد تناسبكم'}:\n\n${blocks.join('\n\n———\n\n')}\n\n${one ? 'هل البيانات مناسبة لكم؟' : 'أي منها يناسبكم؟'}`;
+        }
+
+        function matchCopyText(text) {
+            const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+            let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(t); return ok;
+        }
+
+        function matchLogShare(refs, method) {
+            if (!matchState) return;
+            const ms = matchState, today = new Date().toLocaleDateString('en-CA').replace(/-/g, '/');
+            if (ms.ctx) {
+                refs.forEach(r => { const prev = ms.ctx.shares[r]; ms.ctx.shares[r] = { at: today, method: method === 'wa' ? 'واتساب' : 'نسخ', count: prev ? prev.count + 1 : 1 }; });
+                matchPaintCards();
+            }
+            matchPost({ action: 'adminLogMatchShare', refId: ms.refId, targetRefIds: refs, method: method })
+                .then(r => { if (!r || !r.success) showToast('لم تُحفظ علامة «عُرضت عليه»', 'warning'); })
+                .catch(() => showToast('لم تُحفظ علامة «عُرضت عليه»', 'warning'));
+        }
+
+        window.matchCopy = function(ref) {
+            const refs = ref ? [String(ref)] : Array.from(matchState.selected);
+            if (!refs.length) return;
+            if (!matchCopyText(matchShareText(refs))) return showToast('فشل النسخ', 'error');
+            showToast(refs.length === 1 ? 'نُسخت البيانات (بلا رقم الجوال)' : `نُسخت بيانات ${refs.length} ملفات`);
+            matchLogShare(refs, 'copy');
+        };
+
+        window.matchSendToClient = function(ref) {
+            const refs = ref ? [String(ref)] : Array.from(matchState.selected);
+            if (!refs.length) return;
+            if (!matchState.clientPhone) return showToast('رقم جوال العميل غير متوفر', 'error');
+            openWaFromBase64(matchState.clientPhone, encodeBase64(matchShareText(refs)));
+            matchLogShare(refs, 'wa');
+        };
+
+        window.matchToggleSelect = function(ref, checked) {
+            if (checked) matchState.selected.add(String(ref)); else matchState.selected.delete(String(ref));
+            matchPaintSelection();
+        };
+        window.matchClearSelection = function() {
+            matchState.selected.clear(); document.querySelectorAll('.match-pick').forEach(c => c.checked = false); matchPaintSelection();
+        };
+        function matchPaintSelection() {
+            const bar = document.getElementById('match-select-bar'); if (!bar) return;
+            bar.style.display = matchState.selected.size ? 'flex' : 'none';
+            const n = document.getElementById('match-select-count'); if (n) n.textContent = matchState.selected.size;
+        }
+
+        window.matchToggleThread = function(ref) {
+            const box = document.getElementById(`mthread-${ref}`); if (box) box.classList.toggle('hidden');
+        };
+
+        // رأس النافذة (رصيد العميل وطلباته) وشارات كل بطاقة
+        function matchPaintClient() {
+            const box = document.getElementById('match-client-ctx'); if (!box || !matchState) return;
+            const c = matchState.ctx && matchState.ctx.client;
+            if (!c) {
+                box.innerHTML = matchState.ctxError
+                    ? `<span class="text-red-600">${escH(matchState.ctxError)}</span> <button onclick="matchLoadContext()" class="underline text-indigo-700 mr-1">إعادة المحاولة</button>`
+                    : '<span class="text-slate-400">جاري تحميل رصيد العميل وطلباته وسجل ما عُرض عليه…</span>';
+                return;
+            }
+            const full = c.activeCount >= c.maxActive;
+            box.innerHTML = `<span class="bg-white border border-indigo-100 rounded px-2 py-1">💎 رصيده: ${c.hasWallet ? Number(c.balance) : 'لا توجد محفظة'}</span>
+                <span class="bg-white border rounded px-2 py-1 ${full ? 'border-red-300 text-red-600' : 'border-indigo-100'}">💬 طلباته المفتوحة: ${Number(c.activeCount)} من ${Number(c.maxActive)}</span>
+                ${c.banned ? '<span class="bg-red-600 text-white rounded px-2 py-1">🚫 الحساب محظور</span>' : ''}`;
+        }
+
+        function matchPaintCards() {
+            if (!matchState || !matchState.ctx) return;
+            const w = matchWords();
+            matchState.matches.forEach(m => {
+                const ref = String(m.refId);
+                const box = document.getElementById(`mrel-${ref}`); if (!box) return;
+                const rel = matchState.ctx.relations[ref], share = matchState.ctx.shares[ref];
+                let html = '';
+                if (rel) {
+                    const cls = rel.open ? 'bg-indigo-50 border-indigo-300 text-indigo-800' : 'bg-amber-50 border-amber-300 text-amber-800';
+                    html += `<div class="border rounded-lg p-2 mb-2 text-[11px] font-bold ${cls}">
+                        <div class="flex justify-between items-center gap-2"><span>${rel.open ? '💬 بينهما طلب مفتوح' : '🕘 تواصل سابق'}${rel.count > 1 ? ` (${Number(rel.count)} طلبات)` : ''}: ${escH(rel.status)}</span>
+                        ${rel.thread ? `<button onclick="matchToggleThread('${jsq(ref)}')" class="shrink-0 underline">المحادثة</button>` : ''}</div>
+                        <div class="font-medium opacity-80 mt-0.5">${rel.sentByClient ? 'أرسله صاحب الملف' : 'وصل صاحبَ الملف من هذا الطرف'} · <span class="font-mono">${escH(rel.reqId)}</span></div>
+                        <div id="mthread-${escH(ref)}" class="hidden mt-2 bg-white text-slate-700 rounded p-2 max-h-52 overflow-y-auto whitespace-pre-wrap font-medium leading-6">${escH(decodeFromHTML(String(rel.thread || '').replace(/<\/?strong>/g, '')))}</div>
+                    </div>`;
+                }
+                if (share) html += `<div class="border border-slate-300 bg-slate-100 text-slate-600 rounded-lg px-2 py-1.5 mb-2 text-[11px] font-bold">👁️ عُرضت بيانات${w.her} على صاحب الملف (${escH(share.method)}) يوم ${escH(share.at)}${share.count > 1 ? ` · ${Number(share.count)} مرات` : ''}</div>`;
+                box.innerHTML = html;
+                const btn = document.getElementById(`msend-${ref}`);
+                if (btn && !btn.dataset.blocked) {
+                    const open = !!(rel && rel.open);
+                    btn.disabled = open;
+                    btn.classList.toggle('opacity-40', open); btn.classList.toggle('cursor-not-allowed', open);
+                }
+            });
+        }
+
+        window.matchLoadContext = async function() {
+            const ms = matchState; if (!ms) return;
+            ms.ctxError = ''; matchPaintClient();
+            try {
+                const r = await matchPost({ action: 'adminGetMatchContext', refId: ms.refId });
+                if (!r || !r.success) throw new Error((r && r.message) || 'تعذر التحميل');
+                ms.ctx = r;
+            } catch (e) {
+                ms.ctxError = /غير معروف/.test(e.message) ? 'الخادم لم يُحدَّث بعد: انشر نسخة code_artifact الجديدة.' : 'تعذر تحميل رصيد العميل وسجل التواصل.';
+            }
+            if (matchState !== ms) return;
+            matchPaintClient(); matchPaintCards();
+        };
+
+        // ---------- نافذة تأكيد إرسال طلب التواصل بالنيابة (طبقة فوق نافذة المطابقة فتبقى القائمة كما هي) ----------
+        window.matchCloseSend = function() {
+            const o = document.getElementById('match-send-overlay'); if (o && !o.dataset.busy) o.remove();
+        };
+
+        window.matchOpenSend = function(ref) {
+            const m = matchFind(ref); if (!m || !matchState) return;
+            const c = matchState.ctx && matchState.ctx.client;
+            if (!c) return showToast(matchState.ctxError || 'انتظر حتى يكتمل تحميل رصيد العميل', 'warning');
+            if (c.banned) return showToast('حساب صاحب الملف محظور', 'error');
+            const cost = matchCostFor(m);
+            const canCharge = c.hasWallet && Number(c.balance) >= cost;
+            const full = c.activeCount >= c.maxActive;
+            const mName = [m.name, m.familyName].filter(Boolean).join(' ') || 'بدون اسم';
+            const pending = /مراجعة|جديد|انتظار/.test(m.profileStatus || '');
+            const row = 'flex items-start gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer';
+            const o = document.createElement('div');
+            o.id = 'match-send-overlay'; o.className = 'fixed inset-0 z-[60] bg-slate-900/70 flex items-center justify-center p-3';
+            o.innerHTML = `<div class="bg-white rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto p-5 text-xs font-bold text-slate-700">
+                <h4 class="font-black text-sm text-slate-800 mb-3">📨 إرسال طلب تواصل بالنيابة</h4>
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-3 leading-6">
+                    <div>من: ${escH(matchState.clientName || 'صاحب الملف')} <span class="font-mono">#${escH(matchState.refId)}</span></div>
+                    <div>إلى: ${escH(mName)} <span class="font-mono">#${escH(m.refId)}</span></div>
+                    <div class="text-indigo-700">رصيده ${c.hasWallet ? Number(c.balance) : 0} · طلباته المفتوحة ${Number(c.activeCount)} من ${Number(c.maxActive)}</div>
+                </div>
+                ${pending ? '<div class="bg-orange-50 border border-orange-300 text-orange-700 rounded-xl p-2.5 mb-3">⚠️ الملف المستقبِل لم يُعتمد بعد.</div>' : ''}
+                <div class="space-y-2">
+                    <label class="${row} ${canCharge ? '' : 'opacity-50'}"><input type="radio" name="ms-charge" value="yes" ${canCharge ? 'checked' : 'disabled'}><span>خصم النقاط من رصيده (${cost})${canCharge ? '' : ' — الرصيد لا يكفي'}</span></label>
+                    <label class="${row}"><input type="radio" name="ms-charge" value="no"><span>دون خصم<span class="block font-medium text-slate-500 mt-0.5">لا تُرجَع له نقاط ولا ترضية إن أُلغي الطلب أو اعتُذر منه.</span></span></label>
+                    ${full ? `<label class="${row} !bg-red-50 !border-red-300"><input type="checkbox" id="ms-override"><span class="text-red-700">بلغ حد الطلبات المفتوحة: أرسل رغم ذلك</span></label>` : ''}
+                    <label class="${row} !bg-amber-50 !border-amber-300"><input type="checkbox" id="ms-agreed"><span>صاحب الملف اطّلع على البيانات وموافق على الإرسال</span></label>
+                    <label class="${row}"><input type="checkbox" id="ms-notify" checked><span>أبلغه بالواتساب (رسالة آلية فيها البيانات ورابط المحادثة)</span></label>
+                </div>
+                <div id="ms-result" class="mt-3"></div>
+                <div class="flex gap-2 mt-4">
+                    <button id="ms-cancel" onclick="matchCloseSend()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl">تراجع</button>
+                    <button id="ms-submit" onclick="matchSubmitSend('${jsq(m.refId)}', false)" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl">إرسال الطلب</button>
+                </div></div>`;
+            document.body.appendChild(o);
+        };
+
+        window.matchSubmitSend = async function(ref, forceQueue) {
+            const o = document.getElementById('match-send-overlay'); const ms = matchState; if (!o || !ms || o.dataset.busy) return;
+            const result = o.querySelector('#ms-result'), submit = o.querySelector('#ms-submit'), cancel = o.querySelector('#ms-cancel');
+            const note = (text, cls) => { result.innerHTML = `<div class="rounded-xl p-3 leading-6 ${cls}">${text}</div>`; };
+            const picked = o.querySelector('input[name="ms-charge"]:checked');
+            if (!picked) return note('اختر: خصم النقاط أو دون خصم.', 'bg-red-50 text-red-700');
+            if (!o.querySelector('#ms-agreed').checked) return note('أكّد موافقة صاحب الملف على الإرسال.', 'bg-red-50 text-red-700');
+            const override = o.querySelector('#ms-override');
+            if (override && !override.checked) return note('بلغ حد الطلبات المفتوحة. أشّر خانة التجاوز للإرسال.', 'bg-red-50 text-red-700');
+            const opts = { charge: picked.value === 'yes', overrideLimit: !!(override && override.checked), notifyClient: o.querySelector('#ms-notify').checked, clientAgreed: true, forceQueue: forceQueue };
+            // نفس opId لنفس الاختيارات: لو ضاع الرد ثم أُعيد الإرسال لا يتكرر الطلب
+            const sig = JSON.stringify([ref, opts]);
+            ms.opIds = ms.opIds || {};
+            if (!ms.opIds[sig]) ms.opIds[sig] = 'ams_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            o.dataset.busy = '1'; submit.disabled = true; cancel.disabled = true; submit.textContent = 'جاري الإرسال…';
+            note('قد يستغرق حتى دقيقة، لا تغلق الصفحة.', 'bg-slate-100 text-slate-600');
+            let res = null;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try { res = await matchPost({ action: 'adminSendContact', refId: ms.refId, targetRefId: ref, opts: opts, opId: ms.opIds[sig] }, 70000); }
+                catch (e) { res = null; }
+                if (res && !res.pending && res.message !== 'النظام مشغول.') break;
+                if (attempt < 2) { note('لم يصل الرد بعد، نتأكد تلقائياً…', 'bg-amber-50 text-amber-800'); await new Promise(r => setTimeout(r, 5000)); }
+            }
+            delete o.dataset.busy; cancel.disabled = false; submit.disabled = false; submit.textContent = 'إرسال الطلب';
+            if (!res) return note('لم يصل رد الخادم. راجع المراسلات قبل المحاولة من جديد. الضغط هنا مرة أخرى بنفس الاختيارات لا يكرر الطلب خلال 6 ساعات.', 'bg-red-50 text-red-700');
+            if (res.requireQueueConfirm) {
+                note(`هذا الملف مشغول بتواصل مع طرف آخر. يمكن حجز دور رقم ${Number(res.queuePos) || 1} في قائمة الانتظار.`, 'bg-amber-50 text-amber-800');
+                submit.textContent = 'احجز دوراً'; submit.setAttribute('onclick', `matchSubmitSend('${jsq(ref)}', true)`);
+                return;
+            }
+            if (!res.success) return note(escH(res.message || 'تعذر الإرسال'), 'bg-red-50 text-red-700');
+            note(`✅ ${escH(res.message)}${opts.notifyClient ? (res.clientNotified ? '<br>وأُرسل إشعار لصاحب الملف.' : (res.duplicate ? '' : '<br>⚠️ لم يُرسل إشعار صاحب الملف.')) : ''}<br><span class="font-mono">${escH(res.reqId || '')}</span>`, 'bg-emerald-50 text-emerald-800');
+            submit.remove(); cancel.textContent = 'تم';
+            if (ms.ctx) {
+                const prev = ms.ctx.relations[ref];
+                ms.ctx.relations[ref] = { reqId: res.reqId || '', status: res.queued ? 'في قائمة الانتظار' : 'بانتظار الطرف الثاني', open: true, sentByClient: true, thread: '', count: prev ? prev.count + 1 : 1 };
+                ms.ctx.client.activeCount++;
+                if (res.charged) ms.ctx.client.balance = res.balance;
+                if (matchState === ms) { matchPaintClient(); matchPaintCards(); }
+            }
+        };
+
         window.actionMatch = async function(refId, clientName, isMale) {
             openModal('جاري المطابقة...', '<div class="py-12 flex justify-center"><div class="loader border-indigo-600 border-t-transparent w-10 h-10 border-4"></div></div>', '', 'p-4 w-full');
             try {
-                const res = await apiCall({ action: "adminGetMatches", refId: refId, adminToken: state.adminToken });
+                const res = await apiCall({ action: "adminGetMatches", refId: refId, adminToken: state.adminToken }, 1, SEARCH_TIMEOUT);
                 let matches = (res.matches || []).map(m => { let p = parseInt(m.matchPercentage) || 0; return { ...m, numScore: p, cat: p >= 75 ? 'high' : (p >= 50 ? 'med' : 'low') }; }).filter(m => m.numScore >= 25).sort((a, b) => b.numScore - a.numScore);
-                
+
                 const myP = state.searchResults.find(p => p.refId === refId);
                 const myBioBase64 = encodeBase64(myP ? decodeFromHTML(myP.shortBio) : `تواصل بخصوص ملف #${refId}`);
-                
+
                 if (!matches.length) return openModal(`مطابقات #${refId}`, `<div class="text-center py-10 font-bold text-slate-400">لا توجد مطابقات مناسبة.</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">إغلاق</button>`, 'p-4 w-full');
+
+                const myPhone = myP?.phone ? myP.phone.toString().replace(/\D/g, '') : '';
+                matchState = { refId: String(refId), clientName: clientName, isMale: !!isMale, clientPhone: myPhone, matches: matches, selected: new Set(), ctx: null, ctxError: '' };
+                const w = matchWords();
 
                 let primaryClientInfo = `
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 shadow-sm relative overflow-hidden">
                     <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
                     <div class="text-[10px] font-black text-indigo-600 mb-2 flex items-center gap-1.5"><i class="fas fa-bullseye"></i> بيانات صاحب الملف للمقارنة:</div>
                     <div class="flex items-center gap-2 text-[11px] font-bold text-indigo-900 flex-wrap">
-                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt opacity-60"></i> ${myP?.city || '-'}</span> <span class="text-indigo-200">|</span>
-                        <span>${myP?.age ? myP.age + ' سنة' : '-'}</span> <span class="text-indigo-200">|</span>
-                        <span>${myP?.maritalStatus || '-'}</span> <span class="text-indigo-200">|</span>
-                        ${!isMale ? `<span>تعدد: ${myP?.acceptMarried || '-'}</span> <span class="text-indigo-200">|</span>` : ''}
-                        <span class="text-indigo-700 bg-white px-1.5 py-0.5 rounded shadow-sm border border-indigo-100">${myP?.marriageType || '-'}</span>
+                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt opacity-60"></i> ${escH(myP?.city || '-')}</span> <span class="text-indigo-200">|</span>
+                        <span>${myP?.age ? escH(myP.age) + ' سنة' : '-'}</span> <span class="text-indigo-200">|</span>
+                        <span>${escH(myP?.maritalStatus || '-')}</span> <span class="text-indigo-200">|</span>
+                        ${!isMale ? `<span>تعدد: ${escH(myP?.acceptMarried || '-')}</span> <span class="text-indigo-200">|</span>` : ''}
+                        <span class="text-indigo-700 bg-white px-1.5 py-0.5 rounded shadow-sm border border-indigo-100">${escH(myP?.marriageType || '-')}</span>
                     </div>
+                    <div id="match-client-ctx" class="flex items-center gap-2 flex-wrap mt-2 text-[11px] font-bold text-indigo-900"></div>
                 </div>`;
 
                 const groups = { high: matches.filter(m=>m.cat==='high'), med: matches.filter(m=>m.cat==='med'), low: matches.filter(m=>m.cat==='low') };
@@ -1586,32 +1814,46 @@
                 const renderGroup = (arr, colorCode, tabTarget) => {
                     if(!arr.length) return '';
                     let bulkText = "السلام عليكم، وجدنا هذه الملفات المناسبة لكم:\n\n"; arr.forEach(m => { bulkText += `ملف #${m.refId}\n${decodeFromHTML(m.shortBio || '')}${buildProfileShareLink(m.refId)}\n\n`; });
-                    let bulkBase64 = encodeBase64(bulkText); let myPhone = myP?.phone ? myP.phone.toString().replace(/\D/g, '') : '';
+                    let bulkBase64 = encodeBase64(bulkText);
                     let bgColor = colorCode === 'emerald' ? 'bg-emerald-50' : (colorCode === 'amber' ? 'bg-amber-50' : 'bg-slate-50');
                     let borderColor = colorCode === 'emerald' ? 'border-emerald-200' : (colorCode === 'amber' ? 'border-amber-200' : 'border-slate-200');
-                    
+                    const bulkRefs = jsq(arr.map(m => m.refId).join(','));
+
                     let groupHtml = `<div class="match-group-block mb-6" data-group="${tabTarget}">
                         <div class="flex items-center justify-end gap-2 mb-3 ${bgColor} p-2 rounded-xl border ${borderColor}">
-                            <button onclick="safeCopyFromBase64(this, '${bulkBase64}')" class="bg-white text-slate-600 border border-slate-200 w-10 h-10 rounded-lg flex items-center justify-center shadow-sm hover:text-indigo-600 transition-colors" title="نسخ القائمة"><i class="far fa-copy"></i></button>
-                            <button onclick="openWaFromBase64('${myPhone}', '${bulkBase64}')" class="bg-amber-500 hover:bg-amber-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-sm transition-colors" title="إرسال للعميل الأساسي"><i class="fab fa-whatsapp text-xl"></i></button>
+                            <button onclick="safeCopyFromBase64(this, '${bulkBase64}'); matchLogShare('${bulkRefs}'.split(','), 'copy')" class="bg-white text-slate-600 border border-slate-200 w-10 h-10 rounded-lg flex items-center justify-center shadow-sm hover:text-indigo-600 transition-colors" title="نسخ القائمة"><i class="far fa-copy"></i></button>
+                            <button onclick="openWaFromBase64('${jsq(myPhone)}', '${bulkBase64}'); matchLogShare('${bulkRefs}'.split(','), 'wa')" class="bg-amber-500 hover:bg-amber-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-sm transition-colors" title="إرسال للعميل الأساسي"><i class="fab fa-whatsapp text-xl"></i></button>
                         </div><div class="space-y-3">`;
 
                     arr.forEach(m => {
                         let mName = [m.name, m.familyName].filter(Boolean).join(' ') || 'بدون اسم';
                         let mSt = getStatusConfig(m.profileStatus);
-                        let actionWaBtn = mSt.canContact ? `<button onclick="openWaFromBase64('${jsq(m.phone)}', '${myBioBase64}')" class="w-10 h-10 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 flex items-center justify-center border border-emerald-200 transition-all shadow-sm shrink-0"><i class="fab fa-whatsapp text-xl"></i></button>` : `<button disabled class="w-10 h-10 rounded-lg bg-slate-100 text-slate-300 flex items-center justify-center cursor-not-allowed border border-slate-200 shadow-sm shrink-0" title="يمنع التواصل (تواصل مباشر)"><i class="fas fa-ban text-xl"></i></button>`;
+                        const jref = jsq(m.refId);
+                        let actionWaBtn = mSt.canContact ? `<button onclick="openWaFromBase64('${jsq(m.phone)}', '${myBioBase64}')" class="w-10 h-10 rounded-lg bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 flex items-center justify-center border border-emerald-200 transition-all shadow-sm shrink-0" title="واتساب لصاحب هذا الملف ببيانات عميلك"><i class="fab fa-whatsapp text-xl"></i></button>` : `<button disabled class="w-10 h-10 rounded-lg bg-slate-100 text-slate-300 flex items-center justify-center cursor-not-allowed border border-slate-200 shadow-sm shrink-0" title="يمنع التواصل (تواصل مباشر)"><i class="fas fa-ban text-xl"></i></button>`;
+                        let sendBtn = mSt.canContact
+                            ? `<button id="msend-${escH(m.refId)}" onclick="matchOpenSend('${jref}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-black">📨 أرسل طلب تواصل ${w.them} نيابة عن صاحب الملف</button>`
+                            : `<button id="msend-${escH(m.refId)}" data-blocked="1" disabled class="w-full bg-slate-100 text-slate-400 py-2.5 rounded-xl text-xs font-black cursor-not-allowed">الملف في تواصل مباشر</button>`;
 
                         let dataRibbon = `<div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 mt-1.5 flex-wrap"><span><i class="fas fa-map-marker-alt"></i> ${escH(m.city || '-')}</span> | <span>${escH(m.nationality || 'سعودية/ي')}</span> | <span>${escH(m.maritalStatus || '-')}</span>`;
                         if(isMale) dataRibbon += ` | <span>تعدد: ${escH(m.acceptMarried || '-')}</span>`; dataRibbon += ` | <span>${escH(m.marriageType || '-')}</span></div>`;
-                        
+
                         groupHtml += `
                         <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative">
                             <div class="absolute top-4 left-4 font-black text-lg text-${colorCode}-500">${m.numScore}%</div>
-                            <div class="pr-3 border-r-[3px] border-${colorCode}-400 mb-3">
-                                <h5 class="font-black text-slate-800 text-sm leading-tight">${escH(mName)} <span class="text-slate-400 font-normal text-[10px] mr-1 font-mono">#${m.refId}</span></h5>
-                                ${dataRibbon}
+                            <div class="flex items-start gap-2 mb-3 pl-14">
+                                <input type="checkbox" class="match-pick w-5 h-5 mt-0.5 shrink-0 accent-indigo-600" aria-label="تحديد الملف ${escH(m.refId)}" onchange="matchToggleSelect('${jref}', this.checked)">
+                                <div class="pr-3 border-r-[3px] border-${colorCode}-400">
+                                    <h5 class="font-black text-slate-800 text-sm leading-tight">${escH(mName)} <span class="text-slate-400 font-normal text-[10px] mr-1 font-mono">#${escH(m.refId)}</span></h5>
+                                    ${dataRibbon}
+                                </div>
                             </div>
+                            <div id="mrel-${escH(m.refId)}"></div>
                             <div class="bg-slate-50 p-3 rounded-xl text-[11px] text-slate-600 leading-relaxed mb-3 border border-slate-100 font-medium">${escH(decodeFromHTML(m.shortBio || 'لا توجد نبذة'))}</div>
+                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                <button onclick="matchCopy('${jref}')" class="bg-white border border-slate-200 text-slate-700 py-2 rounded-xl text-[11px] font-bold shadow-sm hover:text-indigo-600"><i class="far fa-copy ml-1"></i> نسخ بيانات${w.her}</button>
+                                <button onclick="matchSendToClient('${jref}')" class="bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-xl text-[11px] font-bold shadow-sm"><i class="fab fa-whatsapp ml-1"></i> إرسالها لصاحب الملف</button>
+                            </div>
+                            <div class="mb-2">${sendBtn}</div>
                             <div class="flex justify-between items-center gap-2">
                                 <div class="flex items-center gap-2 bg-slate-50 px-2 py-1.5 rounded-lg border border-slate-200 flex-1 overflow-hidden">
                                     <span class="text-[11px] font-mono font-bold text-slate-600 flex-1 text-left dir-ltr truncate">${escH(m.phone)}</span>
@@ -1625,8 +1867,15 @@
                 };
 
                 html += renderGroup(groups.high, 'emerald', 'high'); html += renderGroup(groups.med, 'amber', 'med'); html += renderGroup(groups.low, 'slate', 'low'); html += `</div>`;
-                openModal(`مطابقات #${refId} <span class="font-normal text-slate-500 text-sm ml-2">(${escH(clientName)})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50 w-full');
-            } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100">${error.message}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 w-full'); }
+                html += `<div id="match-select-bar" style="display:none" class="sticky bottom-0 z-10 items-center gap-2 bg-slate-900 text-white rounded-2xl p-2.5 text-[11px] font-bold shadow-xl">
+                    <span class="flex-1">محدد: <span id="match-select-count">0</span></span>
+                    <button onclick="matchCopy()" class="bg-white text-slate-800 px-3 py-2 rounded-lg">نسخ</button>
+                    <button onclick="matchSendToClient()" class="bg-amber-500 px-3 py-2 rounded-lg">إرسال لصاحب الملف</button>
+                    <button onclick="matchClearSelection()" class="text-slate-300 px-2 py-2" aria-label="إلغاء التحديد">✕</button>
+                </div>`;
+                openModal(`مطابقات #${escH(refId)} <span class="font-normal text-slate-500 text-sm ml-2">(${escH(clientName)})</span>`, html, `<button onclick="closeModal()" class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 bg-slate-50 w-full');
+                matchLoadContext();
+            } catch (error) { openModal(`حدث خطأ في استجابة السيرفر`, `<div class="text-center py-10 text-red-500 font-bold bg-red-50 rounded-2xl border border-red-100">${escH(error.message)}</div>`, `<button onclick="closeModal()" class="w-full bg-slate-200 py-3 rounded-xl font-bold shadow-sm">إغلاق</button>`, 'p-4 w-full'); }
         };
 
 //
