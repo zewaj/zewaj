@@ -683,7 +683,7 @@
             <div class="bg-gray-50 px-4 py-2.5 flex justify-between gap-2 border-t border-gray-200">
                 <button type="button" onclick="closeTermsModal()" class="flex-1 py-1.5 text-xs text-gray-600 font-bold hover:bg-gray-200 rounded-xl transition-colors">تراجع</button>
                 <button type="button" id="finalSubmitBtn" onclick="submitForm(this)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 rounded-xl shadow-md transition-colors flex items-center justify-center">
-                    <span>اعتماد</span>
+                    <span>أتعهد وأعتمد</span>
                 </button>
             </div>
         </div>
@@ -843,10 +843,18 @@
         let isMale = null;
         let editInfoState = null; 
         let dynamicDropdowns = null;
-        // 🟢 رسوم الوسيط: القيم الافتراضية تُستبدل بما في شيت الإعدادات (مفاتيح FEE_*) عبر getPublicConfig، وآخر قيمة تُحفظ محلياً
-        const DEFAULT_PLATFORM_FEES = { menSpecialAdvance: 1000, menMatch: 3000, womenMatch: 2000, directFee: 150, directFeeSpecialWomen: 250, packageContacts: 4, packagePoints: 250 };
+        // 🟢 رسوم الوسيط وباقات التواصل: من الشيت عبر getPublicConfig. شاشة التعهد لا تنتظر الخادم: تُرسم من آخر نسخة محفوظة على الجهاز (أو الافتراضية) وتُحدَّث بصمت.
+        const DEFAULT_PLATFORM_FEES = { menSpecialAdvance: 999, menMatch: 3000, womenMatch: 2000, directFee: 150, directFeeSpecialWomen: 350, directFeeMenSpecial: 100, packageContacts: 4, packagePoints: 350,
+            contactPackages: [ { name: 'باقة الاشتراطات الخاصة', price: 999, points: 350, external: 4, special: true }, { name: 'الباقة الذهبية', price: 799, points: 200, external: 3, special: false } ] };
+        // رد خادم بلا قائمة باقات: تُبنى بطاقة الاشتراطات الخاصة وحدها من أرقامه
+        function normalizeFees(f) {
+            const out = Object.assign({}, DEFAULT_PLATFORM_FEES, f);
+            if (!Array.isArray(f.contactPackages)) out.contactPackages = [ { name: 'باقة الاشتراطات الخاصة', price: out.menSpecialAdvance, points: out.packagePoints, external: out.packageContacts, special: true } ];
+            return out;
+        }
         let platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES);
-        try { const cachedFees = JSON.parse(localStorage.getItem('platform_fees')); if (cachedFees && cachedFees.menMatch > 0) platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES, cachedFees); } catch(e) {}
+        let feesFetchedAt = 0;
+        try { const cachedFees = JSON.parse(localStorage.getItem('platform_fees_v2')); if (cachedFees && cachedFees.menMatch > 0) platformFees = normalizeFees(cachedFees); } catch(e) {}
         let currentViewData = null;
         let currentViewedIndexInDashboard = null; 
         let hasClickedWaToApprove = false;
@@ -1219,10 +1227,11 @@ function openTermsModal() {
             return; 
         }
         
-        if(typeof generateTerms === 'function') generateTerms(); 
-        
-        const me = document.getElementById('modalError'); if(me) me.classList.add('hidden'); 
-        
+        if(typeof generateTerms === 'function') generateTerms();
+
+        const me = document.getElementById('modalError'); if(me) { me.innerText = 'يرجى الموافقة على التعهد للمتابعة.'; me.classList.add('hidden'); }
+        if (Date.now() - feesFetchedAt > 5 * 60000) fetchPlatformFees(); // تحديث صامت دون انتظار
+
         const tm = document.getElementById('termsModal'); 
         if(tm) {
             tm.classList.remove('hidden');
@@ -1643,9 +1652,10 @@ function closeTermsModal() {
                 const result = JSON.parse(await res.text());
                 const f = result && result.success ? result.fees : null;
                 if (f && f.menMatch >= 0 && f.womenMatch >= 0) {
-                    platformFees = Object.assign({}, DEFAULT_PLATFORM_FEES, f);
-                    try { localStorage.setItem('platform_fees', JSON.stringify(f)); } catch(e) {}
-                    if (isMale !== null) generateTerms();
+                    feesFetchedAt = Date.now();
+                    platformFees = normalizeFees(f);
+                    try { localStorage.setItem('platform_fees_v2', JSON.stringify(f)); } catch(e) {}
+                    if (isMale !== null) applyFreshFees();
                 }
             } catch(e) {}
         }
@@ -1938,7 +1948,7 @@ function closeTermsModal() {
                 pointsNote = `<div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl mt-2 text-emerald-800 shadow-sm"><p class="text-[9.5px] font-bold leading-relaxed">🎁 احصل على نقاط ترحيبية مجانية (لأول ملف يتم تسجيله في حسابك).</p></div>`;
             }
 
-            // 🟢 [2026-10-07] الرسوم بخط كبير وواضح في بطاقات منفصلة (رسوم التواصل المباشر / رسوم التوفيق بعد الملكة)، ثم التعهد الرسمي أسفلها.
+            // 🟢 [2026-11-28] "لا تدفع شيئاً الآن" ثم رسوم الرقم عند الحاجة (الباقة اختيارية) ثم رسوم التوفيق، ثم التعهد الرسمي أسفلها.
             // الأرقام من platformFees (الشيت عبر getPublicConfig). نص التعهد يتبدّل بجنس المسجّل، وما يُحفظ في الشيت يبنيه buildPledgeRecord().
             const feeCard = (title, value, sub, tone) => `<div class="bg-${tone}-50 border-2 border-${tone}-200 p-3 rounded-xl shadow-sm text-center"><div class="text-xs font-black text-${tone}-800 mb-1">${title}</div><div class="text-2xl font-black text-${tone}-900 leading-tight">${value}</div><div class="text-[11px] font-bold text-${tone}-700 mt-1 leading-relaxed">${sub}</div></div>`;
             const lbl = document.getElementById('agreeTermsLabel');
@@ -1946,23 +1956,66 @@ function closeTermsModal() {
                 ? 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بصحة بياناتي وجديّتي، وبأنني غير متلاعب ولا متحايل، وبالتزامي بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة أمام الجهات المعنية.'
                 : 'أُقرّ وأتعهد أمام الله، ثم أمام إدارة المنصة، بصحة بياناتي وجديّتي، وبأنني غير متلاعبة ولا متحايلة، وبالتزامي بسداد الرسوم المبيّنة أعلاه عند استحقاقها، وعند إخلالي بذلك أتحمّل المسؤولية الكاملة عن جميع الالتزامات المالية ذات الصلة أمام الجهات المعنية.';
 
+            const freeNow = `<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl text-center text-xs font-black">${isMale ? 'التسجيل مجاني، ولا تدفع شيئاً الآن' : 'التسجيل مجاني، ولا تدفعين شيئاً الآن'}</div>`;
+            const matchCard = (v) => feeCard('رسوم التوفيق بعد الملكة', `${v} ريال`, 'تُستحق عند إتمام الزواج بتوفيق الله', 'rose');
             if(isMale) {
                 const mmt = document.getElementById('menMarriageType'); const isSpecial = mmt ? (mmt.value === "زواج باشتراطات خاصة") : false;
-                const cards = isSpecial
-                    ? feeCard('باقة المسار الخاص', `${platformFees.menSpecialAdvance} ريال`, `تشمل ${platformFees.packageContacts} أرقام تواصل مباشر و${platformFees.packagePoints} نقطة`, 'amber')
-                    : feeCard('رسوم التواصل المباشر', `${platformFees.directFee} ريال`, `مع امرأة زواج معلن، و${platformFees.directFeeSpecialWomen} ريال مع امرأة ظروف خاصة / مسيار`, 'amber');
-                container.innerHTML = `<div class="space-y-2">${cards}${feeCard('رسوم التوفيق بعد الملكة', `${platformFees.menMatch} ريال`, 'تُستحق عند إتمام الزواج بتوفيق الله', 'rose')}</div>` + pointsNote;
+                container.innerHTML = `<div class="space-y-2">${freeNow}${isSpecial ? buildSpecialContactOptions() : buildRegularContactFees()}${matchCard(platformFees.menMatch)}</div>` + pointsNote;
             } else {
-                container.innerHTML = `<div class="space-y-2">${feeCard('التسجيل', 'مجاني', 'ولا رسوم عليكِ للتواصل المباشر', 'emerald')}${feeCard('رسوم التوفيق بعد الملكة', `${platformFees.womenMatch} ريال`, 'تُستحق عند إتمام الزواج بتوفيق الله', 'rose')}</div>` + pointsNote;
+                container.innerHTML = `<div class="space-y-2">${freeNow}${feeCard('رسوم التواصل المباشر', 'لا رسوم', 'لا رسوم عليكِ للتواصل المباشر', 'emerald')}${matchCard(platformFees.womenMatch)}</div>` + pointsNote;
             }
+        }
+
+        // صف سعر: العنوان والشرح يميناً والمبلغ يساراً
+        function pledgeRow(title, sub, price, badge) {
+            return `<div class="flex items-center justify-between gap-2 bg-white rounded-xl px-3 py-2 border-2 ${badge ? 'border-indigo-400' : 'border-gray-200'}"><div class="min-w-0"><div class="text-[13px] font-black text-gray-900">${title}${badge ? ` <span class="text-[10px] bg-indigo-100 text-indigo-700 rounded-md px-1.5 py-0.5">${badge}</span>` : ''}</div><div class="text-[11px] font-bold text-gray-500 leading-relaxed">${sub}</div></div><div class="text-base font-black text-gray-900 whitespace-nowrap">${price} ريال</div></div>`;
+        }
+        function pledgeFeesBox(title, hint, rows, foot) {
+            return `<div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-2.5 space-y-2"><div><div class="text-[13px] font-black text-amber-900">${title}</div>${hint ? `<div class="text-[11px] font-bold text-amber-700">${hint}</div>` : ''}</div>${rows}${foot ? `<div class="text-[11px] font-bold text-gray-500 leading-relaxed">${foot}</div>` : ''}</div>`;
+        }
+        function buildRegularContactFees() {
+            return pledgeFeesBox('عندما تريد رقم تواصل', 'تدفع عند الحاجة فقط',
+                pledgeRow('الرقم الواحد', 'مع صاحبة الزواج المعلن', platformFees.directFee) +
+                pledgeRow('الرقم الواحد', 'مع صاحبة المسيار أو الظروف الخاصة', platformFees.directFeeSpecialWomen),
+                'وتوجد باقات توفّر عليك، تطّلع عليها بعد التسجيل.');
+        }
+        function arNumbersLabel(n) { return n === 1 ? 'رقم تواصل واحد' : n === 2 ? 'رقمان للتواصل' : (n <= 10 ? `${n} أرقام للتواصل` : `${n} رقماً للتواصل`); }
+        function escPledge(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+        function buildSpecialContactOptions() {
+            const f = platformFees;
+            const list = f.contactPackages || [];
+            // "الأوفر": أقل متوسط للرقم الواحد، وبشرط أن يكون أرخص من الدفع لكل رقم (تُحسب من الأسعار الحالية)
+            let best = -1, bestAvg = f.directFeeSpecialWomen;
+            if (list.length > 1) list.forEach((p, i) => { const avg = p.price / p.external; if (avg < bestAvg) { bestAvg = avg; best = i; } });
+            const rows = list.map((p, i) => {
+                let sub = `${arNumbersLabel(p.external)} و${p.points} نقطة`;
+                if (p.special && f.directFeeMenSpecial > 0 && f.directFeeMenSpecial < f.directFee) sub += `، وبعدها ${f.directFeeMenSpecial} ريال للرقم`;
+                return pledgeRow(escPledge(p.name), sub, p.price, i === best ? 'الأوفر' : '');
+            }).join('') + pledgeRow('بدون باقة: الرقم الواحد', `مع صاحبة المسيار أو الظروف الخاصة، و${f.directFee} ريال مع صاحبة الزواج المعلن`, f.directFeeSpecialWomen, '');
+            return pledgeFeesBox('عندما تريد رقم تواصل، تختار ما يناسبك', list.length ? 'الاشتراك في الباقات اختياري' : '', rows, list.length ? 'تُشترى الباقة بعد التسجيل من صفحة الباقات متى احتجت.' : '');
+        }
+
+        // وصلت أسعار جديدة: يُعاد الرسم، وإن تغيّر ما على الشاشة وهي مفتوحة تُلغى الموافقة ليقرأ المسجّل من جديد
+        function applyFreshFees() {
+            const box = document.getElementById('dynamicTermsContainer'); const tm = document.getElementById('termsModal');
+            const send = document.getElementById('finalSubmitBtn');
+            if (send && send.disabled) return; // الإرسال جارٍ بالأرقام التي وافق عليها
+            const before = box ? box.innerHTML : '';
+            generateTerms();
+            if (!box || !tm || tm.classList.contains('hidden') || box.innerHTML === before) return;
+            const ag = document.getElementById('agreeTerms'); if (ag) ag.checked = false;
+            const me = document.getElementById('modalError');
+            if (me) { me.innerText = 'تم تحديث الأسعار الآن. راجعها ثم أعد الموافقة على التعهد.'; me.classList.remove('hidden'); }
         }
 
         // 🟢 نص موافقة التسجيل المحفوظ في عمود agreedToTerms بصف الملف (هو السجل الوحيد لتعهد الرسوم؛ لا عمود ولا ورقة أخرى).
         // يبدأ بـ"نعم موافق" كما كان، ثم الأرقام التي رآها المسجِّل وقت الاعتماد والتاريخ.
         function buildPledgeRecord(isSpecialMan) {
             const d = new Date().toISOString().slice(0, 10);
+            const pk = (platformFees.contactPackages || []).map(p => `${p.name} ${p.price}`).join(' / ');
+            const perNumber = `تواصل لكل رقم ${platformFees.directFee}/${platformFees.directFeeSpecialWomen}`;
             const feesTxt = isMale
-                ? (isSpecialMan ? `باقة ${platformFees.menSpecialAdvance} + توفيق ${platformFees.menMatch}` : `تواصل مباشر ${platformFees.directFee}/${platformFees.directFeeSpecialWomen} + توفيق ${platformFees.menMatch}`)
+                ? `${perNumber}${isSpecialMan && pk ? ` (أو باقة اختيارية: ${pk})` : ''} + توفيق ${platformFees.menMatch}`
                 : `توفيق ${platformFees.womenMatch}`;
             return `نعم موافق | تعهد رسمي بالرسوم: ${feesTxt} ريال | ${d}`;
         }
@@ -2797,7 +2850,7 @@ function closeTermsModal() {
                         ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? Array.from(document.querySelectorAll('input[name="menSpecOpts"]:checked')).map(cb => cb.value).join(' ، ') : "")
                         : (getV('womenMarriageType') === "زواج بظروف خاصة" ? Array.from(document.querySelectorAll('input[name="womenAltMarriage"]:checked')).map(cb => cb.value).join(' ، ') : ""),
                     acceptMarried: !isMale ? getV('acceptMarried') : "", monthlyIncome: isMale ? getV('monthlyIncome') : "",
-                    fees: isMale ? (getV('menMarriageType') === "زواج باشتراطات خاصة" ? `${platformFees.menSpecialAdvance} باقة + ${platformFees.menMatch} توفيق` : `${platformFees.directFee} / ${platformFees.directFeeSpecialWomen} تواصل مباشر + ${platformFees.menMatch} توفيق`) : `${platformFees.womenMatch} توفيق`,
+                    fees: isMale ? `${platformFees.directFee} / ${platformFees.directFeeSpecialWomen} تواصل مباشر + ${platformFees.menMatch} توفيق` : `${platformFees.womenMatch} توفيق`,
                     partnerSpecs: getCombinedPartnerSpecs(), secretInfo: getV('specialInfo') || "لا يوجد", additionalInfo: finalAdditionalInfo,
                     howHeard: getV('howHeard'), agreedToTerms: buildPledgeRecord(isMale && getV('menMarriageType') === "زواج باشتراطات خاصة"), autoBio: "#طلب_زواج_جديد" 
                 };
